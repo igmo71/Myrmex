@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Myrmex.ApiService\Myrmex.ApiService.csproj" />
+    <ProjectReference Include="..\Myrmex.WebApp\Myrmex.WebApp.csproj" />
     <ProjectReference Include="..\Myrmex.Web\Myrmex.Web.csproj" />
   </ItemGroup>
 
