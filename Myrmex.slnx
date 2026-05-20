@@ -4,4 +4,5 @@
   <Project Path="Myrmex.ServiceDefaults/Myrmex.ServiceDefaults.csproj" />
   <Project Path="Myrmex.Tests/Myrmex.Tests.csproj" />
   <Project Path="Myrmex.Web/Myrmex.Web.csproj" />
+  <Project Path="Myrmex.WebApp/Myrmex.WebApp.csproj" />
 </Solution>

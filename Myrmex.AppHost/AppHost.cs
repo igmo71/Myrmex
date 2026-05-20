@@ -13,4 +13,12 @@ builder.AddProject<Projects.Myrmex_Web>("webfrontend")
     .WithReference(apiService)
     .WaitFor(apiService);
 
+builder.AddProject<Projects.Myrmex_WebApp>("webapp")
+    .WithExternalHttpEndpoints()
+    .WithHttpHealthCheck("/health")
+    .WithReference(cache)
+    .WaitFor(cache)
+    .WithReference(apiService)
+    .WaitFor(apiService);
+
 builder.Build().Run();
