@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Myrmex.Core.Results;
 
-
 public class ServiceResult : IServiceResult
 {
     [MemberNotNullWhen(false, nameof(Error))]
@@ -33,12 +32,14 @@ public class ServiceResult : IServiceResult
 
     public static ServiceResult Invalid(IEnumerable<DomainValidationFailure> failures)
     {
-        if (!failures.Any())
-            return Fail();
+        ArgumentNullException.ThrowIfNull(failures);
 
         ServiceError[] details = failures
             .Select(f => new ServiceError(ServiceErrorType.Invalid, f.Code, f.Message, f.Field))
             .ToArray();
+
+        if (details.Length == 0)
+            return Fail();
 
         return Fail(new ServiceError(
             ServiceErrorType.Invalid,
@@ -79,12 +80,14 @@ public sealed class ServiceResult<TValue> : ServiceResult, IServiceResult<TValue
 
     public static new ServiceResult<TValue> Invalid(IEnumerable<DomainValidationFailure> failures)
     {
-        if (!failures.Any())
-            return Fail(ServiceError.Unknown);
+        ArgumentNullException.ThrowIfNull(failures);
 
         ServiceError[] details = failures
             .Select(f => new ServiceError(ServiceErrorType.Invalid, f.Code, f.Message, f.Field))
             .ToArray();
+
+        if (details.Length == 0)
+            return Fail();
 
         return Fail(new ServiceError(
             ServiceErrorType.Invalid,

@@ -10,7 +10,7 @@ public interface IServiceResult
     ServiceError? Error { get; }
 }
 
-public interface IServiceResult<TValue> : IServiceResult
+public interface IServiceResult<out TValue> : IServiceResult
 {
     TValue Value { get; }
 }

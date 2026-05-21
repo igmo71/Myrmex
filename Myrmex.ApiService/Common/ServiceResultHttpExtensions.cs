@@ -4,7 +4,7 @@ namespace Myrmex.ApiService.Common;
 
 public static class ServiceResultHttpExtensions
 {
-    public static IResult ToHttpResult(this ServiceResult result)
+    public static IResult ToHttpResult(this IServiceResult result)
     {
         if (result.IsSuccess)
             return Results.NoContent();
@@ -12,7 +12,7 @@ public static class ServiceResultHttpExtensions
         return result.Error.ToHttpResult();
     }
 
-    public static IResult ToHttpResult<TValue>(this ServiceResult<TValue> result)
+    public static IResult ToHttpResult<TValue>(this IServiceResult<TValue> result)
     {
         if (result.IsSuccess)
             return Results.Ok(result.Value);
@@ -37,9 +37,15 @@ public static class ServiceResultHttpExtensions
                 error.Code,
                 error.Message)),
 
-            ServiceErrorType.Unauthorized => Results.Unauthorized(),
+            ServiceErrorType.Unauthorized => Results.Problem(
+                title: error.Message,
+                type: error.Code,
+                statusCode: StatusCodes.Status401Unauthorized),
 
-            ServiceErrorType.Forbidden => Results.Forbid(),
+            ServiceErrorType.Forbidden => Results.Problem(
+                title: error.Message,
+                type: error.Code,
+                statusCode: StatusCodes.Status403Forbidden),
 
             ServiceErrorType.Failure => Results.Problem(
                 title: error.Message,
@@ -57,7 +63,7 @@ public static class ServiceResultHttpExtensions
         IEnumerable<ServiceError> validationErrors = error.DetailList.Count > 0 ? error.DetailList : [error];
 
         return validationErrors
-            .GroupBy(e => e.Field ?? string.Empty)
+            .GroupBy(e => e.Field ?? "_error")
             .ToDictionary(g => g.Key, g => g.Select(e => e.Message).ToArray());
     }
 
