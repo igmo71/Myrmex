@@ -1,4 +1,4 @@
-﻿namespace Myrmex.Core.Abstractions;
+﻿namespace Myrmex.Core.Events;
 
 public interface IIntegrationEvent : IEvent
 { }

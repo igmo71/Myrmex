@@ -1,4 +1,4 @@
-﻿namespace Myrmex.Core.Abstractions;
+﻿namespace Myrmex.Core.Domain;
 
 public abstract class EntityBase
 {

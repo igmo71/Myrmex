@@ -1,4 +1,4 @@
-﻿namespace Myrmex.Core.Common;
+﻿namespace Myrmex.Core.Validation;
 
 public sealed record DomainValidationResult(IReadOnlyList<DomainValidationFailure> Errors)
 {
