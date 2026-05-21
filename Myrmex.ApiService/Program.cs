@@ -11,7 +11,7 @@ builder.Services.AddProblemDetails();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.Services.AddEventDispatching();
+builder.Services.AddMyrmexEventDispatching();
 
 var app = builder.Build();
 

@@ -5,7 +5,7 @@ namespace Myrmex.EventDispatching;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddEventDispatching(this IServiceCollection services, params Assembly[] handlerAssemblies)
+    public static IServiceCollection AddMyrmexEventDispatching(this IServiceCollection services, params Assembly[] handlerAssemblies)
     {
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 

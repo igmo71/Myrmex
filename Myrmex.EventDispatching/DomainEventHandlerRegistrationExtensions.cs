@@ -16,7 +16,7 @@ public static class DomainEventHandlerRegistrationExtensions
             .SelectMany(assembly => assembly.DefinedTypes)
             .Where(type =>
                 type is { IsAbstract: false, IsInterface: false } &&
-                type.ImplementedInterfaces.Any(t => t.IsGenericType && t.GetGenericTypeDefinition() == openHandlerType))
+                type.ImplementedInterfaces.Any(IsDomainEventHandlerInterface))
             .Select(type => type.AsType())
             .Distinct();
 
@@ -24,7 +24,7 @@ public static class DomainEventHandlerRegistrationExtensions
         {
             Type[] eventTypes = handlerType
                 .GetInterfaces()
-                .Where(t => t.IsGenericType && t.GetGenericTypeDefinition() == openHandlerType)
+                .Where(IsDomainEventHandlerInterface)
                 .Select(interfaceType => interfaceType.GetGenericArguments()[0])
                 .Distinct()
                 .ToArray();
@@ -39,4 +39,6 @@ public static class DomainEventHandlerRegistrationExtensions
 
         return services;
     }
+    static bool IsDomainEventHandlerInterface(Type type) =>
+        type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>);
 }

@@ -15,7 +15,15 @@ internal sealed class DomainEventDispatcher(
         ArgumentNullException.ThrowIfNull(domainEvent);
 
         Type eventType = domainEvent.GetType();
+
         IReadOnlyList<Type> handlerTypes = registry.GetHandlerTypes(eventType);
+
+        if (handlerTypes.Count == 0)
+        {
+            logger.LogDebug("No domain event handlers registered for event {EventType}.", eventType.Name);
+
+            return;
+        }
 
         foreach (Type handlerType in handlerTypes)
         {
