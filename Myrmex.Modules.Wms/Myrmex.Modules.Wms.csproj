@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="Capabilities\Topology\Features\" />
+		<Folder Include="Capabilities\Topology\Endpoints\" />
+		<Folder Include="Infrastructure\Persistence\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Myrmex.AppDispatching\Myrmex.AppDispatching.csproj" />
+	  <ProjectReference Include="..\Myrmex.Core\Myrmex.Core.csproj" />
+	</ItemGroup>
+
+</Project>

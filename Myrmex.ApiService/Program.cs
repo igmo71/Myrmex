@@ -1,4 +1,5 @@
 using Myrmex.AppDispatching;
+using Myrmex.Modules.Wms;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,7 +12,9 @@ builder.Services.AddProblemDetails();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.Services.AddMyrmexAppDispatching();
+builder.Services.AddWmsModule(builder.Configuration);
+
+builder.Services.AddMyrmexAppDispatching(typeof(WmsModule).Assembly);
 
 var app = builder.Build();
 
@@ -42,6 +45,8 @@ app.MapGet("/weatherforecast", () =>
 .WithName("GetWeatherForecast");
 
 app.MapDefaultEndpoints();
+
+app.MapWmsModuleEndpoints();
 
 app.Run();
 

@@ -6,13 +6,32 @@ public sealed record DomainValidationResult(IReadOnlyList<DomainValidationFailur
 
     public static DomainValidationResult Valid { get; } = new([]);
 
+    public static DomainValidationResult From(IEnumerable<DomainValidationFailure> errors)
+    {
+        DomainValidationFailure[] materializedErrors = [.. errors];
+
+        return materializedErrors.Length == 0 ? Valid : new DomainValidationResult(materializedErrors);
+    }
+
     public static DomainValidationResult Invalid(params DomainValidationFailure[] errors)
-        => errors.Length == 0 ? Valid : new(errors);
+    {
+        if (errors.Length == 0)
+        {
+            throw new ArgumentException("Invalid validation result must contain at least one error.", nameof(errors));
+        }
+
+        return new DomainValidationResult(errors);
+    }
 
     public static DomainValidationResult Invalid(IEnumerable<DomainValidationFailure> errors)
     {
-        var materializedErrors = errors.ToArray();
+        DomainValidationFailure[] materializedErrors = [.. errors];
 
-        return materializedErrors.Length == 0 ? Valid : new(materializedErrors);
+        if (materializedErrors.Length == 0)
+        {
+            throw new ArgumentException("Invalid validation result must contain at least one error.", nameof(errors));
+        }
+
+        return new DomainValidationResult(materializedErrors);
     }
 }
