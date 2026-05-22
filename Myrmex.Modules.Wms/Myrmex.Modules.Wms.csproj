@@ -11,11 +11,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Capabilities\Topology\Endpoints\" />
-		<Folder Include="Capabilities\Topology\Features\Warehouses\" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
 	  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
 	    <PrivateAssets>all</PrivateAssets>

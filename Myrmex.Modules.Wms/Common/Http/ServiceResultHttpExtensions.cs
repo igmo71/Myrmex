@@ -1,8 +1,9 @@
-﻿using Myrmex.Core.Results;
+﻿using Microsoft.AspNetCore.Http;
+using Myrmex.Core.Results;
 
-namespace Myrmex.ApiService.Common;
+namespace Myrmex.Modules.Wms.Common.Http;
 
-public static class ServiceResultHttpExtensions
+internal static class ServiceResultHttpExtensions
 {
     public static IResult ToHttpResult(this IServiceResult result)
     {

@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Myrmex.Modules.Wms.Capabilities.Topology.Domain.Warehouses;
+using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 
 namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Configurations;
 
