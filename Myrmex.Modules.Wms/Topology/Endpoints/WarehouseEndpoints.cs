@@ -14,20 +14,20 @@ internal static class WarehouseEndpoints
 {
     public static RouteGroupBuilder MapWarehouseEndpoints(this RouteGroupBuilder group)
     {
-        group.MapPost("warehouses", CreateWarehouseAsync)
+        group.MapPost("/warehouses", CreateWarehouseAsync)
             .WithName("CreateWarehouse")
             .WithSummary("Create Warehouse");
-        group.MapGet("warehouses/{warehouseId:guid}", GetWarehouseByIdAsync)
+        group.MapGet("/warehouses/{warehouseId:guid}", GetWarehouseByIdAsync)
             .WithName("GetWarehouseById")
             .WithSummary("Get Warehouse By Id");
-        group.MapGet("warehouses", ListWarehousesAsync)
+        group.MapGet("/warehouses", ListWarehousesAsync)
             .WithName("ListWarehouses")
             .WithSummary("List Warehouses");
 
         return group;
     }
 
-    internal sealed record CreateWarehouseRequest(
+    private sealed record CreateWarehouseRequest(
         string? Code,
         string? Name,
         string? Description);

@@ -14,4 +14,16 @@ public abstract record ListQuery
     public string? SortBy { get; init; }
 
     public bool SortDescending { get; init; }
+
+    public static int NormalizeSkip(int skip)
+    {
+        return Math.Max(0, skip);
+    }
+
+    public static int NormalizeTake(int take)
+    {
+        return take <= 0
+            ? DefaultTake
+            : Math.Min(take, MaxTake);
+    }
 }

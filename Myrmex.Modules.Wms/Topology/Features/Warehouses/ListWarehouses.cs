@@ -24,8 +24,8 @@ internal static class ListWarehouses
     {
         public async Task<ServiceResult<ListResult<Item>>> HandleAsync(Query query, CancellationToken cancellationToken = default)
         {
-            int skip = Math.Max(0, query.Skip);
-            int take = query.Take <= 0 ? ListQuery.DefaultTake : Math.Min(query.Take, ListQuery.MaxTake);
+            int skip = ListQuery.NormalizeSkip(query.Skip);
+            int take = ListQuery.NormalizeTake(query.Take);
 
             IQueryable<Warehouse> queryable = dbContext.Warehouses
                 .AsNoTracking();
