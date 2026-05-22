@@ -12,9 +12,9 @@ internal static class CreateWarehouse
     internal sealed record Command(
         string? Code,
         string? Name,
-        string? Description) : ICommand<ServiceResult<Response>>;
+        string? Description) : ICommand<ServiceResult<Result>>;
 
-    internal sealed record Response(
+    internal sealed record Result(
         Guid Id,
         string Code,
         string Name,
@@ -23,9 +23,9 @@ internal static class CreateWarehouse
         DateTimeOffset CreatedAtUtc,
         DateTimeOffset? UpdatedAtUtc);
 
-    internal sealed class Handler(WmsDbContext dbContext) : ICommandHandler<Command, ServiceResult<Response>>
+    internal sealed class Handler(WmsDbContext dbContext) : ICommandHandler<Command, ServiceResult<Result>>
     {
-        public async Task<ServiceResult<Response>> HandleAsync(Command command, CancellationToken cancellationToken = default)
+        public async Task<ServiceResult<Result>> HandleAsync(Command command, CancellationToken cancellationToken = default)
         {
             DomainValidationResult validationResult = Warehouse.Create(
              command.Code,
@@ -35,12 +35,12 @@ internal static class CreateWarehouse
 
             if (!validationResult.IsValid)
             {
-                return ServiceResult<Response>.Invalid(validationResult.Errors);
+                return ServiceResult<Result>.Invalid(validationResult.Errors);
             }
 
             if (warehouse is null)
             {
-                return ServiceResult<Response>.Fail(
+                return ServiceResult<Result>.Fail(
                     ServiceErrors.Failure(
                         "Warehouse.CreateFailed", "Warehouse creation failed unexpectedly."));
             }
@@ -50,7 +50,7 @@ internal static class CreateWarehouse
 
             if (codeAlreadyExists)
             {
-                return ServiceResult<Response>.Fail(
+                return ServiceResult<Result>.Fail(
                     ServiceErrors.Conflict(
                         "Warehouse.CodeAlreadyExists", "Warehouse with the same code already exists.", "code"));
             }
@@ -59,7 +59,7 @@ internal static class CreateWarehouse
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            Response response = new(
+            Result result = new(
                 warehouse.Id,
                 warehouse.Code,
                 warehouse.Name,
@@ -68,7 +68,7 @@ internal static class CreateWarehouse
                 warehouse.CreatedAtUtc,
                 warehouse.UpdatedAtUtc);
 
-            return ServiceResult<Response>.Success(response);
+            return ServiceResult<Result>.Success(result);
         }
     }
 }

@@ -11,6 +11,7 @@ builder.AddProject<Projects.Myrmex_WebApp>("webapp")
     .WithReference(cache)
     .WaitFor(cache)
     .WithReference(apiService)
-    .WaitFor(apiService);
+    .WaitFor(apiService)
+    ;
 
 builder.Build().Run();
