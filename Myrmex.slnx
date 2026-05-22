@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="Myrmex.ApiService/Myrmex.ApiService.csproj" />
+  <Project Path="Myrmex.AppDispatching/Myrmex.AppDispatching.csproj" Id="b08c3084-2bc0-4ec0-b2e1-5f7e76fcc5b6" />
   <Project Path="Myrmex.AppHost/Myrmex.AppHost.csproj" />
   <Project Path="Myrmex.Core/Myrmex.Core.csproj" Id="9bae897d-b243-4460-bce3-126a3e84824c" />
   <Project Path="Myrmex.ServiceDefaults/Myrmex.ServiceDefaults.csproj" />
