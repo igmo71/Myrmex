@@ -3,11 +3,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Myrmex.AppDispatching.CommandDispatching;
 using Myrmex.AppDispatching.QueryDispatching;
+using Myrmex.AspNetCore.Results;
 using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
-using Myrmex.Modules.Wms.Common.Http;
 using Myrmex.Modules.Wms.Topology.Features.Warehouses;
-using static Myrmex.Modules.Wms.Topology.Features.Warehouses.ListWarehouses;
 
 namespace Myrmex.Modules.Wms.Topology.Endpoints;
 
@@ -27,11 +26,22 @@ internal static class WarehouseEndpoints
 
         return group;
     }
+
+    internal sealed record CreateWarehouseRequest(
+        string? Code,
+        string? Name,
+        string? Description);
+
     private static async Task<IResult> CreateWarehouseAsync(
-        CreateWarehouse.Command command,
+        CreateWarehouseRequest request,
         ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken)
     {
+        var command = new CreateWarehouse.Command(
+            Code: request.Code,
+            Name: request.Name,
+            Description: request.Description);
+
         var result = await commandDispatcher
             .DispatchAsync<CreateWarehouse.Command, ServiceResult<CreateWarehouse.Result>>(command, cancellationToken);
         return result.ToHttpResult();
@@ -61,7 +71,7 @@ internal static class WarehouseEndpoints
         var query = new ListWarehouses.Query
         {
             Skip = skip ?? 0,
-            Take = take ?? 20,
+            Take = take ?? ListQuery.DefaultTake,
             SearchText = searchText,
             SortBy = sortBy,
             SortDescending = sortDescending ?? false,
@@ -69,7 +79,7 @@ internal static class WarehouseEndpoints
         };
 
         var result = await queryDispatcher
-            .DispatchAsync<ListWarehouses.Query, ServiceResult<ListResult<Item>>>(query, cancellationToken);
+            .DispatchAsync<ListWarehouses.Query, ServiceResult<ListResult<ListWarehouses.Item>>>(query, cancellationToken);
         return result.ToHttpResult();
     }
 }

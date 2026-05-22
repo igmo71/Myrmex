@@ -59,7 +59,7 @@ internal static class CreateWarehouse
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            Result result = new(
+            Result response = new(
                 warehouse.Id,
                 warehouse.Code,
                 warehouse.Name,
@@ -68,7 +68,7 @@ internal static class CreateWarehouse
                 warehouse.CreatedAtUtc,
                 warehouse.UpdatedAtUtc);
 
-            return ServiceResult<Result>.Success(result);
+            return ServiceResult<Result>.Success(response);
         }
     }
 }

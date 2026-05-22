@@ -9,10 +9,7 @@ namespace Myrmex.Modules.Wms.Topology.Features.Warehouses;
 
 internal static class ListWarehouses
 {
-    private const int DefaultTake = 20;
-    private const int MaxTake = 200;
-
-    internal sealed record Query : ListQuery, IQuery<ServiceResult<ListResult<Item>>>;
+    internal sealed record Query : ActiveListQuery, IQuery<ServiceResult<ListResult<Item>>>;
 
     internal sealed record Item(
         Guid Id,
@@ -28,7 +25,7 @@ internal static class ListWarehouses
         public async Task<ServiceResult<ListResult<Item>>> HandleAsync(Query query, CancellationToken cancellationToken = default)
         {
             int skip = Math.Max(0, query.Skip);
-            int take = query.Take <= 0 ? DefaultTake : Math.Min(query.Take, MaxTake);
+            int take = query.Take <= 0 ? ListQuery.DefaultTake : Math.Min(query.Take, ListQuery.MaxTake);
 
             IQueryable<Warehouse> queryable = dbContext.Warehouses
                 .AsNoTracking();
@@ -48,9 +45,9 @@ internal static class ListWarehouses
                     (x.Description != null && x.Description.Contains(searchText)));
             }
 
-            queryable = ApplySorting(queryable, query.SortBy, query.SortDescending);
-
             int totalCount = await queryable.CountAsync(cancellationToken);
+
+            queryable = ApplySorting(queryable, query.SortBy, query.SortDescending);
 
             List<Item> items = await queryable
                 .Skip(skip)

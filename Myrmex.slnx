@@ -2,6 +2,7 @@
   <Project Path="Myrmex.ApiService/Myrmex.ApiService.csproj" />
   <Project Path="Myrmex.AppDispatching/Myrmex.AppDispatching.csproj" Id="b08c3084-2bc0-4ec0-b2e1-5f7e76fcc5b6" />
   <Project Path="Myrmex.AppHost/Myrmex.AppHost.csproj" />
+  <Project Path="Myrmex.AspNetCore/Myrmex.AspNetCore.csproj" Id="682a9bdb-0971-40b1-91c3-aeb54ac8a972" />
   <Project Path="Myrmex.Core/Myrmex.Core.csproj" Id="9bae897d-b243-4460-bce3-126a3e84824c" />
   <Project Path="Myrmex.Modules.Wms/Myrmex.Modules.Wms.csproj" Id="782eef3d-1ff0-4401-9abb-48e7648a9196" />
   <Project Path="Myrmex.ServiceDefaults/Myrmex.ServiceDefaults.csproj" />
