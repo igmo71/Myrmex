@@ -1,4 +1,4 @@
-using Myrmex.ApplicationDispatching;
+using Myrmex.AppDispatching;
 
 var builder = WebApplication.CreateBuilder(args);
 
