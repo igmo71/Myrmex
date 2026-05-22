@@ -13,7 +13,15 @@
 	<ItemGroup>
 		<Folder Include="Capabilities\Topology\Endpoints\" />
 		<Folder Include="Capabilities\Topology\Features\Warehouses\" />
-		<Folder Include="Infrastructure\Persistence\Configurations\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.8" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.8">
+	    <PrivateAssets>all</PrivateAssets>
+	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
 	</ItemGroup>
 
 	<ItemGroup>

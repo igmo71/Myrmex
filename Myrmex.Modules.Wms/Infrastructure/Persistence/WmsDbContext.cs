@@ -1,9 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Microsoft.EntityFrameworkCore;
+using Myrmex.Modules.Wms.Capabilities.Topology.Domain.Warehouses;
 
 namespace Myrmex.Modules.Wms.Infrastructure.Persistence;
 
-internal class WmsDbContext
+internal sealed class WmsDbContext(DbContextOptions<WmsDbContext> options)
+    : DbContext(options)
 {
+    public DbSet<Warehouse> Warehouses => Set<Warehouse>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.HasDefaultSchema("wms");
+
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(WmsDbContext).Assembly);
+    }
 }
