@@ -11,9 +11,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Capabilities\Topology\Features\" />
 		<Folder Include="Capabilities\Topology\Endpoints\" />
-		<Folder Include="Infrastructure\Persistence\" />
+		<Folder Include="Capabilities\Topology\Features\Warehouses\" />
+		<Folder Include="Infrastructure\Persistence\Configurations\" />
 	</ItemGroup>
 
 	<ItemGroup>

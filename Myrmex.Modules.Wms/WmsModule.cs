@@ -11,7 +11,7 @@ public static class WmsModule
         return services;
     }
 
-    public static IEndpointRouteBuilder MapWmsModuleEndpoints(this IEndpointRouteBuilder endpoints)
+    public static IEndpointRouteBuilder MapWmsModule(this IEndpointRouteBuilder endpoints)
     {
         return endpoints;
     }

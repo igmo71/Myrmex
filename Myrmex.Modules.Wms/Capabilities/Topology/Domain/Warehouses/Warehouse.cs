@@ -1,7 +1,7 @@
 ﻿using Myrmex.Core.Domain;
 using Myrmex.Core.Domain.Validation;
 
-namespace Myrmex.Modules.Wms.Capabilities.Topology.Domain;
+namespace Myrmex.Modules.Wms.Capabilities.Topology.Domain.Warehouses;
 
 internal sealed class Warehouse : AggregateRoot
 {

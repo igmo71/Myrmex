@@ -1,6 +1,6 @@
 ﻿using Myrmex.Core.Events;
 
-namespace Myrmex.Modules.Wms.Capabilities.Topology.Domain;
+namespace Myrmex.Modules.Wms.Capabilities.Topology.Domain.Warehouses;
 
 internal sealed record WarehouseCreatedDomainEvent(Guid WarehouseId) : IDomainEvent;
 

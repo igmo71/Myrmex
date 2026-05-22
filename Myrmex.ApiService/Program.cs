@@ -46,7 +46,7 @@ app.MapGet("/weatherforecast", () =>
 
 app.MapDefaultEndpoints();
 
-app.MapWmsModuleEndpoints();
+app.MapWmsModule();
 
 app.Run();
 

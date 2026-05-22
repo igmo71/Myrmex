@@ -8,6 +8,8 @@ public sealed record DomainValidationResult(IReadOnlyList<DomainValidationFailur
 
     public static DomainValidationResult From(IEnumerable<DomainValidationFailure> errors)
     {
+        ArgumentNullException.ThrowIfNull(errors);
+
         DomainValidationFailure[] materializedErrors = [.. errors];
 
         return materializedErrors.Length == 0 ? Valid : new DomainValidationResult(materializedErrors);
@@ -15,6 +17,8 @@ public sealed record DomainValidationResult(IReadOnlyList<DomainValidationFailur
 
     public static DomainValidationResult Invalid(params DomainValidationFailure[] errors)
     {
+        ArgumentNullException.ThrowIfNull(errors);
+
         if (errors.Length == 0)
         {
             throw new ArgumentException("Invalid validation result must contain at least one error.", nameof(errors));
@@ -25,6 +29,8 @@ public sealed record DomainValidationResult(IReadOnlyList<DomainValidationFailur
 
     public static DomainValidationResult Invalid(IEnumerable<DomainValidationFailure> errors)
     {
+        ArgumentNullException.ThrowIfNull(errors);
+
         DomainValidationFailure[] materializedErrors = [.. errors];
 
         if (materializedErrors.Length == 0)
