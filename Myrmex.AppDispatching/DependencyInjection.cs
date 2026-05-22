@@ -10,6 +10,15 @@ namespace Myrmex.AppDispatching;
 
 public static class DependencyInjection
 {
+    public static IServiceCollection AddAppDispatching(this IServiceCollection services, params Assembly[] handlerAssemblies)
+    {
+        services.AddCommandAndQueryDispatching(handlerAssemblies);
+
+        services.AddDomainEventDispatching(handlerAssemblies);
+
+        return services;
+    }
+
     public static IServiceCollection AddCommandAndQueryDispatching(this IServiceCollection services, params Assembly[] handlerAssemblies)
     {
         services.AddScoped<ICommandDispatcher, CommandDispatcher>();
@@ -53,18 +62,34 @@ public static class DependencyInjection
             .Select(type => type.AsType())
             .Distinct();
 
-        foreach (Type handlerType in handlerTypes)
-        {
-            Type[] handlerInterfaces = handlerType
+        var registrations = handlerTypes
+            .SelectMany(handlerType => handlerType
                 .GetInterfaces()
                 .Where(IsApplicationHandlerInterface)
-                .Distinct()
-                .ToArray();
+                .Select(handlerInterface => new
+                {
+                    HandlerInterface = handlerInterface,
+                    HandlerType = handlerType
+                }))
+            .ToArray();
 
-            foreach (Type handlerInterface in handlerInterfaces)
-            {
-                services.AddScoped(handlerInterface, handlerType);
-            }
+        var duplicates = registrations
+            .GroupBy(x => x.HandlerInterface)
+            .Where(g => g.Count() > 1)
+            .ToArray();
+
+        if (duplicates.Length > 0)
+        {
+            string message = string.Join(Environment.NewLine,
+                duplicates.Select(group => $"{group.Key.Name}: {string.Join(", ", group.Select(x => x.HandlerType.Name))}"));
+
+            throw new InvalidOperationException(
+                $"Multiple application handlers registered for the same command/query:{Environment.NewLine}{message}");
+        }
+
+        foreach (var registration in registrations)
+        {
+            services.AddScoped(registration.HandlerInterface, registration.HandlerType);
         }
 
         return services;
