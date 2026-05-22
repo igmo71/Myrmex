@@ -21,16 +21,8 @@ internal static class WarehouseEndpoints
         ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken)
     {
-        //CreateWarehouse.Command command = new(
-        //    request.Code,
-        //    request.Name,
-        //    request.Description);
-
-        var result =
-            await commandDispatcher.DispatchAsync<CreateWarehouse.Command, ServiceResult<CreateWarehouse.Response>>(
-            command,
-            cancellationToken);
-
+        var result = await commandDispatcher
+            .DispatchAsync<CreateWarehouse.Command, ServiceResult<CreateWarehouse.Response>>(command, cancellationToken);
         return result.ToHttpResult();
     }
 }

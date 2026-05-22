@@ -14,6 +14,6 @@ internal static class TopologyEndpoints
 
         group.MapWarehouseEndpoints();
 
-        return endpoints.MapTopologyEndpoints();
+        return endpoints;
     }
 }
