@@ -1,4 +1,4 @@
-﻿using Myrmex.Core.Validation;
+﻿using Myrmex.Core.Domain.Validation;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Myrmex.Core.Results;
