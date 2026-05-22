@@ -10,21 +10,26 @@ internal sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehous
     {
         builder.ToTable("warehouses");
 
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.Id)
+            .HasName("PK_wms_warehouses");
+
+        builder.Ignore(x => x.DomainEvents);
 
         builder.Property(x => x.Code)
             .HasMaxLength(Warehouse.MaxCodeLength)
             .IsRequired();
 
         builder.HasIndex(x => x.Code)
-            .IsUnique();
+            .IsUnique()
+            .HasDatabaseName("UX_wms_warehouses_code");
 
         builder.Property(x => x.Name)
             .HasMaxLength(Warehouse.MaxNameLength)
             .IsRequired();
 
         builder.Property(x => x.Description)
-            .HasMaxLength(Warehouse.MaxDescriptionLength);
+            .HasMaxLength(Warehouse.MaxDescriptionLength)
+            .IsRequired(false);
 
         builder.Property(x => x.IsActive)
             .IsRequired();
@@ -32,6 +37,7 @@ internal sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehous
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 
-        builder.Property(x => x.UpdatedAtUtc);
+        builder.Property(x => x.UpdatedAtUtc)
+            .IsRequired(false);
     }
 }
