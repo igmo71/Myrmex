@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Myrmex.ApplicationDispatching\Myrmex.ApplicationDispatching.csproj" />
     <ProjectReference Include="..\Myrmex.Core\Myrmex.Core.csproj" />
-    <ProjectReference Include="..\Myrmex.EventDispatching\Myrmex.EventDispatching.csproj" />
     <ProjectReference Include="..\Myrmex.ServiceDefaults\Myrmex.ServiceDefaults.csproj" />
   </ItemGroup>
 

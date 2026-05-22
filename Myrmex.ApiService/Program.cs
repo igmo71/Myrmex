@@ -1,4 +1,4 @@
-using Myrmex.EventDispatching;
+using Myrmex.ApplicationDispatching;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,7 +11,8 @@ builder.Services.AddProblemDetails();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.Services.AddMyrmexEventDispatching();
+builder.Services.AddCommandAndQueryDispatching();
+builder.Services.AddDomainEventDispatching();
 
 var app = builder.Build();
 

@@ -1,6 +1,7 @@
 <Solution>
   <Project Path="Myrmex.ApiService/Myrmex.ApiService.csproj" />
   <Project Path="Myrmex.AppHost/Myrmex.AppHost.csproj" />
+  <Project Path="Myrmex.ApplicationDispatching/Myrmex.ApplicationDispatching.csproj" Id="a8e5b4bc-73c6-45a1-9f9b-a30961e3c8c6" />
   <Project Path="Myrmex.Core/Myrmex.Core.csproj" Id="9bae897d-b243-4460-bce3-126a3e84824c" />
   <Project Path="Myrmex.EventDispatching/Myrmex.EventDispatching.csproj" Id="83e04764-f8b3-4ef6-bf1a-c94013e8c7e6" />
   <Project Path="Myrmex.ServiceDefaults/Myrmex.ServiceDefaults.csproj" />
