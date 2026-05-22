@@ -10,9 +10,9 @@ namespace Myrmex.AppDispatching;
 
 public static class DependencyInjection
 {
-
     public static IServiceCollection AddMyrmexAppDispatching(this IServiceCollection services, params Assembly[] handlerAssemblies)
     {
+        ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(handlerAssemblies);
 
         services.AddScoped<ICommandDispatcher, CommandDispatcher>();

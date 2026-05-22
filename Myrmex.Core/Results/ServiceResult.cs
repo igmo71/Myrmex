@@ -51,7 +51,6 @@ public class ServiceResult : IServiceResult
     public static implicit operator ServiceResult(ServiceError error) => Fail(error);
 }
 
-
 public sealed class ServiceResult<TValue> : ServiceResult, IServiceResult<TValue>
 {
     private readonly TValue? _value;
