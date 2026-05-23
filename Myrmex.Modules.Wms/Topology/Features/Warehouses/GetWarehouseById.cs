@@ -23,8 +23,7 @@ internal static class GetWarehouseById
 
             if (result is null)
             {
-                return ServiceResult<WarehouseDetails>.Fail(
-                    ServiceErrors.NotFound("Warehouse.NotFound", "Warehouse was not found."));
+                return ServiceResult<WarehouseDetails>.Fail(WmsErrors.Warehouse.NotFound);
             }
 
             return ServiceResult<WarehouseDetails>.Success(result);

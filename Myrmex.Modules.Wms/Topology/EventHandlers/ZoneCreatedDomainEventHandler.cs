@@ -12,7 +12,7 @@ internal sealed class ZoneCreatedDomainEventHandler(
         ZoneCreatedDomainEvent domainEvent,
         CancellationToken cancellationToken = default)
     {
-        logger.LogInformation(
+        logger.LogDebug(
             "Zone created domain event handled. ZoneId: {ZoneId}, WarehouseId: {WarehouseId}",
             domainEvent.ZoneId, domainEvent.WarehouseId);
 

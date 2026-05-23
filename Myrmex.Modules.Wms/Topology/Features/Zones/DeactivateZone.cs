@@ -25,9 +25,7 @@ internal static class DeactivateZone
 
             if (zone is null)
             {
-                return ServiceResult<ZoneDetails>.Fail(
-                    ServiceErrors.NotFound(
-                        "Zone.NotFound", "Zone was not found."));
+                return ServiceResult<ZoneDetails>.Fail(WmsErrors.Warehouse.NotFound);
             }
 
             zone.Deactivate();

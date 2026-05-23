@@ -30,12 +30,12 @@ internal static class WmsDbContextSaveExtensions
         {
             await dbContext.SaveChangesAsync(cancellationToken);
 
+            await domainEventDispatcher.DispatchAsync(domainEvents, cancellationToken);
+
             foreach (AggregateRoot aggregateRoot in aggregateRoots)
             {
                 aggregateRoot.ClearDomainEvents();
             }
-
-            await domainEventDispatcher.DispatchAsync(domainEvents, cancellationToken);
 
             return ServiceResult.Success();
         }

@@ -35,9 +35,7 @@ internal static class CreateWarehouse
 
             if (warehouse is null)
             {
-                return ServiceResult<WarehouseDetails>.Fail(
-                    ServiceErrors.Failure(
-                        "Warehouse.CreateFailed", "Warehouse creation failed unexpectedly."));
+                return ServiceResult<WarehouseDetails>.Fail(WmsErrors.Warehouse.CreateFailed);
             }
 
             bool codeAlreadyExists = await dbContext.Warehouses
@@ -45,9 +43,7 @@ internal static class CreateWarehouse
 
             if (codeAlreadyExists)
             {
-                return ServiceResult<WarehouseDetails>.Fail(
-                    ServiceErrors.Conflict(
-                        "Warehouse.CodeAlreadyExists", "Warehouse with the same code already exists.", "code"));
+                return ServiceResult<WarehouseDetails>.Fail(WmsErrors.Warehouse.CodeAlreadyExists);
             }
 
             dbContext.Warehouses.Add(warehouse);

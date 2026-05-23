@@ -10,13 +10,11 @@ internal static class WmsPersistenceExceptionMapper
     {
         if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.WarehouseCodeUniqueIndex))
         {
-            return ServiceErrors.Conflict(
-                "Warehouse.CodeAlreadyExists", "Warehouse with the same code already exists.", "code");
+            return WmsErrors.Warehouse.CodeAlreadyExists;
         }
         if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.ZoneWarehouseIdCodeUniqueIndex))
         {
-            return ServiceErrors.Conflict(
-                "Zone.CodeAlreadyExists", "Zone code already exists in this warehouse.", "code");
+            return WmsErrors.Zone.CodeAlreadyExists;
         }
 
         return null;
