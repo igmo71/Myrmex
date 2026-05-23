@@ -23,7 +23,7 @@ internal static class GetZoneById
 
             if (result is null)
             {
-                return ServiceResult<ZoneDetails>.Fail(WmsErrors.Warehouse.NotFound);
+                return ServiceResult<ZoneDetails>.Fail(WmsErrors.Zone.NotFound);
             }
 
             return ServiceResult<ZoneDetails>.Success(result);
