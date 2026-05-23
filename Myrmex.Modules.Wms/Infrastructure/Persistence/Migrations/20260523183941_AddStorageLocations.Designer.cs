@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using Myrmex.Modules.Wms.Infrastructure.Persistence;
 namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(WmsDbContext))]
-    partial class WmsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260523183941_AddStorageLocations")]
+    partial class AddStorageLocations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -132,52 +135,6 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("UX_wms_storage_location_statuses_code");
 
                     b.ToTable("storage_location_statuses", "wms");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("018f0000-0000-7000-8000-000000000101"),
-                            Code = "AVAILABLE",
-                            CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Storage location is available for operations.",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Available",
-                            SortOrder = 10
-                        },
-                        new
-                        {
-                            Id = new Guid("018f0000-0000-7000-8000-000000000102"),
-                            Code = "BLOCKED",
-                            CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Storage location is blocked for operations.",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Blocked",
-                            SortOrder = 20
-                        },
-                        new
-                        {
-                            Id = new Guid("018f0000-0000-7000-8000-000000000103"),
-                            Code = "MAINTENANCE",
-                            CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Storage location is under maintenance.",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Maintenance",
-                            SortOrder = 30
-                        },
-                        new
-                        {
-                            Id = new Guid("018f0000-0000-7000-8000-000000000104"),
-                            Code = "INVENTORY_CHECK",
-                            CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Storage location is under inventory check.",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Inventory check",
-                            SortOrder = 40
-                        });
                 });
 
             modelBuilder.Entity("Myrmex.Modules.Wms.Topology.Domain.StorageLocations.StorageLocationType", b =>
@@ -223,63 +180,6 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("UX_wms_storage_location_types_code");
 
                     b.ToTable("storage_location_types", "wms");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("018f0000-0000-7000-8000-000000000001"),
-                            Code = "PALLET_RACK",
-                            CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Pallet rack storage location.",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Pallet rack",
-                            SortOrder = 10
-                        },
-                        new
-                        {
-                            Id = new Guid("018f0000-0000-7000-8000-000000000002"),
-                            Code = "SHELF",
-                            CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Shelf or bin storage location.",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Shelf",
-                            SortOrder = 20
-                        },
-                        new
-                        {
-                            Id = new Guid("018f0000-0000-7000-8000-000000000003"),
-                            Code = "FLOOR",
-                            CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Floor storage location.",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Floor",
-                            SortOrder = 30
-                        },
-                        new
-                        {
-                            Id = new Guid("018f0000-0000-7000-8000-000000000004"),
-                            Code = "STAGING",
-                            CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Temporary staging location.",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Staging",
-                            SortOrder = 40
-                        },
-                        new
-                        {
-                            Id = new Guid("018f0000-0000-7000-8000-000000000005"),
-                            Code = "DOCK",
-                            CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
-                            Description = "Receiving or shipping dock.",
-                            IsActive = true,
-                            IsSystem = true,
-                            Name = "Dock",
-                            SortOrder = 50
-                        });
                 });
 
             modelBuilder.Entity("Myrmex.Modules.Wms.Topology.Domain.Warehouses.Warehouse", b =>

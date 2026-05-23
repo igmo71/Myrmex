@@ -16,7 +16,18 @@ internal static class WmsPersistenceExceptionMapper
         {
             return WmsErrors.Zone.CodeAlreadyExists;
         }
-
+        if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.StorageLocationWarehouseIdCodeUniqueIndex))
+        {
+            return WmsErrors.StorageLocation.CodeAlreadyExists;
+        }
+        if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.StorageLocationTypeCodeUniqueIndex))
+        {
+            return WmsErrors.StorageLocationType.CodeAlreadyExists;
+        }
+        if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.StorageLocationStatusCodeUniqueIndex))
+        {
+            return WmsErrors.StorageLocationStatus.CodeAlreadyExists;
+        }
         return null;
     }
 }
