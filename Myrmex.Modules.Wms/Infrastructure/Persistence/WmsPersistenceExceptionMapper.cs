@@ -24,7 +24,6 @@ internal static class WmsPersistenceExceptionMapper
         {
             return ServiceErrors.Conflict("StorageLocationType.CodeAlreadyExists", "Storage location type with the same code already exists.", "code");
         }
-
         if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.StorageLocationStatusCodeUniqueIndex))
         {
             return ServiceErrors.Conflict("StorageLocationStatus.CodeAlreadyExists", "Storage location status with the same code already exists.", "code");

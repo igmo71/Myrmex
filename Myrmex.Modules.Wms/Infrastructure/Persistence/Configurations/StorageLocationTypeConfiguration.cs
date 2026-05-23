@@ -43,5 +43,67 @@ internal sealed class StorageLocationTypeConfiguration : IEntityTypeConfiguratio
 
         builder.Property(x => x.UpdatedAtUtc)
             .IsRequired(false);
+
+        builder.HasData(
+            new
+            {
+                Id = WmsSeedIds.StorageLocationTypePalletRack,
+                Code = "PALLET_RACK",
+                Name = "Pallet rack",
+                Description = "Pallet rack storage location.",
+                IsSystem = true,
+                SortOrder = 10,
+                CreatedAtUtc = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                UpdatedAtUtc = (DateTimeOffset?)null,
+                IsActive = true
+            },
+            new
+            {
+                Id = WmsSeedIds.StorageLocationTypeShelf,
+                Code = "SHELF",
+                Name = "Shelf",
+                Description = "Shelf or bin storage location.",
+                IsSystem = true,
+                SortOrder = 20,
+                CreatedAtUtc = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                UpdatedAtUtc = (DateTimeOffset?)null,
+                IsActive = true
+            },
+            new
+            {
+                Id = WmsSeedIds.StorageLocationTypeFloor,
+                Code = "FLOOR",
+                Name = "Floor",
+                Description = "Floor storage location.",
+                IsSystem = true,
+                SortOrder = 30,
+                CreatedAtUtc = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                UpdatedAtUtc = (DateTimeOffset?)null,
+                IsActive = true
+            },
+            new
+            {
+                Id = WmsSeedIds.StorageLocationTypeStaging,
+                Code = "STAGING",
+                Name = "Staging",
+                Description = "Temporary staging location.",
+                IsSystem = true,
+                SortOrder = 40,
+                CreatedAtUtc = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                UpdatedAtUtc = (DateTimeOffset?)null,
+                IsActive = true
+            },
+            new
+            {
+                Id = WmsSeedIds.StorageLocationTypeDock,
+                Code = "DOCK",
+                Name = "Dock",
+                Description = "Receiving or shipping dock.",
+                IsSystem = true,
+                SortOrder = 50,
+                CreatedAtUtc = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                UpdatedAtUtc = (DateTimeOffset?)null,
+                IsActive = true
+            });
     }
 }

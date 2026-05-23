@@ -43,5 +43,55 @@ internal sealed class StorageLocationStatusConfiguration : IEntityTypeConfigurat
 
         builder.Property(x => x.UpdatedAtUtc)
             .IsRequired(false);
+
+        builder.HasData(
+            new
+            {
+                Id = WmsSeedIds.StorageLocationStatusAvailable,
+                Code = "AVAILABLE",
+                Name = "Available",
+                Description = "Storage location is available for operations.",
+                IsSystem = true,
+                SortOrder = 10,
+                CreatedAtUtc = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                UpdatedAtUtc = (DateTimeOffset?)null,
+                IsActive = true
+            },
+            new
+            {
+                Id = WmsSeedIds.StorageLocationStatusBlocked,
+                Code = "BLOCKED",
+                Name = "Blocked",
+                Description = "Storage location is blocked for operations.",
+                IsSystem = true,
+                SortOrder = 20,
+                CreatedAtUtc = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                UpdatedAtUtc = (DateTimeOffset?)null,
+                IsActive = true
+            },
+            new
+            {
+                Id = WmsSeedIds.StorageLocationStatusMaintenance,
+                Code = "MAINTENANCE",
+                Name = "Maintenance",
+                Description = "Storage location is under maintenance.",
+                IsSystem = true,
+                SortOrder = 30,
+                CreatedAtUtc = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                UpdatedAtUtc = (DateTimeOffset?)null,
+                IsActive = true
+            },
+            new
+            {
+                Id = WmsSeedIds.StorageLocationStatusInventoryCheck,
+                Code = "INVENTORY_CHECK",
+                Name = "Inventory check",
+                Description = "Storage location is under inventory check.",
+                IsSystem = true,
+                SortOrder = 40,
+                CreatedAtUtc = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                UpdatedAtUtc = (DateTimeOffset?)null,
+                IsActive = true
+            });
     }
 }
