@@ -57,7 +57,7 @@ internal static class WarehouseEndpoints
             Description: request.Description);
 
         var result = await commandDispatcher
-            .DispatchAsync<CreateWarehouse.Command, ServiceResult<CreateWarehouse.Result>>(command, cancellationToken);
+            .DispatchAsync<CreateWarehouse.Command, ServiceResult<WarehouseDetails>>(command, cancellationToken);
         return result.ToHttpResult();
     }
     private static async Task<IResult> GetWarehouseByIdAsync(
@@ -68,7 +68,7 @@ internal static class WarehouseEndpoints
         var query = new GetWarehouseById.Query(warehouseId);
 
         var result = await queryDispatcher
-            .DispatchAsync<GetWarehouseById.Query, ServiceResult<GetWarehouseById.Result>>(query, cancellationToken);
+            .DispatchAsync<GetWarehouseById.Query, ServiceResult<WarehouseDetails>>(query, cancellationToken);
         return result.ToHttpResult();
     }
 
@@ -93,7 +93,7 @@ internal static class WarehouseEndpoints
         };
 
         var result = await queryDispatcher
-            .DispatchAsync<ListWarehouses.Query, ServiceResult<ListResult<ListWarehouses.Item>>>(query, cancellationToken);
+            .DispatchAsync<ListWarehouses.Query, ServiceResult<ListResult<WarehouseDetails>>>(query, cancellationToken);
         return result.ToHttpResult();
     }
 
@@ -113,7 +113,7 @@ internal static class WarehouseEndpoints
             Description: request.Description);
 
         var result = await commandDispatcher
-            .DispatchAsync<UpdateWarehouseDetails.Command, ServiceResult<UpdateWarehouseDetails.Result>>(
+            .DispatchAsync<UpdateWarehouseDetails.Command, ServiceResult<WarehouseDetails>>(
                 command,
                 cancellationToken);
 
@@ -128,7 +128,7 @@ internal static class WarehouseEndpoints
         var command = new DeactivateWarehouse.Command(warehouseId);
 
         var result = await commandDispatcher
-            .DispatchAsync<DeactivateWarehouse.Command, ServiceResult<DeactivateWarehouse.Result>>(
+            .DispatchAsync<DeactivateWarehouse.Command, ServiceResult<WarehouseDetails>>(
                 command,
                 cancellationToken);
 
@@ -143,7 +143,7 @@ internal static class WarehouseEndpoints
         var command = new ReactivateWarehouse.Command(warehouseId);
 
         var result = await commandDispatcher
-            .DispatchAsync<ReactivateWarehouse.Command, ServiceResult<ReactivateWarehouse.Result>>(
+            .DispatchAsync<ReactivateWarehouse.Command, ServiceResult<WarehouseDetails>>(
                 command,
                 cancellationToken);
 

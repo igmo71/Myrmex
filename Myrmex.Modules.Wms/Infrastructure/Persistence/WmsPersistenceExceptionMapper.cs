@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Myrmex.Core.Results;
+using Myrmex.Modules.Wms.Infrastructure.Persistence.SqlServer;
 
 namespace Myrmex.Modules.Wms.Infrastructure.Persistence;
 

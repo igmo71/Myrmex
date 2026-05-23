@@ -43,7 +43,7 @@ internal static class ListWarehouses
             List<WarehouseDetails> items = await queryable
                 .Skip(skip)
                 .Take(take)
-                .Select(x => x.ToDetails())
+                .Select(WarehouseDetails.Projection)
                 .ToListAsync(cancellationToken);
 
             return ServiceResult<ListResult<WarehouseDetails>>

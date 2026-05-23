@@ -18,7 +18,7 @@ internal static class GetWarehouseById
             WarehouseDetails? result = await dbContext.Warehouses
                 .AsNoTracking()
                 .Where(x => x.Id == query.WarehouseId)
-                .Select(x => x.ToDetails())
+                .Select(WarehouseDetails.Projection)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (result is null)

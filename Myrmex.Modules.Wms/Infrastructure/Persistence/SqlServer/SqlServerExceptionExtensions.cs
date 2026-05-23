@@ -1,7 +1,7 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
-namespace Myrmex.Modules.Wms.Infrastructure.Persistence;
+namespace Myrmex.Modules.Wms.Infrastructure.Persistence.SqlServer;
 
 internal static class SqlServerExceptionExtensions
 {

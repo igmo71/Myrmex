@@ -43,7 +43,7 @@ internal static class UpdateWarehouseDetails
                 return ServiceResult<WarehouseDetails>.Fail(saveResult.Error);
             }
 
-            return ServiceResult<WarehouseDetails>.Success(warehouse.ToDetails());
+            return ServiceResult<WarehouseDetails>.Success(WarehouseDetails.From(warehouse));
         }
     }
 }
