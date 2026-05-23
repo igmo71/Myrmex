@@ -17,6 +17,7 @@ internal static class ZoneEndpoints
         group.MapPost("/warehouses/{warehouseId:guid}/zones", CreateZoneAsync)
             .WithName("CreateZone")
             .WithSummary("Create Zone");
+
         group.MapGet("/zones/{zoneId:guid}", GetZoneByIdAsync)
             .WithName("GetZoneById")
             .WithSummary("Get Zone By Id");
@@ -24,6 +25,18 @@ internal static class ZoneEndpoints
         group.MapGet("/warehouses/{warehouseId:guid}/zones", ListZonesAsync)
             .WithName("ListZones")
             .WithSummary("List Zones");
+
+        group.MapPut("/zones/{zoneId:guid}", UpdateZoneDetailsAsync)
+            .WithName("UpdateZoneDetails")
+            .WithSummary("Update Zone Details");
+
+        group.MapPost("/zones/{zoneId:guid}/deactivate", DeactivateZoneAsync)
+            .WithName("DeactivateZone")
+            .WithSummary("Deactivate Zone");
+
+        group.MapPost("/zones/{zoneId:guid}/reactivate", ReactivateZoneAsync)
+            .WithName("ReactivateZone")
+            .WithSummary("Reactivate Zone");
 
         return group;
     }
@@ -86,6 +99,53 @@ internal static class ZoneEndpoints
 
         var result = await queryDispatcher
             .DispatchAsync<ListZones.Query, ServiceResult<ListResult<ZoneDetails>>>(query, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private sealed record UpdateZoneDetailsRequest(
+        string? Name,
+        string? Description);
+
+    private static async Task<IResult> UpdateZoneDetailsAsync(
+        Guid zoneId,
+        UpdateZoneDetailsRequest request,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateZoneDetails.Command(
+            ZoneId: zoneId,
+            Name: request.Name,
+            Description: request.Description);
+
+        var result = await commandDispatcher
+            .DispatchAsync<UpdateZoneDetails.Command, ServiceResult<ZoneDetails>>(command, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> DeactivateZoneAsync(
+        Guid zoneId,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var command = new DeactivateZone.Command(zoneId);
+
+        var result = await commandDispatcher
+            .DispatchAsync<DeactivateZone.Command, ServiceResult<ZoneDetails>>(command, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> ReactivateZoneAsync(
+        Guid zoneId,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var command = new ReactivateZone.Command(zoneId);
+
+        var result = await commandDispatcher
+            .DispatchAsync<ReactivateZone.Command, ServiceResult<ZoneDetails>>(command, cancellationToken);
 
         return result.ToHttpResult();
     }
