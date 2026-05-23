@@ -25,4 +25,24 @@ internal static class WmsErrors
         public static ServiceError CreateFailed =>
             ServiceErrors.Failure("Zone.CreateFailed", "Zone creation failed unexpectedly.");
     }
+    internal static class StorageLocation
+    {
+        public static ServiceError NotFound =>
+            ServiceErrors.NotFound("StorageLocation.NotFound", "Storage location was not found.");
+
+        public static ServiceError CodeAlreadyExists =>
+            ServiceErrors.Conflict("StorageLocation.CodeAlreadyExists", "Storage location with the same code already exists in this warehouse.", "code");
+
+        public static ServiceError CreateFailed =>
+            ServiceErrors.Failure("StorageLocation.CreateFailed", "Storage location creation failed unexpectedly.");
+
+        public static ServiceError ZoneWarehouseMismatch =>
+            ServiceErrors.Failure("StorageLocation.ZoneWarehouseMismatch", "Zone does not belong to the specified warehouse.");
+
+        public static ServiceError TypeNotFound =>
+            ServiceErrors.NotFound("StorageLocationType.NotFound", "Storage location type was not found.", "storageLocationTypeId");
+
+        public static ServiceError StatusNotFound =>
+            ServiceErrors.NotFound("StorageLocationStatus.NotFound", "Storage location status was not found.", "storageLocationStatusId");
+    }
 }
