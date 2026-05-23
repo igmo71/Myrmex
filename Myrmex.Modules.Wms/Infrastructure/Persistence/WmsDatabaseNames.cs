@@ -1,6 +1,6 @@
 ﻿namespace Myrmex.Modules.Wms.Infrastructure.Persistence;
 
-internal class WmsDatabaseNames
+internal static class WmsDatabaseNames
 {
     public const string WarehousesTable = "warehouses";
     public const string WarehousePrimaryKey = "PK_wms_warehouses";

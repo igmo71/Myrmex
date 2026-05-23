@@ -63,6 +63,7 @@ internal static class ZoneEndpoints
 
         return result.ToHttpResult();
     }
+
     private static async Task<IResult> GetZoneByIdAsync(
         Guid zoneId,
         IQueryDispatcher queryDispatcher,

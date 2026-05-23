@@ -55,7 +55,7 @@ internal static class CreateZone
             {
                 return ServiceResult<ZoneDetails>.Fail(
                     ServiceErrors.Conflict(
-                        "Zone.CodeAlreadyExists", "Zone with the same code already exists in this warehouse.", "code"));
+                        "Zone.CodeAlreadyExists", "Zone code already exists in this warehouse.", "code"));
             }
 
             dbContext.Zones.Add(zone);
