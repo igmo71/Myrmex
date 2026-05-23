@@ -18,23 +18,21 @@ public abstract class EntityBase
 
     public bool IsActive { get; protected set; }
 
-    public void Deactivate()
+    protected void MarkDeactivated()
     {
         if (!IsActive)
             return;
 
         IsActive = false;
-
         Touch();
     }
 
-    public void Reactivate()
+    protected void MarkReactivated()
     {
         if (IsActive)
             return;
 
         IsActive = true;
-
         Touch();
     }
 

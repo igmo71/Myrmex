@@ -4,16 +4,27 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <UserSecretsId>c5807e2c-9c4f-4f12-b62d-6bac3652a3a1</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Myrmex.AppDispatching\Myrmex.AppDispatching.csproj" />
     <ProjectReference Include="..\Myrmex.Core\Myrmex.Core.csproj" />
+    <ProjectReference Include="..\Myrmex.Modules.Wms\Myrmex.Modules.Wms.csproj" />
     <ProjectReference Include="..\Myrmex.ServiceDefaults\Myrmex.ServiceDefaults.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Scalar.AspNetCore" Version="2.14.14" />
   </ItemGroup>
 
 </Project>

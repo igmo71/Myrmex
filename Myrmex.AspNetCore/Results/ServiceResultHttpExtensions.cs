@@ -1,13 +1,14 @@
-﻿using Myrmex.Core.Results;
+﻿using Microsoft.AspNetCore.Http;
+using Myrmex.Core.Results;
 
-namespace Myrmex.ApiService.Common;
+namespace Myrmex.AspNetCore.Results;
 
 public static class ServiceResultHttpExtensions
 {
     public static IResult ToHttpResult(this IServiceResult result)
     {
         if (result.IsSuccess)
-            return Results.NoContent();
+            return TypedResults.NoContent();
 
         return result.Error.ToHttpResult();
     }
@@ -15,7 +16,7 @@ public static class ServiceResultHttpExtensions
     public static IResult ToHttpResult<TValue>(this IServiceResult<TValue> result)
     {
         if (result.IsSuccess)
-            return Results.Ok(result.Value);
+            return TypedResults.Ok(result.Value);
 
         return result.Error.ToHttpResult();
     }
@@ -24,35 +25,35 @@ public static class ServiceResultHttpExtensions
     {
         return error.Type switch
         {
-            ServiceErrorType.Invalid => Results.ValidationProblem(
+            ServiceErrorType.Invalid => TypedResults.ValidationProblem(
                 errors: error.ToValidationDictionary(),
                 title: error.Message,
                 type: error.Code),
 
-            ServiceErrorType.NotFound => Results.NotFound(new ProblemDetailsDto(
+            ServiceErrorType.NotFound => TypedResults.NotFound(new ProblemDetailsDto(
                 error.Code,
                 error.Message)),
 
-            ServiceErrorType.Conflict => Results.Conflict(new ProblemDetailsDto(
+            ServiceErrorType.Conflict => TypedResults.Conflict(new ProblemDetailsDto(
                 error.Code,
                 error.Message)),
 
-            ServiceErrorType.Unauthorized => Results.Problem(
+            ServiceErrorType.Unauthorized => TypedResults.Problem(
                 title: error.Message,
                 type: error.Code,
                 statusCode: StatusCodes.Status401Unauthorized),
 
-            ServiceErrorType.Forbidden => Results.Problem(
+            ServiceErrorType.Forbidden => TypedResults.Problem(
                 title: error.Message,
                 type: error.Code,
                 statusCode: StatusCodes.Status403Forbidden),
 
-            ServiceErrorType.Failure => Results.Problem(
+            ServiceErrorType.Failure => TypedResults.Problem(
                 title: error.Message,
                 type: error.Code,
                 statusCode: StatusCodes.Status500InternalServerError),
 
-            _ => Results.Problem(
+            _ => TypedResults.Problem(
                 title: "An unexpected error occurred.",
                 statusCode: StatusCodes.Status500InternalServerError)
         };
