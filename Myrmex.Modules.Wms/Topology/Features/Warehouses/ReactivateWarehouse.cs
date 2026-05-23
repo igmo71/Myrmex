@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Myrmex.AppDispatching.EventDispatching;
 using Myrmex.Core.Application;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
@@ -10,16 +11,10 @@ internal static class ReactivateWarehouse
 {
     internal sealed record Command(Guid WarehouseId) : ICommand<ServiceResult<WarehouseDetails>>;
 
-    internal sealed record Result(
-        Guid Id,
-        string Code,
-        string Name,
-        string? Description,
-        bool IsActive,
-        DateTimeOffset CreatedAtUtc,
-        DateTimeOffset? UpdatedAtUtc);
-
-    internal sealed class Handler(WmsDbContext dbContext) : ICommandHandler<Command, ServiceResult<WarehouseDetails>>
+    internal sealed class Handler(
+        WmsDbContext dbContext,
+        IDomainEventDispatcher domainEventDispatcher)
+        : ICommandHandler<Command, ServiceResult<WarehouseDetails>>
     {
         public async Task<ServiceResult<WarehouseDetails>> HandleAsync(
             Command command,
@@ -36,7 +31,8 @@ internal static class ReactivateWarehouse
 
             warehouse.Reactivate();
 
-            ServiceResult saveResult = await dbContext.SaveChangesAsServiceResultAsync(cancellationToken);
+            ServiceResult saveResult = await dbContext
+                .SaveChangesAsServiceResultAsync(domainEventDispatcher, cancellationToken);
 
             if (!saveResult.IsSuccess)
             {

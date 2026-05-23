@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Myrmex.AppDispatching.EventDispatching;
 using Myrmex.Core.Application;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
@@ -10,7 +11,10 @@ internal static class ReactivateZone
 {
     internal sealed record Command(Guid ZoneId) : ICommand<ServiceResult<ZoneDetails>>;
 
-    internal sealed class Handler(WmsDbContext dbContext) : ICommandHandler<Command, ServiceResult<ZoneDetails>>
+    internal sealed class Handler(
+        WmsDbContext dbContext,
+        IDomainEventDispatcher domainEventDispatcher)
+        : ICommandHandler<Command, ServiceResult<ZoneDetails>>
     {
         public async Task<ServiceResult<ZoneDetails>> HandleAsync(
             Command command,
@@ -28,7 +32,8 @@ internal static class ReactivateZone
 
             zone.Reactivate();
 
-            ServiceResult saveResult = await dbContext.SaveChangesAsServiceResultAsync(cancellationToken);
+            ServiceResult saveResult = await dbContext
+                .SaveChangesAsServiceResultAsync(domainEventDispatcher, cancellationToken);
 
             if (!saveResult.IsSuccess)
             {

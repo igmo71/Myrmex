@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Myrmex.AppDispatching.EventDispatching;
 using Myrmex.Core.Application;
 using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
@@ -15,7 +16,10 @@ internal static class CreateZone
         string? Name,
         string? Description) : ICommand<ServiceResult<ZoneDetails>>;
 
-    internal sealed class Handler(WmsDbContext dbContext) : ICommandHandler<Command, ServiceResult<ZoneDetails>>
+    internal sealed class Handler(
+        WmsDbContext dbContext,
+        IDomainEventDispatcher domainEventDispatcher)
+        : ICommandHandler<Command, ServiceResult<ZoneDetails>>
     {
         public async Task<ServiceResult<ZoneDetails>> HandleAsync(Command command, CancellationToken cancellationToken = default)
         {
@@ -60,7 +64,8 @@ internal static class CreateZone
 
             dbContext.Zones.Add(zone);
 
-            ServiceResult saveResult = await dbContext.SaveChangesAsServiceResultAsync(cancellationToken);
+            ServiceResult saveResult = await dbContext
+                .SaveChangesAsServiceResultAsync(domainEventDispatcher, cancellationToken);
 
             if (!saveResult.IsSuccess)
             {
