@@ -1,15 +1,41 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Myrmex.AppDispatching.EventDispatching;
+using Myrmex.Core.Domain;
+using Myrmex.Core.Events;
 using Myrmex.Core.Results;
 
 namespace Myrmex.Modules.Wms.Infrastructure.Persistence;
 
 internal static class WmsDbContextSaveExtensions
 {
-    public static async Task<ServiceResult> SaveChangesAsServiceResultAsync(this WmsDbContext dbContext, CancellationToken cancellationToken = default)
+    public static async Task<ServiceResult> SaveChangesAsServiceResultAsync(
+        this WmsDbContext dbContext,
+        IDomainEventDispatcher domainEventDispatcher,
+        CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(dbContext);
+        ArgumentNullException.ThrowIfNull(domainEventDispatcher);
+
+        List<AggregateRoot> aggregateRoots = dbContext.ChangeTracker
+            .Entries<AggregateRoot>()
+            .Select(x => x.Entity)
+            .Where(x => x.DomainEvents.Count > 0)
+            .ToList();
+
+        List<IDomainEvent> domainEvents = aggregateRoots
+            .SelectMany(x => x.DomainEvents)
+            .ToList();
+
         try
         {
             await dbContext.SaveChangesAsync(cancellationToken);
+
+            foreach (AggregateRoot aggregateRoot in aggregateRoots)
+            {
+                aggregateRoot.ClearDomainEvents();
+            }
+
+            await domainEventDispatcher.DispatchAsync(domainEvents, cancellationToken);
 
             return ServiceResult.Success();
         }
