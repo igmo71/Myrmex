@@ -1,24 +1,31 @@
 ﻿using Myrmex.Core.Domain;
 using Myrmex.Core.Domain.Validation;
 
-namespace Myrmex.Modules.Wms.Topology.Domain.Warehouses;
+namespace Myrmex.Modules.Wms.Topology.Domain.Zones;
 
-internal sealed class Warehouse : AggregateRoot
+internal sealed class Zone : AggregateRoot
 {
     public const int MaxCodeLength = DomainTextLengths.Code;
     public const int MaxNameLength = DomainTextLengths.Name;
     public const int MaxDescriptionLength = DomainTextLengths.Description;
 
-    private Warehouse(string code, string name, string? description)
+    private Zone(
+        Guid warehouseId,
+        string code,
+        string name,
+        string? description)
     {
+        WarehouseId = warehouseId;
         Code = code;
         Name = name;
         Description = description;
     }
 
-    private Warehouse()
+    private Zone()
     {
     }
+
+    public Guid WarehouseId { get; private set; }
 
     public string Code { get; private set; } = null!;
 
@@ -27,28 +34,31 @@ internal sealed class Warehouse : AggregateRoot
     public string? Description { get; private set; }
 
     public static DomainValidationResult Create(
+        Guid warehouseId,
         string? code,
         string? name,
         string? description,
-        out Warehouse? warehouse)
+        out Zone? zone)
     {
         DomainValidationResult validationResult = ValidateCreate(
+            warehouseId,
             code,
             name,
             description);
 
         if (!validationResult.IsValid)
         {
-            warehouse = null;
+            zone = null;
             return validationResult;
         }
 
-        warehouse = new Warehouse(
+        zone = new Zone(
+            warehouseId,
             DomainText.NormalizeCode(code),
             DomainText.NormalizeRequiredText(name),
             DomainText.NormalizeOptionalText(description));
 
-        warehouse.AddDomainEvent(new WarehouseCreatedDomainEvent(warehouse.Id));
+        zone.AddDomainEvent(new ZoneCreatedDomainEvent(zone.Id, zone.WarehouseId));
 
         return DomainValidationResult.Valid;
     }
@@ -70,7 +80,7 @@ internal sealed class Warehouse : AggregateRoot
         Description = DomainText.NormalizeOptionalText(description);
 
         Touch();
-        AddDomainEvent(new WarehouseDetailsUpdatedDomainEvent(Id));
+        AddDomainEvent(new ZoneDetailsUpdatedDomainEvent(Id, WarehouseId));
 
         return DomainValidationResult.Valid;
     }
@@ -83,7 +93,7 @@ internal sealed class Warehouse : AggregateRoot
         }
 
         MarkDeactivated();
-        AddDomainEvent(new WarehouseDeactivatedDomainEvent(Id));
+        AddDomainEvent(new ZoneDeactivatedDomainEvent(Id, WarehouseId));
     }
 
     public void Reactivate()
@@ -94,27 +104,34 @@ internal sealed class Warehouse : AggregateRoot
         }
 
         MarkReactivated();
-        AddDomainEvent(new WarehouseReactivatedDomainEvent(Id));
+        AddDomainEvent(new ZoneReactivatedDomainEvent(Id, WarehouseId));
     }
 
     public static DomainValidationResult ValidateCreate(
+        Guid warehouseId,
         string? code,
         string? name,
         string? description)
     {
         List<DomainValidationFailure> errors = [];
 
+        if (warehouseId == Guid.Empty)
+        {
+            errors.Add(new(
+                "Zone.WarehouseIdRequired", "Warehouse id is required.", "warehouseId"));
+        }
+
         string normalizedCode = DomainText.NormalizeCode(code);
 
         if (string.IsNullOrWhiteSpace(normalizedCode))
         {
             errors.Add(new(
-                "Warehouse.CodeRequired", "Warehouse code is required.", "code"));
+                "Zone.CodeRequired", "Zone code is required.", "code"));
         }
         else if (normalizedCode.Length > MaxCodeLength)
         {
             errors.Add(new(
-                "Warehouse.CodeTooLong", $"Warehouse code must not exceed {MaxCodeLength} characters.", "code"));
+                "Zone.CodeTooLong", $"Zone code must not exceed {MaxCodeLength} characters.", "code"));
         }
 
         DomainValidationResult detailsValidationResult = ValidateDetails(
@@ -138,19 +155,19 @@ internal sealed class Warehouse : AggregateRoot
         if (string.IsNullOrWhiteSpace(normalizedName))
         {
             errors.Add(new(
-                "Warehouse.NameRequired", "Warehouse name is required.", "name"));
+                "Zone.NameRequired", "Zone name is required.", "name"));
         }
         else if (normalizedName.Length > MaxNameLength)
         {
             errors.Add(new(
-                "Warehouse.NameTooLong", $"Warehouse name must not exceed {MaxNameLength} characters.", "name"));
+                "Zone.NameTooLong", $"Zone name must not exceed {MaxNameLength} characters.", "name"));
         }
 
         if (normalizedDescription is not null &&
             normalizedDescription.Length > MaxDescriptionLength)
         {
             errors.Add(new(
-                "Warehouse.DescriptionTooLong", $"Warehouse description must not exceed {MaxDescriptionLength} characters.", "description"));
+                "Zone.DescriptionTooLong", $"Zone description must not exceed {MaxDescriptionLength} characters.", "description"));
         }
 
         return DomainValidationResult.From(errors);
