@@ -12,12 +12,6 @@ internal sealed record StorageLocationDetailsUpdatedDomainEvent(
     Guid WarehouseId,
     Guid ZoneId) : IDomainEvent;
 
-internal sealed record StorageLocationStatusChangedDomainEvent(
-    Guid StorageLocationId,
-    Guid WarehouseId,
-    Guid ZoneId,
-    Guid StorageLocationStatusId) : IDomainEvent;
-
 internal sealed record StorageLocationDeactivatedDomainEvent(
     Guid StorageLocationId,
     Guid WarehouseId,
