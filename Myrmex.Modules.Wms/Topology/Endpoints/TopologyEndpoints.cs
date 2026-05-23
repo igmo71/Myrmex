@@ -13,6 +13,8 @@ internal static class TopologyEndpoints
             .WithTags("Wms Topology");
 
         group.MapWarehouseEndpoints();
+        group.MapZoneEndpoints();
+
 
         return endpoints;
     }

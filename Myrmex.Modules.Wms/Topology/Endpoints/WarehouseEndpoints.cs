@@ -113,9 +113,7 @@ internal static class WarehouseEndpoints
             Description: request.Description);
 
         var result = await commandDispatcher
-            .DispatchAsync<UpdateWarehouseDetails.Command, ServiceResult<WarehouseDetails>>(
-                command,
-                cancellationToken);
+            .DispatchAsync<UpdateWarehouseDetails.Command, ServiceResult<WarehouseDetails>>(command, cancellationToken);
 
         return result.ToHttpResult();
     }
@@ -128,9 +126,7 @@ internal static class WarehouseEndpoints
         var command = new DeactivateWarehouse.Command(warehouseId);
 
         var result = await commandDispatcher
-            .DispatchAsync<DeactivateWarehouse.Command, ServiceResult<WarehouseDetails>>(
-                command,
-                cancellationToken);
+            .DispatchAsync<DeactivateWarehouse.Command, ServiceResult<WarehouseDetails>>(command, cancellationToken);
 
         return result.ToHttpResult();
     }
@@ -143,9 +139,7 @@ internal static class WarehouseEndpoints
         var command = new ReactivateWarehouse.Command(warehouseId);
 
         var result = await commandDispatcher
-            .DispatchAsync<ReactivateWarehouse.Command, ServiceResult<WarehouseDetails>>(
-                command,
-                cancellationToken);
+            .DispatchAsync<ReactivateWarehouse.Command, ServiceResult<WarehouseDetails>>(command, cancellationToken);
 
         return result.ToHttpResult();
     }

@@ -19,10 +19,10 @@ internal static class CreateWarehouse
         public async Task<ServiceResult<WarehouseDetails>> HandleAsync(Command command, CancellationToken cancellationToken = default)
         {
             DomainValidationResult validationResult = Warehouse.Create(
-             command.Code,
-             command.Name,
-             command.Description,
-             out Warehouse? warehouse);
+                command.Code,
+                command.Name,
+                command.Description,
+                out Warehouse? warehouse);
 
             if (!validationResult.IsValid)
             {
