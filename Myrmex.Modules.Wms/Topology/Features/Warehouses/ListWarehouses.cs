@@ -9,20 +9,11 @@ namespace Myrmex.Modules.Wms.Topology.Features.Warehouses;
 
 internal static class ListWarehouses
 {
-    internal sealed record Query : ActiveListQuery, IQuery<ServiceResult<ListResult<Item>>>;
+    internal sealed record Query : ActiveListQuery, IQuery<ServiceResult<ListResult<WarehouseDetails>>>;
 
-    internal sealed record Item(
-        Guid Id,
-        string Code,
-        string Name,
-        string? Description,
-        bool IsActive,
-        DateTimeOffset CreatedAtUtc,
-        DateTimeOffset? UpdatedAtUtc);
-
-    internal sealed class Handler(WmsDbContext dbContext) : IQueryHandler<Query, ServiceResult<ListResult<Item>>>
+    internal sealed class Handler(WmsDbContext dbContext) : IQueryHandler<Query, ServiceResult<ListResult<WarehouseDetails>>>
     {
-        public async Task<ServiceResult<ListResult<Item>>> HandleAsync(Query query, CancellationToken cancellationToken = default)
+        public async Task<ServiceResult<ListResult<WarehouseDetails>>> HandleAsync(Query query, CancellationToken cancellationToken = default)
         {
             int skip = ListQuery.NormalizeSkip(query.Skip);
             int take = ListQuery.NormalizeTake(query.Take);
@@ -49,21 +40,14 @@ internal static class ListWarehouses
 
             queryable = ApplySorting(queryable, query.SortBy, query.SortDescending);
 
-            List<Item> items = await queryable
+            List<WarehouseDetails> items = await queryable
                 .Skip(skip)
                 .Take(take)
-                .Select(x => new Item(
-                    x.Id,
-                    x.Code,
-                    x.Name,
-                    x.Description,
-                    x.IsActive,
-                    x.CreatedAtUtc,
-                    x.UpdatedAtUtc))
+                .Select(x => x.ToDetails())
                 .ToListAsync(cancellationToken);
 
-            return ServiceResult<ListResult<Item>>
-                .Success(new ListResult<Item>(items, totalCount, skip, take));
+            return ServiceResult<ListResult<WarehouseDetails>>
+                .Success(new ListResult<WarehouseDetails>(items, totalCount, skip, take));
         }
 
         private static IQueryable<Warehouse> ApplySorting(IQueryable<Warehouse> query, string? sortBy, bool sortDescending)

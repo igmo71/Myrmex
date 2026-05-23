@@ -17,12 +17,26 @@ internal static class WarehouseEndpoints
         group.MapPost("/warehouses", CreateWarehouseAsync)
             .WithName("CreateWarehouse")
             .WithSummary("Create Warehouse");
+
         group.MapGet("/warehouses/{warehouseId:guid}", GetWarehouseByIdAsync)
             .WithName("GetWarehouseById")
             .WithSummary("Get Warehouse By Id");
+
         group.MapGet("/warehouses", ListWarehousesAsync)
             .WithName("ListWarehouses")
             .WithSummary("List Warehouses");
+
+        group.MapPut("/warehouses/{warehouseId:guid}", UpdateWarehouseDetailsAsync)
+            .WithName("UpdateWarehouseDetails")
+            .WithSummary("Update Warehouse Details");
+
+        group.MapPost("/warehouses/{warehouseId:guid}/deactivate", DeactivateWarehouseAsync)
+            .WithName("DeactivateWarehouse")
+            .WithSummary("Deactivate Warehouse");
+
+        group.MapPost("/warehouses/{warehouseId:guid}/reactivate", ReactivateWarehouseAsync)
+            .WithName("ReactivateWarehouse")
+            .WithSummary("Reactivate Warehouse");
 
         return group;
     }
@@ -80,6 +94,59 @@ internal static class WarehouseEndpoints
 
         var result = await queryDispatcher
             .DispatchAsync<ListWarehouses.Query, ServiceResult<ListResult<ListWarehouses.Item>>>(query, cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    private sealed record UpdateWarehouseDetailsRequest(
+        string? Name,
+        string? Description);
+
+    private static async Task<IResult> UpdateWarehouseDetailsAsync(
+        Guid warehouseId,
+        UpdateWarehouseDetailsRequest request,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateWarehouseDetails.Command(
+            WarehouseId: warehouseId,
+            Name: request.Name,
+            Description: request.Description);
+
+        var result = await commandDispatcher
+            .DispatchAsync<UpdateWarehouseDetails.Command, ServiceResult<UpdateWarehouseDetails.Result>>(
+                command,
+                cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> DeactivateWarehouseAsync(
+        Guid warehouseId,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var command = new DeactivateWarehouse.Command(warehouseId);
+
+        var result = await commandDispatcher
+            .DispatchAsync<DeactivateWarehouse.Command, ServiceResult<DeactivateWarehouse.Result>>(
+                command,
+                cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> ReactivateWarehouseAsync(
+        Guid warehouseId,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var command = new ReactivateWarehouse.Command(warehouseId);
+
+        var result = await commandDispatcher
+            .DispatchAsync<ReactivateWarehouse.Command, ServiceResult<ReactivateWarehouse.Result>>(
+                command,
+                cancellationToken);
+
         return result.ToHttpResult();
     }
 }

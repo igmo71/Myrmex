@@ -7,43 +7,27 @@ namespace Myrmex.Modules.Wms.Topology.Features.Warehouses;
 
 internal static class GetWarehouseById
 {
-    internal sealed record Query(Guid WarehouseId) : IQuery<ServiceResult<Result>>;
+    internal sealed record Query(Guid WarehouseId) : IQuery<ServiceResult<WarehouseDetails>>;
 
-    internal sealed record Result(
-        Guid Id,
-        string Code,
-        string Name,
-        string? Description,
-        bool IsActive,
-        DateTimeOffset CreatedAtUtc,
-        DateTimeOffset? UpdatedAtUtc);
-
-    internal sealed class Handler(WmsDbContext dbContext) : IQueryHandler<Query, ServiceResult<Result>>
+    internal sealed class Handler(WmsDbContext dbContext) : IQueryHandler<Query, ServiceResult<WarehouseDetails>>
     {
-        public async Task<ServiceResult<Result>> HandleAsync(
+        public async Task<ServiceResult<WarehouseDetails>> HandleAsync(
             Query query,
             CancellationToken cancellationToken = default)
         {
-            Result? result = await dbContext.Warehouses
+            WarehouseDetails? result = await dbContext.Warehouses
                 .AsNoTracking()
                 .Where(x => x.Id == query.WarehouseId)
-                .Select(x => new Result(
-                    x.Id,
-                    x.Code,
-                    x.Name,
-                    x.Description,
-                    x.IsActive,
-                    x.CreatedAtUtc,
-                    x.UpdatedAtUtc))
+                .Select(x => x.ToDetails())
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (result is null)
             {
-                return ServiceResult<Result>
-                    .Fail(ServiceErrors.NotFound("Warehouse.NotFound", "Warehouse was not found."));
+                return ServiceResult<WarehouseDetails>.Fail(
+                    ServiceErrors.NotFound("Warehouse.NotFound", "Warehouse was not found."));
             }
 
-            return ServiceResult<Result>.Success(result);
+            return ServiceResult<WarehouseDetails>.Success(result);
         }
     }
 }

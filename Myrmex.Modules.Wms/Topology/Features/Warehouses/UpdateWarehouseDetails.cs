@@ -7,10 +7,10 @@ using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 
 namespace Myrmex.Modules.Wms.Topology.Features.Warehouses;
 
-internal static class CreateWarehouse
+internal static class UpdateWarehouseDetails
 {
     internal sealed record Command(
-        string? Code,
+        Guid WarehouseId,
         string? Name,
         string? Description) : ICommand<ServiceResult<WarehouseDetails>>;
 
@@ -18,35 +18,23 @@ internal static class CreateWarehouse
     {
         public async Task<ServiceResult<WarehouseDetails>> HandleAsync(Command command, CancellationToken cancellationToken = default)
         {
-            DomainValidationResult validationResult = Warehouse.Create(
-             command.Code,
-             command.Name,
-             command.Description,
-             out Warehouse? warehouse);
+            Warehouse? warehouse = await dbContext.Warehouses
+                .FirstOrDefaultAsync(x => x.Id == command.WarehouseId, cancellationToken);
+
+            if (warehouse is null)
+            {
+                return ServiceResult<WarehouseDetails>.Fail(
+                    ServiceErrors.NotFound("Warehouse.NotFound", "Warehouse was not found."));
+            }
+
+            DomainValidationResult validationResult = warehouse.UpdateDetails(
+                command.Name,
+                command.Description);
 
             if (!validationResult.IsValid)
             {
                 return ServiceResult<WarehouseDetails>.Invalid(validationResult.Errors);
             }
-
-            if (warehouse is null)
-            {
-                return ServiceResult<WarehouseDetails>.Fail(
-                    ServiceErrors.Failure(
-                        "Warehouse.CreateFailed", "Warehouse creation failed unexpectedly."));
-            }
-
-            bool codeAlreadyExists = await dbContext.Warehouses
-                .AnyAsync(x => x.Code == warehouse.Code, cancellationToken);
-
-            if (codeAlreadyExists)
-            {
-                return ServiceResult<WarehouseDetails>.Fail(
-                    ServiceErrors.Conflict(
-                        "Warehouse.CodeAlreadyExists", "Warehouse with the same code already exists.", "code"));
-            }
-
-            dbContext.Warehouses.Add(warehouse);
 
             ServiceResult saveResult = await dbContext.SaveChangesAsServiceResultAsync(cancellationToken);
 

@@ -6,12 +6,13 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Configurations;
 
 internal sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>
 {
+
     public void Configure(EntityTypeBuilder<Warehouse> builder)
     {
-        builder.ToTable("warehouses");
+        builder.ToTable(WmsDatabaseNames.WarehousesTable);
 
         builder.HasKey(x => x.Id)
-            .HasName("PK_wms_warehouses");
+            .HasName(WmsDatabaseNames.WarehousePrimaryKey);
 
         builder.Ignore(x => x.DomainEvents);
 
@@ -21,7 +22,7 @@ internal sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehous
 
         builder.HasIndex(x => x.Code)
             .IsUnique()
-            .HasDatabaseName("UX_wms_warehouses_code");
+            .HasDatabaseName(WmsDatabaseNames.WarehouseCodeUniqueIndex);
 
         builder.Property(x => x.Name)
             .HasMaxLength(Warehouse.MaxNameLength)
