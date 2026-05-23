@@ -28,8 +28,7 @@ internal static class UpdateWarehouseDetails
 
             if (warehouse is null)
             {
-                return ServiceResult<WarehouseDetails>.Fail(
-                    ServiceErrors.NotFound("Warehouse.NotFound", "Warehouse was not found."));
+                return ServiceResult<WarehouseDetails>.Fail(WmsErrors.Warehouse.NotFound);
             }
 
             DomainValidationResult validationResult = warehouse.UpdateDetails(
