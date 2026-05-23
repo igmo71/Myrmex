@@ -45,9 +45,7 @@ internal static class CreateZone
 
             if (!warehouseExists)
             {
-                return ServiceResult<ZoneDetails>.Fail(
-                    ServiceErrors.NotFound(
-                        "Warehouse.NotFound", "Warehouse was not found.", "warehouseId"));
+                return ServiceResult<ZoneDetails>.Fail(WmsErrors.Warehouse.NotFoundById);
             }
 
             bool codeAlreadyExists = await dbContext.Zones
