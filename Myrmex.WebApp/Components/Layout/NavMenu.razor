@@ -1,10 +1,11 @@
 ﻿
 <MudNavMenu>
-    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
-    <MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
-    
-    <MudNavLink Href="weather" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">Weather</MudNavLink>
-
+	<MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+	<MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
+	<MudNavLink Href="weather" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">Weather</MudNavLink>
+	<MudNavGroup Title="WMS" Icon="@Icons.Material.Filled.Warehouse" Expanded="true">
+		<MudNavLink Href="wms/topology/warehouses" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AccountTree">Topology</MudNavLink>
+	</MudNavGroup>
 </MudNavMenu>
 
 

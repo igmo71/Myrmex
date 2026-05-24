@@ -1,11 +1,12 @@
 ﻿@page "/wms/topology/warehouses"
-@rendermode InteractiveServer
 
 @using MudBlazor
 @using Myrmex.WebApp.Wms.Topology
 
 @inject WmsTopologyApiClient WmsTopologyApiClient
 @inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
 <PageTitle>WMS Warehouses</PageTitle>
 
@@ -19,13 +20,23 @@
 				</MudText>
 			</div>
 
-			<MudButton Variant="Variant.Filled"
-					   Color="Color.Primary"
-					   StartIcon="@Icons.Material.Filled.Refresh"
-					   OnClick="ReloadAsync"
-					   Disabled="_isLoading">
-				Refresh
-			</MudButton>
+			<MudStack Row="true" Spacing="2">
+				<MudButton Variant="Variant.Filled"
+						   Color="Color.Primary"
+						   StartIcon="@Icons.Material.Filled.Add"
+						   OnClick="CreateWarehouseAsync"
+						   Disabled="_isLoading">
+					Create
+				</MudButton>
+
+				<MudButton Variant="Variant.Outlined"
+						   Color="Color.Primary"
+						   StartIcon="@Icons.Material.Filled.Refresh"
+						   OnClick="ReloadAsync"
+						   Disabled="_isLoading">
+					Refresh
+				</MudButton>
+			</MudStack>
 		</MudStack>
 
 		@if (!string.IsNullOrWhiteSpace(_errorMessage))
@@ -69,27 +80,72 @@
 				<PropertyColumn Property="x => x.Code" Title="Code" />
 				<PropertyColumn Property="x => x.Name" Title="Name" />
 				<PropertyColumn Property="x => x.Description" Title="Description" />
-				<PropertyColumn Property="x => x.IsActive" Title="Active" />
+				<TemplateColumn Title="Actions"
+								Sortable="false"
+								Filterable="false"
+								CellClass="d-flex justify-center">
+					<CellTemplate>
+						@if (context.Item.IsActive)
+						{
+							<MudTooltip Text="Active">
+								<MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+										 Color="Color.Success" />
+							</MudTooltip>
+						}
+						else
+						{
+							<MudTooltip Text="Inactive">
+								<MudIcon Icon="@Icons.Material.Filled.Cancel"
+										 Color="Color.Error" />
+							</MudTooltip>
+						}
+					</CellTemplate>
+				</TemplateColumn>
 				<PropertyColumn Property="x => x.CreatedAtUtc" Title="Created UTC" />
 				<PropertyColumn Property="x => x.UpdatedAtUtc" Title="Updated UTC" />
 
 				<TemplateColumn Title="Actions" Sortable="false" Filterable="false">
 					<CellTemplate>
-						<MudStack Row="true" Spacing="1">
-							<MudButton Size="Size.Small"
-									   Variant="Variant.Text"
-									   Color="Color.Primary"
-									   OnClick="@(() => NavigateToZones(context.Item.Id))">
-								Zones
-							</MudButton>
+						<MudMenu Icon="@Icons.Material.Filled.MoreVert"
+								 Size="Size.Small"
+								 Dense="true"
+								 AnchorOrigin="Origin.BottomRight"
+								 TransformOrigin="Origin.TopRight">
 
-							<MudButton Size="Size.Small"
-									   Variant="Variant.Text"
-									   Color="Color.Primary"
-									   OnClick="@(() => NavigateToLocations(context.Item.Id))">
+							<MudMenuItem Icon="@Icons.Material.Filled.Edit"
+										 OnClick="@(() => EditWarehouseAsync(context.Item))">
+								Edit
+							</MudMenuItem>
+
+							@if (context.Item.IsActive)
+							{
+								<MudMenuItem Icon="@Icons.Material.Filled.Block"
+											 IconColor="Color.Error"
+											 OnClick="@(() => DeactivateWarehouseAsync(context.Item))">
+									Deactivate
+								</MudMenuItem>
+							}
+							else
+							{
+								<MudMenuItem Icon="@Icons.Material.Filled.Restore"
+											 IconColor="Color.Success"
+											 OnClick="@(() => ReactivateWarehouseAsync(context.Item))">
+									Reactivate
+								</MudMenuItem>
+							}
+
+							<MudDivider />
+
+							<MudMenuItem Icon="@Icons.Material.Filled.AccountTree"
+										 OnClick="@(() => NavigateToZones(context.Item.Id))">
+								Zones
+							</MudMenuItem>
+
+							<MudMenuItem Icon="@Icons.Material.Filled.LocationOn"
+										 OnClick="@(() => NavigateToLocations(context.Item.Id))">
 								Locations
-							</MudButton>
-						</MudStack>
+							</MudMenuItem>
+						</MudMenu>
 					</CellTemplate>
 				</TemplateColumn>
 			</Columns>
@@ -157,6 +213,91 @@
 		finally
 		{
 			_isLoading = false;
+		}
+	}
+
+	private async Task CreateWarehouseAsync()
+	{
+		DialogOptions options = new()
+		{
+			CloseButton = true,
+			MaxWidth = MaxWidth.Small,
+			FullWidth = true
+		};
+
+		IDialogReference dialog = await DialogService
+			.ShowAsync<WarehouseEditDialog>("Create warehouse", options);
+
+		DialogResult? result = await dialog.Result;
+
+		if (result is null || result.Canceled)
+		{
+			return;
+		}
+
+		Snackbar.Add("Warehouse created.", Severity.Success);
+
+		await LoadWarehousesAsync();
+	}
+
+	private async Task EditWarehouseAsync(WarehouseDetails warehouse)
+	{
+		DialogParameters parameters = new()
+		{
+			[nameof(WarehouseEditDialog.Warehouse)] = warehouse
+		};
+
+		DialogOptions options = new()
+		{
+			CloseButton = true,
+			MaxWidth = MaxWidth.Small,
+			FullWidth = true
+		};
+
+		IDialogReference dialog = await DialogService
+			.ShowAsync<WarehouseEditDialog>("Edit warehouse", parameters, options);
+
+		DialogResult? result = await dialog.Result;
+
+		if (result is null || result.Canceled)
+		{
+			return;
+		}
+
+		Snackbar.Add("Warehouse updated.", Severity.Success);
+
+		await LoadWarehousesAsync();
+	}
+
+	private async Task DeactivateWarehouseAsync(WarehouseDetails warehouse)
+	{
+		try
+		{
+			await WmsTopologyApiClient.DeactivateWarehouseAsync(warehouse.Id);
+
+			Snackbar.Add("Warehouse deactivated.", Severity.Success);
+
+			await LoadWarehousesAsync();
+		}
+		catch (Exception exception)
+		{
+			Snackbar.Add(exception.Message, Severity.Error);
+		}
+	}
+
+	private async Task ReactivateWarehouseAsync(WarehouseDetails warehouse)
+	{
+		try
+		{
+			await WmsTopologyApiClient.ReactivateWarehouseAsync(warehouse.Id);
+
+			Snackbar.Add("Warehouse reactivated.", Severity.Success);
+
+			await LoadWarehousesAsync();
+		}
+		catch (Exception exception)
+		{
+			Snackbar.Add(exception.Message, Severity.Error);
 		}
 	}
 
