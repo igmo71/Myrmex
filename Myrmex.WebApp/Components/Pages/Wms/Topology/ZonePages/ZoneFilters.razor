@@ -1,0 +1,81 @@
+﻿@using MudBlazor
+@using Myrmex.WebApp.Wms.Topology
+
+<MudPaper Class="pa-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+        <MudSelect T="Guid?"
+                   Label="Warehouse"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Clearable="true"
+                   Value="SelectedWarehouseId"
+                   ValueChanged="OnWarehouseChanged"
+                   Disabled="IsLoadingWarehouses"
+                   Class="min-width-300">
+            @foreach (WarehouseDetails warehouse in Warehouses)
+            {
+                <MudSelectItem T="Guid?" Value="@warehouse.Id">
+                    @warehouse.Code - @warehouse.Name
+                </MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudTextField T="string"
+                      Label="Search"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Clearable="true"
+                      Value="SearchText"
+                      ValueChanged="OnSearchTextChanged"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Class="flex-grow-1" />
+
+        <MudSwitch T="bool"
+                   Label="Include inactive"
+                   Color="Color.Primary"
+                   Value="IncludeInactive"
+                   ValueChanged="OnIncludeInactiveChanged" />
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<WarehouseDetails> Warehouses { get; set; } = [];
+
+    [Parameter]
+    public Guid? SelectedWarehouseId { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid?> SelectedWarehouseIdChanged { get; set; }
+
+    [Parameter]
+    public bool IsLoadingWarehouses { get; set; }
+
+    [Parameter]
+    public string? SearchText { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> SearchTextChanged { get; set; }
+
+    [Parameter]
+    public bool IncludeInactive { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IncludeInactiveChanged { get; set; }
+
+    private async Task OnWarehouseChanged(Guid? value)
+    {
+        await SelectedWarehouseIdChanged.InvokeAsync(value);
+    }
+
+    private async Task OnSearchTextChanged(string? value)
+    {
+        await SearchTextChanged.InvokeAsync(value);
+    }
+
+    private async Task OnIncludeInactiveChanged(bool value)
+    {
+        await IncludeInactiveChanged.InvokeAsync(value);
+    }
+}
