@@ -419,24 +419,4 @@ public partial class Index
             Snackbar.Add(exception.Message, Severity.Error);
         }
     }
-
-    private string GetStorageLocationTypeDisplayName(Guid storageLocationTypeId)
-    {
-        StorageLocationTypeDetails? type = _storageLocationTypes
-            .FirstOrDefault(x => x.Id == storageLocationTypeId);
-
-        return type is null
-            ? storageLocationTypeId.ToString()
-            : $"{type.Code} - {type.Name}";
-    }
-
-    private string GetStorageLocationStatusDisplayName(Guid storageLocationStatusId)
-    {
-        StorageLocationStatusDetails? status = _storageLocationStatuses
-            .FirstOrDefault(x => x.Id == storageLocationStatusId);
-
-        return status is null
-            ? storageLocationStatusId.ToString()
-            : $"{status.Code} - {status.Name}";
-    }
 }
