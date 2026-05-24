@@ -1,0 +1,438 @@
+﻿@page "/wms/topology/zones"
+
+@using MudBlazor
+@using Myrmex.WebApp.Wms.Topology
+
+@inject WmsTopologyApiClient WmsTopologyApiClient
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>WMS Zones</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
+	<MudStack Spacing="3">
+		<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+			<div>
+				<MudText Typo="Typo.h5">Zones</MudText>
+				<MudText Typo="Typo.body2" Color="Color.Secondary">
+					WMS warehouse zones.
+				</MudText>
+			</div>
+
+			<MudStack Row="true" Spacing="2">
+				<MudButton Variant="Variant.Filled"
+						   Color="Color.Primary"
+						   StartIcon="@Icons.Material.Filled.Add"
+						   OnClick="CreateZoneAsync"
+						   Disabled="_isLoading || _selectedWarehouseId is null">
+					Create
+				</MudButton>
+
+				<MudButton Variant="Variant.Outlined"
+						   Color="Color.Primary"
+						   StartIcon="@Icons.Material.Filled.Refresh"
+						   OnClick="ReloadAsync"
+						   Disabled="_isLoading">
+					Refresh
+				</MudButton>
+			</MudStack>
+		</MudStack>
+
+		@if (!string.IsNullOrWhiteSpace(_errorMessage))
+		{
+			<MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+				@_errorMessage
+			</MudAlert>
+		}
+
+		<MudPaper Class="pa-4">
+			<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+				<MudSelect T="Guid?"
+						   Label="Warehouse"
+						   Variant="Variant.Outlined"
+						   Margin="Margin.Dense"
+						   Clearable="true"
+						   Value="_selectedWarehouseId"
+						   ValueChanged="OnWarehouseChanged"
+						   Disabled="_isLoadingWarehouses"
+						   Class="min-width-300">
+					@foreach (WarehouseDetails warehouse in _warehouses)
+					{
+						<MudSelectItem T="Guid?" Value="@warehouse.Id">
+							@warehouse.Code - @warehouse.Name
+						</MudSelectItem>
+					}
+				</MudSelect>
+
+				<MudTextField T="string"
+							  Label="Search"
+							  Variant="Variant.Outlined"
+							  Margin="Margin.Dense"
+							  Clearable="true"
+							  Value="_searchText"
+							  ValueChanged="OnSearchTextChanged"
+							  Adornment="Adornment.Start"
+							  AdornmentIcon="@Icons.Material.Filled.Search"
+							  Class="flex-grow-1" />
+
+				<MudSwitch T="bool"
+						   Label="Include inactive"
+						   Color="Color.Primary"
+						   Value="_includeInactive"
+						   ValueChanged="OnIncludeInactiveChanged" />
+			</MudStack>
+		</MudPaper>
+
+		@if (_selectedWarehouseId is null)
+		{
+			<MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+				Select a warehouse to view zones.
+			</MudAlert>
+		}
+		else
+		{
+			<MudDataGrid T="ZoneDetails"
+						 Items="_zones"
+						 Loading="_isLoading"
+						 Dense="true"
+						 Hover="true"
+						 Bordered="true"
+						 Striped="true"
+						 SortMode="SortMode.Multiple"
+						 Filterable="false">
+				<Columns>
+					<PropertyColumn Property="x => x.Code" Title="Code" />
+					<PropertyColumn Property="x => x.Name" Title="Name" />
+					<PropertyColumn Property="x => x.Description" Title="Description" />
+
+					<TemplateColumn Title="Active" Sortable="false" Filterable="false">
+						<CellTemplate>
+							@if (context.Item.IsActive)
+							{
+								<MudTooltip Text="Active">
+									<MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+											 Color="Color.Success" />
+								</MudTooltip>
+							}
+							else
+							{
+								<MudTooltip Text="Inactive">
+									<MudIcon Icon="@Icons.Material.Filled.Cancel"
+											 Color="Color.Error" />
+								</MudTooltip>
+							}
+						</CellTemplate>
+					</TemplateColumn>
+
+					<PropertyColumn Property="x => x.CreatedAtUtc" Title="Created UTC" />
+					<PropertyColumn Property="x => x.UpdatedAtUtc" Title="Updated UTC" />
+
+					<TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+						<CellTemplate>
+							<MudMenu Icon="@Icons.Material.Filled.MoreVert"
+									 Size="Size.Small"
+									 Dense="true"
+									 AnchorOrigin="Origin.BottomRight"
+									 TransformOrigin="Origin.TopRight">
+
+								<MudMenuItem Icon="@Icons.Material.Filled.Edit"
+											 OnClick="@(() => EditZoneAsync(context.Item))">
+									Edit
+								</MudMenuItem>
+
+								@if (context.Item.IsActive)
+								{
+									<MudMenuItem Icon="@Icons.Material.Filled.Block"
+												 IconColor="Color.Error"
+												 OnClick="@(() => DeactivateZoneAsync(context.Item))">
+										Deactivate
+									</MudMenuItem>
+								}
+								else
+								{
+									<MudMenuItem Icon="@Icons.Material.Filled.Restore"
+												 IconColor="Color.Success"
+												 OnClick="@(() => ReactivateZoneAsync(context.Item))">
+										Reactivate
+									</MudMenuItem>
+								}
+
+								<MudDivider />
+
+								<MudMenuItem Icon="@Icons.Material.Filled.LocationOn"
+											 OnClick="@(() => NavigateToLocations(context.Item))">
+									Locations
+								</MudMenuItem>
+							</MudMenu>
+						</CellTemplate>
+					</TemplateColumn>
+				</Columns>
+
+				<PagerContent>
+					<MudDataGridPager T="ZoneDetails" />
+				</PagerContent>
+			</MudDataGrid>
+		}
+	</MudStack>
+</MudContainer>
+
+@code {
+	[Parameter]
+	[SupplyParameterFromQuery(Name = "warehouseId")]
+	public Guid? WarehouseIdQuery { get; set; }
+
+	private List<WarehouseDetails> _warehouses = [];
+	private List<ZoneDetails> _zones = [];
+
+	private Guid? _selectedWarehouseId;
+	private bool _isLoading;
+	private bool _isLoadingWarehouses;
+	private string? _errorMessage;
+	private string? _searchText;
+	private bool _includeInactive;
+
+	protected override async Task OnInitializedAsync()
+	{
+		_selectedWarehouseId = WarehouseIdQuery;
+
+		await LoadWarehousesAsync();
+
+		if (_selectedWarehouseId is not null)
+		{
+			await LoadZonesAsync();
+		}
+	}
+
+	private async Task ReloadAsync()
+	{
+		if (_selectedWarehouseId is null)
+		{
+			_zones = [];
+			return;
+		}
+
+		await LoadZonesAsync();
+	}
+
+	private async Task OnWarehouseChanged(Guid? value)
+	{
+		_selectedWarehouseId = value;
+		_zones = [];
+
+		UpdateUrl();
+
+		if (_selectedWarehouseId is not null)
+		{
+			await LoadZonesAsync();
+		}
+	}
+
+	private async Task OnSearchTextChanged(string? value)
+	{
+		_searchText = value;
+
+		if (_selectedWarehouseId is not null)
+		{
+			await LoadZonesAsync();
+		}
+	}
+
+	private async Task OnIncludeInactiveChanged(bool value)
+	{
+		_includeInactive = value;
+
+		if (_selectedWarehouseId is not null)
+		{
+			await LoadZonesAsync();
+		}
+	}
+
+	private async Task LoadWarehousesAsync()
+	{
+		_isLoadingWarehouses = true;
+		_errorMessage = null;
+
+		try
+		{
+			var request = new ListRequest(
+				Skip: 0,
+				Take: 100,
+				SearchText: null,
+				SortBy: "code",
+				SortDescending: false,
+				IncludeInactive: false);
+
+			ListResult<WarehouseDetails> result = await WmsTopologyApiClient
+				.ListWarehousesAsync(request);
+
+			_warehouses = result.Items.ToList();
+		}
+		catch (Exception exception)
+		{
+			_errorMessage = exception.Message;
+			_warehouses = [];
+		}
+		finally
+		{
+			_isLoadingWarehouses = false;
+		}
+	}
+
+	private async Task LoadZonesAsync()
+	{
+		if (_selectedWarehouseId is null)
+		{
+			_zones = [];
+			return;
+		}
+
+		_isLoading = true;
+		_errorMessage = null;
+
+		try
+		{
+			var request = new ListRequest(
+				Skip: 0,
+				Take: 100,
+				SearchText: _searchText,
+				SortBy: "code",
+				SortDescending: false,
+				IncludeInactive: _includeInactive);
+
+			ListResult<ZoneDetails> result = await WmsTopologyApiClient
+				.ListZonesAsync(_selectedWarehouseId.Value, request);
+
+			_zones = result.Items.ToList();
+		}
+		catch (Exception exception)
+		{
+			_errorMessage = exception.Message;
+			_zones = [];
+		}
+		finally
+		{
+			_isLoading = false;
+		}
+	}
+
+	private async Task CreateZoneAsync()
+	{
+		if (_selectedWarehouseId is null)
+		{
+			Snackbar.Add("Select a warehouse first.", Severity.Warning);
+			return;
+		}
+
+		DialogParameters parameters = new()
+		{
+			[nameof(ZoneEditDialog.WarehouseId)] = _selectedWarehouseId.Value
+		};
+
+		DialogOptions options = new()
+		{
+			CloseButton = true,
+			MaxWidth = MaxWidth.Small,
+			FullWidth = true
+		};
+
+		IDialogReference dialog = await DialogService.ShowAsync<ZoneEditDialog>(
+			"Create zone",
+			parameters,
+			options);
+
+		DialogResult? result = await dialog.Result;
+
+		if (result is null || result.Canceled)
+		{
+			return;
+		}
+
+		Snackbar.Add("Zone created.", Severity.Success);
+
+		await LoadZonesAsync();
+	}
+
+	private async Task EditZoneAsync(ZoneDetails zone)
+	{
+		DialogParameters parameters = new()
+		{
+			[nameof(ZoneEditDialog.WarehouseId)] = zone.WarehouseId,
+			[nameof(ZoneEditDialog.Zone)] = zone
+		};
+
+		DialogOptions options = new()
+		{
+			CloseButton = true,
+			MaxWidth = MaxWidth.Small,
+			FullWidth = true
+		};
+
+		IDialogReference dialog = await DialogService.ShowAsync<ZoneEditDialog>(
+			"Edit zone",
+			parameters,
+			options);
+
+		DialogResult? result = await dialog.Result;
+
+		if (result is null || result.Canceled)
+		{
+			return;
+		}
+
+		Snackbar.Add("Zone updated.", Severity.Success);
+
+		await LoadZonesAsync();
+	}
+
+	private async Task DeactivateZoneAsync(ZoneDetails zone)
+	{
+		try
+		{
+			await WmsTopologyApiClient.DeactivateZoneAsync(zone.Id);
+
+			Snackbar.Add("Zone deactivated.", Severity.Success);
+
+			await LoadZonesAsync();
+		}
+		catch (Exception exception)
+		{
+			Snackbar.Add(exception.Message, Severity.Error);
+		}
+	}
+
+	private async Task ReactivateZoneAsync(ZoneDetails zone)
+	{
+		try
+		{
+			await WmsTopologyApiClient.ReactivateZoneAsync(zone.Id);
+
+			Snackbar.Add("Zone reactivated.", Severity.Success);
+
+			await LoadZonesAsync();
+		}
+		catch (Exception exception)
+		{
+			Snackbar.Add(exception.Message, Severity.Error);
+		}
+	}
+
+	private void UpdateUrl()
+	{
+		if (_selectedWarehouseId is null)
+		{
+			NavigationManager.NavigateTo("/wms/topology/zones", replace: true);
+			return;
+		}
+
+		NavigationManager.NavigateTo(
+			$"/wms/topology/zones?warehouseId={_selectedWarehouseId.Value}",
+			replace: true);
+	}
+
+	private void NavigateToLocations(ZoneDetails zone)
+	{
+		NavigationManager.NavigateTo(
+			$"/wms/topology/locations?warehouseId={zone.WarehouseId}&zoneId={zone.Id}");
+	}
+}
