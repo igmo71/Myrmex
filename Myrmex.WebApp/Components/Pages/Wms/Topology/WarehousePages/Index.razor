@@ -42,24 +42,10 @@
 		}
 
 		<MudPaper Class="pa-4">
-			<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-				<MudTextField T="string"
-							  Label="Search"
-							  Variant="Variant.Outlined"
-							  Margin="Margin.Dense"
-							  Clearable="true"
-							  Value="_searchText"
-							  ValueChanged="OnSearchTextChanged"
-							  Adornment="Adornment.Start"
-							  AdornmentIcon="@Icons.Material.Filled.Search"
-							  Class="flex-grow-1" />
-
-				<MudSwitch T="bool"
-						   Label="Include inactive"
-						   Color="Color.Primary"
-						   Value="_includeInactive"
-						   ValueChanged="OnIncludeInactiveChanged" />
-			</MudStack>
+			<WarehouseFilters SearchText="@_searchText"
+							  SearchTextChanged="OnSearchTextChanged"
+							  IncludeInactive="@_includeInactive"
+							  IncludeInactiveChanged="OnIncludeInactiveChanged" />
 		</MudPaper>
 
 		<MudDataGrid T="WarehouseDetails"
