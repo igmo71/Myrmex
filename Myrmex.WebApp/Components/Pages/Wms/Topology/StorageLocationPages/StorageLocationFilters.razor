@@ -1,0 +1,184 @@
+﻿@using MudBlazor
+@using Myrmex.WebApp.Wms.Topology
+
+<MudPaper Class="pa-4">
+    <MudStack Spacing="2">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudSelect T="Guid?"
+                       Label="Warehouse"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Clearable="true"
+                       Value="SelectedWarehouseId"
+                       ValueChanged="OnWarehouseChanged"
+                       Disabled="IsLoadingWarehouses"
+                       Class="min-width-300">
+                @foreach (WarehouseDetails warehouse in Warehouses)
+                {
+                    <MudSelectItem T="Guid?" Value="@warehouse.Id">
+                        @warehouse.Code - @warehouse.Name
+                    </MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="Guid?"
+                       Label="Zone"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Clearable="true"
+                       Value="SelectedZoneId"
+                       ValueChanged="OnZoneChanged"
+                       Disabled="SelectedWarehouseId is null || IsLoadingZones"
+                       Class="min-width-300">
+                @foreach (ZoneDetails zone in Zones)
+                {
+                    <MudSelectItem T="Guid?" Value="@zone.Id">
+                        @zone.Code - @zone.Name
+                    </MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField T="string"
+                          Label="Search"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Clearable="true"
+                          Value="SearchText"
+                          ValueChanged="OnSearchTextChanged"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Class="flex-grow-1" />
+        </MudStack>
+
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudSelect T="Guid?"
+                       Label="Type"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Clearable="true"
+                       Value="SelectedStorageLocationTypeId"
+                       ValueChanged="OnStorageLocationTypeChanged"
+                       Disabled="IsLoadingLookups"
+                       Class="min-width-300">
+                @foreach (StorageLocationTypeDetails type in StorageLocationTypes)
+                {
+                    <MudSelectItem T="Guid?" Value="@type.Id">
+                        @type.Code - @type.Name
+                    </MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="Guid?"
+                       Label="Status"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Clearable="true"
+                       Value="SelectedStorageLocationStatusId"
+                       ValueChanged="OnStorageLocationStatusChanged"
+                       Disabled="IsLoadingLookups"
+                       Class="min-width-300">
+                @foreach (StorageLocationStatusDetails status in StorageLocationStatuses)
+                {
+                    <MudSelectItem T="Guid?" Value="@status.Id">
+                        @status.Code - @status.Name
+                    </MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSwitch T="bool"
+                       Label="Include inactive"
+                       Color="Color.Primary"
+                       Value="IncludeInactive"
+                       ValueChanged="OnIncludeInactiveChanged" />
+        </MudStack>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<WarehouseDetails> Warehouses { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<ZoneDetails> Zones { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<StorageLocationTypeDetails> StorageLocationTypes { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<StorageLocationStatusDetails> StorageLocationStatuses { get; set; } = [];
+
+    [Parameter]
+    public Guid? SelectedWarehouseId { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid?> SelectedWarehouseIdChanged { get; set; }
+
+    [Parameter]
+    public Guid? SelectedZoneId { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid?> SelectedZoneIdChanged { get; set; }
+
+    [Parameter]
+    public Guid? SelectedStorageLocationTypeId { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid?> SelectedStorageLocationTypeIdChanged { get; set; }
+
+    [Parameter]
+    public Guid? SelectedStorageLocationStatusId { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid?> SelectedStorageLocationStatusIdChanged { get; set; }
+
+    [Parameter]
+    public bool IsLoadingWarehouses { get; set; }
+
+    [Parameter]
+    public bool IsLoadingZones { get; set; }
+
+    [Parameter]
+    public bool IsLoadingLookups { get; set; }
+
+    [Parameter]
+    public string? SearchText { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> SearchTextChanged { get; set; }
+
+    [Parameter]
+    public bool IncludeInactive { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IncludeInactiveChanged { get; set; }
+
+    private async Task OnWarehouseChanged(Guid? value)
+    {
+        await SelectedWarehouseIdChanged.InvokeAsync(value);
+    }
+
+    private async Task OnZoneChanged(Guid? value)
+    {
+        await SelectedZoneIdChanged.InvokeAsync(value);
+    }
+
+    private async Task OnSearchTextChanged(string? value)
+    {
+        await SearchTextChanged.InvokeAsync(value);
+    }
+
+    private async Task OnStorageLocationTypeChanged(Guid? value)
+    {
+        await SelectedStorageLocationTypeIdChanged.InvokeAsync(value);
+    }
+
+    private async Task OnStorageLocationStatusChanged(Guid? value)
+    {
+        await SelectedStorageLocationStatusIdChanged.InvokeAsync(value);
+    }
+
+    private async Task OnIncludeInactiveChanged(bool value)
+    {
+        await IncludeInactiveChanged.InvokeAsync(value);
+    }
+}

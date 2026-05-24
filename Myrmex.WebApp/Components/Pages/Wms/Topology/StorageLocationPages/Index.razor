@@ -41,98 +41,25 @@
 			</MudAlert>
 		}
 
-		<MudPaper Class="pa-4">
-			<MudStack Spacing="2">
-				<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-					<MudSelect T="Guid?"
-							   Label="Warehouse"
-							   Variant="Variant.Outlined"
-							   Margin="Margin.Dense"
-							   Clearable="true"
-							   Value="_selectedWarehouseId"
-							   ValueChanged="OnWarehouseChanged"
-							   Disabled="_isLoadingWarehouses"
-							   Class="min-width-300">
-						@foreach (WarehouseDetails warehouse in _warehouses)
-						{
-							<MudSelectItem T="Guid?" Value="@warehouse.Id">
-								@warehouse.Code - @warehouse.Name
-							</MudSelectItem>
-						}
-					</MudSelect>
-
-					<MudSelect T="Guid?"
-							   Label="Zone"
-							   Variant="Variant.Outlined"
-							   Margin="Margin.Dense"
-							   Clearable="true"
-							   Value="_selectedZoneId"
-							   ValueChanged="OnZoneChanged"
-							   Disabled="_selectedWarehouseId is null || _isLoadingZones"
-							   Class="min-width-300">
-						@foreach (ZoneDetails zone in _zones)
-						{
-							<MudSelectItem T="Guid?" Value="@zone.Id">
-								@zone.Code - @zone.Name
-							</MudSelectItem>
-						}
-					</MudSelect>
-
-					<MudTextField T="string"
-								  Label="Search"
-								  Variant="Variant.Outlined"
-								  Margin="Margin.Dense"
-								  Clearable="true"
-								  Value="_searchText"
-								  ValueChanged="OnSearchTextChanged"
-								  Adornment="Adornment.Start"
-								  AdornmentIcon="@Icons.Material.Filled.Search"
-								  Class="flex-grow-1" />
-				</MudStack>
-
-				<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-					<MudSelect T="Guid?"
-							   Label="Type"
-							   Variant="Variant.Outlined"
-							   Margin="Margin.Dense"
-							   Clearable="true"
-							   Value="_selectedStorageLocationTypeId"
-							   ValueChanged="OnStorageLocationTypeChanged"
-							   Disabled="_isLoadingLookups"
-							   Class="min-width-300">
-						@foreach (StorageLocationTypeDetails type in _storageLocationTypes)
-						{
-							<MudSelectItem T="Guid?" Value="@type.Id">
-								@type.Code - @type.Name
-							</MudSelectItem>
-						}
-					</MudSelect>
-
-					<MudSelect T="Guid?"
-							   Label="Status"
-							   Variant="Variant.Outlined"
-							   Margin="Margin.Dense"
-							   Clearable="true"
-							   Value="_selectedStorageLocationStatusId"
-							   ValueChanged="OnStorageLocationStatusChanged"
-							   Disabled="_isLoadingLookups"
-							   Class="min-width-300">
-						@foreach (StorageLocationStatusDetails status in _storageLocationStatuses)
-						{
-							<MudSelectItem T="Guid?" Value="@status.Id">
-								@status.Code - @status.Name
-							</MudSelectItem>
-						}
-					</MudSelect>
-
-					<MudSwitch T="bool"
-							   Label="Include inactive"
-							   Color="Color.Primary"
-							   Value="_includeInactive"
-							   ValueChanged="OnIncludeInactiveChanged" />
-				</MudStack>
-			</MudStack>
-		</MudPaper>
+		<StorageLocationFilters Warehouses="@_warehouses"
+								Zones="@_zones"
+								StorageLocationTypes="@_storageLocationTypes"
+								StorageLocationStatuses="@_storageLocationStatuses"
+								SelectedWarehouseId="@_selectedWarehouseId"
+								SelectedWarehouseIdChanged="OnWarehouseChanged"
+								SelectedZoneId="@_selectedZoneId"
+								SelectedZoneIdChanged="OnZoneChanged"
+								SelectedStorageLocationTypeId="@_selectedStorageLocationTypeId"
+								SelectedStorageLocationTypeIdChanged="OnStorageLocationTypeChanged"
+								SelectedStorageLocationStatusId="@_selectedStorageLocationStatusId"
+								SelectedStorageLocationStatusIdChanged="OnStorageLocationStatusChanged"
+								IsLoadingWarehouses="@_isLoadingWarehouses"
+								IsLoadingZones="@_isLoadingZones"
+								IsLoadingLookups="@_isLoadingLookups"
+								SearchText="@_searchText"
+								SearchTextChanged="OnSearchTextChanged"
+								IncludeInactive="@_includeInactive"
+								IncludeInactiveChanged="OnIncludeInactiveChanged" />
 
 		@if (_selectedWarehouseId is null)
 		{
