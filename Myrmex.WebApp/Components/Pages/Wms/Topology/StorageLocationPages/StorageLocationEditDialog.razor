@@ -1,0 +1,266 @@
+﻿@using MudBlazor
+@using Myrmex.WebApp.Wms.Topology
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Title</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudStack Spacing="3">
+                <MudTextField T="string"
+                              Label="Code"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Disabled="IsEditMode"
+                              Required="true"
+                              RequiredError="Code is required."
+                              MaxLength="32"
+                              @bind-Value="_model.Code" />
+
+                <MudTextField T="string"
+                              Label="Name"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Required="true"
+                              RequiredError="Name is required."
+                              MaxLength="200"
+                              @bind-Value="_model.Name" />
+
+                <MudTextField T="string"
+                              Label="Description"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Lines="3"
+                              MaxLength="1000"
+                              @bind-Value="_model.Description" />
+
+                <MudSelect T="Guid?"
+                           Label="Type"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Disabled="IsEditMode || _isLoadingLookups"
+                           Required="true"
+                           RequiredError="Storage location type is required."
+                           @bind-Value="_model.StorageLocationTypeId">
+                    @foreach (StorageLocationTypeDetails type in _storageLocationTypes)
+                    {
+                        <MudSelectItem T="Guid?" Value="@((Guid?)type.Id)">
+                            @type.Code - @type.Name
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudSelect T="Guid?"
+                           Label="Status"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Disabled="IsEditMode || _isLoadingLookups"
+                           Required="true"
+                           RequiredError="Storage location status is required."
+                           @bind-Value="_model.StorageLocationStatusId">
+                    @foreach (StorageLocationStatusDetails status in _storageLocationStatuses)
+                    {
+                        <MudSelectItem T="Guid?" Value="@((Guid?)status.Id)">
+                            @status.Code - @status.Name
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudSwitch T="bool"
+                           Label="Pickable"
+                           Color="Color.Primary"
+                           @bind-Value="_model.IsPickable" />
+
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+                        @_errorMessage
+                    </MudAlert>
+                }
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel"
+                   Disabled="_isSaving">
+            Cancel
+        </MudButton>
+
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="SaveAsync"
+                   Disabled="_isSaving || _isLoadingLookups">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Size="Size.Small"
+                                     Indeterminate="true"
+                                     Class="me-2" />
+            }
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public Guid WarehouseId { get; set; }
+
+    [Parameter]
+    public Guid ZoneId { get; set; }
+
+    [Parameter]
+    public StorageLocationDetails? StorageLocation { get; set; }
+
+    [Inject]
+    private WmsTopologyApiClient WmsTopologyApiClient { get; set; } = null!;
+
+    private MudForm? _form;
+    private readonly StorageLocationEditModel _model = new();
+
+    private List<StorageLocationTypeDetails> _storageLocationTypes = [];
+    private List<StorageLocationStatusDetails> _storageLocationStatuses = [];
+
+    private bool _isSaving;
+    private bool _isLoadingLookups;
+    private string? _errorMessage;
+
+    private bool IsEditMode => StorageLocation is not null;
+
+    private string Title => IsEditMode ? "Edit storage location" : "Create storage location";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (StorageLocation is not null)
+        {
+            _model.Code = StorageLocation.Code;
+            _model.Name = StorageLocation.Name;
+            _model.Description = StorageLocation.Description;
+            _model.StorageLocationTypeId = StorageLocation.StorageLocationTypeId;
+            _model.StorageLocationStatusId = StorageLocation.StorageLocationStatusId;
+            _model.IsPickable = StorageLocation.IsPickable;
+        }
+
+        await LoadLookupsAsync();
+    }
+
+    private async Task LoadLookupsAsync()
+    {
+        _isLoadingLookups = true;
+        _errorMessage = null;
+
+        try
+        {
+            IReadOnlyList<StorageLocationTypeDetails> types = await WmsTopologyApiClient
+                .ListStorageLocationTypesAsync();
+
+            IReadOnlyList<StorageLocationStatusDetails> statuses = await WmsTopologyApiClient
+                .ListStorageLocationStatusesAsync();
+
+            _storageLocationTypes = types.ToList();
+            _storageLocationStatuses = statuses.ToList();
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            _storageLocationTypes = [];
+            _storageLocationStatuses = [];
+        }
+        finally
+        {
+            _isLoadingLookups = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        _isSaving = true;
+        _errorMessage = null;
+
+        try
+        {
+            StorageLocationDetails result;
+
+            if (StorageLocation is null)
+            {
+                if (_model.StorageLocationTypeId is null ||
+                    _model.StorageLocationStatusId is null)
+                {
+                    _errorMessage = "Type and status are required.";
+                    return;
+                }
+
+                var request = new CreateStorageLocationRequest(
+                    StorageLocationTypeId: _model.StorageLocationTypeId.Value,
+                    StorageLocationStatusId: _model.StorageLocationStatusId.Value,
+                    Code: _model.Code,
+                    Name: _model.Name,
+                    Description: _model.Description,
+                    IsPickable: _model.IsPickable);
+
+                result = await WmsTopologyApiClient.CreateStorageLocationAsync(
+                    WarehouseId,
+                    ZoneId,
+                    request);
+            }
+            else
+            {
+                var request = new UpdateStorageLocationDetailsRequest(
+                    Name: _model.Name,
+                    Description: _model.Description,
+                    IsPickable: _model.IsPickable);
+
+                result = await WmsTopologyApiClient.UpdateStorageLocationDetailsAsync(
+                    StorageLocation.Id,
+                    request);
+            }
+
+            MudDialog.Close(DialogResult.Ok(result));
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private sealed class StorageLocationEditModel
+    {
+        public string? Code { get; set; }
+
+        public string? Name { get; set; }
+
+        public string? Description { get; set; }
+
+        public Guid? StorageLocationTypeId { get; set; }
+
+        public Guid? StorageLocationStatusId { get; set; }
+
+        public bool IsPickable { get; set; }
+    }
+}
