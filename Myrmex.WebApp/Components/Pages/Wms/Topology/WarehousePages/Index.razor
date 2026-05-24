@@ -41,12 +41,10 @@
 			</MudAlert>
 		}
 
-		<MudPaper Class="pa-4">
-			<WarehouseFilters SearchText="@_searchText"
-							  SearchTextChanged="OnSearchTextChanged"
-							  IncludeInactive="@_includeInactive"
-							  IncludeInactiveChanged="OnIncludeInactiveChanged" />
-		</MudPaper>
+		<WarehouseFilters SearchText="@_searchText"
+						  SearchTextChanged="OnSearchTextChanged"
+						  IncludeInactive="@_includeInactive"
+						  IncludeInactiveChanged="OnIncludeInactiveChanged" />
 
 		<MudDataGrid T="WarehouseDetails"
 					 Items="_warehouses"
