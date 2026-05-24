@@ -161,6 +161,16 @@ public partial class Index
         }
     }
 
+    private void OnZonesRequested(WarehouseDetails warehouse)
+    {
+        NavigateToZones(warehouse.Id);
+    }
+
+    private void OnLocationsRequested(WarehouseDetails warehouse)
+    {
+        NavigateToLocations(warehouse.Id);
+    }
+
     private void NavigateToZones(Guid warehouseId)
     {
         NavigationManager.NavigateTo($"/wms/topology/zones?warehouseId={warehouseId}");
