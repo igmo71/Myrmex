@@ -162,6 +162,26 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
             $"/api/wms/topology/zones/{zoneId}/reactivate", value: null, cancellationToken);
     }
 
+    public async Task<ApiResult<ZoneDetails>> TryDeactivateZoneAsync(
+    Guid zoneId,
+    CancellationToken cancellationToken = default)
+    {
+        return await PostAsApiResultAsync<ZoneDetails>(
+            $"/api/wms/topology/zones/{zoneId}/deactivate",
+            value: null,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<ZoneDetails>> TryReactivateZoneAsync(
+        Guid zoneId,
+        CancellationToken cancellationToken = default)
+    {
+        return await PostAsApiResultAsync<ZoneDetails>(
+            $"/api/wms/topology/zones/{zoneId}/reactivate",
+            value: null,
+            cancellationToken);
+    }
+
     public async Task<ListResult<StorageLocationDetails>> ListStorageLocationsByWarehouseAsync(
         Guid warehouseId,
         ListRequest request,
