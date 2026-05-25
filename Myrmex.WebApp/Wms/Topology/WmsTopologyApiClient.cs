@@ -72,6 +72,26 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
             $"/api/wms/topology/warehouses/{warehouseId}/reactivate", value: null, cancellationToken);
     }
 
+    public async Task<ApiResult<WarehouseDetails>> TryDeactivateWarehouseAsync(
+        Guid warehouseId,
+        CancellationToken cancellationToken = default)
+    {
+        return await PostAsApiResultAsync<WarehouseDetails>(
+            $"/api/wms/topology/warehouses/{warehouseId}/deactivate",
+            value: null,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<WarehouseDetails>> TryReactivateWarehouseAsync(
+        Guid warehouseId,
+        CancellationToken cancellationToken = default)
+    {
+        return await PostAsApiResultAsync<WarehouseDetails>(
+            $"/api/wms/topology/warehouses/{warehouseId}/reactivate",
+            value: null,
+            cancellationToken);
+    }
+
     public async Task<ListResult<ZoneDetails>> ListZonesAsync(
         Guid warehouseId,
         ListRequest request,
