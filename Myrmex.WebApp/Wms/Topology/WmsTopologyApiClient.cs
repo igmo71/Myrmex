@@ -25,33 +25,12 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
-    public async Task<WarehouseDetails> CreateWarehouseAsync(
-        CreateWarehouseRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        return await PostRequiredAsync<WarehouseDetails>(
-            "/api/wms/topology/warehouses",
-            request,
-            cancellationToken);
-    }
-
     public async Task<ApiResult<WarehouseDetails>> TryCreateWarehouseAsync(
         CreateWarehouseRequest request,
         CancellationToken cancellationToken = default)
     {
         return await PostAsApiResultAsync<WarehouseDetails>(
             "/api/wms/topology/warehouses",
-            request,
-            cancellationToken);
-    }
-
-    public async Task<WarehouseDetails> UpdateWarehouseDetailsAsync(
-        Guid warehouseId,
-        UpdateWarehouseDetailsRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        return await PutRequiredAsync<WarehouseDetails>(
-            $"/api/wms/topology/warehouses/{warehouseId}",
             request,
             cancellationToken);
     }
@@ -64,26 +43,6 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         return await PutAsApiResultAsync<WarehouseDetails>(
             $"/api/wms/topology/warehouses/{warehouseId}",
             request,
-            cancellationToken);
-    }
-
-    public async Task<WarehouseDetails> DeactivateWarehouseAsync(
-        Guid warehouseId,
-        CancellationToken cancellationToken = default)
-    {
-        return await PostRequiredAsync<WarehouseDetails>(
-            $"/api/wms/topology/warehouses/{warehouseId}/deactivate",
-            value: null,
-            cancellationToken);
-    }
-
-    public async Task<WarehouseDetails> ReactivateWarehouseAsync(
-        Guid warehouseId,
-        CancellationToken cancellationToken = default)
-    {
-        return await PostRequiredAsync<WarehouseDetails>(
-            $"/api/wms/topology/warehouses/{warehouseId}/reactivate",
-            value: null,
             cancellationToken);
     }
 
@@ -128,17 +87,6 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
-    public async Task<ZoneDetails> CreateZoneAsync(
-        Guid warehouseId,
-        CreateZoneRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        return await PostRequiredAsync<ZoneDetails>(
-            $"/api/wms/topology/warehouses/{warehouseId}/zones",
-            request,
-            cancellationToken);
-    }
-
     public async Task<ApiResult<ZoneDetails>> TryCreateZoneAsync(
         Guid warehouseId,
         CreateZoneRequest request,
@@ -146,17 +94,6 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
     {
         return await PostAsApiResultAsync<ZoneDetails>(
             $"/api/wms/topology/warehouses/{warehouseId}/zones",
-            request,
-            cancellationToken);
-    }
-
-    public async Task<ZoneDetails> UpdateZoneDetailsAsync(
-        Guid zoneId,
-        UpdateZoneDetailsRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        return await PutRequiredAsync<ZoneDetails>(
-            $"/api/wms/topology/zones/{zoneId}",
             request,
             cancellationToken);
     }
@@ -169,26 +106,6 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         return await PutAsApiResultAsync<ZoneDetails>(
             $"/api/wms/topology/zones/{zoneId}",
             request,
-            cancellationToken);
-    }
-
-    public async Task<ZoneDetails> DeactivateZoneAsync(
-        Guid zoneId,
-        CancellationToken cancellationToken = default)
-    {
-        return await PostRequiredAsync<ZoneDetails>(
-            $"/api/wms/topology/zones/{zoneId}/deactivate",
-            value: null,
-            cancellationToken);
-    }
-
-    public async Task<ZoneDetails> ReactivateZoneAsync(
-        Guid zoneId,
-        CancellationToken cancellationToken = default)
-    {
-        return await PostRequiredAsync<ZoneDetails>(
-            $"/api/wms/topology/zones/{zoneId}/reactivate",
-            value: null,
             cancellationToken);
     }
 
@@ -244,18 +161,6 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
-    public async Task<StorageLocationDetails> CreateStorageLocationAsync(
-        Guid warehouseId,
-        Guid zoneId,
-        CreateStorageLocationRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        return await PostRequiredAsync<StorageLocationDetails>(
-            $"/api/wms/topology/warehouses/{warehouseId}/zones/{zoneId}/locations",
-            request,
-            cancellationToken);
-    }
-
     public async Task<ApiResult<StorageLocationDetails>> TryCreateStorageLocationAsync(
         Guid warehouseId,
         Guid zoneId,
@@ -268,17 +173,6 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
-    public async Task<StorageLocationDetails> UpdateStorageLocationDetailsAsync(
-        Guid storageLocationId,
-        UpdateStorageLocationDetailsRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        return await PutRequiredAsync<StorageLocationDetails>(
-            $"/api/wms/topology/locations/{storageLocationId}",
-            request,
-            cancellationToken);
-    }
-
     public async Task<ApiResult<StorageLocationDetails>> TryUpdateStorageLocationDetailsAsync(
         Guid storageLocationId,
         UpdateStorageLocationDetailsRequest request,
@@ -287,26 +181,6 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         return await PutAsApiResultAsync<StorageLocationDetails>(
             $"/api/wms/topology/locations/{storageLocationId}",
             request,
-            cancellationToken);
-    }
-
-    public async Task<StorageLocationDetails> DeactivateStorageLocationAsync(
-        Guid storageLocationId,
-        CancellationToken cancellationToken = default)
-    {
-        return await PostRequiredAsync<StorageLocationDetails>(
-            $"/api/wms/topology/locations/{storageLocationId}/deactivate",
-            value: null,
-            cancellationToken);
-    }
-
-    public async Task<StorageLocationDetails> ReactivateStorageLocationAsync(
-        Guid storageLocationId,
-        CancellationToken cancellationToken = default)
-    {
-        return await PostRequiredAsync<StorageLocationDetails>(
-            $"/api/wms/topology/locations/{storageLocationId}/reactivate",
-            value: null,
             cancellationToken);
     }
 
@@ -360,36 +234,6 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
 
         return result ?? throw new InvalidOperationException(
             $"API returned empty response for GET '{url}'.");
-    }
-
-    private async Task<T> PostRequiredAsync<T>(
-        string url,
-        object? value,
-        CancellationToken cancellationToken)
-    {
-        using HttpResponseMessage response = await httpClient.PostAsJsonAsync(url, value, cancellationToken);
-
-        response.EnsureSuccessStatusCode();
-
-        T? result = await response.Content.ReadFromJsonAsync<T>(cancellationToken);
-
-        return result ?? throw new InvalidOperationException(
-            $"API returned empty response for POST '{url}'.");
-    }
-
-    private async Task<T> PutRequiredAsync<T>(
-        string url,
-        object value,
-        CancellationToken cancellationToken)
-    {
-        using HttpResponseMessage response = await httpClient.PutAsJsonAsync(url, value, cancellationToken);
-
-        response.EnsureSuccessStatusCode();
-
-        T? result = await response.Content.ReadFromJsonAsync<T>(cancellationToken);
-
-        return result ?? throw new InvalidOperationException(
-            $"API returned empty response for PUT '{url}'.");
     }
 
     private async Task<ApiResult<T>> PostAsApiResultAsync<T>(
