@@ -133,7 +133,15 @@ public partial class Index
     {
         try
         {
-            await WmsTopologyApiClient.DeactivateWarehouseAsync(warehouse.Id);
+            ApiResult<WarehouseDetails> result = await WmsTopologyApiClient
+                .TryDeactivateWarehouseAsync(warehouse.Id);
+
+            if (result.IsFailure)
+            {
+                Snackbar.Add(result.Error?.Message ?? "Warehouse deactivation failed.", Severity.Error);
+
+                return;
+            }
 
             Snackbar.Add("Warehouse deactivated.", Severity.Success);
 
@@ -149,7 +157,15 @@ public partial class Index
     {
         try
         {
-            await WmsTopologyApiClient.ReactivateWarehouseAsync(warehouse.Id);
+            ApiResult<WarehouseDetails> result = await WmsTopologyApiClient
+                .TryReactivateWarehouseAsync(warehouse.Id);
+
+            if (result.IsFailure)
+            {
+                Snackbar.Add(result.Error?.Message ?? "Warehouse reactivation failed.", Severity.Error);
+
+                return;
+            }
 
             Snackbar.Add("Warehouse reactivated.", Severity.Success);
 

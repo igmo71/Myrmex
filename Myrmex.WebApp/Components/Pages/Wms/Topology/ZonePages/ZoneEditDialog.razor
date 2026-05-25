@@ -120,31 +120,43 @@
 
         try
         {
-            ZoneDetails result;
+            ApiResult<ZoneDetails> result;
 
             if (Zone is null)
             {
-                var request = new CreateZoneRequest(
+                CreateZoneRequest request = new(
                     Code: _model.Code,
                     Name: _model.Name,
                     Description: _model.Description);
 
-                result = await WmsTopologyApiClient.CreateZoneAsync(
+                result = await WmsTopologyApiClient.TryCreateZoneAsync(
                     WarehouseId,
                     request);
             }
             else
             {
-                var request = new UpdateZoneDetailsRequest(
+                UpdateZoneDetailsRequest request = new(
                     Name: _model.Name,
                     Description: _model.Description);
 
-                result = await WmsTopologyApiClient.UpdateZoneDetailsAsync(
+                result = await WmsTopologyApiClient.TryUpdateZoneDetailsAsync(
                     Zone.Id,
                     request);
             }
 
-            MudDialog.Close(DialogResult.Ok(result));
+            if (result.IsFailure)
+            {
+                _errorMessage = result.Error?.Message;
+                return;
+            }
+
+            if (result.Value is null)
+            {
+                _errorMessage = "The operation completed without returning zone details.";
+                return;
+            }
+
+            MudDialog.Close(DialogResult.Ok(result.Value));
         }
         catch (Exception exception)
         {

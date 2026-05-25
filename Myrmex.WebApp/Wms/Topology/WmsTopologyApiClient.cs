@@ -1,4 +1,5 @@
-﻿using System.Web;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Web;
 
 namespace Myrmex.WebApp.Wms.Topology;
 
@@ -8,7 +9,9 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         ListRequest request,
         CancellationToken cancellationToken = default)
     {
-        string url = BuildUrl("/api/wms/topology/warehouses", request);
+        string url = BuildUrl(
+            "/api/wms/topology/warehouses",
+            request);
 
         return await GetRequiredAsync<ListResult<WarehouseDetails>>(url, cancellationToken);
     }
@@ -18,40 +21,49 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         CancellationToken cancellationToken = default)
     {
         return await GetRequiredAsync<WarehouseDetails>(
-            $"/api/wms/topology/warehouses/{warehouseId}", cancellationToken);
+            $"/api/wms/topology/warehouses/{warehouseId}",
+            cancellationToken);
     }
 
-    public async Task<WarehouseDetails> CreateWarehouseAsync(
+    public async Task<ApiResult<WarehouseDetails>> TryCreateWarehouseAsync(
         CreateWarehouseRequest request,
         CancellationToken cancellationToken = default)
     {
-        return await PostRequiredAsync<WarehouseDetails>(
-            "/api/wms/topology/warehouses", request, cancellationToken);
+        return await PostAsApiResultAsync<WarehouseDetails>(
+            "/api/wms/topology/warehouses",
+            request,
+            cancellationToken);
     }
 
-    public async Task<WarehouseDetails> UpdateWarehouseDetailsAsync(
+    public async Task<ApiResult<WarehouseDetails>> TryUpdateWarehouseDetailsAsync(
         Guid warehouseId,
         UpdateWarehouseDetailsRequest request,
         CancellationToken cancellationToken = default)
     {
-        return await PutRequiredAsync<WarehouseDetails>(
-            $"/api/wms/topology/warehouses/{warehouseId}", request, cancellationToken);
+        return await PutAsApiResultAsync<WarehouseDetails>(
+            $"/api/wms/topology/warehouses/{warehouseId}",
+            request,
+            cancellationToken);
     }
 
-    public async Task<WarehouseDetails> DeactivateWarehouseAsync(
+    public async Task<ApiResult<WarehouseDetails>> TryDeactivateWarehouseAsync(
         Guid warehouseId,
         CancellationToken cancellationToken = default)
     {
-        return await PostRequiredAsync<WarehouseDetails>(
-            $"/api/wms/topology/warehouses/{warehouseId}/deactivate", value: null, cancellationToken);
+        return await PostAsApiResultAsync<WarehouseDetails>(
+            $"/api/wms/topology/warehouses/{warehouseId}/deactivate",
+            value: null,
+            cancellationToken);
     }
 
-    public async Task<WarehouseDetails> ReactivateWarehouseAsync(
+    public async Task<ApiResult<WarehouseDetails>> TryReactivateWarehouseAsync(
         Guid warehouseId,
         CancellationToken cancellationToken = default)
     {
-        return await PostRequiredAsync<WarehouseDetails>(
-            $"/api/wms/topology/warehouses/{warehouseId}/reactivate", value: null, cancellationToken);
+        return await PostAsApiResultAsync<WarehouseDetails>(
+            $"/api/wms/topology/warehouses/{warehouseId}/reactivate",
+            value: null,
+            cancellationToken);
     }
 
     public async Task<ListResult<ZoneDetails>> ListZonesAsync(
@@ -59,7 +71,9 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         ListRequest request,
         CancellationToken cancellationToken = default)
     {
-        string url = BuildUrl($"/api/wms/topology/warehouses/{warehouseId}/zones", request);
+        string url = BuildUrl(
+            $"/api/wms/topology/warehouses/{warehouseId}/zones",
+            request);
 
         return await GetRequiredAsync<ListResult<ZoneDetails>>(url, cancellationToken);
     }
@@ -69,41 +83,50 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         CancellationToken cancellationToken = default)
     {
         return await GetRequiredAsync<ZoneDetails>(
-            $"/api/wms/topology/zones/{zoneId}", cancellationToken);
+            $"/api/wms/topology/zones/{zoneId}",
+            cancellationToken);
     }
 
-    public async Task<ZoneDetails> CreateZoneAsync(
+    public async Task<ApiResult<ZoneDetails>> TryCreateZoneAsync(
         Guid warehouseId,
         CreateZoneRequest request,
         CancellationToken cancellationToken = default)
     {
-        return await PostRequiredAsync<ZoneDetails>(
-            $"/api/wms/topology/warehouses/{warehouseId}/zones", request, cancellationToken);
+        return await PostAsApiResultAsync<ZoneDetails>(
+            $"/api/wms/topology/warehouses/{warehouseId}/zones",
+            request,
+            cancellationToken);
     }
 
-    public async Task<ZoneDetails> UpdateZoneDetailsAsync(
+    public async Task<ApiResult<ZoneDetails>> TryUpdateZoneDetailsAsync(
         Guid zoneId,
         UpdateZoneDetailsRequest request,
         CancellationToken cancellationToken = default)
     {
-        return await PutRequiredAsync<ZoneDetails>(
-            $"/api/wms/topology/zones/{zoneId}", request, cancellationToken);
+        return await PutAsApiResultAsync<ZoneDetails>(
+            $"/api/wms/topology/zones/{zoneId}",
+            request,
+            cancellationToken);
     }
 
-    public async Task<ZoneDetails> DeactivateZoneAsync(
+    public async Task<ApiResult<ZoneDetails>> TryDeactivateZoneAsync(
         Guid zoneId,
         CancellationToken cancellationToken = default)
     {
-        return await PostRequiredAsync<ZoneDetails>(
-            $"/api/wms/topology/zones/{zoneId}/deactivate", value: null, cancellationToken);
+        return await PostAsApiResultAsync<ZoneDetails>(
+            $"/api/wms/topology/zones/{zoneId}/deactivate",
+            value: null,
+            cancellationToken);
     }
 
-    public async Task<ZoneDetails> ReactivateZoneAsync(
+    public async Task<ApiResult<ZoneDetails>> TryReactivateZoneAsync(
         Guid zoneId,
         CancellationToken cancellationToken = default)
     {
-        return await PostRequiredAsync<ZoneDetails>(
-            $"/api/wms/topology/zones/{zoneId}/reactivate", value: null, cancellationToken);
+        return await PostAsApiResultAsync<ZoneDetails>(
+            $"/api/wms/topology/zones/{zoneId}/reactivate",
+            value: null,
+            cancellationToken);
     }
 
     public async Task<ListResult<StorageLocationDetails>> ListStorageLocationsByWarehouseAsync(
@@ -111,7 +134,9 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         ListRequest request,
         CancellationToken cancellationToken = default)
     {
-        string url = BuildUrl($"/api/wms/topology/warehouses/{warehouseId}/locations", request);
+        string url = BuildUrl(
+            $"/api/wms/topology/warehouses/{warehouseId}/locations",
+            request);
 
         return await GetRequiredAsync<ListResult<StorageLocationDetails>>(url, cancellationToken);
     }
@@ -121,7 +146,9 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         ListRequest request,
         CancellationToken cancellationToken = default)
     {
-        string url = BuildUrl($"/api/wms/topology/zones/{zoneId}/locations", request);
+        string url = BuildUrl(
+            $"/api/wms/topology/zones/{zoneId}/locations",
+            request);
 
         return await GetRequiredAsync<ListResult<StorageLocationDetails>>(url, cancellationToken);
     }
@@ -131,42 +158,51 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         CancellationToken cancellationToken = default)
     {
         return await GetRequiredAsync<StorageLocationDetails>(
-            $"/api/wms/topology/locations/{storageLocationId}", cancellationToken);
+            $"/api/wms/topology/locations/{storageLocationId}",
+            cancellationToken);
     }
 
-    public async Task<StorageLocationDetails> CreateStorageLocationAsync(
+    public async Task<ApiResult<StorageLocationDetails>> TryCreateStorageLocationAsync(
         Guid warehouseId,
         Guid zoneId,
         CreateStorageLocationRequest request,
         CancellationToken cancellationToken = default)
     {
-        return await PostRequiredAsync<StorageLocationDetails>(
-            $"/api/wms/topology/warehouses/{warehouseId}/zones/{zoneId}/locations", request, cancellationToken);
+        return await PostAsApiResultAsync<StorageLocationDetails>(
+            $"/api/wms/topology/warehouses/{warehouseId}/zones/{zoneId}/locations",
+            request,
+            cancellationToken);
     }
 
-    public async Task<StorageLocationDetails> UpdateStorageLocationDetailsAsync(
+    public async Task<ApiResult<StorageLocationDetails>> TryUpdateStorageLocationDetailsAsync(
         Guid storageLocationId,
         UpdateStorageLocationDetailsRequest request,
         CancellationToken cancellationToken = default)
     {
-        return await PutRequiredAsync<StorageLocationDetails>(
-            $"/api/wms/topology/locations/{storageLocationId}", request, cancellationToken);
+        return await PutAsApiResultAsync<StorageLocationDetails>(
+            $"/api/wms/topology/locations/{storageLocationId}",
+            request,
+            cancellationToken);
     }
 
-    public async Task<StorageLocationDetails> DeactivateStorageLocationAsync(
+    public async Task<ApiResult<StorageLocationDetails>> TryDeactivateStorageLocationAsync(
         Guid storageLocationId,
         CancellationToken cancellationToken = default)
     {
-        return await PostRequiredAsync<StorageLocationDetails>(
-            $"/api/wms/topology/locations/{storageLocationId}/deactivate", value: null, cancellationToken);
+        return await PostAsApiResultAsync<StorageLocationDetails>(
+            $"/api/wms/topology/locations/{storageLocationId}/deactivate",
+            value: null,
+            cancellationToken);
     }
 
-    public async Task<StorageLocationDetails> ReactivateStorageLocationAsync(
+    public async Task<ApiResult<StorageLocationDetails>> TryReactivateStorageLocationAsync(
         Guid storageLocationId,
         CancellationToken cancellationToken = default)
     {
-        return await PostRequiredAsync<StorageLocationDetails>(
-            $"/api/wms/topology/locations/{storageLocationId}/reactivate", value: null, cancellationToken);
+        return await PostAsApiResultAsync<StorageLocationDetails>(
+            $"/api/wms/topology/locations/{storageLocationId}/reactivate",
+            value: null,
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<StorageLocationTypeDetails>> ListStorageLocationTypesAsync(
@@ -197,41 +233,99 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
     {
         T? result = await httpClient.GetFromJsonAsync<T>(url, cancellationToken);
 
-        return result ?? throw new InvalidOperationException($"API returned empty response for GET '{url}'.");
+        return result ?? throw new InvalidOperationException(
+            $"API returned empty response for GET '{url}'.");
     }
 
-    private async Task<T> PostRequiredAsync<T>(
+    private async Task<ApiResult<T>> PostAsApiResultAsync<T>(
         string url,
         object? value,
         CancellationToken cancellationToken)
     {
-        using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
-            url,
-            value,
-            cancellationToken);
+        using HttpResponseMessage response = await httpClient.PostAsJsonAsync(url, value, cancellationToken);
 
-        response.EnsureSuccessStatusCode();
-
-        T? result = await response.Content.ReadFromJsonAsync<T>(cancellationToken);
-
-        return result ?? throw new InvalidOperationException($"API returned empty response for POST '{url}'.");
+        return await ReadApiResultAsync<T>(response, $"POST '{url}'", cancellationToken);
     }
 
-    private async Task<T> PutRequiredAsync<T>(
+    private async Task<ApiResult<T>> PutAsApiResultAsync<T>(
         string url,
         object value,
         CancellationToken cancellationToken)
     {
-        using HttpResponseMessage response = await httpClient.PutAsJsonAsync(
-            url,
-            value,
-            cancellationToken);
+        using HttpResponseMessage response = await httpClient.PutAsJsonAsync(url, value, cancellationToken);
 
-        response.EnsureSuccessStatusCode();
+        return await ReadApiResultAsync<T>(response, $"PUT '{url}'", cancellationToken);
+    }
+
+    private static async Task<ApiResult<T>> ReadApiResultAsync<T>(
+        HttpResponseMessage response,
+        string operation,
+        CancellationToken cancellationToken)
+    {
+        if (!response.IsSuccessStatusCode)
+        {
+            ApiError error = await ReadApiErrorAsync(response, operation, cancellationToken);
+
+            return ApiResult<T>.Failure(error);
+        }
 
         T? result = await response.Content.ReadFromJsonAsync<T>(cancellationToken);
 
-        return result ?? throw new InvalidOperationException($"API returned empty response for PUT '{url}'.");
+        if (result is null)
+        {
+            return ApiResult<T>.Failure(ApiError.Create(
+                status: (int)response.StatusCode,
+                message: $"API returned empty response for {operation}."));
+        }
+
+        return ApiResult<T>.Success(result);
+    }
+
+    private static async Task<ApiError> ReadApiErrorAsync(
+        HttpResponseMessage response,
+        string operation,
+        CancellationToken cancellationToken)
+    {
+        string fallbackMessage =
+            $"API request failed for {operation}. Status code: {(int)response.StatusCode} {response.StatusCode}.";
+
+        try
+        {
+            ProblemDetails? problemDetails = await response.Content
+                .ReadFromJsonAsync<ProblemDetails>(cancellationToken);
+
+            if (problemDetails is not null)
+            {
+                string message = problemDetails.Detail
+                    ?? problemDetails.Title
+                    ?? fallbackMessage;
+
+                Dictionary<string, string> extensions = [];
+
+                foreach (KeyValuePair<string, object?> extension in problemDetails.Extensions)
+                {
+                    string? value = extension.Value?.ToString();
+
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        extensions[extension.Key] = value;
+                    }
+                }
+
+                return ApiError.Create(
+                    status: problemDetails.Status ?? (int)response.StatusCode,
+                    message,
+                    extensions);
+            }
+        }
+        catch
+        {
+            // Ignore malformed/unexpected error payload and use safe fallback message.
+        }
+
+        return ApiError.Create(
+            status: (int)response.StatusCode,
+            message: fallbackMessage);
     }
 
     private static string BuildUrl(string path, ListRequest request)

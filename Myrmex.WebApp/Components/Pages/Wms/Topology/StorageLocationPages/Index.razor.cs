@@ -392,7 +392,15 @@ public partial class Index
     {
         try
         {
-            await WmsTopologyApiClient.DeactivateStorageLocationAsync(storageLocation.Id);
+            ApiResult<StorageLocationDetails> result = await WmsTopologyApiClient
+                .TryDeactivateStorageLocationAsync(storageLocation.Id);
+
+            if (result.IsFailure)
+            {
+                Snackbar.Add(result.Error?.Message ?? "Storage location deactivation failed.", Severity.Error);
+
+                return;
+            }
 
             Snackbar.Add("Storage location deactivated.", Severity.Success);
 
@@ -408,7 +416,15 @@ public partial class Index
     {
         try
         {
-            await WmsTopologyApiClient.ReactivateStorageLocationAsync(storageLocation.Id);
+            ApiResult<StorageLocationDetails> result = await WmsTopologyApiClient
+                .TryReactivateStorageLocationAsync(storageLocation.Id);
+
+            if (result.IsFailure)
+            {
+                Snackbar.Add(result.Error?.Message ?? "Storage location reactivation failed.", Severity.Error);
+
+                return;
+            }
 
             Snackbar.Add("Storage location reactivated.", Severity.Success);
 

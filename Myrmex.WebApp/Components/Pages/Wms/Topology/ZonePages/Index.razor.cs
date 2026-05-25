@@ -176,10 +176,7 @@ public partial class Index
             FullWidth = true
         };
 
-        IDialogReference dialog = await DialogService.ShowAsync<ZoneEditDialog>(
-            "Create zone",
-            parameters,
-            options);
+        IDialogReference dialog = await DialogService.ShowAsync<ZoneEditDialog>("Create zone", parameters, options);
 
         DialogResult? result = await dialog.Result;
 
@@ -208,10 +205,7 @@ public partial class Index
             FullWidth = true
         };
 
-        IDialogReference dialog = await DialogService.ShowAsync<ZoneEditDialog>(
-            "Edit zone",
-            parameters,
-            options);
+        IDialogReference dialog = await DialogService.ShowAsync<ZoneEditDialog>("Edit zone", parameters, options);
 
         DialogResult? result = await dialog.Result;
 
@@ -229,7 +223,15 @@ public partial class Index
     {
         try
         {
-            await WmsTopologyApiClient.DeactivateZoneAsync(zone.Id);
+            ApiResult<ZoneDetails> result = await WmsTopologyApiClient
+                .TryDeactivateZoneAsync(zone.Id);
+
+            if (result.IsFailure)
+            {
+                Snackbar.Add(result.Error?.Message ?? "Zone deactivation failed.", Severity.Error);
+
+                return;
+            }
 
             Snackbar.Add("Zone deactivated.", Severity.Success);
 
@@ -245,7 +247,15 @@ public partial class Index
     {
         try
         {
-            await WmsTopologyApiClient.ReactivateZoneAsync(zone.Id);
+            ApiResult<ZoneDetails> result = await WmsTopologyApiClient
+                .TryReactivateZoneAsync(zone.Id);
+
+            if (result.IsFailure)
+            {
+                Snackbar.Add(result.Error?.Message ?? "Zone reactivation failed.", Severity.Error);
+
+                return;
+            }
 
             Snackbar.Add("Zone reactivated.", Severity.Success);
 
@@ -276,3 +286,4 @@ public partial class Index
             $"/wms/topology/locations?warehouseId={zone.WarehouseId}&zoneId={zone.Id}");
     }
 }
+
