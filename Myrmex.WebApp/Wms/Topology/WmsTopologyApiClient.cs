@@ -43,7 +43,7 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
     CreateWarehouseRequest request,
     CancellationToken cancellationToken = default)
     {
-        return await PostResultAsync<WarehouseDetails>(
+        return await PostAsApiResultAsync<WarehouseDetails>(
             "/api/wms/topology/warehouses",
             request,
             cancellationToken);
@@ -54,7 +54,7 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         UpdateWarehouseDetailsRequest request,
         CancellationToken cancellationToken = default)
     {
-        return await PutResultAsync<WarehouseDetails>(
+        return await PutAsApiResultAsync<WarehouseDetails>(
             $"/api/wms/topology/warehouses/{warehouseId}",
             request,
             cancellationToken);
@@ -256,10 +256,10 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         return result ?? throw new InvalidOperationException($"API returned empty response for PUT '{url}'.");
     }
 
-    private async Task<ApiResult<T>> PostResultAsync<T>(
-    string url,
-    object? value,
-    CancellationToken cancellationToken)
+    private async Task<ApiResult<T>> PostAsApiResultAsync<T>(
+        string url,
+        object? value,
+        CancellationToken cancellationToken)
     {
         using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
             url,
@@ -272,7 +272,7 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
-    private async Task<ApiResult<T>> PutResultAsync<T>(
+    private async Task<ApiResult<T>> PutAsApiResultAsync<T>(
         string url,
         object value,
         CancellationToken cancellationToken)
@@ -316,9 +316,9 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
     }
 
     private static async Task<ApiError> ReadApiErrorAsync(
-    HttpResponseMessage response,
-    string operation,
-    CancellationToken cancellationToken)
+        HttpResponseMessage response,
+        string operation,
+        CancellationToken cancellationToken)
     {
         string fallbackMessage =
             $"API request failed for {operation}. Status code: {(int)response.StatusCode} {response.StatusCode}.";

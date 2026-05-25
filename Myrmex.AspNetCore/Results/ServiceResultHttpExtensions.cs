@@ -55,12 +55,10 @@ public static class ServiceResultHttpExtensions
             problemDetails.Extensions["field"] = error.Field;
         }
 
-        var jsonHttpResult = TypedResults.Json(
+        return TypedResults.Json(
             problemDetails,
             statusCode: statusCode,
             contentType: "application/problem+json");
-
-        return jsonHttpResult;
     }
 
     private static IResult CreateValidationProblemResult(ServiceError error)
@@ -82,12 +80,10 @@ public static class ServiceResultHttpExtensions
             validationProblemDetails.Extensions["field"] = error.Field;
         }
 
-        var jsonHttpResult = TypedResults.Json(
+        return TypedResults.Json(
             validationProblemDetails,
             statusCode: statusCode,
             contentType: "application/problem+json");
-
-        return jsonHttpResult;
     }
 
     private static int GetStatusCode(ServiceErrorType errorType)
