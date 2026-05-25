@@ -1,4 +1,5 @@
-﻿using System.Web;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Web;
 
 namespace Myrmex.WebApp.Wms.Topology;
 
@@ -36,6 +37,27 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
     {
         return await PutRequiredAsync<WarehouseDetails>(
             $"/api/wms/topology/warehouses/{warehouseId}", request, cancellationToken);
+    }
+
+    public async Task<ApiResult<WarehouseDetails>> TryCreateWarehouseAsync(
+    CreateWarehouseRequest request,
+    CancellationToken cancellationToken = default)
+    {
+        return await PostResultAsync<WarehouseDetails>(
+            "/api/wms/topology/warehouses",
+            request,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<WarehouseDetails>> TryUpdateWarehouseDetailsAsync(
+        Guid warehouseId,
+        UpdateWarehouseDetailsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await PutResultAsync<WarehouseDetails>(
+            $"/api/wms/topology/warehouses/{warehouseId}",
+            request,
+            cancellationToken);
     }
 
     public async Task<WarehouseDetails> DeactivateWarehouseAsync(
@@ -232,6 +254,112 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         T? result = await response.Content.ReadFromJsonAsync<T>(cancellationToken);
 
         return result ?? throw new InvalidOperationException($"API returned empty response for PUT '{url}'.");
+    }
+
+    private async Task<ApiResult<T>> PostResultAsync<T>(
+    string url,
+    object? value,
+    CancellationToken cancellationToken)
+    {
+        using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
+            url,
+            value,
+            cancellationToken);
+
+        return await ReadApiResultAsync<T>(
+            response,
+            $"POST '{url}'",
+            cancellationToken);
+    }
+
+    private async Task<ApiResult<T>> PutResultAsync<T>(
+        string url,
+        object value,
+        CancellationToken cancellationToken)
+    {
+        using HttpResponseMessage response = await httpClient.PutAsJsonAsync(
+            url,
+            value,
+            cancellationToken);
+
+        return await ReadApiResultAsync<T>(
+            response,
+            $"PUT '{url}'",
+            cancellationToken);
+    }
+
+    private static async Task<ApiResult<T>> ReadApiResultAsync<T>(
+        HttpResponseMessage response,
+        string operation,
+        CancellationToken cancellationToken)
+    {
+        if (!response.IsSuccessStatusCode)
+        {
+            ApiError error = await ReadApiErrorAsync(
+                response,
+                operation,
+                cancellationToken);
+
+            return ApiResult<T>.Failure(error);
+        }
+
+        T? result = await response.Content.ReadFromJsonAsync<T>(cancellationToken);
+
+        if (result is null)
+        {
+            return ApiResult<T>.Failure(ApiError.Create(
+                status: (int)response.StatusCode,
+                message: $"API returned empty response for {operation}."));
+        }
+
+        return ApiResult<T>.Success(result);
+    }
+
+    private static async Task<ApiError> ReadApiErrorAsync(
+    HttpResponseMessage response,
+    string operation,
+    CancellationToken cancellationToken)
+    {
+        string fallbackMessage =
+            $"API request failed for {operation}. Status code: {(int)response.StatusCode} {response.StatusCode}.";
+
+        try
+        {
+            ProblemDetails? problemDetails = await response.Content
+                .ReadFromJsonAsync<ProblemDetails>(cancellationToken);
+
+            if (problemDetails is not null)
+            {
+                string message = problemDetails.Detail
+                    ?? problemDetails.Title
+                    ?? fallbackMessage;
+
+                Dictionary<string, string> extensions = [];
+
+                foreach (KeyValuePair<string, object?> extension in problemDetails.Extensions)
+                {
+                    string? value = extension.Value?.ToString();
+
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        extensions[extension.Key] = value;
+                    }
+                }
+
+                return ApiError.Create(
+                    status: problemDetails.Status ?? (int)response.StatusCode,
+                    message,
+                    extensions);
+            }
+        }
+        catch
+        {
+            // Ignore malformed/unexpected error payload and use safe fallback message.
+        }
+
+        return ApiError.Create(
+            status: (int)response.StatusCode,
+            message: fallbackMessage);
     }
 
     private static string BuildUrl(string path, ListRequest request)

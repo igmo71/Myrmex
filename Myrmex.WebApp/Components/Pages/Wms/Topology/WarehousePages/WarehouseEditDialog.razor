@@ -115,29 +115,41 @@
 
         try
         {
-            WarehouseDetails result;
+            ApiResult<WarehouseDetails> result;
 
             if (Warehouse is null)
             {
-                var request = new CreateWarehouseRequest(
+                CreateWarehouseRequest request = new(
                     Code: _model.Code,
                     Name: _model.Name,
                     Description: _model.Description);
 
-                result = await WmsTopologyApiClient.CreateWarehouseAsync(request);
+                result = await WmsTopologyApiClient.TryCreateWarehouseAsync(request);
             }
             else
             {
-                var request = new UpdateWarehouseDetailsRequest(
+                UpdateWarehouseDetailsRequest request = new(
                     Name: _model.Name,
                     Description: _model.Description);
 
-                result = await WmsTopologyApiClient.UpdateWarehouseDetailsAsync(
+                result = await WmsTopologyApiClient.TryUpdateWarehouseDetailsAsync(
                     Warehouse.Id,
                     request);
             }
 
-            MudDialog.Close(DialogResult.Ok(result));
+            if (result.IsFailure)
+            {
+                _errorMessage = result.Error?.Message;
+                return;
+            }
+
+            if (result.Value is null)
+            {
+                _errorMessage = "The operation completed without returning warehouse details.";
+                return;
+            }
+
+            MudDialog.Close(DialogResult.Ok(result.Value));
         }
         catch (Exception exception)
         {
