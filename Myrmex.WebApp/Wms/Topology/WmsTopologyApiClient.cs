@@ -311,8 +311,8 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
     }
 
     public async Task<ApiResult<StorageLocationDetails>> TryDeactivateStorageLocationAsync(
-    Guid storageLocationId,
-    CancellationToken cancellationToken = default)
+        Guid storageLocationId,
+        CancellationToken cancellationToken = default)
     {
         return await PostAsApiResultAsync<StorageLocationDetails>(
             $"/api/wms/topology/locations/{storageLocationId}/deactivate",
