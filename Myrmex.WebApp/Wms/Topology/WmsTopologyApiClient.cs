@@ -231,7 +231,19 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         string url,
         CancellationToken cancellationToken)
     {
-        T? result = await httpClient.GetFromJsonAsync<T>(url, cancellationToken);
+        using HttpResponseMessage response = await httpClient.GetAsync(
+            url,
+            cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw await ReadApiExceptionAsync(
+                response,
+                $"GET '{url}'",
+                cancellationToken);
+        }
+
+        T? result = await response.Content.ReadFromJsonAsync<T>(cancellationToken);
 
         return result ?? throw new InvalidOperationException(
             $"API returned empty response for GET '{url}'.");
@@ -326,6 +338,22 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         return ApiError.Create(
             status: (int)response.StatusCode,
             message: fallbackMessage);
+    }
+
+    private static async Task<ApiException> ReadApiExceptionAsync(
+        HttpResponseMessage response,
+        string operation,
+        CancellationToken cancellationToken)
+    {
+        ApiError error = await ReadApiErrorAsync(
+            response,
+            operation,
+            cancellationToken);
+
+        return new ApiException(
+            status: error.Status,
+            message: error.Message,
+            extensions: error.Extensions);
     }
 
     private static string BuildUrl(string path, ListRequest request)
