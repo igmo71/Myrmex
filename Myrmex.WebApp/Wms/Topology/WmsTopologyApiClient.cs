@@ -134,7 +134,8 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         ListRequest request,
         CancellationToken cancellationToken = default)
     {
-        string url = BuildUrl($"/api/wms/topology/warehouses/{warehouseId}/locations",
+        string url = BuildUrl(
+            $"/api/wms/topology/warehouses/{warehouseId}/locations",
             request);
 
         return await GetRequiredAsync<ListResult<StorageLocationDetails>>(url, cancellationToken);
