@@ -167,9 +167,7 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
     CancellationToken cancellationToken = default)
     {
         return await PostAsApiResultAsync<ZoneDetails>(
-            $"/api/wms/topology/zones/{zoneId}/deactivate",
-            value: null,
-            cancellationToken);
+            $"/api/wms/topology/zones/{zoneId}/deactivate", value: null, cancellationToken);
     }
 
     public async Task<ApiResult<ZoneDetails>> TryReactivateZoneAsync(
@@ -177,9 +175,7 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         CancellationToken cancellationToken = default)
     {
         return await PostAsApiResultAsync<ZoneDetails>(
-            $"/api/wms/topology/zones/{zoneId}/reactivate",
-            value: null,
-            cancellationToken);
+            $"/api/wms/topology/zones/{zoneId}/reactivate", value: null, cancellationToken);
     }
 
     public async Task<ListResult<StorageLocationDetails>> ListStorageLocationsByWarehouseAsync(
@@ -261,6 +257,22 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         CancellationToken cancellationToken = default)
     {
         return await PostRequiredAsync<StorageLocationDetails>(
+            $"/api/wms/topology/locations/{storageLocationId}/reactivate", value: null, cancellationToken);
+    }
+
+    public async Task<ApiResult<StorageLocationDetails>> TryDeactivateStorageLocationAsync(
+    Guid storageLocationId,
+    CancellationToken cancellationToken = default)
+    {
+        return await PostAsApiResultAsync<StorageLocationDetails>(
+            $"/api/wms/topology/locations/{storageLocationId}/deactivate", value: null, cancellationToken);
+    }
+
+    public async Task<ApiResult<StorageLocationDetails>> TryReactivateStorageLocationAsync(
+        Guid storageLocationId,
+        CancellationToken cancellationToken = default)
+    {
+        return await PostAsApiResultAsync<StorageLocationDetails>(
             $"/api/wms/topology/locations/{storageLocationId}/reactivate", value: null, cancellationToken);
     }
 
