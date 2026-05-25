@@ -180,12 +180,31 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
             $"/api/wms/topology/warehouses/{warehouseId}/zones/{zoneId}/locations", request, cancellationToken);
     }
 
+    public async Task<ApiResult<StorageLocationDetails>> TryCreateStorageLocationAsync(
+        Guid warehouseId,
+        Guid zoneId,
+        CreateStorageLocationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await PostAsApiResultAsync<StorageLocationDetails>(
+            $"/api/wms/topology/warehouses/{warehouseId}/zones/{zoneId}/locations", request, cancellationToken);
+    }
+
     public async Task<StorageLocationDetails> UpdateStorageLocationDetailsAsync(
         Guid storageLocationId,
         UpdateStorageLocationDetailsRequest request,
         CancellationToken cancellationToken = default)
     {
         return await PutRequiredAsync<StorageLocationDetails>(
+            $"/api/wms/topology/locations/{storageLocationId}", request, cancellationToken);
+    }
+
+    public async Task<ApiResult<StorageLocationDetails>> TryUpdateStorageLocationDetailsAsync(
+        Guid storageLocationId,
+        UpdateStorageLocationDetailsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await PutAsApiResultAsync<StorageLocationDetails>(
             $"/api/wms/topology/locations/{storageLocationId}", request, cancellationToken);
     }
 
