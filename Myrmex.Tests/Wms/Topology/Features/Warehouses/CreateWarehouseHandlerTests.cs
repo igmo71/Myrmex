@@ -1,10 +1,7 @@
-﻿using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
-using Myrmex.AppDispatching.EventDispatching;
-using Myrmex.Core.Events;
+﻿using Microsoft.EntityFrameworkCore;
 using Myrmex.Core.Results;
-using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Features.Warehouses;
+using Myrmex.Tests.Wms.Topology.Testing;
 
 namespace Myrmex.Tests.Wms.Topology.Features.Warehouses;
 
@@ -142,66 +139,5 @@ public sealed class CreateWarehouseHandlerTests
         Assert.True(warehouse.IsActive);
 
         Assert.NotEmpty(domainEventDispatcher.DispatchedEvents);
-    }
-
-    private sealed class RecordingDomainEventDispatcher : IDomainEventDispatcher
-    {
-        public List<IDomainEvent> DispatchedEvents { get; } = [];
-
-        public Task DispatchAsync(
-            IDomainEvent domainEvent,
-            CancellationToken cancellationToken = default)
-        {
-            DispatchedEvents.Add(domainEvent);
-
-            return Task.CompletedTask;
-        }
-
-        public Task DispatchAsync(
-            IEnumerable<IDomainEvent> domainEvents,
-            CancellationToken cancellationToken = default)
-        {
-            DispatchedEvents.AddRange(domainEvents);
-
-            return Task.CompletedTask;
-        }
-    }
-
-    private sealed class TestWmsDbContext : IAsyncDisposable
-    {
-        private readonly SqliteConnection _connection;
-
-        private TestWmsDbContext(
-            SqliteConnection connection,
-            WmsDbContext dbContext)
-        {
-            _connection = connection;
-            DbContext = dbContext;
-        }
-
-        public WmsDbContext DbContext { get; }
-
-        public static async Task<TestWmsDbContext> CreateAsync()
-        {
-            SqliteConnection connection = new("Data Source=:memory:");
-
-            await connection.OpenAsync(TestContext.Current.CancellationToken);
-
-            DbContextOptions<WmsDbContext> options = new DbContextOptionsBuilder<WmsDbContext>()
-                .UseSqlite(connection)
-                .Options;
-
-            WmsDbContext dbContext = new(options);
-
-            await dbContext.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
-
-            return new TestWmsDbContext(connection, dbContext);
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await DbContext.DisposeAsync();
-            await _connection.DisposeAsync();
-        }
     }
 }
