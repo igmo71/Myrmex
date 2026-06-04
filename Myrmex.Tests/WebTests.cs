@@ -6,6 +6,7 @@ public class WebTests
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
 
+    [Trait("Category", "Integration")]
     [Fact]
     public async Task GetWebResourceRootReturnsOkStatusCode()
     {
