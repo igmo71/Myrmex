@@ -83,6 +83,7 @@
 <!--
   ACTION REQUIRED: The content in this section represents placeholders.
   Fill them out with the right functional requirements.
+  Use WMS/fulfillment domain language and identify business invariants explicitly.
 -->
 
 ### Functional Requirements
@@ -97,6 +98,16 @@
 
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
+
+### Domain Rules *(mandatory when feature changes domain behavior)*
+
+- **DR-001**: [Domain invariant or state transition rule, e.g., "Inactive storage locations cannot be selected for new stock placement"]
+- **DR-002**: [Uniqueness, identity, lifecycle, or reference-data rule]
+
+### Observability & Error Handling *(mandatory when feature exposes runtime behavior)*
+
+- **OE-001**: System MUST return clear user/API errors for [failure condition]
+- **OE-002**: System MUST provide diagnostics for [operationally important action]
 
 ### Key Entities *(include if feature involves data)*
 

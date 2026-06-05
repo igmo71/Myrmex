@@ -40,7 +40,19 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- **Domain Model First**: Does the plan name the WMS/fulfillment concepts,
+  invariants, commands, queries, and events affected by this feature?
+- **Modular Monolith Boundaries**: Does the design keep code within existing
+  module boundaries and use explicit commands, queries, events, module
+  registration, or API contracts for cross-boundary behavior?
+- **Vertical Slice Delivery**: Is each user-facing change delivered through an
+  endpoint, request/response contract, handler, domain logic, persistence mapping,
+  and UI/client integration where applicable?
+- **Testing Discipline**: Are required domain, handler, persistence, API client,
+  UI, and integration tests identified for all changed behaviors?
+- **Simplicity and Observability**: Does the plan reuse existing local patterns,
+  avoid unnecessary frameworks or service splits, and provide meaningful errors,
+  health checks, logging, or diagnostics for operationally important behavior?
 
 ## Project Structure
 
