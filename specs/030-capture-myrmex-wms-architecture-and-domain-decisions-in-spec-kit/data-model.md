@@ -8,7 +8,7 @@ This model describes documentation entities only. It does not define runtime dom
 
 **Fields**:
 
-- `branch`: `30-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit`
+- `branch`: `030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit`
 - `specPath`: `specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md`
 - `scopeType`: brownfield documentation/specification stabilization
 - `allowedOutputs`: Spec Kit docs and durable `.specify/memory/myrmex-*.md` docs for architecture, development workflow, topology patterns, API error handling, testing guidelines, and roadmap guidance

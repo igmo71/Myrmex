@@ -26,10 +26,10 @@ For issue #30, `$speckit-implement` means creating, validating, or refining docu
 
 **Purpose**: Confirm existing documentation inputs and durable memory docs are present before story work begins.
 
-- [ ] T001 Verify issue #30 planning artifacts exist in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/plan.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/research.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/data-model.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/contracts/documentation-output-contract.md, and specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/quickstart.md
-- [ ] T002 Verify durable memory documents exist in .specify/memory/myrmex-architecture.md, .specify/memory/myrmex-development-workflow.md, .specify/memory/myrmex-topology-patterns.md, .specify/memory/myrmex-api-error-handling.md, .specify/memory/myrmex-testing-guidelines.md, and .specify/memory/myrmex-roadmap.md
-- [ ] T003 [P] Review `AGENTS.md` to confirm it points to all durable memory docs (`.specify/memory/myrmex-architecture.md`, `.specify/memory/myrmex-development-workflow.md`, `.specify/memory/myrmex-topology-patterns.md`, `.specify/memory/myrmex-api-error-handling.md`, `.specify/memory/myrmex-testing-guidelines.md`, `.specify/memory/myrmex-roadmap.md`) and the current active plan pattern.
-- [ ] T004 [P] Review StakeholderDocs/issue-30-spec-kit-stabilization.md as historical input only and note any remaining alignment gaps in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/research.md
+- [X] T001 Verify issue #30 planning artifacts exist in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/plan.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/research.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/data-model.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/contracts/documentation-output-contract.md, and specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/quickstart.md
+- [X] T002 Verify durable memory documents exist in .specify/memory/myrmex-architecture.md, .specify/memory/myrmex-development-workflow.md, .specify/memory/myrmex-topology-patterns.md, .specify/memory/myrmex-api-error-handling.md, .specify/memory/myrmex-testing-guidelines.md, and .specify/memory/myrmex-roadmap.md
+- [X] T003 [P] Review `AGENTS.md` to confirm it points to all durable memory docs (`.specify/memory/myrmex-architecture.md`, `.specify/memory/myrmex-development-workflow.md`, `.specify/memory/myrmex-topology-patterns.md`, `.specify/memory/myrmex-api-error-handling.md`, `.specify/memory/myrmex-testing-guidelines.md`, `.specify/memory/myrmex-roadmap.md`) and the current active plan pattern.
+- [X] T004 [P] Review StakeholderDocs/issue-30-spec-kit-stabilization.md as historical input only and note any remaining alignment gaps in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/research.md
 
 ---
 
@@ -39,10 +39,10 @@ For issue #30, `$speckit-implement` means creating, validating, or refining docu
 
 **CRITICAL**: No user story documentation refinement should begin until this phase confirms the docs-only boundary.
 
-- [ ] T005 Confirm forbidden-work language is complete in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md
-- [ ] T006 Confirm task-generation guard language is complete in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/contracts/documentation-output-contract.md
-- [ ] T007 Confirm docs-only `$speckit-implement` meaning is captured in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/plan.md
-- [ ] T008 Confirm durable memory document requirements are captured in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/data-model.md
+- [X] T005 Confirm forbidden-work language is complete in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md
+- [X] T006 Confirm task-generation guard language is complete in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/contracts/documentation-output-contract.md
+- [X] T007 Confirm docs-only `$speckit-implement` meaning is captured in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/plan.md
+- [X] T008 Confirm durable memory document requirements are captured in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/data-model.md
 
 **Checkpoint**: Scope guardrails are documented before any story-specific refinement.
 
@@ -56,11 +56,11 @@ For issue #30, `$speckit-implement` means creating, validating, or refining docu
 
 ### Documentation for User Story 1
 
-- [ ] T009 [US1] Refine accepted architecture guidance in .specify/memory/myrmex-architecture.md
-- [ ] T010 [US1] Refine Codex Spec Kit workflow and docs-only implementation guidance in .specify/memory/myrmex-development-workflow.md
-- [ ] T011 [US1] Align architecture and workflow requirements in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md
-- [ ] T012 [US1] Align architecture and workflow execution boundaries in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/plan.md
-- [ ] T013 [US1] Align AGENTS.md with durable memory guidance and current active plan pattern
+- [X] T009 [US1] Refine accepted architecture guidance in .specify/memory/myrmex-architecture.md
+- [X] T010 [US1] Refine Codex Spec Kit workflow and docs-only implementation guidance in .specify/memory/myrmex-development-workflow.md
+- [X] T011 [US1] Align architecture and workflow requirements in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md
+- [X] T012 [US1] Align architecture and workflow execution boundaries in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/plan.md
+- [X] T013 [US1] Align AGENTS.md with durable memory guidance and current active plan pattern
 
 **Checkpoint**: User Story 1 can be reviewed independently against SC-001, SC-002, SC-006, SC-007, and SC-008.
 
@@ -74,12 +74,12 @@ For issue #30, `$speckit-implement` means creating, validating, or refining docu
 
 ### Documentation for User Story 2
 
-- [ ] T014 [P] [US2] Refine WMS Topology reference slice guidance in .specify/memory/myrmex-topology-patterns.md
-- [ ] T015 [P] [US2] Refine write/action and read/load API error-handling guidance in .specify/memory/myrmex-api-error-handling.md
-- [ ] T016 [P] [US2] Refine issue #28 testing expectations and GetById/List future-work boundary in .specify/memory/myrmex-testing-guidelines.md
-- [ ] T017 [US2] Align WMS Topology, API error-handling, and testing guidance in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md
-- [ ] T018 [US2] Align WMS Topology, API error-handling, and testing guidance in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/contracts/documentation-output-contract.md
-- [ ] T019 [US2] Align WMS Topology, API error-handling, and testing guidance in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/data-model.md
+- [X] T014 [P] [US2] Refine WMS Topology reference slice guidance in .specify/memory/myrmex-topology-patterns.md
+- [X] T015 [P] [US2] Refine write/action and read/load API error-handling guidance in .specify/memory/myrmex-api-error-handling.md
+- [X] T016 [P] [US2] Refine issue #28 testing expectations and GetById/List future-work boundary in .specify/memory/myrmex-testing-guidelines.md
+- [X] T017 [US2] Align WMS Topology, API error-handling, and testing guidance in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md
+- [X] T018 [US2] Align WMS Topology, API error-handling, and testing guidance in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/contracts/documentation-output-contract.md
+- [X] T019 [US2] Align WMS Topology, API error-handling, and testing guidance in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/data-model.md
 
 **Checkpoint**: User Story 2 can be reviewed independently against SC-003 and the issue #28 testing-expectation requirements without adding tests.
 
@@ -93,10 +93,10 @@ For issue #30, `$speckit-implement` means creating, validating, or refining docu
 
 ### Documentation for User Story 3
 
-- [ ] T020 [US3] Refine roadmap direction and non-implementation boundaries in .specify/memory/myrmex-roadmap.md
-- [ ] T021 [US3] Align roadmap direction language in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md
-- [ ] T022 [US3] Align roadmap direction language in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/contracts/documentation-output-contract.md
-- [ ] T023 [US3] Align roadmap validation steps in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/quickstart.md
+- [X] T020 [US3] Refine roadmap direction and non-implementation boundaries in .specify/memory/myrmex-roadmap.md
+- [X] T021 [US3] Align roadmap direction language in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md
+- [X] T022 [US3] Align roadmap direction language in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/contracts/documentation-output-contract.md
+- [X] T023 [US3] Align roadmap validation steps in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/quickstart.md
 
 **Checkpoint**: User Story 3 can be reviewed independently against SC-004 and the forbidden roadmap implementation guardrails.
 
@@ -106,11 +106,11 @@ For issue #30, `$speckit-implement` means creating, validating, or refining docu
 
 **Purpose**: Validate consistency across all issue #30 documentation artifacts.
 
-- [ ] T024 Check for unresolved clarification markers in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/plan.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/research.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/data-model.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/contracts/documentation-output-contract.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/quickstart.md, .specify/memory/myrmex-architecture.md, .specify/memory/myrmex-development-workflow.md, .specify/memory/myrmex-topology-patterns.md, .specify/memory/myrmex-api-error-handling.md, .specify/memory/myrmex-testing-guidelines.md, and .specify/memory/myrmex-roadmap.md
-- [ ] T025 Check that specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/tasks.md references documentation/specification files only
-- [ ] T026 Check that specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/tasks.md contains no forbidden production, test, runtime, migration, UI, API, persistence, framework, roadmap implementation, or GetById/List query handler test tasks
-- [ ] T027 Run the validation guide in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/quickstart.md
-- [ ] T028 Confirm specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/checklists/requirements.md remains passing after documentation updates
+- [X] T024 Check for unresolved clarification markers in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/plan.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/research.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/data-model.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/contracts/documentation-output-contract.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/quickstart.md, .specify/memory/myrmex-architecture.md, .specify/memory/myrmex-development-workflow.md, .specify/memory/myrmex-topology-patterns.md, .specify/memory/myrmex-api-error-handling.md, .specify/memory/myrmex-testing-guidelines.md, and .specify/memory/myrmex-roadmap.md
+- [X] T025 Check that specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/tasks.md references documentation/specification files only
+- [X] T026 Check that specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/tasks.md contains no forbidden production, test, runtime, migration, UI, API, persistence, framework, roadmap implementation, or GetById/List query handler test tasks
+- [X] T027 Run the validation guide in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/quickstart.md
+- [X] T028 Confirm specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/checklists/requirements.md remains passing after documentation updates
 
 ---
 

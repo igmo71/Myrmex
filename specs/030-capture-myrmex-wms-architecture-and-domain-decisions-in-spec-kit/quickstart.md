@@ -5,7 +5,7 @@ Use this guide to validate that issue #30 remains documentation/specification on
 ## Prerequisites
 
 - Run commands from the repository root.
-- Stay on branch `30-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit`.
+- Stay on branch `030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit`.
 - Do not run production behavior or add tests for this validation.
 
 ## 1. Confirm Required Artifacts Exist
@@ -36,7 +36,8 @@ Expected outcome: every command returns `True`.
 ## 3. Confirm No Clarification Markers Remain
 
 ```powershell
-rg -n "NEEDS CLARIFICATION" `
+$marker = "NEEDS " + "CLARIFICATION"
+rg -n $marker `
   specs\030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit\plan.md `
   specs\030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit\research.md `
   specs\030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit\data-model.md `

@@ -1,6 +1,6 @@
 # Feature Specification: Capture Myrmex WMS Architecture and Domain Decisions in Spec Kit
 
-**Feature Branch**: `30-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit`
+**Feature Branch**: `030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit`
 
 **Created**: 2026-06-05
 

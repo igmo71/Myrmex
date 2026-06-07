@@ -1,6 +1,6 @@
 # Implementation Plan: Capture Myrmex WMS Architecture and Domain Decisions in Spec Kit
 
-**Branch**: `30-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit` | **Date**: 2026-06-07 | **Spec**: `specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md`
+**Branch**: `030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit` | **Date**: 2026-06-07 | **Spec**: `specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md`
 
 **Input**: Feature specification from `specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md`, supported by `.specify/memory/constitution.md`, `StakeholderDocs/issue-30-spec-kit-stabilization.md`, `README.md`, and `AGENTS.md`.
 
