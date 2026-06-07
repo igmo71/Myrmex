@@ -28,7 +28,7 @@ For issue #30, `$speckit-implement` means creating, validating, or refining docu
 
 - [ ] T001 Verify issue #30 planning artifacts exist in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/plan.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/research.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/data-model.md, specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/contracts/documentation-output-contract.md, and specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/quickstart.md
 - [ ] T002 Verify durable memory documents exist in .specify/memory/myrmex-architecture.md, .specify/memory/myrmex-development-workflow.md, .specify/memory/myrmex-topology-patterns.md, .specify/memory/myrmex-api-error-handling.md, .specify/memory/myrmex-testing-guidelines.md, and .specify/memory/myrmex-roadmap.md
-- [ ] T003 [P] Review AGENTS.md to confirm it points to durable .specify/memory/myrmex-*.md guidance and the current active plan pattern
+- [ ] T003 [P] Review `AGENTS.md` to confirm it points to all durable memory docs (`.specify/memory/myrmex-architecture.md`, `.specify/memory/myrmex-development-workflow.md`, `.specify/memory/myrmex-topology-patterns.md`, `.specify/memory/myrmex-api-error-handling.md`, `.specify/memory/myrmex-testing-guidelines.md`, `.specify/memory/myrmex-roadmap.md`) and the current active plan pattern.
 - [ ] T004 [P] Review StakeholderDocs/issue-30-spec-kit-stabilization.md as historical input only and note any remaining alignment gaps in specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/research.md
 
 ---

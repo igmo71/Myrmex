@@ -103,7 +103,7 @@ This model describes documentation entities only. It does not define runtime dom
 **Relationships**:
 
 - Informs future WMS vertical slices.
-- Linked to API Error-Handling Memory and Testing Expectation Memory.
+- Linked to API Error-Handling Memory and Testing Guideline Memory.
 
 **Validation Rules**:
 
