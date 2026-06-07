@@ -2,7 +2,7 @@
 
 ## Decision: Keep issue #30 documentation-only
 
-**Rationale**: The feature spec, stakeholder document, and user instructions define issue #30 as brownfield stabilization. The accepted output is Spec Kit and architecture memory documentation, not runtime behavior.
+**Rationale**: The feature spec, stakeholder document, and user instructions define issue #30 as brownfield stabilization. The accepted output is Spec Kit documentation and durable `.specify/memory/myrmex-*.md` guidance, not runtime behavior.
 
 **Alternatives considered**:
 
@@ -12,12 +12,23 @@
 
 ## Decision: Use Codex CLI skill workflow as the supported Spec Kit workflow
 
-**Rationale**: The stakeholder document states that Myrmex uses Codex CLI as the primary coding/review assistant. Spec Kit examples may mention Copilot Chat slash commands, but this project uses Codex skills such as `$speckit-plan`, `$speckit-tasks`, and `$speckit-implement`.
+**Rationale**: The stakeholder document states that Myrmex uses Codex CLI as the primary coding/review assistant. Spec Kit examples may mention Copilot Chat slash commands, but this project uses Codex skills such as `$speckit-plan`, `$speckit-tasks`, and `$speckit-implement`. For issue #30, `$speckit-implement` means documentation execution only from a docs-only `tasks.md`.
 
 **Alternatives considered**:
 
 - Document Copilot Chat slash commands as required tooling: rejected because the project must not assume Copilot Pro, Copilot Enterprise, or Copilot Chat slash-command capabilities.
 - Document both workflows equally: rejected because it would weaken the project-specific workflow guidance.
+- Treat `$speckit-implement` as runtime implementation permission: rejected because issue #30 forbids production code, test code, runtime behavior, migrations, UI, API, persistence, and framework changes.
+
+## Decision: Produce durable Myrmex memory documents
+
+**Rationale**: Issue #30 must create durable operational guidance, not only feature-local planning artifacts. The required durable documents are `.specify/memory/myrmex-architecture.md`, `.specify/memory/myrmex-development-workflow.md`, `.specify/memory/myrmex-topology-patterns.md`, `.specify/memory/myrmex-api-error-handling.md`, `.specify/memory/myrmex-testing-guidelines.md`, and `.specify/memory/myrmex-roadmap.md`.
+
+**Alternatives considered**:
+
+- Keep guidance only in `specs/030...`: rejected because feature plans become stale after issue completion.
+- Permanently point `AGENTS.md` to the issue #30 plan: rejected because long-lived agent context should use durable memory docs or a current active plan pattern.
+- Move the stakeholder document into `.specify/memory`: rejected because it should remain historical input while durable memory docs become operational guidance.
 
 ## Decision: Treat WMS Topology as the current reference vertical slice
 
@@ -63,6 +74,15 @@
 
 - Produce one large architecture document: rejected because it is harder to review and easier to drift into broad refactoring language.
 - Create tasks for runtime behavior: rejected because downstream implementation tasks must remain documentation/specification only.
+
+## Decision: Add task-generation guardrails
+
+**Rationale**: A future `tasks.md` is the most likely place for scope drift. Tasks for issue #30 must not include production code changes, test code changes, Catalog/SKU implementation, Inventory implementation, Receiving implementation, Integration implementation, broad refactoring, new frameworks, or GetById/List query handler tests.
+
+**Alternatives considered**:
+
+- Rely on the existing forbidden-work language only: rejected because task generation needs explicit guard language.
+- Allow GetById/List query handler tests as test tasks: rejected because they are future work only and test code changes are forbidden.
 
 ## Clarification Status
 

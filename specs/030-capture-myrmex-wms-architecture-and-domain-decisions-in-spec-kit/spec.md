@@ -8,6 +8,16 @@
 
 **Input**: User description: "Create a Spec Kit specification for issue #30 based on the stakeholder document. This is a brownfield stabilization issue. Do not change production code. Do not change tests. Do not start Catalog, SKU, Inventory, Receiving, or Integration implementation. Expected output: specs/030-capture-myrmex-wms-architecture-and-domain-decisions-in-spec-kit/spec.md. The spec must describe documentation/specification work only."
 
+## Clarifications
+
+### Session 2026-06-07
+
+- Q: Should issue #30 produce durable `.specify/memory/myrmex-*.md` files or only feature planning artifacts? -> A: Issue #30 must produce durable `.specify/memory/myrmex-*.md` documents for architecture, development workflow, topology patterns, API error handling, testing guidelines, and roadmap guidance.
+- Q: Is `$speckit-implement` allowed for issue #30? -> A: `$speckit-implement` is allowed only as documentation execution from a docs-only `tasks.md`; it must not change production code, test code, runtime behavior, migrations, UI, API, persistence, or frameworks.
+- Q: Should `AGENTS.md` permanently point to the issue #30 feature plan after completion? -> A: `AGENTS.md` may point to the issue #30 plan during active work, but before completion or merge it must point to durable `.specify/memory/myrmex-*.md` documents or a current active plan pattern.
+- Q: What is the lifecycle of `StakeholderDocs/issue-30-spec-kit-stabilization.md`? -> A: Keep it as historical stakeholder input; operational guidance is superseded by durable `.specify/memory/myrmex-*.md` documents.
+- Q: What guardrails must task generation include? -> A: Tasks for issue #30 must not include production code changes, test code changes, Catalog/SKU implementation, Inventory implementation, Receiving implementation, Integration implementation, broad refactoring, new frameworks, or GetById/List query handler tests.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Stabilize Architecture Guidance (Priority: P1)
@@ -35,6 +45,9 @@ production code or tests.
 3. **Given** Myrmex is brownfield, **When** this specification is used for planning,
    **Then** the plan remains limited to Spec Kit documentation and does not require
    production code, test code, or broad refactoring.
+4. **Given** issue #30 has completed, **When** future agents inspect project
+   guidance, **Then** they read durable `.specify/memory/myrmex-*.md` documents
+   rather than relying on the issue #30 feature plan as permanent context.
 
 ---
 
@@ -101,6 +114,10 @@ Inventory, Receiving, and Integration in this issue.
   those changes must be deferred to a separate approved issue.
 - If query handler tests for GetById/List are discussed, they must be recorded as
   intentionally out of scope and possible future work.
+- If `$speckit-implement` is invoked for issue #30, it must execute only
+  documentation tasks from a docs-only `tasks.md`.
+- If task generation includes runtime, test, or roadmap implementation work, those
+  tasks must be rejected as out of scope for issue #30.
 
 ## Requirements *(mandatory)*
 
@@ -138,6 +155,23 @@ Inventory, Receiving, and Integration in this issue.
 - **FR-012**: The specification MUST remain suitable for downstream Spec Kit
   planning by separating accepted decisions, forbidden work, assumptions, and
   measurable outcomes.
+- **FR-013**: Issue #30 MUST produce durable `.specify/memory/myrmex-*.md`
+  documents for architecture, development workflow, topology patterns, API error
+  handling, testing guidelines, and roadmap guidance.
+- **FR-014**: `$speckit-implement` MAY be used for issue #30 only to execute
+  documentation tasks from a docs-only `tasks.md`.
+- **FR-015**: Issue #30 implementation tasks MUST NOT change production code, test
+  code, runtime behavior, migrations, UI, API, persistence, or frameworks.
+- **FR-016**: Before issue #30 is completed or merged, `AGENTS.md` MUST stop
+  permanently pointing at the issue #30 feature plan and MUST instead reference
+  durable `.specify/memory/myrmex-*.md` documents or a current active plan pattern.
+- **FR-017**: `StakeholderDocs/issue-30-spec-kit-stabilization.md` MUST remain
+  historical stakeholder input, with operational guidance superseded by durable
+  `.specify/memory/myrmex-*.md` documents.
+- **FR-018**: Task generation for issue #30 MUST NOT include production code
+  changes, test code changes, Catalog/SKU implementation, Inventory
+  implementation, Receiving implementation, Integration implementation, broad
+  refactoring, new frameworks, or GetById/List query handler tests.
 
 ### Documentation Scope Rules
 
@@ -150,6 +184,8 @@ Inventory, Receiving, and Integration in this issue.
   StorageLocation.
 - **DSR-004**: Catalog, SKU, Barcode, UoM, Packaging, Inventory, Receiving, and
   Integration MUST remain roadmap direction only for this issue.
+- **DSR-005**: For issue #30, implementation means creating or updating
+  documentation artifacts only.
 
 ### API Error-Handling Documentation Requirements
 
@@ -170,6 +206,10 @@ Inventory, Receiving, and Integration in this issue.
   StorageLocation vertical slice used as the baseline for future WMS work.
 - **Roadmap Domain Vocabulary**: Future WMS areas captured for alignment only:
   Catalog, SKU, Barcode, UoM, Packaging, Inventory, Receiving, and Integration.
+- **Durable Myrmex Memory Documents**: The `.specify/memory/myrmex-*.md`
+  artifacts that supersede issue #30 stakeholder notes as operational guidance.
+- **Documentation Execution Task**: A task generated for issue #30 that creates or
+  updates documentation artifacts only and does not touch runtime or test files.
 
 ## Success Criteria *(mandatory)*
 
@@ -187,6 +227,11 @@ Inventory, Receiving, and Integration in this issue.
   zero requirements that instruct production feature implementation.
 - **SC-006**: Future Spec Kit planning can derive documentation-only tasks from
   this specification without needing to inspect production code.
+- **SC-007**: A reviewer can confirm all six required durable Myrmex memory
+  documents exist under `.specify/memory/`.
+- **SC-008**: A generated `tasks.md` for issue #30 contains zero production code,
+  test code, runtime behavior, migration, UI, API, persistence, framework,
+  roadmap implementation, or GetById/List query handler test tasks.
 
 ## Assumptions
 
@@ -199,3 +244,6 @@ Inventory, Receiving, and Integration in this issue.
   fulfillment project focused on a clear, extensible, domain-oriented architecture.
 - Any implementation of Catalog, SKU, Inventory, Receiving, Integration, or other
   roadmap areas requires a separate approved issue.
+- `StakeholderDocs/issue-30-spec-kit-stabilization.md` remains useful for
+  provenance, but durable `.specify/memory/myrmex-*.md` files become the
+  operational guidance source.

@@ -7,12 +7,12 @@ This contract defines what downstream work may produce from issue #30. It is a d
 Documentation derived from issue #30 MAY create or update:
 
 - Spec Kit documentation.
-- Architecture memory documents.
-- Workflow memory documents.
-- Topology pattern documentation.
-- API error-handling documentation.
-- Testing expectation documentation.
-- Roadmap documentation.
+- `.specify/memory/myrmex-architecture.md`.
+- `.specify/memory/myrmex-development-workflow.md`.
+- `.specify/memory/myrmex-topology-patterns.md`.
+- `.specify/memory/myrmex-api-error-handling.md`.
+- `.specify/memory/myrmex-testing-guidelines.md`.
+- `.specify/memory/myrmex-roadmap.md`.
 
 Documentation derived from issue #30 MUST NOT create or update:
 
@@ -24,6 +24,8 @@ Documentation derived from issue #30 MUST NOT create or update:
 - Integration implementation.
 - Broad refactoring plans.
 - New framework adoption plans.
+- GetById/List query handler tests.
+- Runtime behavior, migration, UI, API, persistence, or framework changes.
 
 ## Required Source Alignment
 
@@ -37,6 +39,8 @@ Each output MUST align with:
 
 If these sources conflict, the issue #30 stakeholder document and project constitution define the stabilization scope.
 
+`StakeholderDocs/issue-30-spec-kit-stabilization.md` remains historical stakeholder input. Operational guidance produced by issue #30 MUST live in durable `.specify/memory/myrmex-*.md` documents.
+
 ## Required Documentation Sections
 
 Any issue #30 memory or planning document SHOULD be small and focused. A valid staged output SHOULD cover one of these subjects:
@@ -49,6 +53,19 @@ Any issue #30 memory or planning document SHOULD be small and focused. A valid s
 - API error-handling patterns.
 - Testing expectations.
 - Roadmap direction.
+
+## Required Durable Memory Documents
+
+Issue #30 MUST produce all of these files:
+
+- `.specify/memory/myrmex-architecture.md`
+- `.specify/memory/myrmex-development-workflow.md`
+- `.specify/memory/myrmex-topology-patterns.md`
+- `.specify/memory/myrmex-api-error-handling.md`
+- `.specify/memory/myrmex-testing-guidelines.md`
+- `.specify/memory/myrmex-roadmap.md`
+
+`AGENTS.md` MAY point to the issue #30 plan during active work. Before issue #30 is completed or merged, it MUST point to durable `.specify/memory/myrmex-*.md` documents or to a current active plan pattern, not permanently to the issue #30 feature plan.
 
 ## Required Language Boundaries
 
@@ -71,6 +88,27 @@ Outputs MUST NOT use language that instructs runtime implementation for this iss
 - "refactor modules"
 - "replace dispatcher"
 - "introduce framework"
+
+## `$speckit-implement` Contract
+
+For issue #30, `$speckit-implement` is allowed only as documentation execution from a docs-only `tasks.md`.
+
+For issue #30, "implement" means creating or updating documentation artifacts only. It does not allow production code, test code, runtime behavior, migrations, UI, API, persistence, or framework changes.
+
+## Task-Generation Guard
+
+Tasks for issue #30 MUST NOT include:
+
+- Production code changes.
+- Test code changes.
+- Catalog/SKU implementation.
+- Inventory implementation.
+- Receiving implementation.
+- Integration implementation.
+- Broad refactoring.
+- New frameworks.
+- GetById/List query handler tests.
+- Runtime behavior, migration, UI, API, persistence, or framework changes.
 
 ## WMS Topology Reference Contract
 
@@ -111,3 +149,4 @@ An output satisfies this contract when:
 - It contains no unresolved clarification markers.
 - It preserves the brownfield documentation-only scope.
 - It does not create implementation tasks for runtime behavior.
+- It includes all six required durable Myrmex memory documents.
