@@ -49,7 +49,10 @@
   endpoint, request/response contract, handler, domain logic, persistence mapping,
   and UI/client integration where applicable?
 - **Testing Discipline**: Are required domain, handler, persistence, API client,
-  UI, and integration tests identified for all changed behaviors?
+  and suitable endpoint/UI tests identified for changed behaviors? If endpoint
+  or UI automation is deferred, does the plan document the Principle IV
+  exception, lower-level automated coverage, manual validation, and follow-up
+  decision?
 - **Simplicity and Observability**: Does the plan reuse existing local patterns,
   avoid unnecessary frameworks or service splits, and provide meaningful errors,
   health checks, logging, or diagnostics for operationally important behavior?
@@ -117,9 +120,16 @@ directories captured above]
 
 ## Complexity Tracking
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
+> **Fill ONLY if Constitution Check has violations or Principle IV endpoint/UI
+> automated-test exceptions that must be justified**
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
 | [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
 | [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+
+### Principle IV Endpoint/UI Test Exceptions
+
+| Deferred automated test | Why deferred | Lower-level automated coverage | Manual validation required | Follow-up issue needed? |
+|-------------------------|--------------|--------------------------------|----------------------------|-------------------------|
+| [endpoint/UI behavior] | [new framework, broad test host, or disproportionate setup] | [domain/handler/persistence/API-client tests] | [quickstart/manual checks] | [Yes/No + issue if known] |

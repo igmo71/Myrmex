@@ -18,4 +18,14 @@ GetById/List query handler tests are intentionally out of scope for issue #30 an
 
 ## Future Planning
 
-When future work changes or introduces domain rules, handlers, persistence behavior, API contracts, or critical UI flows, plans should identify the required tests before implementation tasks that depend on them.
+When future work changes or introduces domain rules, command/query handlers,
+persistence mappings, or API clients, plans MUST identify automated tests before
+implementation tasks that depend on them.
+
+HTTP endpoint integration tests and UI/component tests are expected when suitable
+project test infrastructure already exists and lower-level tests cannot
+adequately protect the behavior. Plans may defer endpoint/UI automated tests when
+they would require new frameworks, broad test-host infrastructure, or setup
+disproportionate to the issue scope. Any deferral must state the lower-level
+automated coverage, required manual validation, and whether a follow-up issue is
+needed.

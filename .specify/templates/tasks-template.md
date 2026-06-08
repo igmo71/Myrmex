@@ -10,9 +10,12 @@ description: "Task list template for feature implementation"
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
 **Tests**: Include tests required by the constitution for changed domain rules,
-command/query handlers, persistence mappings, API clients, critical UI flows, and
-integration behavior. Additional tests remain optional when they do not protect a
-changed behavior.
+command/query handlers, persistence mappings, and API clients. Include endpoint
+integration tests and UI/component tests when suitable project infrastructure
+already exists and lower-level tests cannot adequately protect the behavior. If
+the plan documents a Principle IV endpoint/UI exception, include the lower-level
+automated tests and required manual validation tasks instead. Additional tests
+remain optional when they do not protect a changed behavior.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -88,7 +91,7 @@ Examples of foundational tasks (adjust based on your project):
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
 - [ ] T010 [P] [US1] Domain or handler test for [rule/command/query] in tests/[path]
-- [ ] T011 [P] [US1] Integration or contract test for [user journey/API/client] in tests/[path]
+- [ ] T011 [P] [US1] API client, endpoint, or UI test required by Principle IV in tests/[path]
 
 ### Implementation for User Story 1
 
@@ -112,7 +115,7 @@ Examples of foundational tasks (adjust based on your project):
 ### Tests for User Story 2 (include when constitutionally required) ⚠️
 
 - [ ] T018 [P] [US2] Domain or handler test for [rule/command/query] in tests/[path]
-- [ ] T019 [P] [US2] Integration or contract test for [user journey/API/client] in tests/[path]
+- [ ] T019 [P] [US2] API client, endpoint, or UI test required by Principle IV in tests/[path]
 
 ### Implementation for User Story 2
 
@@ -134,7 +137,7 @@ Examples of foundational tasks (adjust based on your project):
 ### Tests for User Story 3 (include when constitutionally required) ⚠️
 
 - [ ] T024 [P] [US3] Domain or handler test for [rule/command/query] in tests/[path]
-- [ ] T025 [P] [US3] Integration or contract test for [user journey/API/client] in tests/[path]
+- [ ] T025 [P] [US3] API client, endpoint, or UI test required by Principle IV in tests/[path]
 
 ### Implementation for User Story 3
 
@@ -183,6 +186,8 @@ Examples of foundational tasks (adjust based on your project):
 ### Within Each User Story
 
 - Constitutionally required tests MUST be written and fail before implementation
+- Endpoint/UI automation exceptions MUST match the plan and include required
+  lower-level automated coverage plus manual validation tasks
 - Models before services
 - Services before endpoints
 - Core implementation before integration
