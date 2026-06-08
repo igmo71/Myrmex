@@ -24,6 +24,8 @@ Tags: `Wms Catalog`
 }
 ```
 
+On create, `updatedAtUtc` is `null`. It is set only after a successful update, deactivate, or reactivate operation.
+
 ### CreateStockKeepingUnitRequest
 
 ```json
@@ -64,6 +66,12 @@ Tags: `Wms Catalog`
 
 **Success**: returns `StockKeepingUnitDetails` for the created active SKU.
 
+**Behavior**:
+
+- Stores the normalized SKU code directly in `code`.
+- Does not expose or persist a separate `normalizedCode` field.
+- Returns `updatedAtUtc: null` for a newly created SKU.
+
 **Failure behavior**:
 
 - Missing or invalid code returns validation ProblemDetails with `code` field details.
@@ -91,6 +99,7 @@ Tags: `Wms Catalog`
 - Default list excludes inactive SKUs.
 - `includeInactive=true` includes inactive SKUs.
 - Search matches code, name, and description.
+- Supported `sortBy` values are `code`, `name`, `createdAtUtc`, `updatedAtUtc`, and `isActive`.
 - Unknown sort fields fall back to code ordering.
 
 ### Get SKU By Id
@@ -168,6 +177,8 @@ Expected methods:
 
 Read/load methods throw the existing API exception shape on failed responses. Write/action methods return the existing API result shape on failed responses.
 
+The Catalog client may keep local support types for this MVP. It must not move, rewrite, or otherwise refactor existing WMS Topology API client support types.
+
 ## UI Contract
 
 Route: `/wms/catalog/skus`
@@ -196,6 +207,7 @@ No endpoint, payload, client method, or UI component may expose:
 
 - Inventory quantity.
 - Barcode.
+- `normalizedCode`.
 - Unit of measure.
 - Packaging.
 - Receiving.

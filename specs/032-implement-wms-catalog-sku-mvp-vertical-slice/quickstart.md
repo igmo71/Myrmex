@@ -66,24 +66,39 @@ Expected outcome:
 - Adds required columns for code, name, created timestamp, and active state.
 - Adds optional columns for description and updated timestamp.
 - Adds a unique index for SKU code.
+- Does not add a `NormalizedCode` column.
+- Leaves `UpdatedAtUtc` nullable.
 - Does not add inventory, barcode, UoM, packaging, receiving, LPN, picking, shipping, or integration tables.
 
-## 7. Manual API Behavior Check
+## 7. Verify Practical Persistence Tests
+
+Review or run the Catalog/SKU persistence tests.
+
+Expected outcome:
+
+- Tests use the existing SQLite/EnsureCreated WMS test infrastructure.
+- Tests verify the StockKeepingUnit mapping/table can be created.
+- Tests verify duplicate normalized `Code` values are protected by a unique index.
+- Tests do not require SQL Server-specific migration execution.
+
+## 8. Manual API Behavior Check
 
 After starting the application in the normal local development flow, verify:
 
 1. Create SKU `ITEM-001` with a valid name succeeds.
-2. Creating ` item-001 ` again fails with duplicate-code feedback.
-3. Listing SKUs shows `ITEM-001` when active.
-4. Searching by `ITEM` or the SKU name returns the SKU.
-5. Updating name or description succeeds and preserves code.
-6. Deactivating hides the SKU from the default list.
-7. Including inactive records shows the deactivated SKU.
-8. Reactivating makes it appear in the default list again.
+2. The created SKU returns `updatedAtUtc` as empty/null.
+3. Creating ` item-001 ` again fails with duplicate-code feedback.
+4. Listing SKUs shows `ITEM-001` when active.
+5. Searching by `ITEM` or the SKU name returns the SKU.
+6. Sorting by code, name, created timestamp, updated timestamp, and active state follows existing WMS list behavior.
+7. Updating name or description succeeds, preserves code, and sets `updatedAtUtc`.
+8. Deactivating hides the SKU from the default list and sets `updatedAtUtc`.
+9. Including inactive records shows the deactivated SKU.
+10. Reactivating makes it appear in the default list again and sets `updatedAtUtc`.
 
 Expected outcome: all behaviors match `contracts/catalog-sku-api-and-ui-contract.md`.
 
-## 8. Manual UI Behavior Check
+## 9. Manual UI Behavior Check
 
 Open `/wms/catalog/skus` in the web app and verify:
 
@@ -94,3 +109,13 @@ Open `/wms/catalog/skus` in the web app and verify:
 - The UI does not show inventory, barcode, UoM, packaging, receiving, LPN, picking, shipping, or integration controls.
 
 Expected outcome: the Catalog/SKU page demonstrates the MVP without scope drift.
+
+## 10. Verify Topology Client Was Not Refactored
+
+Review the final diff.
+
+Expected outcome:
+
+- Existing WMS Topology API client support types were not moved or rewritten.
+- Catalog keeps local API client support types if needed for this MVP.
+- No new domain base type such as `Myrmex.Core\Domain\Entity.cs` was introduced.

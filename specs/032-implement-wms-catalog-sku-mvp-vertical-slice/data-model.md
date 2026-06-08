@@ -6,15 +6,17 @@
 
 **User-facing name**: SKU.
 
+**Domain base pattern**: Uses the existing `AggregateRoot`/`EntityBase` pattern for identity, timestamps, active state, and domain events. The MVP must not introduce a new domain base type or reference `Myrmex.Core\Domain\Entity.cs`.
+
 **Fields**:
 
 - `Id`: Stable system identity.
-- `Code`: Required SKU business code. Normalized for casing and surrounding whitespace. Globally unique within the WMS catalog.
+- `Code`: Required SKU business code. Normalized for casing and surrounding whitespace, stored directly as the duplicate-protected value, and globally unique within the WMS catalog.
 - `Name`: Required display name.
 - `Description`: Optional descriptive text.
 - `IsActive`: Lifecycle flag. New SKUs start active.
 - `CreatedAtUtc`: Creation timestamp.
-- `UpdatedAtUtc`: Last update timestamp when details or lifecycle change.
+- `UpdatedAtUtc`: Null on create; set only when details or lifecycle change.
 - `DomainEvents`: In-memory domain event collection ignored by persistence.
 
 **Validation Rules**:
@@ -26,6 +28,7 @@
 - `Description`, when present, must not exceed the shared WMS description length.
 - `Code` cannot be changed through the MVP detail update flow.
 - Duplicate codes are rejected after normalization.
+- A separate `NormalizedCode` field is not part of the MVP.
 
 **State Transitions**:
 
@@ -33,8 +36,8 @@
 Create valid SKU -> Active
 Active -> Deactivate -> Inactive
 Inactive -> Reactivate -> Active
-Active -> Reactivate -> Active (idempotent)
-Inactive -> Deactivate -> Inactive (idempotent)
+Active -> Reactivate -> Active (idempotent, no lifecycle event)
+Inactive -> Deactivate -> Inactive (idempotent, no lifecycle event)
 Active or Inactive -> Update Details -> same lifecycle state
 ```
 
@@ -44,6 +47,8 @@ Active or Inactive -> Update Details -> same lifecycle state
 - `StockKeepingUnitDetailsUpdatedDomainEvent`
 - `StockKeepingUnitDeactivatedDomainEvent`
 - `StockKeepingUnitReactivatedDomainEvent`
+
+Events are emitted only when the matching state change occurs. No lifecycle event is emitted for an idempotent no-op deactivate or reactivate call.
 
 **Relationships**:
 
@@ -162,7 +167,8 @@ Active or Inactive -> Update Details -> same lifecycle state
 - Returns bounded items plus total count, skip, and take.
 - Default behavior excludes inactive SKUs.
 - Search matches code, name, and description.
-- Supported sorting includes code, name, created timestamp, updated timestamp, and active state.
+- Supported sorting includes code, name, created timestamp, updated timestamp, and active state, matching existing Warehouse/Zone list handler patterns.
+- Unknown or unsupported sort fields fall back to code ordering.
 
 ## Persistence Shape
 
@@ -184,6 +190,7 @@ Active or Inactive -> Update Details -> same lifecycle state
 - Unique index on `Code`.
 - Required columns for `Code`, `Name`, `CreatedAtUtc`, and `IsActive`.
 - Length constraints aligned with the domain model.
+- No `NormalizedCode` column.
 
 ## Out of Scope Data
 

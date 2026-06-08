@@ -30,6 +30,25 @@
 - Add category, brand, dimensions, or costing: rejected because they are not required for the MVP acceptance scenarios.
 - Allow direct deletion: rejected because existing WMS reference data uses deactivate/reactivate lifecycle behavior.
 
+## Decision: Store normalized SKU code directly in `Code`
+
+**Rationale**: Existing Warehouse, Zone, and StorageLocation aggregates normalize code before storing it in `Code`, then enforce uniqueness on that stored value. Matching this pattern keeps duplicate protection simple and avoids an unnecessary persistence field.
+
+**Alternatives considered**:
+
+- Add `NormalizedCode`: rejected because it introduces a second code field and diverges from existing WMS Topology patterns without a current need.
+- Store user-entered casing separately: rejected because the MVP does not require display-preserved SKU codes.
+- Rely only on case-insensitive database collation: rejected because the domain already has explicit code normalization behavior.
+
+## Decision: Leave `UpdatedAtUtc` null on create
+
+**Rationale**: `EntityBase` initializes `UpdatedAtUtc` to null and sets it only through `Touch()` during update, deactivate, or reactivate operations. Existing WMS entities and seeded reference data follow the same shape.
+
+**Alternatives considered**:
+
+- Set `UpdatedAtUtc` equal to `CreatedAtUtc` on create: rejected because it diverges from the current domain base behavior.
+- Hide `UpdatedAtUtc` from SKU responses: rejected because existing WMS details contracts expose it consistently.
+
 ## Decision: Implement the same command/query set as Warehouse for the SKU MVP
 
 **Rationale**: Create, list, get by id, update details, deactivate, and reactivate match the requested user flows and the accepted WMS Topology vertical-slice pattern.
@@ -40,6 +59,16 @@
 - Add bulk import/export: rejected because the spec says a polished bulk import/export experience is not required.
 - Add GetByCode as a first-class query: rejected because search and get-by-id satisfy the MVP.
 
+## Decision: Emit StockKeepingUnit domain events only for real changes
+
+**Rationale**: Existing WMS aggregates emit domain events for create, update details, deactivate, and reactivate changes, but idempotent no-op deactivate/reactivate calls return without adding a new event. StockKeepingUnit should match that behavior exactly.
+
+**Alternatives considered**:
+
+- Omit StockKeepingUnit domain events entirely: rejected because existing aggregates use domain events for comparable lifecycle changes.
+- Emit events for idempotent no-op lifecycle calls: rejected because it would misrepresent that a state transition happened.
+- Add extra catalog-specific events: rejected because no current handler or operational requirement needs them.
+
 ## Decision: Use EF Core mapping with a `stock_keeping_units` table and unique SKU code index
 
 **Rationale**: Existing WMS persistence maps aggregates through `WmsDbContext`, named table constants, configuration classes, migrations, and unique business-code indexes. SKU code uniqueness is a core invariant and should be protected in both handler checks and persistence.
@@ -49,6 +78,15 @@
 - Store SKUs in an existing table: rejected because no existing entity represents catalog item identity.
 - Rely only on handler-level duplicate checks: rejected because persistence should protect uniqueness under concurrent writes.
 - Use a natural key as the primary key: rejected because existing WMS aggregates use generated identity plus business code.
+
+## Decision: Use existing domain base classes only
+
+**Rationale**: The current domain model uses `EntityBase` for identity, timestamps, active state, and `AggregateRoot` for domain events. StockKeepingUnit should inherit through the existing aggregate pattern and must not introduce or reference `Myrmex.Core\Domain\Entity.cs`.
+
+**Alternatives considered**:
+
+- Create a new `Entity` base type: rejected because the project already has `EntityBase` and adding another base type is unnecessary broadening.
+- Create a Catalog-specific base aggregate: rejected because one MVP aggregate does not justify a new abstraction.
 
 ## Decision: Expose Catalog endpoints under `/api/wms/catalog/skus`
 
@@ -69,6 +107,7 @@
 - Add SKU methods to `WmsTopologyApiClient`: rejected because it mixes Catalog into Topology.
 - Introduce a shared generic API client abstraction: rejected because that would be a broader refactor than the MVP requires.
 - Move existing `ApiResult` and `ApiException` immediately to a shared folder: rejected for this MVP because it touches existing Topology code without being required for Catalog/SKU behavior.
+- Rewrite existing Topology API client infrastructure: rejected because issue #32 must preserve Topology behavior and keep the slice small.
 
 ## Decision: Build a minimal MudBlazor SKU list page using existing Topology UI composition
 
@@ -82,13 +121,23 @@
 
 ## Decision: Add focused regression tests for domain, handlers, persistence, and API client
 
-**Rationale**: The constitution requires tests for new domain rules, handlers, persistence mappings, API clients, and critical UI flows. Existing WMS Topology tests show the expected coverage for invalid input, duplicate code, lifecycle idempotency, domain event dispatch, and ProblemDetails-aware error handling.
+**Rationale**: The constitution requires tests for new domain rules, handlers, persistence mappings, API clients, and critical UI flows. Existing WMS Topology tests show the expected coverage for invalid input, duplicate code, lifecycle idempotency, domain event dispatch, and ProblemDetails-aware error handling. Practical persistence tests should use the existing SQLite/EnsureCreated infrastructure to verify mapping/table creation and unique `Code` index behavior; SQL Server-specific migration execution tests are not required for this MVP.
 
 **Alternatives considered**:
 
 - Rely on manual testing only: rejected because this is a new domain and persistence slice.
 - Add broad end-to-end browser automation now: rejected because the repository's current WMS coverage pattern does not require it for the MVP.
 - Add exhaustive list/get query handler tests: rejected for initial MVP unless needed by task generation; list behavior can be validated through focused handler tests if tasks include it.
+- Require SQL Server-specific migration execution tests: rejected because existing local test infrastructure is SQLite/EnsureCreated and SQL Server migration execution would expand the validation surface.
+
+## Decision: Match existing list sorting fields only
+
+**Rationale**: Warehouse and Zone list handlers support sorting by code, name, created timestamp, updated timestamp, and active state. StockKeepingUnit should support those same fields and fall back to code ordering for unknown sort fields.
+
+**Alternatives considered**:
+
+- Support code/name/isActive only: rejected because created/updated timestamp sorting is already a local list-handler pattern.
+- Add advanced multi-field or arbitrary dynamic sorting: rejected because it goes beyond existing local patterns.
 
 ## Decision: Keep roadmap exclusions explicit in every downstream artifact
 

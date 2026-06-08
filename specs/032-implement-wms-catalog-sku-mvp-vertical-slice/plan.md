@@ -8,7 +8,7 @@
 
 Implement a small WMS Catalog/SKU vertical slice that lets users create, list, search, retrieve, update, deactivate, and reactivate SKU reference data. The slice will introduce `StockKeepingUnit` as the domain aggregate inside the existing WMS module, with command/query handlers, persistence mapping and migration, minimal API endpoints, a typed web API client, minimal MudBlazor UI, and focused regression tests.
 
-The implementation must mirror the accepted WMS Topology patterns while keeping Catalog/SKU separate from topology concepts. It must not implement Inventory, Barcode, UoM, Packaging, Receiving, LPN contents, Picking, Shipping, Integration, MediatR, new frameworks, or broad refactoring.
+The implementation must mirror the accepted WMS Topology patterns while keeping Catalog/SKU separate from topology concepts. It must store normalized SKU codes directly in `Code`, leave `UpdatedAtUtc` null on create, emit domain events only for real state changes, and use existing `EntityBase`/`AggregateRoot` patterns. It must not implement Inventory, Barcode, UoM, Packaging, Receiving, LPN contents, Picking, Shipping, Integration, MediatR, new frameworks, broad refactoring, or any `Myrmex.Core\Domain\Entity.cs` base type.
 
 ## Technical Context
 
@@ -16,9 +16,9 @@ The implementation must mirror the accepted WMS Topology patterns while keeping 
 
 **Primary Dependencies**: Existing ASP.NET Core Minimal APIs, EF Core, Blazor, MudBlazor, xUnit, `Myrmex.Core`, `Myrmex.AppDispatching`, `Myrmex.AspNetCore`, and `Myrmex.Modules.Wms`.
 
-**Storage**: Existing WMS EF Core context using SQL Server in production and SQLite-backed test context. Add a WMS `stock_keeping_units` table through EF Core configuration and migration.
+**Storage**: Existing WMS EF Core context using SQL Server in production and SQLite-backed test context. Add a WMS `stock_keeping_units` table through EF Core configuration and migration. Store normalized SKU code directly in `Code`; do not add `NormalizedCode`.
 
-**Testing**: Existing xUnit test project. Add domain tests, handler tests, persistence/mapping coverage via the existing test DB context, and web API client error-handling tests for Catalog/SKU.
+**Testing**: Existing xUnit test project. Add domain tests, handler tests, practical SQLite/EnsureCreated persistence tests for mapping/table creation and unique `Code` index, and web API client error-handling tests for Catalog/SKU. Do not require SQL Server-specific migration execution tests.
 
 **Target Platform**: Existing Myrmex web application and API service in the modular-monolith solution.
 
@@ -26,7 +26,7 @@ The implementation must mirror the accepted WMS Topology patterns while keeping 
 
 **Performance Goals**: Users can create a SKU in under 1 minute and find a known SKU by code or name from at least 25 records in under 30 seconds.
 
-**Constraints**: Keep the slice small; preserve WMS Topology behavior; use explicit commands and queries through the existing internal dispatchers; use existing service result and ProblemDetails conventions; no new frameworks; no MediatR; no future roadmap areas beyond SKU reference data.
+**Constraints**: Keep the slice small; preserve WMS Topology behavior; use explicit commands and queries through the existing internal dispatchers; use existing service result and ProblemDetails conventions; use existing `EntityBase` and `AggregateRoot` domain base classes; no new frameworks; no MediatR; no `Entity.cs`; no future roadmap areas beyond SKU reference data.
 
 **Scale/Scope**: One WMS Catalog/SKU reference-data slice covering one aggregate, six user-facing operations, one database table, one web list page with dialog-based create/edit, and focused regression tests.
 
@@ -110,7 +110,7 @@ Myrmex.Tests/
     └── Persistence/StockKeepingUnitPersistenceTests.cs
 ```
 
-**Structure Decision**: Add `Catalog` as a sibling WMS capability to `Topology` inside `Myrmex.Modules.Wms`. Keep the web API client and UI under `Wms/Catalog` and `Components/Pages/Wms/Catalog` so Catalog/SKU does not get mixed into Topology. Keep the small API result/exception support types local to Catalog for this MVP instead of refactoring Topology into shared client infrastructure. Keep tests under `Myrmex.Tests/Wms/Catalog` while reusing existing test infrastructure patterns.
+**Structure Decision**: Add `Catalog` as a sibling WMS capability to `Topology` inside `Myrmex.Modules.Wms`. Keep the web API client and UI under `Wms/Catalog` and `Components/Pages/Wms/Catalog` so Catalog/SKU does not get mixed into Topology. Keep the small API result/exception support types local to Catalog for this MVP if needed. Do not move, rewrite, or otherwise refactor existing Topology API client infrastructure. Keep tests under `Myrmex.Tests/Wms/Catalog` while reusing existing test infrastructure patterns.
 
 ## Phase 0: Research Output
 
@@ -119,6 +119,9 @@ Create `research.md` with decisions for:
 - WMS Catalog capability placement.
 - `StockKeepingUnit` aggregate name and user-facing SKU wording.
 - Minimal SKU data shape and lifecycle.
+- Normalized `Code` storage without a separate `NormalizedCode` column.
+- `UpdatedAtUtc` lifecycle behavior.
+- Existing `EntityBase` and `AggregateRoot` domain base class usage.
 - Command/query handler set.
 - EF Core table, unique index, and migration.
 - API route and ProblemDetails/service-result behavior.
@@ -129,7 +132,7 @@ Create `research.md` with decisions for:
 
 ## Phase 1: Design Outputs
 
-Create `data-model.md` for the `StockKeepingUnit` aggregate, domain events, command/query inputs, details projection, persistence shape, lifecycle transitions, validation rules, and out-of-scope relationships.
+Create `data-model.md` for the `StockKeepingUnit` aggregate, domain events, command/query inputs, details projection, persistence shape, lifecycle transitions, validation rules, and out-of-scope relationships. The model must explicitly state that normalized SKU code is stored directly in `Code`, `UpdatedAtUtc` is null on create, and no new domain base type is introduced.
 
 Create `contracts/catalog-sku-api-and-ui-contract.md` for the minimal API surface, payloads, list query parameters, error behavior, and web UI page/dialog expectations.
 
@@ -156,6 +159,8 @@ Tasks must not include:
 - New frameworks.
 - Broad refactoring.
 - Reworking existing WMS Topology behavior except where required to keep shared WMS registration compiling.
+- Moving or rewriting existing WMS Topology API client support types.
+- Creating `Myrmex.Core\Domain\Entity.cs` or any new domain base type.
 
 ## Post-Design Constitution Check
 

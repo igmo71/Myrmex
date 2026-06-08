@@ -10,6 +10,18 @@
 
 **Input**: User description: "Use GitHub issue #32 as stakeholder input. Implement WMS Catalog/SKU MVP vertical slice. This is a real implementation feature. Keep the slice small and follow existing WMS Topology behavior patterns. Do not implement Inventory, Barcode, UoM, Packaging, Receiving, LPN contents, Picking, Shipping, or Integration."
 
+## Clarifications
+
+### Session 2026-06-08
+
+- Q: Should SKU duplicate protection store normalized `Code` directly or introduce a separate `NormalizedCode` column? -> A: Store normalized `Code` directly; do not add a separate `NormalizedCode` column for this MVP.
+- Q: Should `UpdatedAtUtc` be null on create or equal to `CreatedAtUtc`? -> A: `UpdatedAtUtc` is null on create and is set only after update, deactivate, or reactivate.
+- Q: Should StockKeepingUnit domain events be included? -> A: Include events only where they match existing WMS aggregate/domain-event patterns, with no lifecycle event for idempotent no-op deactivate/reactivate calls.
+- Q: Should persistence tests be required? -> A: Require practical SQLite/EnsureCreated persistence tests for mapping/table creation and unique code index; do not require SQL Server-specific migration execution tests.
+- Q: Should list sorting support all planned fields? -> A: Support code, name, createdAtUtc, updatedAtUtc, and isActive if matching existing Warehouse/Zone list handler patterns; do not add advanced sorting.
+- Q: Which domain base classes should the implementation use? -> A: Use existing `EntityBase` and `AggregateRoot` patterns; do not reference or create `Myrmex.Core\Domain\Entity.cs`.
+- Q: Should Catalog refactor existing Topology API client support types? -> A: No. Keep Catalog client support local if needed and do not move or rewrite Topology API client infrastructure.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Create SKU Reference Data (Priority: P1)
@@ -22,7 +34,7 @@ A warehouse catalog user can create a SKU with the minimum descriptive informati
 
 **Acceptance Scenarios**:
 
-1. **Given** no SKU exists with code `ITEM-001`, **When** a catalog user creates a SKU with code `ITEM-001` and a valid name, **Then** the system records an active SKU with that code, name, optional description, and creation timestamp.
+1. **Given** no SKU exists with code `ITEM-001`, **When** a catalog user creates a SKU with code `ITEM-001` and a valid name, **Then** the system records an active SKU with that normalized code, name, optional description, creation timestamp, and no update timestamp.
 2. **Given** a SKU already exists with code `ITEM-001`, **When** a catalog user attempts to create another SKU using the same code with different casing or surrounding spaces, **Then** the system rejects the request with a clear duplicate-code error.
 3. **Given** a catalog user provides a missing code or missing name, **When** the user attempts to create a SKU, **Then** the system rejects the request with field-specific validation errors and does not create a SKU.
 
@@ -67,6 +79,7 @@ A warehouse catalog user can update SKU descriptive details and deactivate or re
 ### Edge Cases
 
 - Duplicate SKU codes must be detected after normalizing casing and surrounding whitespace.
+- Duplicate SKU code protection must use the stored normalized `Code` value directly and must not require a separate normalized-code field.
 - Missing, blank, or overlong SKU code, name, or description values must produce clear validation errors tied to the affected field.
 - Listing SKUs with negative or excessive paging values must use the system's existing bounded list behavior.
 - Searching with empty or whitespace-only text must behave like an unfiltered list.
@@ -96,11 +109,13 @@ A warehouse catalog user can update SKU descriptive details and deactivate or re
 
 - **DR-001**: A SKU represents catalog reference data for an item that can be identified by future WMS workflows.
 - **DR-002**: SKU code is the stable business identifier for a SKU and must be unique across the WMS catalog.
-- **DR-003**: SKU code is assigned when the SKU is created and cannot be changed by the MVP detail update flow.
+- **DR-003**: SKU code is assigned when the SKU is created, stored in normalized form, and cannot be changed by the MVP detail update flow.
 - **DR-004**: A SKU is active immediately after creation.
 - **DR-005**: Deactivation and reactivation are lifecycle changes; they must not delete the SKU or create another SKU.
 - **DR-006**: Repeating a deactivate request for an inactive SKU or a reactivate request for an active SKU is idempotent from a user perspective.
 - **DR-007**: SKU records do not carry stock quantity, barcode, unit-of-measure, packaging, receiving, LPN, picking, shipping, or integration state in this MVP.
+- **DR-008**: `UpdatedAtUtc` is empty when a SKU is created and is set only after a successful detail update, deactivate, or reactivate operation.
+- **DR-009**: StockKeepingUnit domain events are emitted for create, details updated, deactivated, and reactivated changes only when those changes occur.
 
 ### Observability & Error Handling *(mandatory when feature exposes runtime behavior)*
 
@@ -132,6 +147,7 @@ A warehouse catalog user can update SKU descriptive details and deactivate or re
 - The primary MVP user is an internal warehouse catalog or operations user who maintains item reference data.
 - SKU code, name, and description follow the same general text-length expectations as existing WMS reference data unless a later plan identifies a domain-specific exception.
 - SKU codes are globally unique within the WMS catalog for this MVP.
+- SKU code normalization follows existing WMS Topology behavior by storing normalized `Code` directly.
 - Direct deletion is out of scope; lifecycle is handled through deactivate and reactivate.
 - The MVP includes user-facing behavior needed to create, read, list, update, deactivate, and reactivate SKUs, but does not require a polished bulk import/export experience.
 - Authentication and authorization behavior reuse the existing application defaults and are not changed by this feature.
