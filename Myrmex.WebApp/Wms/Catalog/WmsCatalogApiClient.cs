@@ -35,6 +35,37 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
+    public async Task<ApiResult<StockKeepingUnitDetails>> TryUpdateStockKeepingUnitDetailsAsync(
+        Guid stockKeepingUnitId,
+        UpdateStockKeepingUnitDetailsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await PutAsApiResultAsync<StockKeepingUnitDetails>(
+            $"/api/wms/catalog/skus/{stockKeepingUnitId}",
+            request,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<StockKeepingUnitDetails>> TryDeactivateStockKeepingUnitAsync(
+        Guid stockKeepingUnitId,
+        CancellationToken cancellationToken = default)
+    {
+        return await PostAsApiResultAsync<StockKeepingUnitDetails>(
+            $"/api/wms/catalog/skus/{stockKeepingUnitId}/deactivate",
+            value: null,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<StockKeepingUnitDetails>> TryReactivateStockKeepingUnitAsync(
+        Guid stockKeepingUnitId,
+        CancellationToken cancellationToken = default)
+    {
+        return await PostAsApiResultAsync<StockKeepingUnitDetails>(
+            $"/api/wms/catalog/skus/{stockKeepingUnitId}/reactivate",
+            value: null,
+            cancellationToken);
+    }
+
     private async Task<T> GetRequiredAsync<T>(
         string url,
         CancellationToken cancellationToken)
@@ -65,6 +96,16 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
         using HttpResponseMessage response = await httpClient.PostAsJsonAsync(url, value, cancellationToken);
 
         return await ReadApiResultAsync<T>(response, $"POST '{url}'", cancellationToken);
+    }
+
+    private async Task<ApiResult<T>> PutAsApiResultAsync<T>(
+        string url,
+        object value,
+        CancellationToken cancellationToken)
+    {
+        using HttpResponseMessage response = await httpClient.PutAsJsonAsync(url, value, cancellationToken);
+
+        return await ReadApiResultAsync<T>(response, $"PUT '{url}'", cancellationToken);
     }
 
     private static async Task<ApiResult<T>> ReadApiResultAsync<T>(
@@ -203,5 +244,9 @@ public sealed record StockKeepingUnitDetails(
 
 public sealed record CreateStockKeepingUnitRequest(
     string? Code,
+    string? Name,
+    string? Description);
+
+public sealed record UpdateStockKeepingUnitDetailsRequest(
     string? Name,
     string? Description);

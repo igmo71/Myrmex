@@ -98,21 +98,21 @@
 
 ### Tests for User Story 3 Backend
 
-- [ ] T031 [P] [US3] Add StockKeepingUnit update/deactivate/reactivate domain tests including `UpdatedAtUtc` changes and no domain event for idempotent no-op lifecycle calls in `Myrmex.Tests/Wms/Catalog/Domain/StockKeepingUnitTests.cs`
-- [ ] T032 [P] [US3] Add UpdateStockKeepingUnitDetails handler tests for not found, invalid details, successful update, preserved code, and dispatched details-updated event in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/UpdateStockKeepingUnitDetailsHandlerTests.cs`
-- [ ] T033 [P] [US3] Add DeactivateStockKeepingUnit handler tests for not found, successful deactivate, hidden active state, and idempotent no-op without domain event in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/DeactivateStockKeepingUnitHandlerTests.cs`
-- [ ] T034 [P] [US3] Add ReactivateStockKeepingUnit handler tests for not found, successful reactivate, restored active state, and idempotent no-op without domain event in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/ReactivateStockKeepingUnitHandlerTests.cs`
-- [ ] T035 [P] [US3] Add WmsCatalogApiClient update/deactivate/reactivate write/action error-handling tests in `Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs`
+- [X] T031 [P] [US3] Add StockKeepingUnit update/deactivate/reactivate domain tests including `UpdatedAtUtc` changes and no domain event for idempotent no-op lifecycle calls in `Myrmex.Tests/Wms/Catalog/Domain/StockKeepingUnitTests.cs`
+- [X] T032 [P] [US3] Add UpdateStockKeepingUnitDetails handler tests for not found, invalid details, successful update, preserved code, and dispatched details-updated event in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/UpdateStockKeepingUnitDetailsHandlerTests.cs`
+- [X] T033 [P] [US3] Add DeactivateStockKeepingUnit handler tests for not found, successful deactivate, hidden active state, and idempotent no-op without domain event in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/DeactivateStockKeepingUnitHandlerTests.cs`
+- [X] T034 [P] [US3] Add ReactivateStockKeepingUnit handler tests for not found, successful reactivate, restored active state, and idempotent no-op without domain event in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/ReactivateStockKeepingUnitHandlerTests.cs`
+- [X] T035 [P] [US3] Add WmsCatalogApiClient update/deactivate/reactivate write/action error-handling tests in `Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs`
 
 ### Implementation for User Story 3 Backend
 
-- [ ] T036 [US3] Add StockKeepingUnit details-updated, deactivated, and reactivated domain events in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnitEvents.cs`
-- [ ] T037 [US3] Add StockKeepingUnit update, deactivate, and reactivate behavior with `UpdatedAtUtc` updates only on real changes in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnit.cs`
-- [ ] T038 [US3] Implement UpdateStockKeepingUnitDetails command and handler in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/UpdateStockKeepingUnitDetails.cs`
-- [ ] T039 [US3] Implement DeactivateStockKeepingUnit command and handler in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/DeactivateStockKeepingUnit.cs`
-- [ ] T040 [US3] Implement ReactivateStockKeepingUnit command and handler in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/ReactivateStockKeepingUnit.cs`
-- [ ] T041 [US3] Add update/deactivate/reactivate endpoints to `Myrmex.Modules.Wms/Catalog/Endpoints/StockKeepingUnitEndpoints.cs`
-- [ ] T042 [US3] Add update/deactivate/reactivate request and client methods to `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
+- [X] T036 [US3] Add StockKeepingUnit details-updated, deactivated, and reactivated domain events in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnitEvents.cs`
+- [X] T037 [US3] Add StockKeepingUnit update, deactivate, and reactivate behavior with `UpdatedAtUtc` updates only on real changes in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnit.cs`
+- [X] T038 [US3] Implement UpdateStockKeepingUnitDetails command and handler in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/UpdateStockKeepingUnitDetails.cs`
+- [X] T039 [US3] Implement DeactivateStockKeepingUnit command and handler in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/DeactivateStockKeepingUnit.cs`
+- [X] T040 [US3] Implement ReactivateStockKeepingUnit command and handler in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/ReactivateStockKeepingUnit.cs`
+- [X] T041 [US3] Add update/deactivate/reactivate endpoints to `Myrmex.Modules.Wms/Catalog/Endpoints/StockKeepingUnitEndpoints.cs`
+- [X] T042 [US3] Add update/deactivate/reactivate request and client methods to `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
 
 **Checkpoint**: All backend/API/client user stories are independently functional.
 

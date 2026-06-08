@@ -26,6 +26,50 @@ internal sealed class StockKeepingUnit : AggregateRoot
 
     public string? Description { get; private set; }
 
+    public DomainValidationResult UpdateDetails(
+        string? name,
+        string? description)
+    {
+        DomainValidationResult validationResult = ValidateDetails(
+            name,
+            description);
+
+        if (!validationResult.IsValid)
+        {
+            return validationResult;
+        }
+
+        Name = DomainText.NormalizeRequiredText(name);
+        Description = DomainText.NormalizeOptionalText(description);
+
+        Touch();
+        AddDomainEvent(new StockKeepingUnitDetailsUpdatedDomainEvent(Id));
+
+        return DomainValidationResult.Valid;
+    }
+
+    public void Deactivate()
+    {
+        if (!IsActive)
+        {
+            return;
+        }
+
+        MarkDeactivated();
+        AddDomainEvent(new StockKeepingUnitDeactivatedDomainEvent(Id));
+    }
+
+    public void Reactivate()
+    {
+        if (IsActive)
+        {
+            return;
+        }
+
+        MarkReactivated();
+        AddDomainEvent(new StockKeepingUnitReactivatedDomainEvent(Id));
+    }
+
     public static DomainValidationResult Create(
         string? code,
         string? name,

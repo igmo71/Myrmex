@@ -118,6 +118,81 @@ public sealed class WmsCatalogApiClientTests
     }
 
     [Fact]
+    public async Task TryUpdateStockKeepingUnitDetailsAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
+    {
+        // Arrange
+        const string problemJson = """
+            {
+              "type": "https://httpstatuses.com/404",
+              "title": "Not Found",
+              "status": 404,
+              "detail": "Stock keeping unit was not found.",
+              "code": "StockKeepingUnit.NotFound"
+            }
+            """;
+
+        using HttpClient httpClient = CreateHttpClient(
+            HttpStatusCode.NotFound,
+            problemJson,
+            "application/problem+json");
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        UpdateStockKeepingUnitDetailsRequest request = new(
+            Name: "Updated Widget",
+            Description: null);
+
+        // Act
+        ApiResult<StockKeepingUnitDetails> result = await apiClient.TryUpdateStockKeepingUnitDetailsAsync(
+            Guid.NewGuid(),
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.NotNull(result.Error);
+
+        Assert.Equal(404, result.Error.Status);
+        Assert.Equal("Stock keeping unit was not found.", result.Error.Message);
+        Assert.Equal("StockKeepingUnit.NotFound", result.Error.Extensions["code"]);
+    }
+
+    [Fact]
+    public async Task TryDeactivateStockKeepingUnitAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
+    {
+        // Arrange
+        const string problemJson = """
+            {
+              "type": "https://httpstatuses.com/404",
+              "title": "Not Found",
+              "status": 404,
+              "detail": "Stock keeping unit was not found.",
+              "code": "StockKeepingUnit.NotFound"
+            }
+            """;
+
+        using HttpClient httpClient = CreateHttpClient(
+            HttpStatusCode.NotFound,
+            problemJson,
+            "application/problem+json");
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        // Act
+        ApiResult<StockKeepingUnitDetails> result = await apiClient.TryDeactivateStockKeepingUnitAsync(
+            Guid.NewGuid(),
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.NotNull(result.Error);
+
+        Assert.Equal(404, result.Error.Status);
+        Assert.Equal("Stock keeping unit was not found.", result.Error.Message);
+        Assert.Equal("StockKeepingUnit.NotFound", result.Error.Extensions["code"]);
+    }
+
+    [Fact]
     public async Task ListStockKeepingUnitsAsync_WhenMalformedErrorReturned_ThrowsApiExceptionWithFallbackMessage()
     {
         // Arrange
@@ -199,6 +274,35 @@ public sealed class WmsCatalogApiClientTests
         Assert.Equal(400, result.Error.Status);
         Assert.Equal(
             "API request failed for POST '/api/wms/catalog/skus'. Status code: 400 BadRequest.",
+            result.Error.Message);
+        Assert.Empty(result.Error.Extensions);
+    }
+
+    [Fact]
+    public async Task TryReactivateStockKeepingUnitAsync_WhenMalformedErrorReturned_ReturnsFallbackFailureResult()
+    {
+        // Arrange
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000001");
+
+        using HttpClient httpClient = CreateHttpClient(
+            HttpStatusCode.BadRequest,
+            "not a valid problem details json",
+            "application/problem+json");
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        // Act
+        ApiResult<StockKeepingUnitDetails> result = await apiClient.TryReactivateStockKeepingUnitAsync(
+            stockKeepingUnitId,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.NotNull(result.Error);
+
+        Assert.Equal(400, result.Error.Status);
+        Assert.Equal(
+            $"API request failed for POST '/api/wms/catalog/skus/{stockKeepingUnitId}/reactivate'. Status code: 400 BadRequest.",
             result.Error.Message);
         Assert.Empty(result.Error.Extensions);
     }

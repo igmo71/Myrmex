@@ -26,6 +26,18 @@ internal static class StockKeepingUnitEndpoints
             .WithName("ListStockKeepingUnits")
             .WithSummary("List SKUs");
 
+        group.MapPut("/skus/{stockKeepingUnitId:guid}", UpdateStockKeepingUnitDetailsAsync)
+            .WithName("UpdateStockKeepingUnitDetails")
+            .WithSummary("Update SKU Details");
+
+        group.MapPost("/skus/{stockKeepingUnitId:guid}/deactivate", DeactivateStockKeepingUnitAsync)
+            .WithName("DeactivateStockKeepingUnit")
+            .WithSummary("Deactivate SKU");
+
+        group.MapPost("/skus/{stockKeepingUnitId:guid}/reactivate", ReactivateStockKeepingUnitAsync)
+            .WithName("ReactivateStockKeepingUnit")
+            .WithSummary("Reactivate SKU");
+
         return group;
     }
 
@@ -85,6 +97,53 @@ internal static class StockKeepingUnitEndpoints
 
         var result = await queryDispatcher
             .DispatchAsync<ListStockKeepingUnits.Query, ServiceResult<ListResult<StockKeepingUnitDetails>>>(query, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private sealed record UpdateStockKeepingUnitDetailsRequest(
+        string? Name,
+        string? Description);
+
+    private static async Task<IResult> UpdateStockKeepingUnitDetailsAsync(
+        Guid stockKeepingUnitId,
+        UpdateStockKeepingUnitDetailsRequest request,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateStockKeepingUnitDetails.Command(
+            StockKeepingUnitId: stockKeepingUnitId,
+            Name: request.Name,
+            Description: request.Description);
+
+        var result = await commandDispatcher
+            .DispatchAsync<UpdateStockKeepingUnitDetails.Command, ServiceResult<StockKeepingUnitDetails>>(command, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> DeactivateStockKeepingUnitAsync(
+        Guid stockKeepingUnitId,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var command = new DeactivateStockKeepingUnit.Command(stockKeepingUnitId);
+
+        var result = await commandDispatcher
+            .DispatchAsync<DeactivateStockKeepingUnit.Command, ServiceResult<StockKeepingUnitDetails>>(command, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> ReactivateStockKeepingUnitAsync(
+        Guid stockKeepingUnitId,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var command = new ReactivateStockKeepingUnit.Command(stockKeepingUnitId);
+
+        var result = await commandDispatcher
+            .DispatchAsync<ReactivateStockKeepingUnit.Command, ServiceResult<StockKeepingUnitDetails>>(command, cancellationToken);
 
         return result.ToHttpResult();
     }
