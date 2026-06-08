@@ -204,4 +204,6 @@ cost.
 
 ## Complexity Tracking
 
-No constitution violations. No complexity exceptions are requested.
+| Exception | Reason | Rejected Simpler Alternative | Alternative Validation | Follow-up |
+|-----------|--------|------------------------------|------------------------|-----------|
+| Endpoint/UI automated test deferral under Constitution v1.0.1 | Issue #32 introduces Catalog/SKU endpoint and browser UI behavior, but Myrmex does not yet have accepted endpoint integration or UI/component test infrastructure. Introducing bUnit, Playwright, WebApplicationFactory, or equivalent test-host infrastructure would be a cross-cutting testing decision outside the Catalog/SKU MVP scope. | Add new endpoint/UI automated test framework or broad test-host infrastructure inside issue #32. Rejected because it would expand the issue beyond the Catalog/SKU vertical slice. | Domain tests, command/query handler tests, persistence tests, API client tests, full regression tests, and manual API/UI validation through `quickstart.md`. | No follow-up is required before completing issue #32. A separate future issue may introduce accepted endpoint integration or UI/component test infrastructure if the project decides the extra coverage is worth the setup cost. |

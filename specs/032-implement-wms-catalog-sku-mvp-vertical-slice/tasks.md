@@ -4,7 +4,7 @@
 
 **Prerequisites**: `plan.md`, `spec.md`, `research.md`, `data-model.md`, `contracts/catalog-sku-api-and-ui-contract.md`, `quickstart.md`, `.specify/memory/constitution.md`, and `.specify/memory/myrmex-*.md`.
 
-**Tests**: Required by the Myrmex constitution for new domain rules, command/query handlers, persistence mappings, API clients, and critical UI behavior. Test tasks are listed before behavior-changing implementation tasks in each backend user-story phase.
+**Tests**: Required by the Myrmex constitution for new domain rules, command/query handlers, persistence mappings, and API clients. Endpoint and UI automated tests are conditional under Constitution v1.0.1 and are deferred for issue #32 through the plan's Complexity Tracking exception. Test tasks are listed before behavior-changing implementation tasks in each backend user-story phase.
 
 **Organization**: Tasks are backend-first. Browser UI create/edit/list/lifecycle behavior is delivered after backend capabilities and API-client contracts exist.
 
