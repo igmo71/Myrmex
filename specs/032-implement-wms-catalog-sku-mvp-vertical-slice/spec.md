@@ -114,7 +114,7 @@ A warehouse catalog user can update SKU descriptive details and deactivate or re
 - **DR-005**: Deactivation and reactivation are lifecycle changes; they must not delete the SKU or create another SKU.
 - **DR-006**: Repeating a deactivate request for an inactive SKU or a reactivate request for an active SKU is idempotent from a user perspective.
 - **DR-007**: SKU records do not carry stock quantity, barcode, unit-of-measure, packaging, receiving, LPN, picking, shipping, or integration state in this MVP.
-- **DR-008**: `UpdatedAtUtc` is empty when a SKU is created and is set only after a successful detail update, deactivate, or reactivate operation.
+- **DR-008**: `UpdatedAtUtc` is `null` when a SKU is created and is set only after a successful detail update, deactivate, or reactivate operation.
 - **DR-009**: StockKeepingUnit domain events are emitted for create, details updated, deactivated, and reactivated changes only when those changes occur.
 
 ### Observability & Error Handling *(mandatory when feature exposes runtime behavior)*
