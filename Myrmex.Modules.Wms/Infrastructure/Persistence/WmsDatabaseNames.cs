@@ -33,5 +33,9 @@ internal static class WmsDatabaseNames
     public const string StorageLocationStatusesTable = "storage_location_statuses";
     public const string StorageLocationStatusPrimaryKey = "PK_wms_storage_location_statuses";
     public const string StorageLocationStatusCodeUniqueIndex = "UX_wms_storage_location_statuses_code";
+
+    public const string StockKeepingUnitsTable = "stock_keeping_units";
+    public const string StockKeepingUnitPrimaryKey = "PK_wms_stock_keeping_units";
+    public const string StockKeepingUnitCodeUniqueIndex = "UX_wms_stock_keeping_units_code";
 }
 

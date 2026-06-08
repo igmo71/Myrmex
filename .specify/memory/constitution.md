@@ -1,23 +1,19 @@
 <!--
 Sync Impact Report
-Version change: template -> 1.0.0
+Version change: 1.0.0 -> 1.0.1
 Modified principles:
-- Template principle 1 -> I. Domain Model First
-- Template principle 2 -> II. Modular Monolith Boundaries
-- Template principle 3 -> III. Vertical Slices with Explicit Requests
-- Template principle 4 -> IV. Tests Protect Domain and Integration Behavior
-- Template principle 5 -> V. Pragmatic Simplicity and Observability
+- IV. Tests Protect Domain and Integration Behavior: clarified endpoint/UI automation expectations and exception requirements
 Added sections:
-- Architecture Constraints
-- Development Workflow
+- None
 Removed sections:
 - None
 Templates requiring updates:
 - ✅ updated: .specify/templates/plan-template.md
-- ✅ updated: .specify/templates/spec-template.md
+- ✅ verified: .specify/templates/spec-template.md
 - ✅ updated: .specify/templates/tasks-template.md
 - ✅ verified: .specify/templates/checklist-template.md
 - ✅ not present: .specify/templates/commands/
+- ✅ updated: .specify/memory/myrmex-testing-guidelines.md
 Follow-up TODOs:
 - None
 -->
@@ -63,12 +59,23 @@ Rationale: vertical slices keep WMS workflows small enough to test and evolve wh
 still exercising the full architecture.
 
 ### IV. Tests Protect Domain and Integration Behavior
-Domain invariants, command/query handlers, persistence mappings, API clients, and
-critical UI flows MUST have automated tests when changed or introduced. Tests MUST
-cover invalid inputs, inactive/reactivated states, identity and uniqueness rules,
-and persistence error mapping where those behaviors apply. Integration-style tests
-MUST be used for behavior that depends on EF Core, Aspire-hosted services, HTTP
-contracts, or dispatcher wiring.
+Domain invariants, command/query handlers, persistence mappings, and API clients
+MUST have automated tests when changed or introduced. Tests MUST cover invalid
+inputs, inactive/reactivated states, identity and uniqueness rules, and persistence
+error mapping where those behaviors apply.
+
+HTTP endpoint integration tests and UI/component tests SHOULD be included when
+suitable project test infrastructure already exists and the behavior cannot be
+adequately protected by lower-level automated tests. This principle does not
+require bUnit, Playwright, WebApplicationFactory, or any new test framework by
+default.
+
+A feature plan MAY document an exception for endpoint or UI automated tests when
+those tests would require new frameworks, broad test-host infrastructure, or
+setup disproportionate to the issue scope. The exception MUST state why automated
+endpoint or UI tests are deferred, which lower-level automated tests protect the
+same business behavior, what manual validation is required, and whether a
+follow-up issue is needed.
 
 Rationale: warehouse workflows depend on stable state transitions and reference
 data. Tests are the guardrail that allows iterative expansion without weakening
@@ -107,7 +114,8 @@ depend on them.
 
 Implementation MUST proceed in small, reviewable increments. Each increment MUST
 build successfully, preserve existing tests, and include new tests for changed
-domain rules, handlers, persistence behavior, API contracts, or critical UI flows.
+domain rules, handlers, persistence behavior, and API clients. Endpoint and UI
+test coverage MUST follow Principle IV's infrastructure and exception rules.
 
 ## Governance
 
@@ -124,4 +132,4 @@ Every feature plan and review MUST verify compliance with the Core Principles.
 Any exception MUST be documented in the plan's Complexity Tracking table with the
 reason, rejected simpler alternative, and migration or rollback expectation.
 
-**Version**: 1.0.0 | **Ratified**: 2026-06-04 | **Last Amended**: 2026-06-04
+**Version**: 1.0.1 | **Ratified**: 2026-06-04 | **Last Amended**: 2026-06-08

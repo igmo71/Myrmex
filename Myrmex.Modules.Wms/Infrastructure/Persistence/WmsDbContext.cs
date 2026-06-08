@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 using Myrmex.Modules.Wms.Topology.Domain.Zones;
@@ -13,6 +14,7 @@ internal sealed class WmsDbContext(DbContextOptions<WmsDbContext> options)
     public DbSet<StorageLocation> StorageLocations => Set<StorageLocation>();
     public DbSet<StorageLocationType> StorageLocationTypes => Set<StorageLocationType>();
     public DbSet<StorageLocationStatus> StorageLocationStatuses => Set<StorageLocationStatus>();
+    public DbSet<StockKeepingUnit> StockKeepingUnits => Set<StockKeepingUnit>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

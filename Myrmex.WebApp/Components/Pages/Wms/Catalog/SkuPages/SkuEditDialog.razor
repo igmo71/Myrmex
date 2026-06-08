@@ -1,0 +1,177 @@
+@using MudBlazor
+@using Myrmex.WebApp.Wms.Catalog
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Title</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudStack Spacing="3">
+                <MudTextField T="string"
+                              Label="Code"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Disabled="IsEditMode"
+                              Required="true"
+                              RequiredError="Code is required."
+                              MaxLength="32"
+                              @bind-Value="_model.Code" />
+
+                <MudTextField T="string"
+                              Label="Name"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Required="true"
+                              RequiredError="Name is required."
+                              MaxLength="200"
+                              @bind-Value="_model.Name" />
+
+                <MudTextField T="string"
+                              Label="Description"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Lines="3"
+                              MaxLength="1000"
+                              @bind-Value="_model.Description" />
+
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+                        @_errorMessage
+                    </MudAlert>
+                }
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel"
+                   Disabled="_isSaving">
+            Cancel
+        </MudButton>
+
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="SaveAsync"
+                   Disabled="_isSaving">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" />
+            }
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public StockKeepingUnitDetails? Sku { get; set; }
+
+    [Inject]
+    private WmsCatalogApiClient WmsCatalogApiClient { get; set; } = null!;
+
+    private MudForm? _form;
+    private readonly SkuEditModel _model = new();
+    private bool _isSaving;
+    private string? _errorMessage;
+
+    private bool IsEditMode => Sku is not null;
+
+    private string Title => IsEditMode ? "Edit SKU" : "Create SKU";
+
+    protected override void OnInitialized()
+    {
+        if (Sku is null)
+        {
+            return;
+        }
+
+        _model.Code = Sku.Code;
+        _model.Name = Sku.Name;
+        _model.Description = Sku.Description;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        _isSaving = true;
+        _errorMessage = null;
+
+        try
+        {
+            ApiResult<StockKeepingUnitDetails> result;
+
+            if (Sku is null)
+            {
+                CreateStockKeepingUnitRequest request = new(
+                    Code: _model.Code,
+                    Name: _model.Name,
+                    Description: _model.Description);
+
+                result = await WmsCatalogApiClient.TryCreateStockKeepingUnitAsync(request);
+            }
+            else
+            {
+                UpdateStockKeepingUnitDetailsRequest request = new(
+                    Name: _model.Name,
+                    Description: _model.Description);
+
+                result = await WmsCatalogApiClient.TryUpdateStockKeepingUnitDetailsAsync(
+                    Sku.Id,
+                    request);
+            }
+
+            if (result.IsFailure)
+            {
+                _errorMessage = result.Error?.Message;
+                return;
+            }
+
+            if (result.Value is null)
+            {
+                _errorMessage = "The operation completed without returning SKU details.";
+                return;
+            }
+
+            MudDialog.Close(DialogResult.Ok(result.Value));
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private sealed class SkuEditModel
+    {
+        public string? Code { get; set; }
+
+        public string? Name { get; set; }
+
+        public string? Description { get; set; }
+    }
+}
