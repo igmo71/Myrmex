@@ -41,27 +41,27 @@
 
 > Write these tests first and ensure they fail before behavior-changing implementation.
 
-- [ ] T006 [P] [US1] Add StockKeepingUnit create validation, normalization, active-on-create, `UpdatedAtUtc` null, and created-domain-event tests in `Myrmex.Tests/Wms/Catalog/Domain/StockKeepingUnitTests.cs`
-- [ ] T007 [P] [US1] Add CreateStockKeepingUnit handler tests for invalid input, duplicate normalized `Code`, successful create, persisted details, and dispatched created event in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/CreateStockKeepingUnitHandlerTests.cs`
-- [ ] T008 [P] [US1] Add practical SQLite/EnsureCreated persistence tests for StockKeepingUnit table creation, absence of a `NormalizedCode` column, and unique normalized `Code` index in `Myrmex.Tests/Wms/Catalog/Persistence/StockKeepingUnitPersistenceTests.cs`
-- [ ] T009 [P] [US1] Add WmsCatalogApiClient create error-handling tests for ProblemDetails and malformed error fallback in `Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs`
+- [X] T006 [P] [US1] Add StockKeepingUnit create validation, normalization, active-on-create, `UpdatedAtUtc` null, and created-domain-event tests in `Myrmex.Tests/Wms/Catalog/Domain/StockKeepingUnitTests.cs`
+- [X] T007 [P] [US1] Add CreateStockKeepingUnit handler tests for invalid input, duplicate normalized `Code`, successful create, persisted details, and dispatched created event in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/CreateStockKeepingUnitHandlerTests.cs`
+- [X] T008 [P] [US1] Add practical SQLite/EnsureCreated persistence tests for StockKeepingUnit table creation, absence of a `NormalizedCode` column, and unique normalized `Code` index in `Myrmex.Tests/Wms/Catalog/Persistence/StockKeepingUnitPersistenceTests.cs`
+- [X] T009 [P] [US1] Add WmsCatalogApiClient create error-handling tests for ProblemDetails and malformed error fallback in `Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs`
 
 ### Implementation for User Story 1 Backend
 
-- [ ] T010 [US1] Implement StockKeepingUnit aggregate using existing `AggregateRoot`/`EntityBase` patterns in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnit.cs`
-- [ ] T011 [US1] Implement StockKeepingUnit created domain event in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnitEvents.cs`
-- [ ] T012 [US1] Implement StockKeepingUnitDetails projection in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/StockKeepingUnitDetails.cs`
-- [ ] T013 [US1] Add StockKeepingUnit DbSet to `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs`
-- [ ] T014 [US1] Implement StockKeepingUnit EF Core mapping with stored normalized `Code`, no `NormalizedCode`, nullable `UpdatedAtUtc`, and unique code index in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/StockKeepingUnitConfiguration.cs`
-- [ ] T015 [US1] Generate EF Core migration named `AddStockKeepingUnits`; expected generated files are `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/*_AddStockKeepingUnits.cs`, `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/*_AddStockKeepingUnits.Designer.cs`, and an updated `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/WmsDbContextModelSnapshot.cs`
-- [ ] T016 [US1] Add StockKeepingUnit duplicate-code behavior mapping to `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsPersistenceExceptionMapper.cs`
-- [ ] T017 [US1] Implement CreateStockKeepingUnit command and handler in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/CreateStockKeepingUnit.cs`
-- [ ] T018 [US1] Implement Catalog route group in `Myrmex.Modules.Wms/Catalog/Endpoints/CatalogEndpoints.cs`
-- [ ] T019 [US1] Map Catalog endpoints from `Myrmex.Modules.Wms/WmsModule.cs` without changing existing Topology endpoint registration behavior
-- [ ] T020 [US1] Implement create SKU endpoint and request contract in `Myrmex.Modules.Wms/Catalog/Endpoints/StockKeepingUnitEndpoints.cs`
-- [ ] T021 [US1] Implement local Catalog `ApiResult<T>` support type in `Myrmex.WebApp/Wms/Catalog/ApiResult.cs` without moving or rewriting Topology client support types
-- [ ] T022 [US1] Implement local Catalog `ApiException` support type in `Myrmex.WebApp/Wms/Catalog/ApiException.cs` without moving or rewriting Topology client support types
-- [ ] T023 [US1] Implement WmsCatalogApiClient create SKU request, details record, and write/action error handling in `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
+- [X] T010 [US1] Implement StockKeepingUnit aggregate using existing `AggregateRoot`/`EntityBase` patterns in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnit.cs`
+- [X] T011 [US1] Implement StockKeepingUnit created domain event in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnitEvents.cs`
+- [X] T012 [US1] Implement StockKeepingUnitDetails projection in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/StockKeepingUnitDetails.cs`
+- [X] T013 [US1] Add StockKeepingUnit DbSet to `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs`
+- [X] T014 [US1] Implement StockKeepingUnit EF Core mapping with stored normalized `Code`, no `NormalizedCode`, nullable `UpdatedAtUtc`, and unique code index in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/StockKeepingUnitConfiguration.cs`
+- [X] T015 [US1] Generate EF Core migration named `AddStockKeepingUnits`; expected generated files are `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/*_AddStockKeepingUnits.cs`, `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/*_AddStockKeepingUnits.Designer.cs`, and an updated `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/WmsDbContextModelSnapshot.cs`
+- [X] T016 [US1] Add StockKeepingUnit duplicate-code behavior mapping to `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsPersistenceExceptionMapper.cs`
+- [X] T017 [US1] Implement CreateStockKeepingUnit command and handler in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/CreateStockKeepingUnit.cs`
+- [X] T018 [US1] Implement Catalog route group in `Myrmex.Modules.Wms/Catalog/Endpoints/CatalogEndpoints.cs`
+- [X] T019 [US1] Map Catalog endpoints from `Myrmex.Modules.Wms/WmsModule.cs` without changing existing Topology endpoint registration behavior
+- [X] T020 [US1] Implement create SKU endpoint and request contract in `Myrmex.Modules.Wms/Catalog/Endpoints/StockKeepingUnitEndpoints.cs`
+- [X] T021 [US1] Implement local Catalog `ApiResult<T>` support type in `Myrmex.WebApp/Wms/Catalog/ApiResult.cs` without moving or rewriting Topology client support types
+- [X] T022 [US1] Implement local Catalog `ApiException` support type in `Myrmex.WebApp/Wms/Catalog/ApiException.cs` without moving or rewriting Topology client support types
+- [X] T023 [US1] Implement WmsCatalogApiClient create SKU request, details record, and write/action error handling in `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
 
 **Checkpoint**: User Story 1 backend/API/client behavior is fully functional and independently testable.
 

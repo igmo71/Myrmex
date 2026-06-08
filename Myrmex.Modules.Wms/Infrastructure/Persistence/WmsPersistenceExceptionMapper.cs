@@ -28,6 +28,10 @@ internal static class WmsPersistenceExceptionMapper
         {
             return WmsErrors.StorageLocationStatus.CodeAlreadyExists;
         }
+        if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.StockKeepingUnitCodeUniqueIndex))
+        {
+            return WmsErrors.StockKeepingUnit.CodeAlreadyExists;
+        }
         return null;
     }
 }

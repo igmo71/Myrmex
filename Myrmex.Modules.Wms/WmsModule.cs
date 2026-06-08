@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Myrmex.Modules.Wms.Catalog.Endpoints;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Endpoints;
 
@@ -23,6 +24,7 @@ public static class WmsModule
     public static IEndpointRouteBuilder MapWmsModule(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapTopologyEndpoints();
+        endpoints.MapCatalogEndpoints();
 
         return endpoints;
     }
