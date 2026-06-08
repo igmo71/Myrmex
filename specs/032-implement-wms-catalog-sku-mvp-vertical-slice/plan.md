@@ -174,6 +174,34 @@ Tasks must not include:
 
 No constitution violations. No complexity exceptions are requested.
 
+## Test Strategy Exception
+
+Issue #32 does not introduce new UI/component or HTTP endpoint integration test
+infrastructure.
+
+Automated coverage is provided by:
+
+- Domain tests for `StockKeepingUnit` invariants and lifecycle.
+- Command/query handler tests for create, list/get, update, deactivate, and reactivate.
+- Persistence tests for EF Core mapping and unique `Code` index.
+- API client tests for `ApiResult<T>`, `ApiException`, ProblemDetails, and fallback error behavior.
+
+Manual validation is required for:
+
+- Minimal API route behavior through the normal local application flow.
+- `/wms/catalog/skus` browser UI create, list, search, sort, update, deactivate,
+  reactivate, include-inactive, and validation-error behavior.
+
+This exception is accepted under Constitution v1.0.1 because introducing bUnit,
+Playwright, WebApplicationFactory, or equivalent endpoint/UI test-host
+infrastructure would be a separate cross-cutting testing decision outside the
+Catalog/SKU MVP scope.
+
+No follow-up issue is required before completing issue #32. A separate future
+issue may introduce accepted endpoint integration or UI component test
+infrastructure if the project decides that the extra coverage is worth the setup
+cost.
+
 ## Complexity Tracking
 
 No constitution violations. No complexity exceptions are requested.

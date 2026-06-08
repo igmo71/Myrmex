@@ -143,6 +143,7 @@
 - [ ] T052 Validate migration and model snapshot do not add `NormalizedCode`, Inventory, Barcode, UoM, Packaging, Receiving, LPN, Picking, Shipping, or Integration artifacts in `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations`
 - [ ] T053 Validate final diff does not create `Myrmex.Core/Domain/Entity.cs` or move/rewrite existing `Myrmex.WebApp/Wms/Topology` API client infrastructure
 - [ ] T054 Manually validate `/wms/catalog/skus` create, list, search, sort, update, deactivate, reactivate, include-inactive, and validation-error behavior against `specs/032-implement-wms-catalog-sku-mvp-vertical-slice/quickstart.md`
+- [ ] T055 Confirm the Constitution v1.0.1 endpoint/UI automated-test exception is documented in `specs/032-implement-wms-catalog-sku-mvp-vertical-slice/plan.md` and validated through `quickstart.md`
 
 ---
 
