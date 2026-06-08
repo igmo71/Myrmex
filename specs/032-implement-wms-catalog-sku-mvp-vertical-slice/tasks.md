@@ -122,12 +122,12 @@
 
 **Purpose**: Deliver the browser UI create/edit/list/lifecycle experience after backend capabilities and API-client contracts exist.
 
-- [ ] T043 Register WmsCatalogApiClient in `Myrmex.WebApp/Program.cs`
-- [ ] T044 Implement SKU list page route and loading behavior in `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages/Index.razor` and `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages/Index.razor.cs`
-- [ ] T045 Implement SKU filters component for search and include-inactive behavior in `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages/SkuFilters.razor`
-- [ ] T046 Implement SKU grid component with code, name, description, active state, timestamps, and action callbacks in `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages/SkuGrid.razor`
-- [ ] T047 Implement SKU create/edit dialog with code disabled in edit mode in `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages/SkuEditDialog.razor`
-- [ ] T048 Wire create, edit, deactivate, reactivate, snackbar, and reload behavior in `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages/Index.razor.cs`
+- [X] T043 Register WmsCatalogApiClient in `Myrmex.WebApp/Program.cs`
+- [X] T044 Implement SKU list page route and loading behavior in `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages/Index.razor` and `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages/Index.razor.cs`
+- [X] T045 Implement SKU filters component for search and include-inactive behavior in `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages/SkuFilters.razor`
+- [X] T046 Implement SKU grid component with code, name, description, active state, timestamps, and action callbacks in `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages/SkuGrid.razor`
+- [X] T047 Implement SKU create/edit dialog with code disabled in edit mode in `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages/SkuEditDialog.razor`
+- [X] T048 Wire create, edit, deactivate, reactivate, snackbar, and reload behavior in `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages/Index.razor.cs`
 
 **Checkpoint**: Browser UI create/edit/list/lifecycle behavior is available for manual validation.
 
