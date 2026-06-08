@@ -104,9 +104,11 @@ Myrmex.Tests/
     ├── Domain/StockKeepingUnitTests.cs
     ├── Features/StockKeepingUnits/
     │   ├── CreateStockKeepingUnitHandlerTests.cs
+    │   ├── ListStockKeepingUnitsHandlerTests.cs
+    │   ├── GetStockKeepingUnitByIdHandlerTests.cs
+    │   ├── UpdateStockKeepingUnitDetailsHandlerTests.cs
     │   ├── DeactivateStockKeepingUnitHandlerTests.cs
-    │   ├── ReactivateStockKeepingUnitHandlerTests.cs
-    │   └── UpdateStockKeepingUnitDetailsHandlerTests.cs
+    │   └── ReactivateStockKeepingUnitHandlerTests.cs
     └── Persistence/StockKeepingUnitPersistenceTests.cs
 ```
 
