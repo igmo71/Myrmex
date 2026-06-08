@@ -1,42 +1,51 @@
 ﻿<MudNavMenu>
-    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">
-        Home
-    </MudNavLink>
+	<MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">
+		Home
+	</MudNavLink>
 
-    <MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">
-        Counter
-    </MudNavLink>
+	<MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">
+		Counter
+	</MudNavLink>
 
-    <MudNavLink Href="weather" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">
-        Weather
-    </MudNavLink>
+	<MudNavLink Href="weather" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">
+		Weather
+	</MudNavLink>
 
-    <MudNavGroup Title="WMS"
-                 Icon="@Icons.Material.Filled.Warehouse"
-                 Expanded="true">
+	<MudNavGroup Title="WMS"
+				 Icon="@Icons.Material.Filled.Warehouse"
+				 Expanded="true">
 
-        <MudNavGroup Title="Topology"
-                     Icon="@Icons.Material.Filled.AccountTree"
-                     Expanded="true">
+		<MudNavGroup Title="Topology"
+					 Icon="@Icons.Material.Filled.AccountTree"
+					 Expanded="true">
 
-            <MudNavLink Href="wms/topology/warehouses"
-                        Match="NavLinkMatch.Prefix"
-                        Icon="@Icons.Material.Filled.Warehouse">
-                Warehouses
-            </MudNavLink>
+			<MudNavLink Href="wms/topology/warehouses"
+						Match="NavLinkMatch.Prefix"
+						Icon="@Icons.Material.Filled.Warehouse">
+				Warehouses
+			</MudNavLink>
 
-            <MudNavLink Href="wms/topology/zones"
-                        Match="NavLinkMatch.Prefix"
-                        Icon="@Icons.Material.Filled.AccountTree">
-                Zones
-            </MudNavLink>
+			<MudNavLink Href="wms/topology/zones"
+						Match="NavLinkMatch.Prefix"
+						Icon="@Icons.Material.Filled.AccountTree">
+				Zones
+			</MudNavLink>
 
-            <MudNavLink Href="wms/topology/locations"
-                        Match="NavLinkMatch.Prefix"
-                        Icon="@Icons.Material.Filled.LocationOn">
-                Storage Locations
-            </MudNavLink>
+			<MudNavLink Href="wms/topology/locations"
+						Match="NavLinkMatch.Prefix"
+						Icon="@Icons.Material.Filled.LocationOn">
+				Storage Locations
+			</MudNavLink>
+		</MudNavGroup>
+		<MudNavGroup Title="Catalog"
+					 Icon="@Icons.Material.Filled.Category"
+					 Expanded="true">
+			<MudNavLink Href="wms/catalog/skus"
+						Match="NavLinkMatch.Prefix"
+						Icon="@Icons.Material.Filled.Inventory2">
+				SKUs
+			</MudNavLink>
+		</MudNavGroup>
+	</MudNavGroup>
 
-        </MudNavGroup>
-    </MudNavGroup>
 </MudNavMenu>
