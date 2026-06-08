@@ -75,16 +75,16 @@
 
 ### Tests for User Story 2 Backend
 
-- [ ] T024 [P] [US2] Add ListStockKeepingUnits handler tests for active-only default, include inactive, search, bounded paging, supported sorting, and fallback code ordering in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/ListStockKeepingUnitsHandlerTests.cs`
-- [ ] T025 [P] [US2] Add GetStockKeepingUnitById handler tests for existing active SKU, existing inactive SKU, and missing SKU not-found result in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/GetStockKeepingUnitByIdHandlerTests.cs`
-- [ ] T026 [P] [US2] Add WmsCatalogApiClient read/load error-handling tests for list/get ProblemDetails and malformed error fallback in `Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs`
+- [X] T024 [P] [US2] Add ListStockKeepingUnits handler tests for active-only default, include inactive, search, bounded paging, supported sorting, and fallback code ordering in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/ListStockKeepingUnitsHandlerTests.cs`
+- [X] T025 [P] [US2] Add GetStockKeepingUnitById handler tests for existing active SKU, existing inactive SKU, and missing SKU not-found result in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/GetStockKeepingUnitByIdHandlerTests.cs`
+- [X] T026 [P] [US2] Add WmsCatalogApiClient read/load error-handling tests for list/get ProblemDetails and malformed error fallback in `Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs`
 
 ### Implementation for User Story 2 Backend
 
-- [ ] T027 [US2] Implement ListStockKeepingUnits query and handler with active filtering, search, bounded paging, and local-pattern sorting in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/ListStockKeepingUnits.cs`
-- [ ] T028 [US2] Implement GetStockKeepingUnitById query and handler in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/GetStockKeepingUnitById.cs`
-- [ ] T029 [US2] Add list and get SKU endpoints to `Myrmex.Modules.Wms/Catalog/Endpoints/StockKeepingUnitEndpoints.cs`
-- [ ] T030 [US2] Add ListRequest, ListResult, list method, and get method to `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
+- [X] T027 [US2] Implement ListStockKeepingUnits query and handler with active filtering, search, bounded paging, and local-pattern sorting in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/ListStockKeepingUnits.cs`
+- [X] T028 [US2] Implement GetStockKeepingUnitById query and handler in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/GetStockKeepingUnitById.cs`
+- [X] T029 [US2] Add list and get SKU endpoints to `Myrmex.Modules.Wms/Catalog/Endpoints/StockKeepingUnitEndpoints.cs`
+- [X] T030 [US2] Add ListRequest, ListResult, list method, and get method to `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
 
 **Checkpoint**: User Stories 1 and 2 backend/API/client behavior work independently.
 
