@@ -167,7 +167,7 @@ Events are emitted only when the matching state change occurs. No lifecycle even
 - Returns bounded items plus total count, skip, and take.
 - Default behavior excludes inactive SKUs.
 - Search matches code, name, and description.
-- Supported sorting includes code, name, created timestamp, updated timestamp, and active state, matching existing Warehouse/Zone list handler patterns.
+- Supported sorting includes code, name, and active state. Unknown sort fields fall back to code ordering.
 - Unknown or unsupported sort fields fall back to code ordering.
 
 ## Persistence Shape

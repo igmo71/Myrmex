@@ -71,7 +71,7 @@
 
 **Goal**: A catalog user can list active SKUs by default, include inactive SKUs, search by code/name/description, sort by existing local pattern fields, and retrieve a SKU by identity through backend/API-client paths.
 
-**Independent Test**: Create multiple SKUs, list active records, search by code/name, sort by `code`, `name`, `createdAtUtc`, `updatedAtUtc`, and `isActive`, retrieve by identity, and receive not-found for a missing identity. Browser UI list behavior is delivered in the frontend phase.
+**Independent Test**: Create multiple SKUs, list active records, search by code/name, sort by `code`, `name`, and `isActive`, retrieve by identity, and receive not-found for a missing identity. Browser UI list behavior is delivered in the frontend phase.
 
 ### Tests for User Story 2 Backend
 

@@ -99,7 +99,7 @@ On create, `updatedAtUtc` is `null`. It is set only after a successful update, d
 - Default list excludes inactive SKUs.
 - `includeInactive=true` includes inactive SKUs.
 - Search matches code, name, and description.
-- Supported `sortBy` values are `code`, `name`, `createdAtUtc`, `updatedAtUtc`, and `isActive`.
+- Supported `sortBy` values are `code`, `name`, and `isActive`.
 - Unknown sort fields fall back to code ordering.
 
 ### Get SKU By Id

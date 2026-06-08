@@ -90,7 +90,7 @@ After starting the application in the normal local development flow, verify:
 3. Creating ` item-001 ` again fails with duplicate-code feedback.
 4. Listing SKUs shows `ITEM-001` when active.
 5. Searching by `ITEM` or the SKU name returns the SKU.
-6. Sorting by code, name, created timestamp, updated timestamp, and active state follows existing WMS list behavior.
+6. Sorting by code, name, and active state follows the Catalog/SKU list behavior.
 7. Updating name or description succeeds, preserves code, and sets `updatedAtUtc`.
 8. Deactivating hides the SKU from the default list and sets `updatedAtUtc`.
 9. Including inactive records shows the deactivated SKU.

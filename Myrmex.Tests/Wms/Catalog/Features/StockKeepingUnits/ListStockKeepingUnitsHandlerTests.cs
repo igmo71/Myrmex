@@ -122,32 +122,23 @@ public sealed class ListStockKeepingUnitsHandlerTests
     [Theory]
     [InlineData("code")]
     [InlineData("name")]
-    [InlineData("createdAtUtc")]
-    [InlineData("updatedAtUtc")]
     [InlineData("isActive")]
     public async Task HandleAsync_WhenSortByIsSupported_SortsByRequestedField(string sortBy)
     {
         // Arrange
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
 
-        DateTimeOffset older = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
-        DateTimeOffset newer = new(2026, 1, 2, 0, 0, 0, TimeSpan.Zero);
-
         await AddStockKeepingUnitAsync(
             testDbContext,
             "ITEM-A",
             "Alpha",
-            isActive: false,
-            createdAtUtc: older,
-            updatedAtUtc: older);
+            isActive: false);
 
         await AddStockKeepingUnitAsync(
             testDbContext,
             "ITEM-B",
             "Beta",
-            isActive: true,
-            createdAtUtc: newer,
-            updatedAtUtc: newer);
+            isActive: true);
 
         ListStockKeepingUnits.Handler handler = new(testDbContext.DbContext);
 
@@ -226,9 +217,7 @@ public sealed class ListStockKeepingUnitsHandlerTests
         string code,
         string name,
         string? description = null,
-        bool isActive = true,
-        DateTimeOffset? createdAtUtc = null,
-        DateTimeOffset? updatedAtUtc = null)
+        bool isActive = true)
     {
         var result = StockKeepingUnit.Create(
             code,
@@ -245,20 +234,6 @@ public sealed class ListStockKeepingUnitsHandlerTests
         testDbContext.DbContext.Entry(stockKeepingUnit)
             .Property(nameof(StockKeepingUnit.IsActive))
             .CurrentValue = isActive;
-
-        if (createdAtUtc is not null)
-        {
-            testDbContext.DbContext.Entry(stockKeepingUnit)
-                .Property(nameof(StockKeepingUnit.CreatedAtUtc))
-                .CurrentValue = createdAtUtc.Value;
-        }
-
-        if (updatedAtUtc is not null)
-        {
-            testDbContext.DbContext.Entry(stockKeepingUnit)
-                .Property(nameof(StockKeepingUnit.UpdatedAtUtc))
-                .CurrentValue = updatedAtUtc.Value;
-        }
 
         await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
