@@ -137,13 +137,23 @@
 
 **Purpose**: Verify the complete vertical slice, preserve existing behavior, and prevent scope drift.
 
-- [ ] T049 Run solution build with `dotnet build Myrmex.slnx -nologo -v:minimal` and record results in the implementation summary
-- [ ] T050 Run Catalog/SKU-focused tests with `dotnet test Myrmex.Tests/Myrmex.Tests.csproj -nologo -v:minimal --filter "FullyQualifiedName~Wms.Catalog"` and record results in the implementation summary
-- [ ] T051 Run full regression tests with `dotnet test Myrmex.Tests/Myrmex.Tests.csproj -nologo -v:minimal` and record results in the implementation summary
-- [ ] T052 Validate migration and model snapshot do not add `NormalizedCode`, Inventory, Barcode, UoM, Packaging, Receiving, LPN, Picking, Shipping, or Integration artifacts in `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations`
-- [ ] T053 Validate final diff does not create `Myrmex.Core/Domain/Entity.cs` or move/rewrite existing `Myrmex.WebApp/Wms/Topology` API client infrastructure
-- [ ] T054 Manually validate `/wms/catalog/skus` create, list, search, sort, update, deactivate, reactivate, include-inactive, and validation-error behavior against `specs/032-implement-wms-catalog-sku-mvp-vertical-slice/quickstart.md`
-- [ ] T055 Confirm the Constitution v1.0.1 endpoint/UI automated-test exception is documented in `specs/032-implement-wms-catalog-sku-mvp-vertical-slice/plan.md` and validated through `quickstart.md`
+- [X] T049 Run solution build with `dotnet build Myrmex.slnx -nologo -v:minimal` and record results in the implementation summary
+- [X] T050 Run Catalog/SKU-focused tests with `dotnet test Myrmex.Tests/Myrmex.Tests.csproj -nologo -v:minimal --filter "FullyQualifiedName~Wms.Catalog"` and record results in the implementation summary
+- [X] T051 Run full regression tests with `dotnet test Myrmex.Tests/Myrmex.Tests.csproj -nologo -v:minimal` and record results in the implementation summary
+- [X] T052 Validate migration and model snapshot do not add `NormalizedCode`, Inventory, Barcode, UoM, Packaging, Receiving, LPN, Picking, Shipping, or Integration artifacts in `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations`
+- [X] T053 Validate final diff does not create `Myrmex.Core/Domain/Entity.cs` or move/rewrite existing `Myrmex.WebApp/Wms/Topology` API client infrastructure
+- [X] T054 Manually validate `/wms/catalog/skus` create, list, search, sort, update, deactivate, reactivate, include-inactive, and validation-error behavior against `specs/032-implement-wms-catalog-sku-mvp-vertical-slice/quickstart.md`
+- [X] T055 Confirm the Constitution v1.0.1 endpoint/UI automated-test exception is documented in `specs/032-implement-wms-catalog-sku-mvp-vertical-slice/plan.md` and validated through `quickstart.md`
+
+### Phase 7 Validation Results
+
+- `dotnet build Myrmex.slnx -nologo -v:minimal`: passed.
+- `dotnet test Myrmex.Tests\Myrmex.Tests.csproj -nologo -v:minimal --filter "FullyQualifiedName~Wms.Catalog"`: passed.
+- `dotnet test Myrmex.Tests\Myrmex.Tests.csproj -nologo -v:minimal`: passed.
+- Migration/scope check: no `NormalizedCode` or excluded roadmap artifacts.
+- `Entity.cs` check: no `Myrmex.Core\Domain\Entity.cs`.
+- Topology client check: existing WMS Topology API client infrastructure was not moved or rewritten.
+- Manual UI smoke for `/wms/catalog/skus`: passed.
 
 ---
 
