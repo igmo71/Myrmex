@@ -43,4 +43,16 @@ internal static class WmsErrors
         public static ServiceError CodeAlreadyExists => ServiceErrors.Conflict("StorageLocationStatus.CodeAlreadyExists", "Storage location status with the same code already exists.", "code");
         public static ServiceError CreateFailed => ServiceErrors.Failure("StorageLocationStatus.CreateFailed", "Storage location status creation failed unexpectedly.");
     }
+
+    internal static class StockKeepingUnit
+    {
+        public static ServiceError NotFound => ServiceErrors.NotFound("StockKeepingUnit.NotFound", "Stock keeping unit was not found.");
+        public static ServiceError NotFoundById => ServiceErrors.NotFound("StockKeepingUnit.NotFound", "Stock keeping unit was not found.", "stockKeepingUnitId");
+        public static ServiceError CodeAlreadyExists => ServiceErrors.Conflict("StockKeepingUnit.CodeAlreadyExists", "Stock keeping unit with the same code already exists.", "code");
+        public static ServiceError ValidationFailed => ServiceErrors.Failure("StockKeepingUnit.ValidationFailed", "Stock keeping unit validation failed.");
+        public static ServiceError CreateFailed => ServiceErrors.Failure("StockKeepingUnit.CreateFailed", "Stock keeping unit creation failed unexpectedly.");
+        public static ServiceError UpdateFailed => ServiceErrors.Failure("StockKeepingUnit.UpdateFailed", "Stock keeping unit update failed unexpectedly.");
+        public static ServiceError DeactivateFailed => ServiceErrors.Failure("StockKeepingUnit.DeactivateFailed", "Stock keeping unit deactivation failed unexpectedly.");
+        public static ServiceError ReactivateFailed => ServiceErrors.Failure("StockKeepingUnit.ReactivateFailed", "Stock keeping unit reactivation failed unexpectedly.");
+    }
 }

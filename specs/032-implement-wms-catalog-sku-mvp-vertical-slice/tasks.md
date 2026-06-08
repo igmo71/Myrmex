@@ -12,9 +12,9 @@
 
 **Purpose**: Prepare Catalog/SKU folders and test folders without changing existing WMS Topology behavior.
 
-- [ ] T001 Create Catalog feature folders in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits`, `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits`, and `Myrmex.Modules.Wms/Catalog/Endpoints`
-- [ ] T002 Create Catalog web folders in `Myrmex.WebApp/Wms/Catalog` and `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages`
-- [ ] T003 Create Catalog test folders in `Myrmex.Tests/Wms/Catalog/Domain`, `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits`, `Myrmex.Tests/Wms/Catalog/Persistence`, and `Myrmex.Tests/Wms/Catalog/Client`
+- [X] T001 Create Catalog feature folders in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits`, `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits`, and `Myrmex.Modules.Wms/Catalog/Endpoints`
+- [X] T002 Create Catalog web folders in `Myrmex.WebApp/Wms/Catalog` and `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages`
+- [X] T003 Create Catalog test folders in `Myrmex.Tests/Wms/Catalog/Domain`, `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits`, `Myrmex.Tests/Wms/Catalog/Persistence`, and `Myrmex.Tests/Wms/Catalog/Client`
 
 ---
 
@@ -24,8 +24,8 @@
 
 **Guardrail**: Foundational declarations may introduce names and error identifiers required for compilation, but they must not implement behavior. Behavior-changing mapping, including duplicate-code persistence exception mapping, must be implemented after tests.
 
-- [ ] T004 Add StockKeepingUnit table, primary key, and unique code index constants to `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs`
-- [ ] T005 Add StockKeepingUnit error identifiers for not found, duplicate code, validation, and create/update/lifecycle failures to `Myrmex.Modules.Wms/WmsErrors.cs`
+- [X] T004 Add StockKeepingUnit table, primary key, and unique code index constants to `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs`
+- [X] T005 Add StockKeepingUnit error identifiers for not found, duplicate code, validation, and create/update/lifecycle failures to `Myrmex.Modules.Wms/WmsErrors.cs`
 
 **Checkpoint**: Backend declarations are ready; behavior-changing user-story work can begin.
 
