@@ -1,9 +1,30 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Web;
 
 namespace Myrmex.WebApp.Wms.Catalog;
 
 public sealed class WmsCatalogApiClient(HttpClient httpClient)
 {
+    public async Task<ListResult<StockKeepingUnitDetails>> ListStockKeepingUnitsAsync(
+        ListRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        string url = BuildUrl(
+            "/api/wms/catalog/skus",
+            request);
+
+        return await GetRequiredAsync<ListResult<StockKeepingUnitDetails>>(url, cancellationToken);
+    }
+
+    public async Task<StockKeepingUnitDetails> GetStockKeepingUnitByIdAsync(
+        Guid stockKeepingUnitId,
+        CancellationToken cancellationToken = default)
+    {
+        return await GetRequiredAsync<StockKeepingUnitDetails>(
+            $"/api/wms/catalog/skus/{stockKeepingUnitId}",
+            cancellationToken);
+    }
+
     public async Task<ApiResult<StockKeepingUnitDetails>> TryCreateStockKeepingUnitAsync(
         CreateStockKeepingUnitRequest request,
         CancellationToken cancellationToken = default)
@@ -12,6 +33,28 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
             "/api/wms/catalog/skus",
             request,
             cancellationToken);
+    }
+
+    private async Task<T> GetRequiredAsync<T>(
+        string url,
+        CancellationToken cancellationToken)
+    {
+        using HttpResponseMessage response = await httpClient.GetAsync(
+            url,
+            cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw await ReadApiExceptionAsync(
+                response,
+                $"GET '{url}'",
+                cancellationToken);
+        }
+
+        T? result = await response.Content.ReadFromJsonAsync<T>(cancellationToken);
+
+        return result ?? throw new InvalidOperationException(
+            $"API returned empty response for GET '{url}'.");
     }
 
     private async Task<ApiResult<T>> PostAsApiResultAsync<T>(
@@ -94,7 +137,60 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
             status: (int)response.StatusCode,
             message: fallbackMessage);
     }
+
+    private static async Task<ApiException> ReadApiExceptionAsync(
+        HttpResponseMessage response,
+        string operation,
+        CancellationToken cancellationToken)
+    {
+        ApiError error = await ReadApiErrorAsync(
+            response,
+            operation,
+            cancellationToken);
+
+        return new ApiException(
+            status: error.Status,
+            message: error.Message,
+            extensions: error.Extensions);
+    }
+
+    private static string BuildUrl(string path, ListRequest request)
+    {
+        List<string> query = [];
+
+        query.Add($"skip={request.Skip}");
+        query.Add($"take={request.Take}");
+
+        if (!string.IsNullOrWhiteSpace(request.SearchText))
+        {
+            query.Add($"searchText={HttpUtility.UrlEncode(request.SearchText)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SortBy))
+        {
+            query.Add($"sortBy={HttpUtility.UrlEncode(request.SortBy)}");
+        }
+
+        query.Add($"sortDescending={request.SortDescending.ToString().ToLowerInvariant()}");
+        query.Add($"includeInactive={request.IncludeInactive.ToString().ToLowerInvariant()}");
+
+        return $"{path}?{string.Join("&", query)}";
+    }
 }
+
+public sealed record ListRequest(
+    int Skip = 0,
+    int Take = 20,
+    string? SearchText = null,
+    string? SortBy = null,
+    bool SortDescending = false,
+    bool IncludeInactive = false);
+
+public sealed record ListResult<T>(
+    IReadOnlyList<T> Items,
+    int TotalCount,
+    int Skip,
+    int Take);
 
 public sealed record StockKeepingUnitDetails(
     Guid Id,

@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Myrmex.AppDispatching.CommandDispatching;
+using Myrmex.AppDispatching.QueryDispatching;
 using Myrmex.AspNetCore.Results;
+using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Features.StockKeepingUnits;
 
@@ -15,6 +17,14 @@ internal static class StockKeepingUnitEndpoints
         group.MapPost("/skus", CreateStockKeepingUnitAsync)
             .WithName("CreateStockKeepingUnit")
             .WithSummary("Create SKU");
+
+        group.MapGet("/skus/{stockKeepingUnitId:guid}", GetStockKeepingUnitByIdAsync)
+            .WithName("GetStockKeepingUnitById")
+            .WithSummary("Get SKU By Id");
+
+        group.MapGet("/skus", ListStockKeepingUnitsAsync)
+            .WithName("ListStockKeepingUnits")
+            .WithSummary("List SKUs");
 
         return group;
     }
@@ -36,6 +46,45 @@ internal static class StockKeepingUnitEndpoints
 
         var result = await commandDispatcher
             .DispatchAsync<CreateStockKeepingUnit.Command, ServiceResult<StockKeepingUnitDetails>>(command, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> GetStockKeepingUnitByIdAsync(
+        Guid stockKeepingUnitId,
+        IQueryDispatcher queryDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetStockKeepingUnitById.Query(stockKeepingUnitId);
+
+        var result = await queryDispatcher
+            .DispatchAsync<GetStockKeepingUnitById.Query, ServiceResult<StockKeepingUnitDetails>>(query, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> ListStockKeepingUnitsAsync(
+        int? skip,
+        int? take,
+        string? searchText,
+        string? sortBy,
+        bool? sortDescending,
+        bool? includeInactive,
+        IQueryDispatcher queryDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var query = new ListStockKeepingUnits.Query
+        {
+            Skip = skip ?? 0,
+            Take = take ?? ListQuery.DefaultTake,
+            SearchText = searchText,
+            SortBy = sortBy,
+            SortDescending = sortDescending ?? false,
+            IncludeInactive = includeInactive ?? false
+        };
+
+        var result = await queryDispatcher
+            .DispatchAsync<ListStockKeepingUnits.Query, ServiceResult<ListResult<StockKeepingUnitDetails>>>(query, cancellationToken);
 
         return result.ToHttpResult();
     }

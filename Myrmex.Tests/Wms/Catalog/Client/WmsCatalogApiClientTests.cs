@@ -6,6 +6,74 @@ namespace Myrmex.Tests.Wms.Catalog.Client;
 public sealed class WmsCatalogApiClientTests
 {
     [Fact]
+    public async Task ListStockKeepingUnitsAsync_WhenProblemDetailsReturned_ThrowsApiException()
+    {
+        // Arrange
+        const string problemJson = """
+            {
+              "type": "https://httpstatuses.com/500",
+              "title": "Internal Server Error",
+              "status": 500,
+              "detail": "Unexpected catalog API failure.",
+              "code": "Error.Unknown"
+            }
+            """;
+
+        using HttpClient httpClient = CreateHttpClient(
+            HttpStatusCode.InternalServerError,
+            problemJson,
+            "application/problem+json");
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        ListRequest request = new();
+
+        // Act
+        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
+            apiClient.ListStockKeepingUnitsAsync(
+                request,
+                TestContext.Current.CancellationToken));
+
+        // Assert
+        Assert.Equal(500, exception.Status);
+        Assert.Equal("Unexpected catalog API failure.", exception.Message);
+        Assert.Equal("Error.Unknown", exception.Extensions["code"]);
+    }
+
+    [Fact]
+    public async Task GetStockKeepingUnitByIdAsync_WhenProblemDetailsReturned_ThrowsApiException()
+    {
+        // Arrange
+        const string problemJson = """
+            {
+              "type": "https://httpstatuses.com/404",
+              "title": "Not Found",
+              "status": 404,
+              "detail": "Stock keeping unit was not found.",
+              "code": "StockKeepingUnit.NotFound"
+            }
+            """;
+
+        using HttpClient httpClient = CreateHttpClient(
+            HttpStatusCode.NotFound,
+            problemJson,
+            "application/problem+json");
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        // Act
+        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
+            apiClient.GetStockKeepingUnitByIdAsync(
+                Guid.NewGuid(),
+                TestContext.Current.CancellationToken));
+
+        // Assert
+        Assert.Equal(404, exception.Status);
+        Assert.Equal("Stock keeping unit was not found.", exception.Message);
+        Assert.Equal("StockKeepingUnit.NotFound", exception.Extensions["code"]);
+    }
+
+    [Fact]
     public async Task TryCreateStockKeepingUnitAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
     {
         // Arrange
@@ -47,6 +115,60 @@ public sealed class WmsCatalogApiClientTests
         Assert.Equal("SKU with the same code already exists.", result.Error.Message);
         Assert.Equal("StockKeepingUnit.CodeAlreadyExists", result.Error.Extensions["code"]);
         Assert.Equal("code", result.Error.Extensions["field"]);
+    }
+
+    [Fact]
+    public async Task ListStockKeepingUnitsAsync_WhenMalformedErrorReturned_ThrowsApiExceptionWithFallbackMessage()
+    {
+        // Arrange
+        using HttpClient httpClient = CreateHttpClient(
+            HttpStatusCode.BadRequest,
+            "not a valid problem details json",
+            "application/problem+json");
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        ListRequest request = new();
+
+        // Act
+        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
+            apiClient.ListStockKeepingUnitsAsync(
+                request,
+                TestContext.Current.CancellationToken));
+
+        // Assert
+        Assert.Equal(400, exception.Status);
+        Assert.Equal(
+            "API request failed for GET '/api/wms/catalog/skus?skip=0&take=20&sortDescending=false&includeInactive=false'. Status code: 400 BadRequest.",
+            exception.Message);
+        Assert.Empty(exception.Extensions);
+    }
+
+    [Fact]
+    public async Task GetStockKeepingUnitByIdAsync_WhenMalformedErrorReturned_ThrowsApiExceptionWithFallbackMessage()
+    {
+        // Arrange
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000001");
+
+        using HttpClient httpClient = CreateHttpClient(
+            HttpStatusCode.BadRequest,
+            "not a valid problem details json",
+            "application/problem+json");
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        // Act
+        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
+            apiClient.GetStockKeepingUnitByIdAsync(
+                stockKeepingUnitId,
+                TestContext.Current.CancellationToken));
+
+        // Assert
+        Assert.Equal(400, exception.Status);
+        Assert.Equal(
+            $"API request failed for GET '/api/wms/catalog/skus/{stockKeepingUnitId}'. Status code: 400 BadRequest.",
+            exception.Message);
+        Assert.Empty(exception.Extensions);
     }
 
     [Fact]
