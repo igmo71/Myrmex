@@ -26,6 +26,18 @@ internal static class UnitOfMeasureEndpoints
             .WithName("ListUnitsOfMeasure")
             .WithSummary("List UoMs");
 
+        group.MapPut("/uoms/{unitOfMeasureId:guid}", UpdateUnitOfMeasureDetailsAsync)
+            .WithName("UpdateUnitOfMeasureDetails")
+            .WithSummary("Update UoM Details");
+
+        group.MapPost("/uoms/{unitOfMeasureId:guid}/deactivate", DeactivateUnitOfMeasureAsync)
+            .WithName("DeactivateUnitOfMeasure")
+            .WithSummary("Deactivate UoM");
+
+        group.MapPost("/uoms/{unitOfMeasureId:guid}/reactivate", ReactivateUnitOfMeasureAsync)
+            .WithName("ReactivateUnitOfMeasure")
+            .WithSummary("Reactivate UoM");
+
         return group;
     }
 
@@ -46,6 +58,53 @@ internal static class UnitOfMeasureEndpoints
 
         var result = await commandDispatcher
             .DispatchAsync<CreateUnitOfMeasure.Command, ServiceResult<UnitOfMeasureDetails>>(command, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private sealed record UpdateUnitOfMeasureDetailsRequest(
+        string? Name,
+        string? Symbol);
+
+    private static async Task<IResult> UpdateUnitOfMeasureDetailsAsync(
+        Guid unitOfMeasureId,
+        UpdateUnitOfMeasureDetailsRequest request,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateUnitOfMeasureDetails.Command(
+            UnitOfMeasureId: unitOfMeasureId,
+            Name: request.Name,
+            Symbol: request.Symbol);
+
+        var result = await commandDispatcher
+            .DispatchAsync<UpdateUnitOfMeasureDetails.Command, ServiceResult<UnitOfMeasureDetails>>(command, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> DeactivateUnitOfMeasureAsync(
+        Guid unitOfMeasureId,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var command = new DeactivateUnitOfMeasure.Command(unitOfMeasureId);
+
+        var result = await commandDispatcher
+            .DispatchAsync<DeactivateUnitOfMeasure.Command, ServiceResult<UnitOfMeasureDetails>>(command, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> ReactivateUnitOfMeasureAsync(
+        Guid unitOfMeasureId,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var command = new ReactivateUnitOfMeasure.Command(unitOfMeasureId);
+
+        var result = await commandDispatcher
+            .DispatchAsync<ReactivateUnitOfMeasure.Command, ServiceResult<UnitOfMeasureDetails>>(command, cancellationToken);
 
         return result.ToHttpResult();
     }

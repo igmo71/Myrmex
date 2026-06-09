@@ -26,6 +26,50 @@ internal sealed class UnitOfMeasure : AggregateRoot
 
     public string? Symbol { get; private set; }
 
+    public DomainValidationResult UpdateDetails(
+        string? name,
+        string? symbol)
+    {
+        DomainValidationResult validationResult = ValidateDetails(
+            name,
+            symbol);
+
+        if (!validationResult.IsValid)
+        {
+            return validationResult;
+        }
+
+        Name = DomainText.NormalizeRequiredText(name);
+        Symbol = DomainText.NormalizeOptionalText(symbol);
+
+        Touch();
+        AddDomainEvent(new UnitOfMeasureDetailsUpdatedDomainEvent(Id));
+
+        return DomainValidationResult.Valid;
+    }
+
+    public void Deactivate()
+    {
+        if (!IsActive)
+        {
+            return;
+        }
+
+        MarkDeactivated();
+        AddDomainEvent(new UnitOfMeasureDeactivatedDomainEvent(Id));
+    }
+
+    public void Reactivate()
+    {
+        if (IsActive)
+        {
+            return;
+        }
+
+        MarkReactivated();
+        AddDomainEvent(new UnitOfMeasureReactivatedDomainEvent(Id));
+    }
+
     public static DomainValidationResult Create(
         string? code,
         string? name,
@@ -76,6 +120,21 @@ internal sealed class UnitOfMeasure : AggregateRoot
                 $"UoM code must not exceed {MaxCodeLength} characters.",
                 "code"));
         }
+
+        DomainValidationResult detailsValidationResult = ValidateDetails(
+            name,
+            symbol);
+
+        errors.AddRange(detailsValidationResult.Errors);
+
+        return DomainValidationResult.From(errors);
+    }
+
+    public static DomainValidationResult ValidateDetails(
+        string? name,
+        string? symbol)
+    {
+        List<DomainValidationFailure> errors = [];
 
         string normalizedName = DomainText.NormalizeRequiredText(name);
 

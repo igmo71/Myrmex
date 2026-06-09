@@ -65,6 +65,37 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
+    public async Task<ApiResult<UnitOfMeasureDetails>> TryUpdateUnitOfMeasureDetailsAsync(
+        Guid unitOfMeasureId,
+        UpdateUnitOfMeasureDetailsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await PutAsApiResultAsync<UnitOfMeasureDetails>(
+            $"/api/wms/catalog/uoms/{unitOfMeasureId}",
+            request,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<UnitOfMeasureDetails>> TryDeactivateUnitOfMeasureAsync(
+        Guid unitOfMeasureId,
+        CancellationToken cancellationToken = default)
+    {
+        return await PostAsApiResultAsync<UnitOfMeasureDetails>(
+            $"/api/wms/catalog/uoms/{unitOfMeasureId}/deactivate",
+            value: null,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<UnitOfMeasureDetails>> TryReactivateUnitOfMeasureAsync(
+        Guid unitOfMeasureId,
+        CancellationToken cancellationToken = default)
+    {
+        return await PostAsApiResultAsync<UnitOfMeasureDetails>(
+            $"/api/wms/catalog/uoms/{unitOfMeasureId}/reactivate",
+            value: null,
+            cancellationToken);
+    }
+
     public async Task<ApiResult<StockKeepingUnitDetails>> TryUpdateStockKeepingUnitDetailsAsync(
         Guid stockKeepingUnitId,
         UpdateStockKeepingUnitDetailsRequest request,
@@ -292,5 +323,9 @@ public sealed record UnitOfMeasureDetails(
 
 public sealed record CreateUnitOfMeasureRequest(
     string? Code,
+    string? Name,
+    string? Symbol);
+
+public sealed record UpdateUnitOfMeasureDetailsRequest(
     string? Name,
     string? Symbol);

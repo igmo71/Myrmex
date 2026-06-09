@@ -55,14 +55,38 @@
             </CellTemplate>
         </TemplateColumn>
 
-        @if (Actions is not null)
-        {
-            <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
-                <CellTemplate>
-                    @Actions(context.Item)
-                </CellTemplate>
-            </TemplateColumn>
-        }
+        <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                         Size="Size.Small"
+                         Dense="true"
+                         AnchorOrigin="Origin.BottomRight"
+                         TransformOrigin="Origin.TopRight">
+
+                    <MudMenuItem Icon="@Icons.Material.Filled.Edit"
+                                 OnClick="@(() => EditRequested.InvokeAsync(context.Item))">
+                        Edit
+                    </MudMenuItem>
+
+                    @if (context.Item.IsActive)
+                    {
+                        <MudMenuItem Icon="@Icons.Material.Filled.Block"
+                                     IconColor="Color.Error"
+                                     OnClick="@(() => DeactivateRequested.InvokeAsync(context.Item))">
+                            Deactivate
+                        </MudMenuItem>
+                    }
+                    else
+                    {
+                        <MudMenuItem Icon="@Icons.Material.Filled.Restore"
+                                     IconColor="Color.Success"
+                                     OnClick="@(() => ReactivateRequested.InvokeAsync(context.Item))">
+                            Reactivate
+                        </MudMenuItem>
+                    }
+                </MudMenu>
+            </CellTemplate>
+        </TemplateColumn>
     </Columns>
 
     <PagerContent>
@@ -78,5 +102,11 @@
     public bool IsLoading { get; set; }
 
     [Parameter]
-    public RenderFragment<UnitOfMeasureDetails>? Actions { get; set; }
+    public EventCallback<UnitOfMeasureDetails> EditRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<UnitOfMeasureDetails> DeactivateRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<UnitOfMeasureDetails> ReactivateRequested { get; set; }
 }

@@ -107,22 +107,22 @@
 
 ### Tests for User Story 3
 
-- [ ] T036 [P] [US3] Add focused UnitOfMeasure update/deactivate/reactivate domain tests including idempotent no-op lifecycle behavior in Myrmex.Tests/Wms/Catalog/Domain/UnitOfMeasureTests.cs
-- [ ] T037 [P] [US3] Add focused UpdateUnitOfMeasureDetails handler tests for success, validation failure, missing UoM, code preservation, and timestamp update in Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/UpdateUnitOfMeasureDetailsHandlerTests.cs
-- [ ] T038 [P] [US3] Add focused lifecycle handler tests for deactivate/reactivate success, missing UoM, and idempotent no-op behavior in Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/UnitOfMeasureLifecycleHandlerTests.cs
-- [ ] T039 [US3] Add UoM update/deactivate/reactivate client write-result wiring tests in Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs
+- [X] T036 [P] [US3] Add focused UnitOfMeasure update/deactivate/reactivate domain tests including idempotent no-op lifecycle behavior in Myrmex.Tests/Wms/Catalog/Domain/UnitOfMeasureTests.cs
+- [X] T037 [P] [US3] Add focused UpdateUnitOfMeasureDetails handler tests for success, validation failure, missing UoM, code preservation, and timestamp update in Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/UpdateUnitOfMeasureDetailsHandlerTests.cs
+- [X] T038 [P] [US3] Add focused lifecycle handler tests for deactivate/reactivate success, missing UoM, and idempotent no-op behavior in Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/UnitOfMeasureLifecycleHandlerTests.cs
+- [X] T039 [US3] Add UoM update/deactivate/reactivate client write-result wiring tests in Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs
 
 ### Implementation for User Story 3
 
-- [ ] T040 [US3] Implement UpdateDetails, Deactivate, and Reactivate behavior in Myrmex.Modules.Wms/Catalog/Domain/UnitsOfMeasure/UnitOfMeasure.cs
-- [ ] T041 [US3] Implement UpdateUnitOfMeasureDetails command/handler in Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/UpdateUnitOfMeasureDetails.cs
-- [ ] T042 [US3] Implement DeactivateUnitOfMeasure command/handler in Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/DeactivateUnitOfMeasure.cs
-- [ ] T043 [US3] Implement ReactivateUnitOfMeasure command/handler in Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/ReactivateUnitOfMeasure.cs
-- [ ] T044 [US3] Add update, deactivate, and reactivate UoM endpoints in Myrmex.Modules.Wms/Catalog/Endpoints/UnitOfMeasureEndpoints.cs
-- [ ] T045 [US3] Add TryUpdateUnitOfMeasureDetailsAsync, TryDeactivateUnitOfMeasureAsync, and TryReactivateUnitOfMeasureAsync to Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs
-- [ ] T046 [US3] Add edit-mode behavior to UoM dialog with code locked and name/symbol update support in Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages/UomEditDialog.razor
-- [ ] T047 [US3] Add edit/deactivate/reactivate handlers, snackbar feedback, and reload behavior to Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages/Index.razor.cs
-- [ ] T048 [US3] Wire UoM grid action callbacks for edit, deactivate, and reactivate in Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages/Index.razor
+- [X] T040 [US3] Implement UpdateDetails, Deactivate, and Reactivate behavior in Myrmex.Modules.Wms/Catalog/Domain/UnitsOfMeasure/UnitOfMeasure.cs
+- [X] T041 [US3] Implement UpdateUnitOfMeasureDetails command/handler in Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/UpdateUnitOfMeasureDetails.cs
+- [X] T042 [US3] Implement DeactivateUnitOfMeasure command/handler in Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/DeactivateUnitOfMeasure.cs
+- [X] T043 [US3] Implement ReactivateUnitOfMeasure command/handler in Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/ReactivateUnitOfMeasure.cs
+- [X] T044 [US3] Add update, deactivate, and reactivate UoM endpoints in Myrmex.Modules.Wms/Catalog/Endpoints/UnitOfMeasureEndpoints.cs
+- [X] T045 [US3] Add TryUpdateUnitOfMeasureDetailsAsync, TryDeactivateUnitOfMeasureAsync, and TryReactivateUnitOfMeasureAsync to Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs
+- [X] T046 [US3] Add edit-mode behavior to UoM dialog with code locked and name/symbol update support in Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages/UomEditDialog.razor
+- [X] T047 [US3] Add edit/deactivate/reactivate handlers, snackbar feedback, and reload behavior to Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages/Index.razor.cs
+- [X] T048 [US3] Wire UoM grid action callbacks for edit, deactivate, and reactivate in Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages/Index.razor
 
 **Checkpoint**: All user stories are independently functional through the repeated Catalog/UoM slice.
 

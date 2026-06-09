@@ -389,6 +389,262 @@ public sealed class WmsCatalogApiClientTests
     }
 
     [Fact]
+    public async Task TryUpdateUnitOfMeasureDetailsAsync_WhenSuccessful_PutsToUomRouteAndReturnsDetails()
+    {
+        // Arrange
+        const string responseJson = """
+            {
+              "id": "018f0000-0000-7000-8000-000000000002",
+              "code": "EA",
+              "name": "Each Updated",
+              "symbol": "each",
+              "isActive": true,
+              "createdAtUtc": "2026-06-09T00:00:00+00:00",
+              "updatedAtUtc": "2026-06-09T01:00:00+00:00"
+            }
+            """;
+
+        Guid unitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000002");
+
+        CapturingHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            responseJson,
+            "application/json");
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("https://myrmex.test")
+        };
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        UpdateUnitOfMeasureDetailsRequest request = new(
+            Name: "Each Updated",
+            Symbol: "each");
+
+        // Act
+        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryUpdateUnitOfMeasureDetailsAsync(
+            unitOfMeasureId,
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+
+        Assert.Equal(unitOfMeasureId, result.Value.Id);
+        Assert.Equal("EA", result.Value.Code);
+        Assert.Equal("Each Updated", result.Value.Name);
+        Assert.Equal("each", result.Value.Symbol);
+        Assert.NotNull(result.Value.UpdatedAtUtc);
+
+        Assert.Equal(HttpMethod.Put, handler.RequestMethod);
+        Assert.Equal($"/api/wms/catalog/uoms/{unitOfMeasureId}", handler.RequestPathAndQuery);
+        Assert.NotNull(handler.RequestContent);
+        Assert.Contains("\"name\":\"Each Updated\"", handler.RequestContent);
+        Assert.Contains("\"symbol\":\"each\"", handler.RequestContent);
+        Assert.DoesNotContain("\"code\"", handler.RequestContent);
+    }
+
+    [Fact]
+    public async Task TryUpdateUnitOfMeasureDetailsAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
+    {
+        // Arrange
+        const string problemJson = """
+            {
+              "type": "https://httpstatuses.com/404",
+              "title": "Not Found",
+              "status": 404,
+              "detail": "Unit of measure was not found.",
+              "code": "UnitOfMeasure.NotFound"
+            }
+            """;
+
+        using HttpClient httpClient = CreateHttpClient(
+            HttpStatusCode.NotFound,
+            problemJson,
+            "application/problem+json");
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        UpdateUnitOfMeasureDetailsRequest request = new(
+            Name: "Updated Each",
+            Symbol: null);
+
+        // Act
+        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryUpdateUnitOfMeasureDetailsAsync(
+            Guid.NewGuid(),
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.NotNull(result.Error);
+
+        Assert.Equal(404, result.Error.Status);
+        Assert.Equal("Unit of measure was not found.", result.Error.Message);
+        Assert.Equal("UnitOfMeasure.NotFound", result.Error.Extensions["code"]);
+    }
+
+    [Fact]
+    public async Task TryDeactivateUnitOfMeasureAsync_WhenSuccessful_PostsToUomDeactivateRouteAndReturnsDetails()
+    {
+        // Arrange
+        const string responseJson = """
+            {
+              "id": "018f0000-0000-7000-8000-000000000002",
+              "code": "EA",
+              "name": "Each",
+              "symbol": "ea",
+              "isActive": false,
+              "createdAtUtc": "2026-06-09T00:00:00+00:00",
+              "updatedAtUtc": "2026-06-09T01:00:00+00:00"
+            }
+            """;
+
+        Guid unitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000002");
+
+        CapturingHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            responseJson,
+            "application/json");
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("https://myrmex.test")
+        };
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        // Act
+        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryDeactivateUnitOfMeasureAsync(
+            unitOfMeasureId,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.False(result.Value.IsActive);
+
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal($"/api/wms/catalog/uoms/{unitOfMeasureId}/deactivate", handler.RequestPathAndQuery);
+    }
+
+    [Fact]
+    public async Task TryDeactivateUnitOfMeasureAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
+    {
+        // Arrange
+        const string problemJson = """
+            {
+              "type": "https://httpstatuses.com/404",
+              "title": "Not Found",
+              "status": 404,
+              "detail": "Unit of measure was not found.",
+              "code": "UnitOfMeasure.NotFound"
+            }
+            """;
+
+        using HttpClient httpClient = CreateHttpClient(
+            HttpStatusCode.NotFound,
+            problemJson,
+            "application/problem+json");
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        // Act
+        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryDeactivateUnitOfMeasureAsync(
+            Guid.NewGuid(),
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.NotNull(result.Error);
+
+        Assert.Equal(404, result.Error.Status);
+        Assert.Equal("Unit of measure was not found.", result.Error.Message);
+        Assert.Equal("UnitOfMeasure.NotFound", result.Error.Extensions["code"]);
+    }
+
+    [Fact]
+    public async Task TryReactivateUnitOfMeasureAsync_WhenSuccessful_PostsToUomReactivateRouteAndReturnsDetails()
+    {
+        // Arrange
+        const string responseJson = """
+            {
+              "id": "018f0000-0000-7000-8000-000000000002",
+              "code": "EA",
+              "name": "Each",
+              "symbol": "ea",
+              "isActive": true,
+              "createdAtUtc": "2026-06-09T00:00:00+00:00",
+              "updatedAtUtc": "2026-06-09T01:00:00+00:00"
+            }
+            """;
+
+        Guid unitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000002");
+
+        CapturingHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            responseJson,
+            "application/json");
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("https://myrmex.test")
+        };
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        // Act
+        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryReactivateUnitOfMeasureAsync(
+            unitOfMeasureId,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.True(result.Value.IsActive);
+
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal($"/api/wms/catalog/uoms/{unitOfMeasureId}/reactivate", handler.RequestPathAndQuery);
+    }
+
+    [Fact]
+    public async Task TryReactivateUnitOfMeasureAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
+    {
+        // Arrange
+        const string problemJson = """
+            {
+              "type": "https://httpstatuses.com/404",
+              "title": "Not Found",
+              "status": 404,
+              "detail": "Unit of measure was not found.",
+              "code": "UnitOfMeasure.NotFound"
+            }
+            """;
+
+        using HttpClient httpClient = CreateHttpClient(
+            HttpStatusCode.NotFound,
+            problemJson,
+            "application/problem+json");
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        // Act
+        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryReactivateUnitOfMeasureAsync(
+            Guid.NewGuid(),
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.NotNull(result.Error);
+
+        Assert.Equal(404, result.Error.Status);
+        Assert.Equal("Unit of measure was not found.", result.Error.Message);
+        Assert.Equal("UnitOfMeasure.NotFound", result.Error.Extensions["code"]);
+    }
+
+    [Fact]
     public async Task TryUpdateStockKeepingUnitDetailsAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
     {
         // Arrange

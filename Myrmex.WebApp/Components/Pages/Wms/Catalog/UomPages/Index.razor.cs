@@ -97,4 +97,81 @@ public partial class Index
 
         await LoadUnitsOfMeasureAsync();
     }
+
+    private async Task EditUnitOfMeasureAsync(UnitOfMeasureDetails unitOfMeasure)
+    {
+        DialogParameters parameters = new()
+        {
+            [nameof(UomEditDialog.UnitOfMeasure)] = unitOfMeasure
+        };
+
+        DialogOptions options = new()
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+
+        IDialogReference dialog = await DialogService
+            .ShowAsync<UomEditDialog>("Edit UoM", parameters, options);
+
+        DialogResult? result = await dialog.Result;
+
+        if (result is null || result.Canceled)
+        {
+            return;
+        }
+
+        Snackbar.Add("UoM updated.", Severity.Success);
+
+        await LoadUnitsOfMeasureAsync();
+    }
+
+    private async Task DeactivateUnitOfMeasureAsync(UnitOfMeasureDetails unitOfMeasure)
+    {
+        try
+        {
+            ApiResult<UnitOfMeasureDetails> result = await WmsCatalogApiClient
+                .TryDeactivateUnitOfMeasureAsync(unitOfMeasure.Id);
+
+            if (result.IsFailure)
+            {
+                Snackbar.Add(result.Error?.Message ?? "UoM deactivation failed.", Severity.Error);
+
+                return;
+            }
+
+            Snackbar.Add("UoM deactivated.", Severity.Success);
+
+            await LoadUnitsOfMeasureAsync();
+        }
+        catch (Exception exception)
+        {
+            Snackbar.Add(exception.Message, Severity.Error);
+        }
+    }
+
+    private async Task ReactivateUnitOfMeasureAsync(UnitOfMeasureDetails unitOfMeasure)
+    {
+        try
+        {
+            ApiResult<UnitOfMeasureDetails> result = await WmsCatalogApiClient
+                .TryReactivateUnitOfMeasureAsync(unitOfMeasure.Id);
+
+            if (result.IsFailure)
+            {
+                Snackbar.Add(result.Error?.Message ?? "UoM reactivation failed.", Severity.Error);
+
+                return;
+            }
+
+            Snackbar.Add("UoM reactivated.", Severity.Success);
+
+            await LoadUnitsOfMeasureAsync();
+        }
+        catch (Exception exception)
+        {
+            Snackbar.Add(exception.Message, Severity.Error);
+        }
+    }
 }

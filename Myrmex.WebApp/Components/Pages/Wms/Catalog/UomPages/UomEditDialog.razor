@@ -3,7 +3,7 @@
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">Create UoM</MudText>
+        <MudText Typo="Typo.h6">@Title</MudText>
     </TitleContent>
 
     <DialogContent>
@@ -13,6 +13,7 @@
                               Label="Code"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
+                              Disabled="IsEditMode"
                               Required="true"
                               RequiredError="Code is required."
                               MaxLength="32"
@@ -67,6 +68,9 @@
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
+    [Parameter]
+    public UnitOfMeasureDetails? UnitOfMeasure { get; set; }
+
     [Inject]
     private WmsCatalogApiClient WmsCatalogApiClient { get; set; } = null!;
 
@@ -74,6 +78,22 @@
     private readonly UomEditModel _model = new();
     private bool _isSaving;
     private string? _errorMessage;
+
+    private bool IsEditMode => UnitOfMeasure is not null;
+
+    private string Title => IsEditMode ? "Edit UoM" : "Create UoM";
+
+    protected override void OnInitialized()
+    {
+        if (UnitOfMeasure is null)
+        {
+            return;
+        }
+
+        _model.Code = UnitOfMeasure.Code;
+        _model.Name = UnitOfMeasure.Name;
+        _model.Symbol = UnitOfMeasure.Symbol;
+    }
 
     private async Task SaveAsync()
     {
@@ -94,13 +114,27 @@
 
         try
         {
-            CreateUnitOfMeasureRequest request = new(
-                Code: _model.Code,
-                Name: _model.Name,
-                Symbol: _model.Symbol);
+            ApiResult<UnitOfMeasureDetails> result;
 
-            ApiResult<UnitOfMeasureDetails> result = await WmsCatalogApiClient
-                .TryCreateUnitOfMeasureAsync(request);
+            if (UnitOfMeasure is null)
+            {
+                CreateUnitOfMeasureRequest request = new(
+                    Code: _model.Code,
+                    Name: _model.Name,
+                    Symbol: _model.Symbol);
+
+                result = await WmsCatalogApiClient.TryCreateUnitOfMeasureAsync(request);
+            }
+            else
+            {
+                UpdateUnitOfMeasureDetailsRequest request = new(
+                    Name: _model.Name,
+                    Symbol: _model.Symbol);
+
+                result = await WmsCatalogApiClient.TryUpdateUnitOfMeasureDetailsAsync(
+                    UnitOfMeasure.Id,
+                    request);
+            }
 
             if (result.IsFailure)
             {

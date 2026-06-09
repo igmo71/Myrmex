@@ -46,6 +46,9 @@
                     IncludeInactiveChanged="OnIncludeInactiveChanged" />
 
         <UomGrid UnitsOfMeasure="@_unitsOfMeasure"
-                 IsLoading="@_isLoading" />
+                 IsLoading="@_isLoading"
+                 EditRequested="EditUnitOfMeasureAsync"
+                 DeactivateRequested="DeactivateUnitOfMeasureAsync"
+                 ReactivateRequested="ReactivateUnitOfMeasureAsync" />
     </MudStack>
 </MudContainer>
