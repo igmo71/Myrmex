@@ -25,6 +25,26 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
+    public async Task<ListResult<UnitOfMeasureDetails>> ListUnitsOfMeasureAsync(
+        ListRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        string url = BuildUrl(
+            "/api/wms/catalog/uoms",
+            request);
+
+        return await GetRequiredAsync<ListResult<UnitOfMeasureDetails>>(url, cancellationToken);
+    }
+
+    public async Task<UnitOfMeasureDetails> GetUnitOfMeasureByIdAsync(
+        Guid unitOfMeasureId,
+        CancellationToken cancellationToken = default)
+    {
+        return await GetRequiredAsync<UnitOfMeasureDetails>(
+            $"/api/wms/catalog/uoms/{unitOfMeasureId}",
+            cancellationToken);
+    }
+
     public async Task<ApiResult<StockKeepingUnitDetails>> TryCreateStockKeepingUnitAsync(
         CreateStockKeepingUnitRequest request,
         CancellationToken cancellationToken = default)
@@ -32,6 +52,47 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
         return await PostAsApiResultAsync<StockKeepingUnitDetails>(
             "/api/wms/catalog/skus",
             request,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<UnitOfMeasureDetails>> TryCreateUnitOfMeasureAsync(
+        CreateUnitOfMeasureRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await PostAsApiResultAsync<UnitOfMeasureDetails>(
+            "/api/wms/catalog/uoms",
+            request,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<UnitOfMeasureDetails>> TryUpdateUnitOfMeasureDetailsAsync(
+        Guid unitOfMeasureId,
+        UpdateUnitOfMeasureDetailsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await PutAsApiResultAsync<UnitOfMeasureDetails>(
+            $"/api/wms/catalog/uoms/{unitOfMeasureId}",
+            request,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<UnitOfMeasureDetails>> TryDeactivateUnitOfMeasureAsync(
+        Guid unitOfMeasureId,
+        CancellationToken cancellationToken = default)
+    {
+        return await PostAsApiResultAsync<UnitOfMeasureDetails>(
+            $"/api/wms/catalog/uoms/{unitOfMeasureId}/deactivate",
+            value: null,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<UnitOfMeasureDetails>> TryReactivateUnitOfMeasureAsync(
+        Guid unitOfMeasureId,
+        CancellationToken cancellationToken = default)
+    {
+        return await PostAsApiResultAsync<UnitOfMeasureDetails>(
+            $"/api/wms/catalog/uoms/{unitOfMeasureId}/reactivate",
+            value: null,
             cancellationToken);
     }
 
@@ -250,3 +311,21 @@ public sealed record CreateStockKeepingUnitRequest(
 public sealed record UpdateStockKeepingUnitDetailsRequest(
     string? Name,
     string? Description);
+
+public sealed record UnitOfMeasureDetails(
+    Guid Id,
+    string Code,
+    string Name,
+    string? Symbol,
+    bool IsActive,
+    DateTimeOffset CreatedAtUtc,
+    DateTimeOffset? UpdatedAtUtc);
+
+public sealed record CreateUnitOfMeasureRequest(
+    string? Code,
+    string? Name,
+    string? Symbol);
+
+public sealed record UpdateUnitOfMeasureDetailsRequest(
+    string? Name,
+    string? Symbol);

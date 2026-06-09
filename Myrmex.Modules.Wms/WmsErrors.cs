@@ -55,4 +55,12 @@ internal static class WmsErrors
         public static ServiceError DeactivateFailed => ServiceErrors.Failure("StockKeepingUnit.DeactivateFailed", "Stock keeping unit deactivation failed unexpectedly.");
         public static ServiceError ReactivateFailed => ServiceErrors.Failure("StockKeepingUnit.ReactivateFailed", "Stock keeping unit reactivation failed unexpectedly.");
     }
+
+    internal static class UnitOfMeasure
+    {
+        public static ServiceError NotFound => ServiceErrors.NotFound("UnitOfMeasure.NotFound", "Unit of measure was not found.");
+        public static ServiceError NotFoundById => ServiceErrors.NotFound("UnitOfMeasure.NotFound", "Unit of measure was not found.", "unitOfMeasureId");
+        public static ServiceError CodeAlreadyExists => ServiceErrors.Conflict("UnitOfMeasure.CodeAlreadyExists", "Unit of measure with the same code already exists.", "code");
+        public static ServiceError CreateFailed => ServiceErrors.Failure("UnitOfMeasure.CreateFailed", "Unit of measure creation failed unexpectedly.");
+    }
 }

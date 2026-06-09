@@ -1,0 +1,112 @@
+@using MudBlazor
+@using Microsoft.AspNetCore.Components
+@using Myrmex.WebApp.Wms.Catalog
+
+<MudDataGrid T="UnitOfMeasureDetails"
+             Items="UnitsOfMeasure"
+             Loading="IsLoading"
+             Dense="true"
+             Hover="true"
+             Bordered="true"
+             Striped="true"
+             SortMode="SortMode.Multiple"
+             Filterable="false">
+    <Columns>
+        <PropertyColumn Property="x => x.Code" Title="Code" />
+        <PropertyColumn Property="x => x.Name" Title="Name" />
+
+        <TemplateColumn Title="Symbol" Sortable="false" Filterable="false">
+            <CellTemplate>
+                @context.Item.Symbol
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Active"
+                        Sortable="false"
+                        Filterable="false"
+                        CellClass="d-flex justify-center">
+            <CellTemplate>
+                @if (context.Item.IsActive)
+                {
+                    <MudTooltip Text="Active">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                 Color="Color.Success" />
+                    </MudTooltip>
+                }
+                else
+                {
+                    <MudTooltip Text="Inactive">
+                        <MudIcon Icon="@Icons.Material.Filled.Cancel"
+                                 Color="Color.Error" />
+                    </MudTooltip>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Created UTC" Sortable="false" Filterable="false">
+            <CellTemplate>
+                @context.Item.CreatedAtUtc
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Updated UTC" Sortable="false" Filterable="false">
+            <CellTemplate>
+                @context.Item.UpdatedAtUtc
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                         Size="Size.Small"
+                         Dense="true"
+                         AnchorOrigin="Origin.BottomRight"
+                         TransformOrigin="Origin.TopRight">
+
+                    <MudMenuItem Icon="@Icons.Material.Filled.Edit"
+                                 OnClick="@(() => EditRequested.InvokeAsync(context.Item))">
+                        Edit
+                    </MudMenuItem>
+
+                    @if (context.Item.IsActive)
+                    {
+                        <MudMenuItem Icon="@Icons.Material.Filled.Block"
+                                     IconColor="Color.Error"
+                                     OnClick="@(() => DeactivateRequested.InvokeAsync(context.Item))">
+                            Deactivate
+                        </MudMenuItem>
+                    }
+                    else
+                    {
+                        <MudMenuItem Icon="@Icons.Material.Filled.Restore"
+                                     IconColor="Color.Success"
+                                     OnClick="@(() => ReactivateRequested.InvokeAsync(context.Item))">
+                            Reactivate
+                        </MudMenuItem>
+                    }
+                </MudMenu>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager T="UnitOfMeasureDetails" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<UnitOfMeasureDetails> UnitsOfMeasure { get; set; } = [];
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public EventCallback<UnitOfMeasureDetails> EditRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<UnitOfMeasureDetails> DeactivateRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<UnitOfMeasureDetails> ReactivateRequested { get; set; }
+}

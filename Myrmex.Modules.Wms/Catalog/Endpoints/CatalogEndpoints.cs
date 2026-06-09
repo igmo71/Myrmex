@@ -13,6 +13,7 @@ internal static class CatalogEndpoints
             .WithTags("Wms Catalog");
 
         group.MapStockKeepingUnitEndpoints();
+        group.MapUnitOfMeasureEndpoints();
 
         return endpoints;
     }
