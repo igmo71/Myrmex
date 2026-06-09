@@ -1,10 +1,10 @@
-# Myrmex Architecture Memory
+# Myrmex Architecture
 
-This document is durable operational guidance for Myrmex agents and maintainers. It supersedes issue #30 stakeholder notes as day-to-day architecture guidance while preserving those notes as historical input.
+Durable solution and module structure guidance.
 
 ## Architecture Baseline
 
-Myrmex is a brownfield .NET WMS / fulfillment project. It uses:
+Myrmex is a brownfield .NET WMS and fulfillment project. It uses:
 
 - Modular monolith architecture.
 - Clean Architecture and DDD-inspired structure.
@@ -15,7 +15,7 @@ Myrmex is a brownfield .NET WMS / fulfillment project. It uses:
 - Blazor and MudBlazor.
 - Internal command/query/handler dispatching.
 
-Myrmex does not use MediatR. Do not introduce MediatR or another architectural framework without a separate approved issue and plan.
+Do not implement another architectural concept without a separate approved issue and plan.
 
 ## Module Boundaries
 
@@ -29,10 +29,15 @@ Use the existing repository boundaries:
 
 Future module changes must preserve these boundaries unless a separate approved plan documents the reason to diverge.
 
-## Style
+## Slice Conventions
 
-Prefer simple explicit code over broad generic abstractions. New abstractions must solve a current WMS problem and match existing local patterns.
+Deliver user-facing behavior as vertical slices with explicit request/response
+contracts, commands or queries, handlers, domain logic, persistence mapping, and
+UI/client integration where applicable.
 
-## Issue #30 Guardrails
+Use existing internal dispatching patterns for commands, queries, and domain
+events. Keep cross-module communication explicit through public module
+registration, API contracts, commands, queries, or events.
 
-Issue #30 is documentation-only. It must not change production code, test code, runtime behavior, migrations, UI, API, persistence, or frameworks.
+Prefer simple explicit code over broad generic abstractions. New abstractions
+must solve a current WMS problem and match existing local patterns.

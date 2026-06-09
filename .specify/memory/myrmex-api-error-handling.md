@@ -1,16 +1,12 @@
-# Myrmex API Error-Handling Memory
+# Myrmex API Error Handling
 
-This document records accepted API error-handling guidance for Myrmex.
+Durable API, result, and error conventions.
 
-## Accepted Convention
+## Conventions
 
 Write/action operations return `ApiResult<T>`.
 
 Read/load operations use exception-based flow that remains aware of user-facing ProblemDetails.
-
-## Documentation Scope
-
-Issue #30 documents this convention only. It must not change endpoints, API clients, ProblemDetails behavior, exception behavior, or service result shapes.
 
 ## Future Planning
 

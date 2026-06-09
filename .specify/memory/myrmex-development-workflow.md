@@ -1,43 +1,49 @@
-# Myrmex Development Workflow Memory
+# Myrmex Development Workflow
 
-This document is durable operational guidance for Myrmex Spec Kit and agent workflow.
+Durable workflow guidance for planning and implementation.
 
-## Supported Assistant Workflow
+## Spec Kit Workflow
 
-Myrmex uses Codex CLI skills for Spec Kit work:
+Use the repository's Spec Kit workflow for:
 
-- `$speckit-constitution`
-- `$speckit-specify`
-- `$speckit-plan`
-- `$speckit-tasks`
-- `$speckit-analyze`
-- `$speckit-implement`
+- constitution updates;
+- feature specifications;
+- implementation plans;
+- task lists;
+- cross-artifact analysis;
+- task execution.
 
-Do not assume Copilot Pro, Copilot Enterprise, or Copilot Chat slash-command capabilities.
+Do not assume product-specific slash-command support.
 
-## Active Plan Context
+## Feature Context
 
-`AGENTS.md` should point agents to durable `.specify/memory/myrmex-*.md` documents. When working on an active Spec Kit feature, also read that feature's current `specs/<feature>/plan.md`.
+`AGENTS.md` is only an entry point. Durable rules live in `.specify/memory/`.
+Feature-specific context belongs in `specs/<feature>/`.
 
-Do not leave `AGENTS.md` permanently pinned to an old feature plan after that issue is completed or merged.
+When working on a feature, read the current `specs/<feature>/spec.md`,
+`plan.md`, `tasks.md`, and related artifacts when present. Do not pin durable
+memory or `AGENTS.md` to a completed feature.
 
-## Issue #30 Implementation Meaning
+## Execution Boundaries
 
-For issue #30, `$speckit-implement` is allowed only as documentation execution from a docs-only `tasks.md`.
+Builds, tests, application startup, database updates, EF migration application,
+and infrastructure-affecting commands are performed manually by the developer.
+Do not run them automatically.
 
-For issue #30, "implement" means creating or updating documentation artifacts only. It does not allow production code, test code, runtime behavior, migrations, UI, API, persistence, or framework changes.
+Report recommended commands instead of executing them.
 
-## Task Generation Guard
+EF migration generation is a separate explicit step. Do not generate migrations
+unless the user or an approved task asks for that step directly.
 
-Tasks for issue #30 must not include:
+## Task Planning
 
-- Production code changes.
-- Test code changes.
-- Catalog/SKU implementation.
-- Inventory implementation.
-- Receiving implementation.
-- Integration implementation.
-- Broad refactoring.
-- New frameworks.
-- GetById/List query handler tests.
-- Runtime behavior, migration, UI, API, persistence, or framework changes.
+Tasks must be small, reviewable, and ordered by dependency. Identify required
+tests before implementation tasks that depend on them.
+
+Separate UI implementation into its own phase when practical.
+
+Documentation-only work must not include production code, test code, runtime
+behavior, persistence, API, UI, or framework changes.
+
+Prefer deleting obsolete guidance over carrying historical issue context in
+durable memory.

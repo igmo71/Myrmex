@@ -1,19 +1,15 @@
 <!--
 Sync Impact Report
-Version change: 1.0.0 -> 1.0.1
+Version change: 1.0.1 -> 1.0.2
 Modified principles:
-- IV. Tests Protect Domain and Integration Behavior: clarified endpoint/UI automation expectations and exception requirements
+- III. Vertical Slices with Explicit Requests: clarified migration scope language
+- IV. Tests Protect Domain and Integration Behavior: simplified validation wording
 Added sections:
 - None
 Removed sections:
 - None
 Templates requiring updates:
-- ✅ updated: .specify/templates/plan-template.md
-- ✅ verified: .specify/templates/spec-template.md
-- ✅ updated: .specify/templates/tasks-template.md
-- ✅ verified: .specify/templates/checklist-template.md
-- ✅ not present: .specify/templates/commands/
-- ✅ updated: .specify/memory/myrmex-testing-guidelines.md
+- Not reviewed in this documentation cleanup
 Follow-up TODOs:
 - None
 -->
@@ -51,9 +47,11 @@ complexity prematurely.
 User-facing behavior MUST be delivered as independently understandable vertical
 slices: endpoint, request/response contracts, command or query handler, domain
 logic, persistence mapping, and UI/client integration where applicable. Commands
-and queries MUST be explicit types handled through the internal dispatcher pattern.
-New slices MUST preserve existing API and UI behavior unless the plan identifies a
-breaking change and migration path.
+and queries MUST be explicit types handled through the internal dispatcher
+pattern. Schema-changing slices MUST identify EF Core mapping and migration
+needs; migration generation is an explicit task, not an assumed part of general
+implementation. New slices MUST preserve existing API and UI behavior unless the
+plan identifies a breaking change and migration path.
 
 Rationale: vertical slices keep WMS workflows small enough to test and evolve while
 still exercising the full architecture.
@@ -99,10 +97,11 @@ project's internal command/query/domain-event dispatchers. Feature plans MUST us
 these technologies and repository conventions unless they document a concrete
 reason to diverge.
 
-Persistence changes MUST include EF Core model configuration and migrations when
-schema changes are required. Public API changes MUST preserve consistent service
-result and problem-details behavior. UI changes MUST use the existing Blazor
-structure and API client patterns unless the plan approves a replacement.
+Persistence changes MUST include EF Core model configuration when schema changes
+are required and MUST identify whether migration generation is in scope. Public
+API changes MUST preserve consistent service result and problem-details
+behavior. UI changes MUST use the existing Blazor structure and API client
+patterns unless the plan approves a replacement.
 
 ## Development Workflow
 
@@ -112,10 +111,11 @@ again after design. Tasks MUST be grouped by user story, include exact file path
 and identify test tasks required by Principle IV before implementation tasks that
 depend on them.
 
-Implementation MUST proceed in small, reviewable increments. Each increment MUST
-build successfully, preserve existing tests, and include new tests for changed
-domain rules, handlers, persistence behavior, and API clients. Endpoint and UI
-test coverage MUST follow Principle IV's infrastructure and exception rules.
+Implementation MUST proceed in small, reviewable increments. Plans and task
+lists MUST state the recommended validation commands for build, test, startup,
+database, migration, and infrastructure checks, while execution boundaries are
+defined in durable workflow guidance. Endpoint and UI test coverage MUST follow
+Principle IV's infrastructure and exception rules.
 
 ## Governance
 
@@ -132,4 +132,4 @@ Every feature plan and review MUST verify compliance with the Core Principles.
 Any exception MUST be documented in the plan's Complexity Tracking table with the
 reason, rejected simpler alternative, and migration or rollback expectation.
 
-**Version**: 1.0.1 | **Ratified**: 2026-06-04 | **Last Amended**: 2026-06-08
+**Version**: 1.0.2 | **Ratified**: 2026-06-04 | **Last Amended**: 2026-06-09

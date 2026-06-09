@@ -1,8 +1,14 @@
 <!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the durable Myrmex
-memory documents in .specify/memory/myrmex-*.md.
+Read durable Myrmex guidance before changing plans, documentation, or code:
 
-For active issue #36 work, also read
-specs/036-implement-wms-catalog-uom-mvp-vertical-slice/plan.md.
+- `.specify/memory/constitution.md`
+- `.specify/memory/myrmex-architecture.md`
+- `.specify/memory/myrmex-development-workflow.md`
+- `.specify/memory/myrmex-roadmap.md`
+- `.specify/memory/myrmex-testing-guidelines.md`
+- `.specify/memory/myrmex-api-error-handling.md`
+
+For feature work, also read the current `specs/<feature>/` artifacts. Keep
+feature-specific context in `specs/<feature>/`, not in durable memory or this
+entry point.
 <!-- SPECKIT END -->
