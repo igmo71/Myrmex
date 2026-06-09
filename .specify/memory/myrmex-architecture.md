@@ -2,9 +2,9 @@
 
 Durable solution and module structure guidance.
 
-## Architecture Baseline
+## Solution Baseline
 
-Myrmex is a brownfield .NET WMS and fulfillment project. It uses:
+Myrmex is a .NET WMS and fulfillment platform for operational use. It uses:
 
 - Modular monolith architecture.
 - Clean Architecture and DDD-inspired structure.
@@ -27,13 +27,10 @@ Use the existing repository boundaries:
 - `Myrmex.Modules.Wms` for WMS capabilities.
 - `Myrmex.ApiService`, `Myrmex.WebApp`, and host projects for their existing application roles.
 
-Future module changes must preserve these boundaries unless a separate approved plan documents the reason to diverge.
+Future module changes must preserve these boundaries unless a separate approved
+plan documents the reason to diverge.
 
-## Slice Conventions
-
-Deliver user-facing behavior as vertical slices with explicit request/response
-contracts, commands or queries, handlers, domain logic, persistence mapping, and
-UI/client integration where applicable.
+## Local Pattern Guidance
 
 Use existing internal dispatching patterns for commands, queries, and domain
 events. Keep cross-module communication explicit through public module

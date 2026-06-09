@@ -11,6 +11,9 @@ When changed or introduced, the following need automated tests:
 - persistence mappings, indexes, uniqueness, and provider-sensitive behavior;
 - API clients, result envelopes, ProblemDetails mapping, and error handling.
 
+Plans should identify required test tasks before implementation tasks that
+depend on them.
+
 ## Reference-Data Slice Coverage
 
 Catalog/SKU is the representative reference-data vertical slice. Future

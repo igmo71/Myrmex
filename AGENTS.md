@@ -1,14 +1,11 @@
 <!-- SPECKIT START -->
-Read durable Myrmex guidance before changing plans, documentation, or code:
+Durable project guidance lives in `.specify/memory/`. Read only the files
+relevant to the task:
 
-- `.specify/memory/constitution.md`
-- `.specify/memory/myrmex-architecture.md`
-- `.specify/memory/myrmex-development-workflow.md`
-- `.specify/memory/myrmex-roadmap.md`
-- `.specify/memory/myrmex-testing-guidelines.md`
-- `.specify/memory/myrmex-api-error-handling.md`
+- `constitution.md` for stable principles and governance.
+- `myrmex-development-workflow.md` before executing or recommending work.
+- Architecture, testing, API, and roadmap memory only when that area is touched.
 
-For feature work, also read the current `specs/<feature>/` artifacts. Keep
-feature-specific context in `specs/<feature>/`, not in durable memory or this
-entry point.
+For feature work, start with `specs/<feature>/plan.md` and `tasks.md`. Read
+other feature artifacts only when directly relevant.
 <!-- SPECKIT END -->
