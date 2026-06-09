@@ -1,6 +1,6 @@
 # Feature Specification: WMS Catalog/UoM MVP Vertical Slice
 
-**Feature Branch**: `036-implement-wms-catalog-uom-mvp-vertical-slic`
+**Feature Branch**: `036-implement-wms-catalog-uom-mvp-vertical-slice`
 
 **Created**: 2026-06-09
 
