@@ -1,21 +1,6 @@
-# Myrmex Architecture Memory
+# Myrmex Architecture
 
-This document is durable operational guidance for Myrmex agents and maintainers. It supersedes issue #30 stakeholder notes as day-to-day architecture guidance while preserving those notes as historical input.
-
-## Architecture Baseline
-
-Myrmex is a brownfield .NET WMS / fulfillment project. It uses:
-
-- Modular monolith architecture.
-- Clean Architecture and DDD-inspired structure.
-- Vertical slices.
-- ASP.NET Core Minimal APIs.
-- EF Core.
-- Aspire.
-- Blazor and MudBlazor.
-- Internal command/query/handler dispatching.
-
-Myrmex does not use MediatR. Do not introduce MediatR or another architectural framework without a separate approved issue and plan.
+Durable solution and module structure guidance.
 
 ## Module Boundaries
 
@@ -29,10 +14,8 @@ Use the existing repository boundaries:
 
 Future module changes must preserve these boundaries unless a separate approved plan documents the reason to diverge.
 
-## Style
+## Local Pattern Guidance
+
+Use existing internal dispatching patterns for commands, queries, and domain events. Keep cross-module communication explicit through public module registration, API contracts, commands, queries, or events.
 
 Prefer simple explicit code over broad generic abstractions. New abstractions must solve a current WMS problem and match existing local patterns.
-
-## Issue #30 Guardrails
-
-Issue #30 is documentation-only. It must not change production code, test code, runtime behavior, migrations, UI, API, persistence, or frameworks.

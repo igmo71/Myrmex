@@ -1,26 +1,21 @@
-# Myrmex Roadmap Memory
+# Myrmex Roadmap
 
-This document records future WMS vocabulary for planning alignment only.
+Current product and domain roadmap direction.
 
-## Roadmap Direction Only
+## Ordered Direction
 
-The following areas are future direction only unless a separate approved issue authorizes implementation:
+The current roadmap order is:
 
-- Catalog.
-- SKU.
-- Barcode.
-- UoM.
+- Catalog and SKU reference data.
+- Unit of Measure reference data.
+- Barcode reference data.
 - Packaging.
 - Inventory.
 - Receiving.
 - Integration.
 
-## Issue #30 Guardrails
+Roadmap entries are planning direction only. They are not authorization to add domain behavior, endpoints, UI, persistence, tests, migrations, or integrations.
 
-Issue #30 must not start implementation for Catalog/SKU, Inventory, Receiving, or Integration.
+## Implementation Rule
 
-Roadmap terms in issue #30 documentation are ubiquitous language and planning context only. They are not instructions to add domain features, endpoints, UI, persistence, tests, or integrations.
-
-## Future Work
-
-Any roadmap implementation requires a separate specification, plan, task breakdown, and constitution check.
+Each roadmap implementation requires a separate specification, plan, task breakdown, and constitution check.

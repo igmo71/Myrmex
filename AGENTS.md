@@ -1,8 +1,9 @@
 <!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the durable Myrmex
-memory documents in .specify/memory/myrmex-*.md.
+Durable project guidance lives in `.specify/memory/`. Read only the files relevant to the task:
 
-For active issue #36 work, also read
-specs/036-implement-wms-catalog-uom-mvp-vertical-slice/plan.md.
+- `constitution.md` for stable principles and governance.
+- `myrmex-development-workflow.md` before executing or recommending work.
+- Architecture, testing, API, and roadmap memory only when that area is touched.
+
+For feature work, start with `specs/<feature>/plan.md` and `tasks.md`. Read other feature artifacts only when directly relevant.
 <!-- SPECKIT END -->

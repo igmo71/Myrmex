@@ -1,24 +1,19 @@
-# Myrmex Testing Guidelines Memory
+# Myrmex Testing Guidelines
 
-This document records accepted testing expectations for Myrmex planning.
+Durable testing strategy for Myrmex planning and implementation.
 
-## Existing Issue #28 Expectations
+## Required Coverage
 
-Issue #28 added regression coverage for the WMS Topology vertical slice. The accepted coverage categories are:
+When changed or introduced, the following need automated tests:
 
-- Domain tests.
-- Application/handler tests.
-- WMS topology API client error-handling tests.
-
-## Issue #30 Scope
-
-Issue #30 documents testing expectations only. It must not add, remove, or modify automated tests.
-
-GetById/List query handler tests are intentionally out of scope for issue #30 and may become future work in a separate approved issue.
+- domain invariants and lifecycle behavior;
+- command and query handlers;
+- persistence mappings, indexes, uniqueness, and provider-sensitive behavior;
+- API clients, result envelopes, ProblemDetails mapping, and error handling.
 
 ## Reference-Data Slice Coverage
 
-Catalog/SKU from issue #32 is the current representative reference-data vertical slice. Future CRUD-style reference-data slices SHOULD reuse the established pattern instead of duplicating the full SKU-level test matrix by default.
+Catalog/SKU is the representative reference-data vertical slice. Future CRUD-style reference-data slices SHOULD reuse that pattern instead of copying the full SKU-level test matrix by default.
 
 A repeated reference-data slice SHOULD use focused coverage when it follows an already accepted domain, handler, persistence, API client, and UI pattern. It MUST still add targeted automated tests for genuinely new behavior.
 
@@ -43,37 +38,8 @@ API client ProblemDetails/error-mapping tests SHOULD be representative rather th
 
 ## Endpoint and UI Automation
 
-HTTP endpoint integration tests and UI/component tests are expected when suitable project test infrastructure already exists and lower-level tests cannot adequately protect the behavior.
+Add HTTP endpoint integration tests and UI/component tests when suitable project test infrastructure already exists and lower-level tests do not adequately protect the behavior.
 
-Plans MAY defer endpoint/UI automated tests when they would require new frameworks, broad test-host infrastructure, or setup disproportionate to the issue scope.
+Plans may defer endpoint/UI automated tests when they would require new frameworks, broad test-host infrastructure, or setup disproportionate to the scope. Deferrals must record lower-level automated coverage, required manual validation, and whether a follow-up issue is needed.
 
-Any endpoint/UI automation deferral MUST state:
-
-- why automated endpoint or UI tests are deferred;
-- which lower-level automated tests protect the same business behavior;
-- what manual validation is required;
-- whether a follow-up issue is needed.
-
-Manual UI smoke checks are acceptable for simple repeated reference-data CRUD pages when the page follows an already accepted UI pattern and the plan records the manual smoke scope and result.
-
-## Constitution Alignment
-
-The current constitution v1.0.1 already allows endpoint/UI automation deferrals with explicit plan exceptions and keeps automated tests mandatory for domain invariants, handlers, persistence mappings, and API clients when changed or introduced.
-
-This guideline refines how to apply that policy to repeated reference-data slices. It does not change project-level mandatory testing requirements and does not require a constitution amendment by itself.
-
-A future constitution amendment is required only if the project decides to change mandatory test categories or make endpoint/UI automation mandatory by default.
-
-## Future Planning
-
-When future work changes or introduces domain rules, command/query handlers,
-persistence mappings, or API clients, plans MUST identify automated tests before
-implementation tasks that depend on them.
-
-HTTP endpoint integration tests and UI/component tests are expected when suitable
-project test infrastructure already exists and lower-level tests cannot
-adequately protect the behavior. Plans may defer endpoint/UI automated tests when
-they would require new frameworks, broad test-host infrastructure, or setup
-disproportionate to the issue scope. Any deferral must state the lower-level
-automated coverage, required manual validation, and whether a follow-up issue is
-needed.
+Manual UI smoke checks are acceptable for simple repeated CRUD pages when the page follows an accepted UI pattern and the plan records the smoke scope and result.
