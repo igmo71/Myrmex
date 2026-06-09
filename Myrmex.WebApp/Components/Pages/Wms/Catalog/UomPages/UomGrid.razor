@@ -1,0 +1,82 @@
+@using MudBlazor
+@using Microsoft.AspNetCore.Components
+@using Myrmex.WebApp.Wms.Catalog
+
+<MudDataGrid T="UnitOfMeasureDetails"
+             Items="UnitsOfMeasure"
+             Loading="IsLoading"
+             Dense="true"
+             Hover="true"
+             Bordered="true"
+             Striped="true"
+             SortMode="SortMode.Multiple"
+             Filterable="false">
+    <Columns>
+        <PropertyColumn Property="x => x.Code" Title="Code" />
+        <PropertyColumn Property="x => x.Name" Title="Name" />
+
+        <TemplateColumn Title="Symbol" Sortable="false" Filterable="false">
+            <CellTemplate>
+                @context.Item.Symbol
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Active"
+                        Sortable="false"
+                        Filterable="false"
+                        CellClass="d-flex justify-center">
+            <CellTemplate>
+                @if (context.Item.IsActive)
+                {
+                    <MudTooltip Text="Active">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                 Color="Color.Success" />
+                    </MudTooltip>
+                }
+                else
+                {
+                    <MudTooltip Text="Inactive">
+                        <MudIcon Icon="@Icons.Material.Filled.Cancel"
+                                 Color="Color.Error" />
+                    </MudTooltip>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Created UTC" Sortable="false" Filterable="false">
+            <CellTemplate>
+                @context.Item.CreatedAtUtc
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Updated UTC" Sortable="false" Filterable="false">
+            <CellTemplate>
+                @context.Item.UpdatedAtUtc
+            </CellTemplate>
+        </TemplateColumn>
+
+        @if (Actions is not null)
+        {
+            <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+                <CellTemplate>
+                    @Actions(context.Item)
+                </CellTemplate>
+            </TemplateColumn>
+        }
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager T="UnitOfMeasureDetails" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<UnitOfMeasureDetails> UnitsOfMeasure { get; set; } = [];
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public RenderFragment<UnitOfMeasureDetails>? Actions { get; set; }
+}

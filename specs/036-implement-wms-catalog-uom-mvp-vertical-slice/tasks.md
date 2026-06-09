@@ -18,10 +18,10 @@
 
 **Purpose**: Confirm the active feature context and prepare UoM folders without changing existing SKU/Topology behavior.
 
-- [ ] T001 Review issue #36 guardrails in specs/036-implement-wms-catalog-uom-mvp-vertical-slice/plan.md before implementation
-- [ ] T002 [P] Review the representative Catalog/SKU implementation under Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits and Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages
-- [ ] T003 [P] Create UoM source directories Myrmex.Modules.Wms/Catalog/Domain/UnitsOfMeasure, Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure, and Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages
-- [ ] T004 [P] Create UoM test directories Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure and Myrmex.Tests/Wms/Catalog/Persistence
+- [X] T001 Review issue #36 guardrails in specs/036-implement-wms-catalog-uom-mvp-vertical-slice/plan.md before implementation
+- [X] T002 [P] Review the representative Catalog/SKU implementation under Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits and Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages
+- [X] T003 [P] Create UoM source directories Myrmex.Modules.Wms/Catalog/Domain/UnitsOfMeasure, Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure, and Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages
+- [X] T004 [P] Create UoM test directories Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure and Myrmex.Tests/Wms/Catalog/Persistence
 
 ---
 
@@ -31,8 +31,8 @@
 
 **CRITICAL**: No user story implementation should add conversions, SKU binding, packaging, barcode, inventory, receiving, LPN, picking/shipping, provider-specific sorting, `AsEnumerable()` sorting, new endpoint/UI test frameworks, or new observability infrastructure.
 
-- [ ] T005 Confirm no out-of-scope UoM files or migrations exist before coding by checking Myrmex.Modules.Wms/Catalog and Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations
-- [ ] T006 Confirm existing Catalog client support remains local by checking Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs, Myrmex.WebApp/Wms/Catalog/ApiResult.cs, and Myrmex.WebApp/Wms/Catalog/ApiException.cs
+- [X] T005 Confirm no out-of-scope UoM files or migrations exist before coding by checking Myrmex.Modules.Wms/Catalog and Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations
+- [X] T006 Confirm existing Catalog client support remains local by checking Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs, Myrmex.WebApp/Wms/Catalog/ApiResult.cs, and Myrmex.WebApp/Wms/Catalog/ApiException.cs
 
 **Checkpoint**: UoM work can proceed using Catalog/SKU as the representative pattern.
 
@@ -46,26 +46,26 @@
 
 ### Tests for User Story 1
 
-- [ ] T007 [P] [US1] Add focused UnitOfMeasure create/validation/domain-event tests in Myrmex.Tests/Wms/Catalog/Domain/UnitOfMeasureTests.cs
-- [ ] T008 [P] [US1] Add focused CreateUnitOfMeasure handler tests for success, validation failure, duplicate code, and persistence failure in Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/CreateUnitOfMeasureHandlerTests.cs
-- [ ] T009 [P] [US1] Add UoM persistence tests for table creation, required fields, nullable UpdatedAtUtc, no NormalizedCode, and unique Code in Myrmex.Tests/Wms/Catalog/Persistence/UnitOfMeasurePersistenceTests.cs
-- [ ] T010 [P] [US1] Add UoM create route and write-result client wiring tests in Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs
+- [X] T007 [P] [US1] Add focused UnitOfMeasure create/validation/domain-event tests in Myrmex.Tests/Wms/Catalog/Domain/UnitOfMeasureTests.cs
+- [X] T008 [P] [US1] Add focused CreateUnitOfMeasure handler tests for success, validation failure, duplicate code, and persistence failure in Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/CreateUnitOfMeasureHandlerTests.cs
+- [X] T009 [P] [US1] Add UoM persistence tests for table creation, required fields, nullable UpdatedAtUtc, no NormalizedCode, and unique Code in Myrmex.Tests/Wms/Catalog/Persistence/UnitOfMeasurePersistenceTests.cs
+- [X] T010 [P] [US1] Add UoM create route and write-result client wiring tests in Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs
 
 ### Implementation for User Story 1
 
-- [ ] T011 [P] [US1] Create UoM domain events in Myrmex.Modules.Wms/Catalog/Domain/UnitsOfMeasure/UnitOfMeasureEvents.cs
-- [ ] T012 [US1] Create UnitOfMeasure aggregate with normalized Code, required Name, optional Symbol, active-on-create state, UpdatedAtUtc null on create, and real-change domain events in Myrmex.Modules.Wms/Catalog/Domain/UnitsOfMeasure/UnitOfMeasure.cs
-- [ ] T013 [P] [US1] Create UnitOfMeasureDetails projection in Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/UnitOfMeasureDetails.cs
-- [ ] T014 [US1] Add UnitOfMeasure error codes for validation, duplicate code, not found, and persistence failure using existing conventions in Myrmex.Modules.Wms/WmsErrors.cs
-- [ ] T015 [US1] Implement CreateUnitOfMeasure command/handler with validation, duplicate normalized Code check, persistence save, and ServiceResult behavior in Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/CreateUnitOfMeasure.cs
-- [ ] T016 [US1] Add units_of_measure database names and unique Code index names in Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs
-- [ ] T017 [US1] Add UnitOfMeasure DbSet to Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs
-- [ ] T018 [US1] Add UnitOfMeasure EF Core mapping with required Code/Name/CreatedAtUtc/IsActive, optional Symbol/UpdatedAtUtc, ignored DomainEvents, and unique Code index in Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/UnitOfMeasureConfiguration.cs
-- [ ] T019 [US1] Generate AddUnitsOfMeasure migration and model snapshot changes in Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations
-- [ ] T020 [US1] Add create UoM endpoint and request contract in Myrmex.Modules.Wms/Catalog/Endpoints/UnitOfMeasureEndpoints.cs
-- [ ] T021 [US1] Register UnitOfMeasure endpoints in Myrmex.Modules.Wms/Catalog/Endpoints/CatalogEndpoints.cs
-- [ ] T022 [US1] Add UnitOfMeasureDetails and CreateUnitOfMeasureRequest DTOs plus TryCreateUnitOfMeasureAsync to Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs
-- [ ] T023 [US1] Create UoM edit dialog with create mode, code/name/symbol inputs, existing ApiResult error display, and no conversion fields in Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages/UomEditDialog.razor
+- [X] T011 [P] [US1] Create UoM domain events in Myrmex.Modules.Wms/Catalog/Domain/UnitsOfMeasure/UnitOfMeasureEvents.cs
+- [X] T012 [US1] Create UnitOfMeasure aggregate with normalized Code, required Name, optional Symbol, active-on-create state, UpdatedAtUtc null on create, and real-change domain events in Myrmex.Modules.Wms/Catalog/Domain/UnitsOfMeasure/UnitOfMeasure.cs
+- [X] T013 [P] [US1] Create UnitOfMeasureDetails projection in Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/UnitOfMeasureDetails.cs
+- [X] T014 [US1] Add UnitOfMeasure error codes for validation, duplicate code, not found, and persistence failure using existing conventions in Myrmex.Modules.Wms/WmsErrors.cs
+- [X] T015 [US1] Implement CreateUnitOfMeasure command/handler with validation, duplicate normalized Code check, persistence save, and ServiceResult behavior in Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/CreateUnitOfMeasure.cs
+- [X] T016 [US1] Add units_of_measure database names and unique Code index names in Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs
+- [X] T017 [US1] Add UnitOfMeasure DbSet to Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs
+- [X] T018 [US1] Add UnitOfMeasure EF Core mapping with required Code/Name/CreatedAtUtc/IsActive, optional Symbol/UpdatedAtUtc, ignored DomainEvents, and unique Code index in Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/UnitOfMeasureConfiguration.cs
+- [X] T019 [US1] Generate AddUnitsOfMeasure migration and model snapshot changes in Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations
+- [X] T020 [US1] Add create UoM endpoint and request contract in Myrmex.Modules.Wms/Catalog/Endpoints/UnitOfMeasureEndpoints.cs
+- [X] T021 [US1] Register UnitOfMeasure endpoints in Myrmex.Modules.Wms/Catalog/Endpoints/CatalogEndpoints.cs
+- [X] T022 [US1] Add UnitOfMeasureDetails and CreateUnitOfMeasureRequest DTOs plus TryCreateUnitOfMeasureAsync to Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs
+- [X] T023 [US1] Create UoM edit dialog with create mode, code/name/symbol inputs, existing ApiResult error display, and no conversion fields in Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages/UomEditDialog.razor
 
 **Checkpoint**: User Story 1 is functional through domain, handler, persistence, endpoint, client, and create dialog wiring.
 
@@ -79,21 +79,21 @@
 
 ### Tests for User Story 2
 
-- [ ] T024 [P] [US2] Add focused ListUnitsOfMeasure handler tests for active-only default, includeInactive, search, code/name/isActive sorting, unknown sort fallback, and no date sorting behavior in Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/ListUnitsOfMeasureHandlerTests.cs
-- [ ] T025 [P] [US2] Add focused get-by-id handler tests for active, inactive, and missing UoM behavior in Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/GetUnitOfMeasureByIdHandlerTests.cs
-- [ ] T026 [US2] Add UoM list/get read-client route and exception-flow wiring tests in Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs
+- [X] T024 [P] [US2] Add focused ListUnitsOfMeasure handler tests for active-only default, includeInactive, search, code/name/isActive sorting, unknown sort fallback, and no date sorting behavior in Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/ListUnitsOfMeasureHandlerTests.cs
+- [X] T025 [P] [US2] Add focused get-by-id handler tests for active, inactive, and missing UoM behavior in Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/GetUnitOfMeasureByIdHandlerTests.cs
+- [X] T026 [US2] Add UoM list/get read-client route and exception-flow wiring tests in Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs
 
 ### Implementation for User Story 2
 
-- [ ] T027 [US2] Implement ListUnitsOfMeasure query/handler with bounded paging, active-only default, includeInactive, search by Code/Name/Symbol, and provider-safe code/name/isActive sorting in Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/ListUnitsOfMeasure.cs
-- [ ] T028 [US2] Implement GetUnitOfMeasureById query/handler returning active or inactive UoMs and existing not-found behavior in Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/GetUnitOfMeasureById.cs
-- [ ] T029 [US2] Add list and get UoM endpoints in Myrmex.Modules.Wms/Catalog/Endpoints/UnitOfMeasureEndpoints.cs
-- [ ] T030 [US2] Add ListUnitsOfMeasureAsync and GetUnitOfMeasureByIdAsync to Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs
-- [ ] T031 [P] [US2] Create UoM filters component for search and include-inactive controls in Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages/UomFilters.razor
-- [ ] T032 [P] [US2] Create UoM grid component with code, name, symbol, active state, timestamps, provider-safe sort fields, and action slots in Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages/UomGrid.razor
-- [ ] T033 [US2] Create UoM page load/search/refresh behavior using WmsCatalogApiClient in Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages/Index.razor.cs
-- [ ] T034 [US2] Create UoM page markup at route /wms/catalog/uoms in Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages/Index.razor
-- [ ] T035 [US2] Add UoMs to Catalog navigation without changing existing SKU/Topology links in Myrmex.WebApp/Components/Layout/NavMenu.razor
+- [X] T027 [US2] Implement ListUnitsOfMeasure query/handler with bounded paging, active-only default, includeInactive, search by Code/Name/Symbol, and provider-safe code/name/isActive sorting in Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/ListUnitsOfMeasure.cs
+- [X] T028 [US2] Implement GetUnitOfMeasureById query/handler returning active or inactive UoMs and existing not-found behavior in Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/GetUnitOfMeasureById.cs
+- [X] T029 [US2] Add list and get UoM endpoints in Myrmex.Modules.Wms/Catalog/Endpoints/UnitOfMeasureEndpoints.cs
+- [X] T030 [US2] Add ListUnitsOfMeasureAsync and GetUnitOfMeasureByIdAsync to Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs
+- [X] T031 [P] [US2] Create UoM filters component for search and include-inactive controls in Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages/UomFilters.razor
+- [X] T032 [P] [US2] Create UoM grid component with code, name, symbol, active state, timestamps, provider-safe sort fields, and action slots in Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages/UomGrid.razor
+- [X] T033 [US2] Create UoM page load/search/refresh behavior using WmsCatalogApiClient in Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages/Index.razor.cs
+- [X] T034 [US2] Create UoM page markup at route /wms/catalog/uoms in Myrmex.WebApp/Components/Pages/Wms/Catalog/UomPages/Index.razor
+- [X] T035 [US2] Add UoMs to Catalog navigation without changing existing SKU/Topology links in Myrmex.WebApp/Components/Layout/NavMenu.razor
 
 **Checkpoint**: User Stories 1 and 2 are functional and can be reviewed from the UoM page and API/client list/get flows.
 

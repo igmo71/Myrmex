@@ -1,0 +1,51 @@
+@page "/wms/catalog/uoms"
+
+@using MudBlazor
+
+<PageTitle>WMS UoMs</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <div>
+                <MudText Typo="Typo.h5">UoMs</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    WMS catalog unit of measure reference data.
+                </MudText>
+            </div>
+
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="CreateUnitOfMeasureAsync"
+                           Disabled="_isLoading">
+                    Create
+                </MudButton>
+
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Refresh"
+                           OnClick="ReloadAsync"
+                           Disabled="_isLoading">
+                    Refresh
+                </MudButton>
+            </MudStack>
+        </MudStack>
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+                @_errorMessage
+            </MudAlert>
+        }
+
+        <UomFilters SearchText="@_searchText"
+                    SearchTextChanged="OnSearchTextChanged"
+                    IncludeInactive="@_includeInactive"
+                    IncludeInactiveChanged="OnIncludeInactiveChanged" />
+
+        <UomGrid UnitsOfMeasure="@_unitsOfMeasure"
+                 IsLoading="@_isLoading" />
+    </MudStack>
+</MudContainer>

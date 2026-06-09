@@ -25,6 +25,26 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
+    public async Task<ListResult<UnitOfMeasureDetails>> ListUnitsOfMeasureAsync(
+        ListRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        string url = BuildUrl(
+            "/api/wms/catalog/uoms",
+            request);
+
+        return await GetRequiredAsync<ListResult<UnitOfMeasureDetails>>(url, cancellationToken);
+    }
+
+    public async Task<UnitOfMeasureDetails> GetUnitOfMeasureByIdAsync(
+        Guid unitOfMeasureId,
+        CancellationToken cancellationToken = default)
+    {
+        return await GetRequiredAsync<UnitOfMeasureDetails>(
+            $"/api/wms/catalog/uoms/{unitOfMeasureId}",
+            cancellationToken);
+    }
+
     public async Task<ApiResult<StockKeepingUnitDetails>> TryCreateStockKeepingUnitAsync(
         CreateStockKeepingUnitRequest request,
         CancellationToken cancellationToken = default)
