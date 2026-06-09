@@ -132,12 +132,12 @@
 
 **Purpose**: Verify the repeated-slice scope, focused test strategy, manual endpoint/UI validation, and regression safety.
 
-- [ ] T049 Run build validation from specs/036-implement-wms-catalog-uom-mvp-vertical-slice/quickstart.md with dotnet build Myrmex.slnx -nologo -v:minimal
-- [ ] T050 Run focused UoM tests from specs/036-implement-wms-catalog-uom-mvp-vertical-slice/quickstart.md with dotnet test Myrmex.Tests/Myrmex.Tests.csproj --filter "FullyQualifiedName~UnitOfMeasure|FullyQualifiedName~UnitsOfMeasure" -nologo -v:minimal
-- [ ] T051 Run full regression tests from specs/036-implement-wms-catalog-uom-mvp-vertical-slice/quickstart.md with dotnet test Myrmex.Tests/Myrmex.Tests.csproj -nologo -v:minimal
+- [X] T049 Run build validation from specs/036-implement-wms-catalog-uom-mvp-vertical-slice/quickstart.md with dotnet build Myrmex.slnx -nologo -v:minimal
+- [X] T050 Run focused UoM tests from specs/036-implement-wms-catalog-uom-mvp-vertical-slice/quickstart.md with dotnet test Myrmex.Tests/Myrmex.Tests.csproj --filter "FullyQualifiedName~UnitOfMeasure|FullyQualifiedName~UnitsOfMeasure" -nologo -v:minimal
+- [X] T051 Run full regression tests from specs/036-implement-wms-catalog-uom-mvp-vertical-slice/quickstart.md with dotnet test Myrmex.Tests/Myrmex.Tests.csproj -nologo -v:minimal
 - [X] T052 Manually verify UoM migration shape against specs/036-implement-wms-catalog-uom-mvp-vertical-slice/quickstart.md in Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations
-- [ ] T053 Manually perform UoM API smoke validation from specs/036-implement-wms-catalog-uom-mvp-vertical-slice/quickstart.md for create, duplicate create, list/search/sort, get, update, deactivate, include inactive, and reactivate behavior
-- [ ] T054 Manually perform UoM UI smoke validation from specs/036-implement-wms-catalog-uom-mvp-vertical-slice/quickstart.md at /wms/catalog/uoms for navigation, create/edit dialog, search, include inactive, lifecycle actions, snackbar/reload behavior, and absence of out-of-scope controls
+- [X] T053 Manually perform UoM API smoke validation from specs/036-implement-wms-catalog-uom-mvp-vertical-slice/quickstart.md for create, duplicate create, list/search/sort, get, update, deactivate, include inactive, and reactivate behavior
+- [X] T054 Manually perform UoM UI smoke validation from specs/036-implement-wms-catalog-uom-mvp-vertical-slice/quickstart.md at /wms/catalog/uoms for navigation, create/edit dialog, search, include inactive, lifecycle actions, snackbar/reload behavior, and absence of out-of-scope controls
 - [X] T055 Verify final diff against specs/036-implement-wms-catalog-uom-mvp-vertical-slice/plan.md contains no conversions, SKU-to-UoM binding, packaging, barcode, inventory, receiving, LPN, picking/shipping, integration, provider-specific sorting, AsEnumerable sorting, new endpoint/UI test frameworks, new observability infrastructure, or broad SKU/Topology refactors
 
 ---
