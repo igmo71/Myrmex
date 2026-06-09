@@ -118,6 +118,107 @@ public sealed class WmsCatalogApiClientTests
     }
 
     [Fact]
+    public async Task TryCreateUnitOfMeasureAsync_WhenSuccessful_PostsToUomRouteAndReturnsDetails()
+    {
+        // Arrange
+        const string responseJson = """
+            {
+              "id": "018f0000-0000-7000-8000-000000000002",
+              "code": "EA",
+              "name": "Each",
+              "symbol": "ea",
+              "isActive": true,
+              "createdAtUtc": "2026-06-09T00:00:00+00:00",
+              "updatedAtUtc": null
+            }
+            """;
+
+        CapturingHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            responseJson,
+            "application/json");
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("https://myrmex.test")
+        };
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        CreateUnitOfMeasureRequest request = new(
+            Code: "EA",
+            Name: "Each",
+            Symbol: "ea");
+
+        // Act
+        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryCreateUnitOfMeasureAsync(
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+
+        Assert.Equal(Guid.Parse("018f0000-0000-7000-8000-000000000002"), result.Value.Id);
+        Assert.Equal("EA", result.Value.Code);
+        Assert.Equal("Each", result.Value.Name);
+        Assert.Equal("ea", result.Value.Symbol);
+        Assert.True(result.Value.IsActive);
+        Assert.Null(result.Value.UpdatedAtUtc);
+
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal("/api/wms/catalog/uoms", handler.RequestPathAndQuery);
+        Assert.NotNull(handler.RequestContent);
+        Assert.Contains("\"code\":\"EA\"", handler.RequestContent);
+        Assert.Contains("\"name\":\"Each\"", handler.RequestContent);
+        Assert.Contains("\"symbol\":\"ea\"", handler.RequestContent);
+    }
+
+    [Fact]
+    public async Task TryCreateUnitOfMeasureAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
+    {
+        // Arrange
+        const string problemJson = """
+            {
+              "type": "https://httpstatuses.com/409",
+              "title": "Conflict",
+              "status": 409,
+              "detail": "Unit of measure with the same code already exists.",
+              "code": "UnitOfMeasure.CodeAlreadyExists",
+              "field": "code"
+            }
+            """;
+
+        using HttpClient httpClient = CreateHttpClient(
+            HttpStatusCode.Conflict,
+            problemJson,
+            "application/problem+json");
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        CreateUnitOfMeasureRequest request = new(
+            Code: "EA",
+            Name: "Each",
+            Symbol: "ea");
+
+        // Act
+        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryCreateUnitOfMeasureAsync(
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.False(result.IsSuccess);
+        Assert.Null(result.Value);
+        Assert.NotNull(result.Error);
+
+        Assert.Equal(409, result.Error.Status);
+        Assert.Equal("Unit of measure with the same code already exists.", result.Error.Message);
+        Assert.Equal("UnitOfMeasure.CodeAlreadyExists", result.Error.Extensions["code"]);
+        Assert.Equal("code", result.Error.Extensions["field"]);
+    }
+
+    [Fact]
     public async Task TryUpdateStockKeepingUnitDetailsAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
     {
         // Arrange
@@ -338,6 +439,39 @@ public sealed class WmsCatalogApiClientTests
             };
 
             return Task.FromResult(response);
+        }
+    }
+
+    private sealed class CapturingHttpMessageHandler(
+        HttpStatusCode statusCode,
+        string content,
+        string mediaType) : HttpMessageHandler
+    {
+        public HttpMethod? RequestMethod { get; private set; }
+
+        public string? RequestPathAndQuery { get; private set; }
+
+        public string? RequestContent { get; private set; }
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            RequestMethod = request.Method;
+            RequestPathAndQuery = request.RequestUri?.PathAndQuery;
+
+            if (request.Content is not null)
+            {
+                RequestContent = await request.Content.ReadAsStringAsync(cancellationToken);
+            }
+
+            return new HttpResponseMessage(statusCode)
+            {
+                Content = new StringContent(
+                    content,
+                    Encoding.UTF8,
+                    mediaType)
+            };
         }
     }
 }
