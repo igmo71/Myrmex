@@ -26,7 +26,7 @@ Myrmex features MUST start from explicit WMS and fulfillment domain concepts bef
 Rationale: Myrmex is a coherent WMS and fulfillment platform for real operational use. Hidden domain rules make warehouse workflows harder to operate, maintain, and extend safely.
 
 ### II. Modular Monolith Boundaries
-The system MUST remain a modular monolith unless a feature plan documents a constitution-approved reason to split a capability. Shared kernel code belongs in `Myrmex.Core`, cross-cutting dispatching in `Myrmex.AppDispatching`, ASP.NET helpers in `Myrmex.AspNetCore`, and WMS capabilities in `Myrmex.Modules.Wms`. Modules MUST communicate through explicit commands, queries, events, public module registration, or API contracts. Direct dependencies that bypass these boundaries MUST be justified in the feature plan.
+The system MUST remain a modular monolith unless a feature plan documents a constitution-approved reason to split a capability. Modules MUST communicate through explicit commands, queries, events, public module registration, or API contracts. Direct dependencies that bypass these boundaries MUST be justified in the feature plan.
 
 Rationale: clear module boundaries keep Myrmex maintainable and extensible while avoiding unnecessary distributed-system complexity.
 
