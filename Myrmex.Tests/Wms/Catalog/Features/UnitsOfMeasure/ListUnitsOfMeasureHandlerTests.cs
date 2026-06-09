@@ -67,7 +67,7 @@ public sealed class ListUnitsOfMeasureHandlerTests
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
 
         await AddUnitOfMeasureAsync(testDbContext, "EA", "Each", "ea");
-        await AddUnitOfMeasureAsync(testDbContext, "BOX", "Box", "each-box");
+        await AddUnitOfMeasureAsync(testDbContext, "BOX", "Box", "Each-box");
         await AddUnitOfMeasureAsync(testDbContext, "PAL", "Pallet", "plt");
 
         ListUnitsOfMeasure.Handler handler = new(testDbContext.DbContext);
