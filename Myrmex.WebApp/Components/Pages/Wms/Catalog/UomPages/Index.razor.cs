@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Catalog;
 
 namespace Myrmex.WebApp.Components.Pages.Wms.Catalog.UomPages;

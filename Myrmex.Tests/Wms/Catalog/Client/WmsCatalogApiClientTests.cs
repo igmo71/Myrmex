@@ -1,4 +1,5 @@
 using Myrmex.WebApp.Wms.Catalog;
+using Myrmex.WebApp.Wms.Api;
 using System.Text;
 
 namespace Myrmex.Tests.Wms.Catalog.Client;
