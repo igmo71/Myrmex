@@ -118,7 +118,7 @@ A warehouse catalog user can update UoM descriptive details and deactivate or re
 - **OE-003**: The system MUST return a clear not-found error when a catalog user requests or changes a UoM that does not exist.
 - **OE-004**: Write/action operations MUST produce user-consumable success or failure results consistent with existing Catalog reference-data behavior.
 - **OE-005**: Read/load operations MUST preserve user-facing error behavior consistent with existing Catalog reference-data behavior.
-- **OE-006**: Operationally important UoM actions MUST provide enough diagnostics to distinguish validation failure, duplicate code, missing UoM, unsupported sorting, and persistence failure.
+- **OE-006**: Operationally important UoM actions MUST provide enough user/API error detail within existing Myrmex error/result conventions to distinguish validation failure, duplicate code, missing UoM, unsupported sorting, and persistence failure.
 
 ### Key Entities *(include if feature involves data)*
 
