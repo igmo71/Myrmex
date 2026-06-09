@@ -14,10 +14,8 @@ The current roadmap order is:
 - Receiving.
 - Integration.
 
-Roadmap entries are planning direction only. They are not authorization to add
-domain behavior, endpoints, UI, persistence, tests, migrations, or integrations.
+Roadmap entries are planning direction only. They are not authorization to add domain behavior, endpoints, UI, persistence, tests, migrations, or integrations.
 
 ## Implementation Rule
 
-Each roadmap implementation requires a separate specification, plan, task
-breakdown, and constitution check.
+Each roadmap implementation requires a separate specification, plan, task breakdown, and constitution check.

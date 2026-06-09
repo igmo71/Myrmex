@@ -11,14 +11,11 @@ When changed or introduced, the following need automated tests:
 - persistence mappings, indexes, uniqueness, and provider-sensitive behavior;
 - API clients, result envelopes, ProblemDetails mapping, and error handling.
 
-Plans should identify required test tasks before implementation tasks that
-depend on them.
+Plans should identify required test tasks before implementation tasks that depend on them.
 
 ## Reference-Data Slice Coverage
 
-Catalog/SKU is the representative reference-data vertical slice. Future
-CRUD-style reference-data slices SHOULD reuse that pattern instead of copying
-the full SKU-level test matrix by default.
+Catalog/SKU is the representative reference-data vertical slice. Future CRUD-style reference-data slices SHOULD reuse that pattern instead of copying the full SKU-level test matrix by default.
 
 A repeated reference-data slice SHOULD use focused coverage when it follows an already accepted domain, handler, persistence, API client, and UI pattern. It MUST still add targeted automated tests for genuinely new behavior.
 
@@ -43,15 +40,8 @@ API client ProblemDetails/error-mapping tests SHOULD be representative rather th
 
 ## Endpoint and UI Automation
 
-Add HTTP endpoint integration tests and UI/component tests when suitable project
-test infrastructure already exists and lower-level tests do not adequately
-protect the behavior.
+Add HTTP endpoint integration tests and UI/component tests when suitable project test infrastructure already exists and lower-level tests do not adequately protect the behavior.
 
-Plans may defer endpoint/UI automated tests when they would require new
-frameworks, broad test-host infrastructure, or setup disproportionate to the
-scope. Deferrals must record lower-level automated coverage, required manual
-validation, and whether a follow-up issue is needed.
+Plans may defer endpoint/UI automated tests when they would require new frameworks, broad test-host infrastructure, or setup disproportionate to the scope. Deferrals must record lower-level automated coverage, required manual validation, and whether a follow-up issue is needed.
 
-Manual UI smoke checks are acceptable for simple repeated CRUD pages when the
-page follows an accepted UI pattern and the plan records the smoke scope and
-result.
+Manual UI smoke checks are acceptable for simple repeated CRUD pages when the page follows an accepted UI pattern and the plan records the smoke scope and result.
