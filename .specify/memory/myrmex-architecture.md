@@ -2,21 +2,6 @@
 
 Durable solution and module structure guidance.
 
-## Solution Baseline
-
-Myrmex is a .NET WMS and fulfillment platform for operational use. It uses:
-
-- Modular monolith architecture.
-- Clean Architecture and DDD-inspired structure.
-- Vertical slices.
-- ASP.NET Core Minimal APIs.
-- EF Core.
-- Aspire.
-- Blazor and MudBlazor.
-- Internal command/query/handler dispatching.
-
-Do not implement another architectural concept without a separate approved issue and plan.
-
 ## Module Boundaries
 
 Use the existing repository boundaries:
