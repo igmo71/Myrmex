@@ -1,4 +1,4 @@
-namespace Myrmex.WebApp.Wms.Catalog;
+namespace Myrmex.WebApp.Wms.Api;
 
 public sealed class ApiException : Exception
 {
