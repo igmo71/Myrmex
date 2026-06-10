@@ -6,4 +6,6 @@ Durable project guidance lives in `.specify/memory/`. Read only the files releva
 - Architecture, testing, API, and roadmap memory only when that area is touched.
 
 For feature work, start with `specs/<feature>/plan.md` and `tasks.md`. Read other feature artifacts only when directly relevant.
+
+Current active feature plan: `specs/042-catalogsku-barcode-mvp-vertical-slice/plan.md`.
 <!-- SPECKIT END -->
