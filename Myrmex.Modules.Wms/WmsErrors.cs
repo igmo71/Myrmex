@@ -63,4 +63,16 @@ internal static class WmsErrors
         public static ServiceError CodeAlreadyExists => ServiceErrors.Conflict("UnitOfMeasure.CodeAlreadyExists", "Unit of measure with the same code already exists.", "code");
         public static ServiceError CreateFailed => ServiceErrors.Failure("UnitOfMeasure.CreateFailed", "Unit of measure creation failed unexpectedly.");
     }
+
+    internal static class SkuBarcode
+    {
+        public static ServiceError NotFound => ServiceErrors.NotFound("SkuBarcode.NotFound", "SKU barcode was not found.");
+        public static ServiceError NotFoundById => ServiceErrors.NotFound("SkuBarcode.NotFound", "SKU barcode was not found.", "skuBarcodeId");
+        public static ServiceError ValueAlreadyExists => ServiceErrors.Conflict("SkuBarcode.ValueAlreadyExists", "SKU barcode with the same value already exists.", "value");
+        public static ServiceError CreateFailed => ServiceErrors.Failure("SkuBarcode.CreateFailed", "SKU barcode creation failed unexpectedly.");
+        public static ServiceError UpdateFailed => ServiceErrors.Failure("SkuBarcode.UpdateFailed", "SKU barcode update failed unexpectedly.");
+        public static ServiceError DeactivateFailed => ServiceErrors.Failure("SkuBarcode.DeactivateFailed", "SKU barcode deactivation failed unexpectedly.");
+        public static ServiceError ReactivateFailed => ServiceErrors.Failure("SkuBarcode.ReactivateFailed", "SKU barcode reactivation failed unexpectedly.");
+        public static ServiceError UnsupportedPrimaryChange => ServiceErrors.Conflict("SkuBarcode.UnsupportedPrimaryChange", "Inactive SKU barcodes cannot be made primary.", "isPrimary");
+    }
 }

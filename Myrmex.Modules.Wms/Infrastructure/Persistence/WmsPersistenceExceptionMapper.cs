@@ -36,6 +36,10 @@ internal static class WmsPersistenceExceptionMapper
         {
             return WmsErrors.UnitOfMeasure.CodeAlreadyExists;
         }
+        if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.SkuBarcodeValueUniqueIndex))
+        {
+            return WmsErrors.SkuBarcode.ValueAlreadyExists;
+        }
         return null;
     }
 }

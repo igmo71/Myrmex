@@ -1,4 +1,5 @@
 using Myrmex.WebApp.Wms.Api;
+using System.Web;
 
 namespace Myrmex.WebApp.Wms.Catalog;
 
@@ -44,6 +45,24 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
+    public async Task<ListResult<SkuBarcodeDetails>> ListSkuBarcodesAsync(
+        ListSkuBarcodesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        string url = BuildSkuBarcodeListUrl(request);
+
+        return await httpClient.GetRequiredAsync<ListResult<SkuBarcodeDetails>>(url, cancellationToken);
+    }
+
+    public async Task<SkuBarcodeDetails> GetSkuBarcodeByIdAsync(
+        Guid skuBarcodeId,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.GetRequiredAsync<SkuBarcodeDetails>(
+            $"/api/wms/catalog/sku-barcodes/{skuBarcodeId}",
+            cancellationToken);
+    }
+
     public async Task<ApiResult<StockKeepingUnitDetails>> TryCreateStockKeepingUnitAsync(
         CreateStockKeepingUnitRequest request,
         CancellationToken cancellationToken = default)
@@ -51,6 +70,47 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
         return await httpClient.PostAsApiResultAsync<StockKeepingUnitDetails>(
             "/api/wms/catalog/skus",
             request,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<SkuBarcodeDetails>> TryCreateSkuBarcodeAsync(
+        CreateSkuBarcodeRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<SkuBarcodeDetails>(
+            "/api/wms/catalog/sku-barcodes",
+            request,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<SkuBarcodeDetails>> TryUpdateSkuBarcodeDetailsAsync(
+        Guid skuBarcodeId,
+        UpdateSkuBarcodeDetailsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PutAsApiResultAsync<SkuBarcodeDetails>(
+            $"/api/wms/catalog/sku-barcodes/{skuBarcodeId}",
+            request,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<SkuBarcodeDetails>> TryDeactivateSkuBarcodeAsync(
+        Guid skuBarcodeId,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<SkuBarcodeDetails>(
+            $"/api/wms/catalog/sku-barcodes/{skuBarcodeId}/deactivate",
+            value: null,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<SkuBarcodeDetails>> TryReactivateSkuBarcodeAsync(
+        Guid skuBarcodeId,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<SkuBarcodeDetails>(
+            $"/api/wms/catalog/sku-barcodes/{skuBarcodeId}/reactivate",
+            value: null,
             cancellationToken);
     }
 
@@ -126,6 +186,27 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
+    private static string BuildSkuBarcodeListUrl(ListSkuBarcodesRequest request)
+    {
+        ListRequest listRequest = new(
+            request.Skip,
+            request.Take,
+            request.SearchText,
+            request.SortBy,
+            request.SortDescending,
+            request.IncludeInactive);
+
+        string url = WmsApiUrls.BuildListUrl(
+            "/api/wms/catalog/sku-barcodes",
+            listRequest);
+
+        if (request.StockKeepingUnitId.HasValue)
+        {
+            url += $"&stockKeepingUnitId={HttpUtility.UrlEncode(request.StockKeepingUnitId.Value.ToString())}";
+        }
+
+        return url;
+    }
 }
 
 public sealed record StockKeepingUnitDetails(
@@ -163,3 +244,33 @@ public sealed record CreateUnitOfMeasureRequest(
 public sealed record UpdateUnitOfMeasureDetailsRequest(
     string? Name,
     string? Symbol);
+
+public sealed record SkuBarcodeDetails(
+    Guid Id,
+    Guid StockKeepingUnitId,
+    string Value,
+    string Symbology,
+    bool IsPrimary,
+    bool IsActive,
+    DateTimeOffset CreatedAtUtc,
+    DateTimeOffset? UpdatedAtUtc);
+
+public sealed record CreateSkuBarcodeRequest(
+    Guid StockKeepingUnitId,
+    string? Value,
+    string? Symbology,
+    bool IsPrimary);
+
+public sealed record UpdateSkuBarcodeDetailsRequest(
+    string? Value,
+    string? Symbology,
+    bool IsPrimary);
+
+public sealed record ListSkuBarcodesRequest(
+    int Skip = 0,
+    int Take = 20,
+    string? SearchText = null,
+    string? SortBy = null,
+    bool SortDescending = false,
+    bool IncludeInactive = false,
+    Guid? StockKeepingUnitId = null);

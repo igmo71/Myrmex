@@ -41,4 +41,10 @@ internal static class WmsDatabaseNames
     public const string UnitsOfMeasureTable = "units_of_measure";
     public const string UnitOfMeasurePrimaryKey = "PK_wms_units_of_measure";
     public const string UnitOfMeasureCodeUniqueIndex = "UX_wms_units_of_measure_code";
+
+    public const string SkuBarcodesTable = "sku_barcodes";
+    public const string SkuBarcodePrimaryKey = "PK_wms_sku_barcodes";
+    public const string SkuBarcodeStockKeepingUnitForeignKey = "FK_wms_sku_barcodes_stock_keeping_units_stock_keeping_unit_id";
+    public const string SkuBarcodeValueUniqueIndex = "UX_wms_sku_barcodes_value";
+    public const string SkuBarcodeStockKeepingUnitIdIndex = "IX_wms_sku_barcodes_stock_keeping_unit_id";
 }
