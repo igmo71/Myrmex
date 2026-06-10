@@ -7,5 +7,5 @@ Durable project guidance lives in `.specify/memory/`. Read only the files releva
 
 For feature work, start with `specs/<feature>/plan.md` and `tasks.md`. Read other feature artifacts only when directly relevant.
 
-Current active feature plan: `specs/042-catalogsku-barcode-mvp-vertical-slice/plan.md`.
+Current active feature plan: `specs/044-catalogsku-base-uom-mvp-vertical-slice/plan.md`.
 <!-- SPECKIT END -->
