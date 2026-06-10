@@ -8,6 +8,9 @@ public static class ServiceErrors
     public static ServiceError Conflict(string code, string message, string? field = null)
         => new(ServiceErrorType.Conflict, code, message, field);
 
+    public static ServiceError Validation(string code, string message, string? field = null)
+        => new(ServiceErrorType.Invalid, code, message, field);
+
     public static ServiceError Unauthorized(string code = "Auth.Unauthorized", string message = "Authentication is required.")
         => new(ServiceErrorType.Unauthorized, code, message);
 

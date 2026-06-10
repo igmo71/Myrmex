@@ -34,36 +34,24 @@ internal static class UpdateStockKeepingUnitDetails
                 return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.NotFound);
             }
 
-            DomainValidationResult validationResult = StockKeepingUnit.ValidateDetails(
-                command.Name,
-                command.Description,
-                command.BaseUnitOfMeasureId);
-
-            if (!validationResult.IsValid)
+            if (!command.BaseUnitOfMeasureId.HasValue || command.BaseUnitOfMeasureId.Value == Guid.Empty)
             {
-                return ServiceResult<StockKeepingUnitDetails>.Invalid(validationResult.Errors);
+                return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureRequired);
             }
 
-            var baseUnitOfMeasure = await dbContext.UnitsOfMeasure
-                .AsNoTracking()
-                .Where(x => x.Id == command.BaseUnitOfMeasureId!.Value)
-                .Select(x => new { x.IsActive })
-                .FirstOrDefaultAsync(cancellationToken);
+            Guid baseUnitOfMeasureId = command.BaseUnitOfMeasureId.Value;
 
-            if (baseUnitOfMeasure is null)
+            ServiceResult baseUnitOfMeasureResult = await EnsureBaseUnitOfMeasureCanBeAssignedAsync(
+                baseUnitOfMeasureId,
+                cancellationToken);
+
+            if (!baseUnitOfMeasureResult.IsSuccess)
             {
-                return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureNotFound);
+                return ServiceResult<StockKeepingUnitDetails>.Fail(baseUnitOfMeasureResult.Error);
             }
 
-            if (!baseUnitOfMeasure.IsActive)
-            {
-                return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureInactive);
-            }
-
-            validationResult = stockKeepingUnit.UpdateDetails(
-                command.Name,
-                command.Description,
-                command.BaseUnitOfMeasureId);
+            DomainValidationResult validationResult = stockKeepingUnit
+                .UpdateDetails(command.Name, command.Description, baseUnitOfMeasureId);
 
             if (!validationResult.IsValid)
             {
@@ -79,6 +67,29 @@ internal static class UpdateStockKeepingUnitDetails
             }
 
             return ServiceResult<StockKeepingUnitDetails>.Success(StockKeepingUnitDetails.From(stockKeepingUnit));
+        }
+
+        private async Task<ServiceResult> EnsureBaseUnitOfMeasureCanBeAssignedAsync(
+            Guid baseUnitOfMeasureId,
+            CancellationToken cancellationToken)
+        {
+            var baseUnitOfMeasure = await dbContext.UnitsOfMeasure
+                .AsNoTracking()
+                .Where(x => x.Id == baseUnitOfMeasureId)
+                .Select(x => new { x.IsActive })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (baseUnitOfMeasure is null)
+            {
+                return ServiceResult.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureNotFound);
+            }
+
+            if (!baseUnitOfMeasure.IsActive)
+            {
+                return ServiceResult.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureInactive);
+            }
+
+            return ServiceResult.Success();
         }
     }
 }

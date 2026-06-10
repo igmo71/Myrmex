@@ -55,7 +55,8 @@ internal static class WmsErrors
         public static ServiceError DeactivateFailed => ServiceErrors.Failure("StockKeepingUnit.DeactivateFailed", "Stock keeping unit deactivation failed unexpectedly.");
         public static ServiceError ReactivateFailed => ServiceErrors.Failure("StockKeepingUnit.ReactivateFailed", "Stock keeping unit reactivation failed unexpectedly.");
         public static ServiceError BaseUnitOfMeasureNotFound => ServiceErrors.NotFound("UnitOfMeasure.NotFound", "Base unit of measure was not found.", "baseUnitOfMeasureId");
-        public static ServiceError BaseUnitOfMeasureInactive => new(ServiceErrorType.Failure, "UnitOfMeasure.Inactive", "Base unit of measure must be active.", "baseUnitOfMeasureId");
+        public static ServiceError BaseUnitOfMeasureInactive => ServiceErrors.Validation("StockKeepingUnit.BaseUnitOfMeasureInactive", "SKU base unit of measure must be active.", "baseUnitOfMeasureId");
+        public static ServiceError BaseUnitOfMeasureRequired => ServiceErrors.Validation("StockKeepingUnit.BaseUnitOfMeasureRequired", "SKU base unit of measure is required.", "baseUnitOfMeasureId");
     }
 
     internal static class UnitOfMeasure
