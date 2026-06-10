@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Tests.Wms.Topology.Testing;
@@ -44,15 +45,65 @@ public sealed class StockKeepingUnitPersistenceTests
     }
 
     [Fact]
+    public async Task Model_HasRequiredBaseUnitOfMeasureRelationship()
+    {
+        // Arrange
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+
+        // Act
+        var entityType = testDbContext.DbContext.Model.FindEntityType(typeof(StockKeepingUnit));
+
+        // Assert
+        Assert.NotNull(entityType);
+
+        var property = Assert.Single(entityType.GetProperties(), candidate =>
+            candidate.Name == nameof(StockKeepingUnit.BaseUnitOfMeasureId));
+
+        Assert.False(property.IsNullable);
+
+        var foreignKey = Assert.Single(entityType.GetForeignKeys(), candidate =>
+            candidate.GetConstraintName() == WmsDatabaseNames.StockKeepingUnitBaseUnitOfMeasureForeignKey);
+
+        Assert.Equal(typeof(UnitOfMeasure), foreignKey.PrincipalEntityType.ClrType);
+        Assert.Equal([nameof(StockKeepingUnit.BaseUnitOfMeasureId)], foreignKey.Properties.Select(candidate => candidate.Name).ToArray());
+        Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
+    }
+
+    [Fact]
+    public async Task Model_HasBaseUnitOfMeasureIdIndex()
+    {
+        // Arrange
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+
+        // Act
+        var entityType = testDbContext.DbContext.Model.FindEntityType(typeof(StockKeepingUnit));
+
+        // Assert
+        Assert.NotNull(entityType);
+
+        var index = Assert.Single(entityType.GetIndexes(), candidate =>
+            candidate.GetDatabaseName() == WmsDatabaseNames.StockKeepingUnitBaseUnitOfMeasureIdIndex);
+
+        Assert.False(index.IsUnique);
+        Assert.Equal([nameof(StockKeepingUnit.BaseUnitOfMeasureId)], index.Properties.Select(property => property.Name).ToArray());
+    }
+
+    [Fact]
     public async Task SaveChanges_WhenNormalizedCodeAlreadyExists_ThrowsDbUpdateException()
     {
         // Arrange
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
 
+        UnitOfMeasure baseUnitOfMeasure = CreateUnitOfMeasure();
+
+        testDbContext.DbContext.UnitsOfMeasure.Add(baseUnitOfMeasure);
+        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
         var firstResult = StockKeepingUnit.Create(
             code: "ITEM-001",
             name: "Widget",
             description: null,
+            baseUnitOfMeasureId: baseUnitOfMeasure.Id,
             out StockKeepingUnit? firstStockKeepingUnit);
 
         Assert.True(firstResult.IsValid);
@@ -62,6 +113,7 @@ public sealed class StockKeepingUnitPersistenceTests
             code: " item-001 ",
             name: "Another Widget",
             description: null,
+            baseUnitOfMeasureId: baseUnitOfMeasure.Id,
             out StockKeepingUnit? duplicateStockKeepingUnit);
 
         Assert.True(duplicateResult.IsValid);
@@ -75,5 +127,19 @@ public sealed class StockKeepingUnitPersistenceTests
         // Act & Assert
         await Assert.ThrowsAsync<DbUpdateException>(() =>
             testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken));
+    }
+
+    private static UnitOfMeasure CreateUnitOfMeasure()
+    {
+        var result = UnitOfMeasure.Create(
+            code: "EA",
+            name: "Each",
+            symbol: "ea",
+            out UnitOfMeasure? unitOfMeasure);
+
+        Assert.True(result.IsValid);
+        Assert.NotNull(unitOfMeasure);
+
+        return unitOfMeasure;
     }
 }

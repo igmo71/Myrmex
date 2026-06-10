@@ -119,6 +119,69 @@ public sealed class WmsCatalogApiClientTests
     }
 
     [Fact]
+    public async Task TryCreateStockKeepingUnitAsync_WhenSuccessful_PostsBaseUnitOfMeasureIdAndReturnsDetails()
+    {
+        // Arrange
+        Guid baseUnitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000111");
+
+        const string responseJson = """
+            {
+              "id": "018f0000-0000-7000-8000-000000000001",
+              "code": "ITEM-001",
+              "name": "Widget",
+              "description": "Sellable widget",
+              "baseUnitOfMeasureId": "018f0000-0000-7000-8000-000000000111",
+              "isActive": true,
+              "createdAtUtc": "2026-06-10T00:00:00+00:00",
+              "updatedAtUtc": null
+            }
+            """;
+
+        CapturingHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            responseJson,
+            "application/json");
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("https://myrmex.test")
+        };
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        CreateStockKeepingUnitRequest request = new(
+            Code: "ITEM-001",
+            Name: "Widget",
+            Description: "Sellable widget",
+            BaseUnitOfMeasureId: baseUnitOfMeasureId);
+
+        // Act
+        ApiResult<StockKeepingUnitDetails> result = await apiClient.TryCreateStockKeepingUnitAsync(
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+
+        Assert.Equal(Guid.Parse("018f0000-0000-7000-8000-000000000001"), result.Value.Id);
+        Assert.Equal("ITEM-001", result.Value.Code);
+        Assert.Equal("Widget", result.Value.Name);
+        Assert.Equal("Sellable widget", result.Value.Description);
+        Assert.Equal(baseUnitOfMeasureId, result.Value.BaseUnitOfMeasureId);
+        Assert.True(result.Value.IsActive);
+        Assert.Null(result.Value.UpdatedAtUtc);
+
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal("/api/wms/catalog/skus", handler.RequestPathAndQuery);
+        Assert.NotNull(handler.RequestContent);
+        Assert.Contains("\"code\":\"ITEM-001\"", handler.RequestContent);
+        Assert.Contains("\"name\":\"Widget\"", handler.RequestContent);
+        Assert.Contains("\"description\":\"Sellable widget\"", handler.RequestContent);
+        Assert.Contains($"\"baseUnitOfMeasureId\":\"{baseUnitOfMeasureId}\"", handler.RequestContent);
+    }
+
+    [Fact]
     public async Task TryCreateUnitOfMeasureAsync_WhenSuccessful_PostsToUomRouteAndReturnsDetails()
     {
         // Arrange

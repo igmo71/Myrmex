@@ -214,6 +214,7 @@ public sealed record StockKeepingUnitDetails(
     string Code,
     string Name,
     string? Description,
+    Guid BaseUnitOfMeasureId,
     bool IsActive,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? UpdatedAtUtc);
@@ -221,7 +222,8 @@ public sealed record StockKeepingUnitDetails(
 public sealed record CreateStockKeepingUnitRequest(
     string? Code,
     string? Name,
-    string? Description);
+    string? Description,
+    Guid? BaseUnitOfMeasureId = null);
 
 public sealed record UpdateStockKeepingUnitDetailsRequest(
     string? Name,
