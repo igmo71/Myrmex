@@ -109,7 +109,12 @@ public sealed class SkuBarcodePersistenceTests
         var symbologyProperty = entityType.FindProperty(nameof(SkuBarcode.Symbology));
 
         Assert.NotNull(symbologyProperty);
-        Assert.Equal(typeof(string), symbologyProperty.GetValueConverter()?.ProviderClrType);
+        Assert.Equal(32, symbologyProperty.GetMaxLength());
+
+        var converter = symbologyProperty.GetTypeMapping().Converter;
+
+        Assert.NotNull(converter);
+        Assert.Equal(typeof(string), converter.ProviderClrType);
     }
 
     [Fact]

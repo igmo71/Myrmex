@@ -306,6 +306,8 @@ public sealed class CreateSkuBarcodeHandlerTests
         testDbContext.DbContext.StockKeepingUnits.Add(stockKeepingUnit);
         await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
+        stockKeepingUnit.ClearDomainEvents();
+
         return stockKeepingUnit;
     }
 
