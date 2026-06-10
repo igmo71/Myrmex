@@ -42,6 +42,56 @@ internal sealed class SkuBarcode : AggregateRoot
         Touch();
     }
 
+    public DomainValidationResult UpdateDetails(
+        string? value,
+        BarcodeSymbology symbology,
+        bool isPrimary)
+    {
+        DomainValidationResult validationResult = ValidateDetails(
+            value,
+            symbology,
+            isPrimary,
+            IsActive);
+
+        if (!validationResult.IsValid)
+        {
+            return validationResult;
+        }
+
+        Value = NormalizeValue(value);
+        Symbology = symbology;
+        IsPrimary = isPrimary;
+
+        Touch();
+        AddDomainEvent(new SkuBarcodeDetailsUpdatedDomainEvent(Id));
+
+        return DomainValidationResult.Valid;
+    }
+
+    public void Deactivate()
+    {
+        if (!IsActive)
+        {
+            return;
+        }
+
+        IsPrimary = false;
+        MarkDeactivated();
+        AddDomainEvent(new SkuBarcodeDeactivatedDomainEvent(Id));
+    }
+
+    public void Reactivate()
+    {
+        if (IsActive)
+        {
+            return;
+        }
+
+        IsPrimary = false;
+        MarkReactivated();
+        AddDomainEvent(new SkuBarcodeReactivatedDomainEvent(Id));
+    }
+
     public static DomainValidationResult Create(
         Guid stockKeepingUnitId,
         string? value,
@@ -109,6 +159,50 @@ internal sealed class SkuBarcode : AggregateRoot
                 "SkuBarcode.SymbologyUnsupported",
                 "SKU barcode symbology is not supported.",
                 "symbology"));
+        }
+
+        return DomainValidationResult.From(errors);
+    }
+
+    public static DomainValidationResult ValidateDetails(
+        string? value,
+        BarcodeSymbology symbology,
+        bool isPrimary,
+        bool isActive)
+    {
+        List<DomainValidationFailure> errors = [];
+
+        string normalizedValue = NormalizeValue(value);
+
+        if (string.IsNullOrWhiteSpace(normalizedValue))
+        {
+            errors.Add(new(
+                "SkuBarcode.ValueRequired",
+                "SKU barcode value is required.",
+                "value"));
+        }
+        else if (normalizedValue.Length > MaxValueLength)
+        {
+            errors.Add(new(
+                "SkuBarcode.ValueTooLong",
+                $"SKU barcode value must not exceed {MaxValueLength} characters.",
+                "value"));
+        }
+
+        if (!Enum.IsDefined(symbology))
+        {
+            errors.Add(new(
+                "SkuBarcode.SymbologyUnsupported",
+                "SKU barcode symbology is not supported.",
+                "symbology"));
+        }
+
+        if (!isActive && isPrimary)
+        {
+            errors.Add(new(
+                "SkuBarcode.UnsupportedPrimaryChange",
+                "Inactive SKU barcodes cannot be made primary.",
+                "isPrimary"));
         }
 
         return DomainValidationResult.From(errors);

@@ -73,6 +73,6 @@ internal static class WmsErrors
         public static ServiceError UpdateFailed => ServiceErrors.Failure("SkuBarcode.UpdateFailed", "SKU barcode update failed unexpectedly.");
         public static ServiceError DeactivateFailed => ServiceErrors.Failure("SkuBarcode.DeactivateFailed", "SKU barcode deactivation failed unexpectedly.");
         public static ServiceError ReactivateFailed => ServiceErrors.Failure("SkuBarcode.ReactivateFailed", "SKU barcode reactivation failed unexpectedly.");
-        public static ServiceError UnsupportedPrimaryChange => ServiceErrors.Failure("SkuBarcode.UnsupportedPrimaryChange", "Inactive SKU barcodes cannot be made primary.");
+        public static ServiceError UnsupportedPrimaryChange => ServiceErrors.Conflict("SkuBarcode.UnsupportedPrimaryChange", "Inactive SKU barcodes cannot be made primary.", "isPrimary");
     }
 }

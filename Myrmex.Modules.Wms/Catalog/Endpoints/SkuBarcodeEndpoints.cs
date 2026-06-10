@@ -27,6 +27,18 @@ internal static class SkuBarcodeEndpoints
             .WithName("ListSkuBarcodes")
             .WithSummary("List SKU Barcodes");
 
+        group.MapPut("/sku-barcodes/{skuBarcodeId:guid}", UpdateSkuBarcodeDetailsAsync)
+            .WithName("UpdateSkuBarcodeDetails")
+            .WithSummary("Update SKU Barcode Details");
+
+        group.MapPost("/sku-barcodes/{skuBarcodeId:guid}/deactivate", DeactivateSkuBarcodeAsync)
+            .WithName("DeactivateSkuBarcode")
+            .WithSummary("Deactivate SKU Barcode");
+
+        group.MapPost("/sku-barcodes/{skuBarcodeId:guid}/reactivate", ReactivateSkuBarcodeAsync)
+            .WithName("ReactivateSkuBarcode")
+            .WithSummary("Reactivate SKU Barcode");
+
         return group;
     }
 
@@ -56,6 +68,62 @@ internal static class SkuBarcodeEndpoints
 
         var result = await commandDispatcher
             .DispatchAsync<CreateSkuBarcode.Command, ServiceResult<SkuBarcodeDetails>>(command, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private sealed record UpdateSkuBarcodeDetailsRequest(
+        string? Value,
+        string? Symbology,
+        bool IsPrimary);
+
+    private static async Task<IResult> UpdateSkuBarcodeDetailsAsync(
+        Guid skuBarcodeId,
+        UpdateSkuBarcodeDetailsRequest request,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken)
+    {
+        BarcodeSymbology symbology = Enum.TryParse(
+            request.Symbology,
+            ignoreCase: false,
+            out BarcodeSymbology parsedSymbology)
+                ? parsedSymbology
+                : (BarcodeSymbology)(-1);
+
+        var command = new UpdateSkuBarcodeDetails.Command(
+            SkuBarcodeId: skuBarcodeId,
+            Value: request.Value,
+            Symbology: symbology,
+            IsPrimary: request.IsPrimary);
+
+        var result = await commandDispatcher
+            .DispatchAsync<UpdateSkuBarcodeDetails.Command, ServiceResult<SkuBarcodeDetails>>(command, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> DeactivateSkuBarcodeAsync(
+        Guid skuBarcodeId,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var command = new DeactivateSkuBarcode.Command(skuBarcodeId);
+
+        var result = await commandDispatcher
+            .DispatchAsync<DeactivateSkuBarcode.Command, ServiceResult<SkuBarcodeDetails>>(command, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> ReactivateSkuBarcodeAsync(
+        Guid skuBarcodeId,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var command = new ReactivateSkuBarcode.Command(skuBarcodeId);
+
+        var result = await commandDispatcher
+            .DispatchAsync<ReactivateSkuBarcode.Command, ServiceResult<SkuBarcodeDetails>>(command, cancellationToken);
 
         return result.ToHttpResult();
     }

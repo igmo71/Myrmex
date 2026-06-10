@@ -1171,6 +1171,204 @@ public sealed class WmsCatalogApiClientTests
         Assert.Equal("SkuBarcode.NotFound", exception.Extensions["code"]);
     }
 
+    [Fact]
+    public async Task TryUpdateSkuBarcodeDetailsAsync_WhenSuccessful_PutsToSkuBarcodeRouteAndReturnsDetails()
+    {
+        // Arrange
+        const string responseJson = """
+            {
+              "id": "018f0000-0000-7000-8000-000000000042",
+              "stockKeepingUnitId": "018f0000-0000-7000-8000-000000000001",
+              "value": "AbC-789",
+              "symbology": "QrCode",
+              "isPrimary": true,
+              "isActive": true,
+              "createdAtUtc": "2026-06-09T00:00:00+00:00",
+              "updatedAtUtc": "2026-06-10T00:00:00+00:00"
+            }
+            """;
+
+        Guid skuBarcodeId = Guid.Parse("018f0000-0000-7000-8000-000000000042");
+
+        CapturingHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            responseJson,
+            "application/json");
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("https://myrmex.test")
+        };
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        UpdateSkuBarcodeDetailsRequest request = new(
+            Value: "  AbC-789  ",
+            Symbology: "QrCode",
+            IsPrimary: true);
+
+        // Act
+        ApiResult<SkuBarcodeDetails> result = await apiClient.TryUpdateSkuBarcodeDetailsAsync(
+            skuBarcodeId,
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+
+        Assert.Equal(skuBarcodeId, result.Value.Id);
+        Assert.Equal("AbC-789", result.Value.Value);
+        Assert.Equal("QrCode", result.Value.Symbology);
+        Assert.True(result.Value.IsPrimary);
+
+        Assert.Equal(HttpMethod.Put, handler.RequestMethod);
+        Assert.Equal($"/api/wms/catalog/sku-barcodes/{skuBarcodeId}", handler.RequestPathAndQuery);
+        Assert.NotNull(handler.RequestContent);
+        Assert.Contains("\"value\":\"  AbC-789  \"", handler.RequestContent);
+        Assert.Contains("\"symbology\":\"QrCode\"", handler.RequestContent);
+        Assert.Contains("\"isPrimary\":true", handler.RequestContent);
+    }
+
+    [Fact]
+    public async Task TryUpdateSkuBarcodeDetailsAsync_WhenUnsupportedPrimaryChangeReturned_ReturnsFailureResult()
+    {
+        // Arrange
+        const string problemJson = """
+            {
+              "type": "https://httpstatuses.com/409",
+              "title": "Conflict",
+              "status": 409,
+              "detail": "Inactive SKU barcodes cannot be made primary.",
+              "code": "SkuBarcode.UnsupportedPrimaryChange",
+              "field": "isPrimary"
+            }
+            """;
+
+        using HttpClient httpClient = CreateHttpClient(
+            HttpStatusCode.Conflict,
+            problemJson,
+            "application/problem+json");
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        UpdateSkuBarcodeDetailsRequest request = new(
+            Value: "ABC-123",
+            Symbology: "Code128",
+            IsPrimary: true);
+
+        // Act
+        ApiResult<SkuBarcodeDetails> result = await apiClient.TryUpdateSkuBarcodeDetailsAsync(
+            Guid.NewGuid(),
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.NotNull(result.Error);
+
+        Assert.Equal(409, result.Error.Status);
+        Assert.Equal("Inactive SKU barcodes cannot be made primary.", result.Error.Message);
+        Assert.Equal("SkuBarcode.UnsupportedPrimaryChange", result.Error.Extensions["code"]);
+        Assert.Equal("isPrimary", result.Error.Extensions["field"]);
+    }
+
+    [Fact]
+    public async Task TryDeactivateSkuBarcodeAsync_WhenSuccessful_PostsToDeactivateRouteAndReturnsDetails()
+    {
+        // Arrange
+        const string responseJson = """
+            {
+              "id": "018f0000-0000-7000-8000-000000000042",
+              "stockKeepingUnitId": "018f0000-0000-7000-8000-000000000001",
+              "value": "AbC-123",
+              "symbology": "Code128",
+              "isPrimary": false,
+              "isActive": false,
+              "createdAtUtc": "2026-06-09T00:00:00+00:00",
+              "updatedAtUtc": "2026-06-10T00:00:00+00:00"
+            }
+            """;
+
+        Guid skuBarcodeId = Guid.Parse("018f0000-0000-7000-8000-000000000042");
+
+        CapturingHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            responseJson,
+            "application/json");
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("https://myrmex.test")
+        };
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        // Act
+        ApiResult<SkuBarcodeDetails> result = await apiClient.TryDeactivateSkuBarcodeAsync(
+            skuBarcodeId,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+
+        Assert.Equal(skuBarcodeId, result.Value.Id);
+        Assert.False(result.Value.IsPrimary);
+        Assert.False(result.Value.IsActive);
+
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal($"/api/wms/catalog/sku-barcodes/{skuBarcodeId}/deactivate", handler.RequestPathAndQuery);
+    }
+
+    [Fact]
+    public async Task TryReactivateSkuBarcodeAsync_WhenSuccessful_PostsToReactivateRouteAndReturnsDetails()
+    {
+        // Arrange
+        const string responseJson = """
+            {
+              "id": "018f0000-0000-7000-8000-000000000042",
+              "stockKeepingUnitId": "018f0000-0000-7000-8000-000000000001",
+              "value": "AbC-123",
+              "symbology": "Code128",
+              "isPrimary": false,
+              "isActive": true,
+              "createdAtUtc": "2026-06-09T00:00:00+00:00",
+              "updatedAtUtc": "2026-06-10T00:00:00+00:00"
+            }
+            """;
+
+        Guid skuBarcodeId = Guid.Parse("018f0000-0000-7000-8000-000000000042");
+
+        CapturingHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            responseJson,
+            "application/json");
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("https://myrmex.test")
+        };
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        // Act
+        ApiResult<SkuBarcodeDetails> result = await apiClient.TryReactivateSkuBarcodeAsync(
+            skuBarcodeId,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+
+        Assert.Equal(skuBarcodeId, result.Value.Id);
+        Assert.False(result.Value.IsPrimary);
+        Assert.True(result.Value.IsActive);
+
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal($"/api/wms/catalog/sku-barcodes/{skuBarcodeId}/reactivate", handler.RequestPathAndQuery);
+    }
+
     private static HttpClient CreateHttpClient(
         HttpStatusCode statusCode,
         string content,

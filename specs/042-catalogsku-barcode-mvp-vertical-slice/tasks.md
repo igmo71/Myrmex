@@ -98,19 +98,19 @@
 
 ### Tests for User Story 3
 
-- [ ] T030 [P] [US3] Add domain tests for update behavior, explicit primary selection, deactivate clearing `IsPrimary` only on the deactivated barcode, no promotion, reactivation as non-primary, and idempotent lifecycle calls in `Myrmex.Tests/Wms/Catalog/Domain/SkuBarcodeTests.cs`
-- [ ] T031 [P] [US3] Add update handler tests for trimming-only update normalization, case-sensitive duplicate conflicts, symbology validation, explicit `IsPrimary=true` clearing other active primary barcodes, explicit `IsPrimary=false`, and rejecting `IsPrimary=true` update on an inactive barcode in `Myrmex.Tests/Wms/Catalog/Features/SkuBarcodes/UpdateSkuBarcodeDetailsHandlerTests.cs`
-- [ ] T032 [P] [US3] Add lifecycle handler tests for deactivate primary clearing only the deactivated barcode, no automatic promotion, SKU with zero active primary barcodes, reactivate returning non-primary, and lifecycle idempotency in `Myrmex.Tests/Wms/Catalog/Features/SkuBarcodes/SkuBarcodeLifecycleHandlerTests.cs`
-- [ ] T033 [US3] Add Catalog API client update, deactivate, reactivate, unsupported-primary-change, and lifecycle result tests in `Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs`
+- [X] T030 [P] [US3] Add domain tests for update behavior, explicit primary selection, deactivate clearing `IsPrimary` only on the deactivated barcode, no promotion, reactivation as non-primary, and idempotent lifecycle calls in `Myrmex.Tests/Wms/Catalog/Domain/SkuBarcodeTests.cs`
+- [X] T031 [P] [US3] Add update handler tests for trimming-only update normalization, case-sensitive duplicate conflicts, symbology validation, explicit `IsPrimary=true` clearing other active primary barcodes, explicit `IsPrimary=false`, and rejecting `IsPrimary=true` update on an inactive barcode in `Myrmex.Tests/Wms/Catalog/Features/SkuBarcodes/UpdateSkuBarcodeDetailsHandlerTests.cs`
+- [X] T032 [P] [US3] Add lifecycle handler tests for deactivate primary clearing only the deactivated barcode, no automatic promotion, SKU with zero active primary barcodes, reactivate returning non-primary, and lifecycle idempotency in `Myrmex.Tests/Wms/Catalog/Features/SkuBarcodes/SkuBarcodeLifecycleHandlerTests.cs`
+- [X] T033 [US3] Add Catalog API client update, deactivate, reactivate, unsupported-primary-change, and lifecycle result tests in `Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs`
 
 ### Implementation for User Story 3
 
-- [ ] T034 [US3] Extend `SkuBarcode` aggregate update and lifecycle methods for trimmed value updates, symbology changes, explicit primary changes, inactive primary update rejection, deactivate primary clearing, no promotion, reactivation as non-primary, and idempotency in `Myrmex.Modules.Wms/Catalog/Domain/SkuBarcodes/SkuBarcode.cs`
-- [ ] T035 [US3] Implement `UpdateSkuBarcodeDetails` command and handler with duplicate checks, unsupported inactive-primary update handling, explicit primary clearing for active barcode updates, and existing result conventions in `Myrmex.Modules.Wms/Catalog/Features/SkuBarcodes/UpdateSkuBarcodeDetails.cs`
-- [ ] T036 [US3] Implement `DeactivateSkuBarcode` command and handler with primary clearing only on the deactivated barcode, no promotion, idempotency, and updated timestamp behavior in `Myrmex.Modules.Wms/Catalog/Features/SkuBarcodes/DeactivateSkuBarcode.cs`
-- [ ] T037 [US3] Implement `ReactivateSkuBarcode` command and handler with active state restoration, non-primary default, idempotency, and updated timestamp behavior in `Myrmex.Modules.Wms/Catalog/Features/SkuBarcodes/ReactivateSkuBarcode.cs`
-- [ ] T038 [US3] Add update, deactivate, and reactivate routes to `SkuBarcodeEndpoints` in `Myrmex.Modules.Wms/Catalog/Endpoints/SkuBarcodeEndpoints.cs`
-- [ ] T039 [US3] Add `UpdateSkuBarcodeDetailsRequest`, `TryUpdateSkuBarcodeDetailsAsync`, `TryDeactivateSkuBarcodeAsync`, and `TryReactivateSkuBarcodeAsync` to the existing Catalog client in `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
+- [X] T034 [US3] Extend `SkuBarcode` aggregate update and lifecycle methods for trimmed value updates, symbology changes, explicit primary changes, inactive primary update rejection, deactivate primary clearing, no promotion, reactivation as non-primary, and idempotency in `Myrmex.Modules.Wms/Catalog/Domain/SkuBarcodes/SkuBarcode.cs`
+- [X] T035 [US3] Implement `UpdateSkuBarcodeDetails` command and handler with duplicate checks, unsupported inactive-primary update handling, explicit primary clearing for active barcode updates, and existing result conventions in `Myrmex.Modules.Wms/Catalog/Features/SkuBarcodes/UpdateSkuBarcodeDetails.cs`
+- [X] T036 [US3] Implement `DeactivateSkuBarcode` command and handler with primary clearing only on the deactivated barcode, no promotion, idempotency, and updated timestamp behavior in `Myrmex.Modules.Wms/Catalog/Features/SkuBarcodes/DeactivateSkuBarcode.cs`
+- [X] T037 [US3] Implement `ReactivateSkuBarcode` command and handler with active state restoration, non-primary default, idempotency, and updated timestamp behavior in `Myrmex.Modules.Wms/Catalog/Features/SkuBarcodes/ReactivateSkuBarcode.cs`
+- [X] T038 [US3] Add update, deactivate, and reactivate routes to `SkuBarcodeEndpoints` in `Myrmex.Modules.Wms/Catalog/Endpoints/SkuBarcodeEndpoints.cs`
+- [X] T039 [US3] Add `UpdateSkuBarcodeDetailsRequest`, `TryUpdateSkuBarcodeDetailsAsync`, `TryDeactivateSkuBarcodeAsync`, and `TryReactivateSkuBarcodeAsync` to the existing Catalog client in `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
 
 **Checkpoint**: All user stories should be independently functional through API/domain/handler/persistence/client paths, with UI still out of scope.
 
