@@ -61,7 +61,7 @@
 - [X] T019 [US1] Add initial `SkuBarcodeEndpoints` with create route `POST /api/wms/catalog/sku-barcodes` in `Myrmex.Modules.Wms/Catalog/Endpoints/SkuBarcodeEndpoints.cs`
 - [X] T020 [US1] Register SKU barcode endpoints in the Catalog route group in `Myrmex.Modules.Wms/Catalog/Endpoints/CatalogEndpoints.cs`
 - [X] T021 [US1] Add SKU barcode create DTOs and `TryCreateSkuBarcodeAsync` to the existing Catalog client in `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
-- [ ] T022 [US1] Review developer-generated `AddSkuBarcodes` migration artifacts for the expected table, SKU foreign key, string `Symbology`, provider-appropriate case-sensitive `Value` uniqueness, no `NormalizedValue`, and no forbidden tables in `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations`
+- [X] T022 [US1] Review developer-generated `AddSkuBarcodes` migration artifacts for the expected table, SKU foreign key, string `Symbology`, provider-appropriate case-sensitive `Value` uniqueness, no `NormalizedValue`, and no forbidden tables in `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations`
 
 **Checkpoint**: User Story 1 should create SKU barcodes independently through domain, handler, persistence, endpoint, and client paths.
 
@@ -120,11 +120,11 @@
 
 **Purpose**: Final scope, regression, and documentation checks without adding new feature scope.
 
-- [ ] T040 [P] Verify no UI phase was added by reviewing absence of SKU barcode pages, navigation, dialogs, grids, forms, and component tests under `Myrmex.WebApp/Components/Pages/Wms/Catalog` and `Myrmex.Tests`
-- [ ] T041 [P] Verify no generic barcode abstraction was added by reviewing final changes for BarcodeType reference data, generic Barcode table, Barcode module, OwnerType/OwnerId, IHasBarcodes, generic ownership, scanning, printing, labels, GS1, check digit validation, packaging, SKU/UoM conversion, inventory, receiving, LPN, picking, shipping, and integration in `Myrmex.Modules.Wms`, `Myrmex.WebApp`, and `Myrmex.Tests`
-- [ ] T042 [P] Update implementation notes if task execution changes validation commands or migration review expectations in `specs/042-catalogsku-barcode-mvp-vertical-slice/quickstart.md`
-- [ ] T043 Review final implementation against the API contract in `specs/042-catalogsku-barcode-mvp-vertical-slice/contracts/catalog-sku-barcode-api-contract.md`
-- [ ] T044 Review final implementation against the data model in `specs/042-catalogsku-barcode-mvp-vertical-slice/data-model.md`
+- [X] T040 [P] Verify no UI phase was added by reviewing absence of SKU barcode pages, navigation, dialogs, grids, forms, and component tests under `Myrmex.WebApp/Components/Pages/Wms/Catalog` and `Myrmex.Tests`
+- [X] T041 [P] Verify no generic barcode abstraction was added by reviewing final changes for BarcodeType reference data, generic Barcode table, Barcode module, OwnerType/OwnerId, IHasBarcodes, generic ownership, scanning, printing, labels, GS1, check digit validation, packaging, SKU/UoM conversion, inventory, receiving, LPN, picking, shipping, and integration in `Myrmex.Modules.Wms`, `Myrmex.WebApp`, and `Myrmex.Tests`
+- [X] T042 [P] Update implementation notes if task execution changes validation commands or migration review expectations in `specs/042-catalogsku-barcode-mvp-vertical-slice/quickstart.md`
+- [X] T043 Review final implementation against the API contract in `specs/042-catalogsku-barcode-mvp-vertical-slice/contracts/catalog-sku-barcode-api-contract.md`
+- [X] T044 Review final implementation against the data model in `specs/042-catalogsku-barcode-mvp-vertical-slice/data-model.md`
 
 ---
 
