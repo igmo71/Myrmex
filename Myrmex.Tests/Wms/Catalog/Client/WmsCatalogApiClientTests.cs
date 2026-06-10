@@ -835,6 +835,158 @@ public sealed class WmsCatalogApiClientTests
         Assert.Empty(result.Error.Extensions);
     }
 
+    [Fact]
+    public async Task TryCreateSkuBarcodeAsync_WhenSuccessful_PostsToSkuBarcodeRouteAndReturnsDetails()
+    {
+        // Arrange
+        const string responseJson = """
+            {
+              "id": "018f0000-0000-7000-8000-000000000042",
+              "stockKeepingUnitId": "018f0000-0000-7000-8000-000000000001",
+              "value": "AbC-123",
+              "symbology": "Code128",
+              "isPrimary": true,
+              "isActive": true,
+              "createdAtUtc": "2026-06-09T00:00:00+00:00",
+              "updatedAtUtc": null
+            }
+            """;
+
+        CapturingHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            responseJson,
+            "application/json");
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("https://myrmex.test")
+        };
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000001");
+        CreateSkuBarcodeRequest request = new(
+            StockKeepingUnitId: stockKeepingUnitId,
+            Value: "  AbC-123  ",
+            Symbology: "Code128",
+            IsPrimary: true);
+
+        // Act
+        ApiResult<SkuBarcodeDetails> result = await apiClient.TryCreateSkuBarcodeAsync(
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+
+        Assert.Equal(Guid.Parse("018f0000-0000-7000-8000-000000000042"), result.Value.Id);
+        Assert.Equal(stockKeepingUnitId, result.Value.StockKeepingUnitId);
+        Assert.Equal("AbC-123", result.Value.Value);
+        Assert.Equal("Code128", result.Value.Symbology);
+        Assert.True(result.Value.IsPrimary);
+        Assert.True(result.Value.IsActive);
+        Assert.Null(result.Value.UpdatedAtUtc);
+
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal("/api/wms/catalog/sku-barcodes", handler.RequestPathAndQuery);
+        Assert.NotNull(handler.RequestContent);
+        Assert.Contains($"\"stockKeepingUnitId\":\"{stockKeepingUnitId}\"", handler.RequestContent);
+        Assert.Contains("\"value\":\"  AbC-123  \"", handler.RequestContent);
+        Assert.Contains("\"symbology\":\"Code128\"", handler.RequestContent);
+        Assert.Contains("\"isPrimary\":true", handler.RequestContent);
+    }
+
+    [Fact]
+    public async Task TryCreateSkuBarcodeAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
+    {
+        // Arrange
+        const string problemJson = """
+            {
+              "type": "https://httpstatuses.com/409",
+              "title": "Conflict",
+              "status": 409,
+              "detail": "SKU barcode with the same value already exists.",
+              "code": "SkuBarcode.ValueAlreadyExists",
+              "field": "value"
+            }
+            """;
+
+        using HttpClient httpClient = CreateHttpClient(
+            HttpStatusCode.Conflict,
+            problemJson,
+            "application/problem+json");
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        CreateSkuBarcodeRequest request = new(
+            StockKeepingUnitId: Guid.NewGuid(),
+            Value: "ABC-123",
+            Symbology: "Code128",
+            IsPrimary: false);
+
+        // Act
+        ApiResult<SkuBarcodeDetails> result = await apiClient.TryCreateSkuBarcodeAsync(
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.False(result.IsSuccess);
+        Assert.Null(result.Value);
+        Assert.NotNull(result.Error);
+
+        Assert.Equal(409, result.Error.Status);
+        Assert.Equal("SKU barcode with the same value already exists.", result.Error.Message);
+        Assert.Equal("SkuBarcode.ValueAlreadyExists", result.Error.Extensions["code"]);
+        Assert.Equal("value", result.Error.Extensions["field"]);
+    }
+
+    [Fact]
+    public async Task TryCreateSkuBarcodeAsync_WhenStockKeepingUnitIsMissing_ReturnsFailureResult()
+    {
+        // Arrange
+        const string problemJson = """
+            {
+              "type": "https://httpstatuses.com/404",
+              "title": "Not Found",
+              "status": 404,
+              "detail": "Stock keeping unit was not found.",
+              "code": "StockKeepingUnit.NotFound",
+              "field": "stockKeepingUnitId"
+            }
+            """;
+
+        using HttpClient httpClient = CreateHttpClient(
+            HttpStatusCode.NotFound,
+            problemJson,
+            "application/problem+json");
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        CreateSkuBarcodeRequest request = new(
+            StockKeepingUnitId: Guid.NewGuid(),
+            Value: "ABC-123",
+            Symbology: "Code128",
+            IsPrimary: false);
+
+        // Act
+        ApiResult<SkuBarcodeDetails> result = await apiClient.TryCreateSkuBarcodeAsync(
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.False(result.IsSuccess);
+        Assert.Null(result.Value);
+        Assert.NotNull(result.Error);
+
+        Assert.Equal(404, result.Error.Status);
+        Assert.Equal("Stock keeping unit was not found.", result.Error.Message);
+        Assert.Equal("StockKeepingUnit.NotFound", result.Error.Extensions["code"]);
+        Assert.Equal("stockKeepingUnitId", result.Error.Extensions["field"]);
+    }
+
     private static HttpClient CreateHttpClient(
         HttpStatusCode statusCode,
         string content,

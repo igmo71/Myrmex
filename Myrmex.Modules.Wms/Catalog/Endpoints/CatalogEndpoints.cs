@@ -14,6 +14,7 @@ internal static class CatalogEndpoints
 
         group.MapStockKeepingUnitEndpoints();
         group.MapUnitOfMeasureEndpoints();
+        group.MapSkuBarcodeEndpoints();
 
         return endpoints;
     }

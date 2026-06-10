@@ -18,10 +18,10 @@
 
 **Purpose**: Prepare the SKU barcode slice folders and review existing Catalog patterns without changing behavior.
 
-- [ ] T001 Create SKU barcode source and test folders in `Myrmex.Modules.Wms/Catalog/Domain/SkuBarcodes`, `Myrmex.Modules.Wms/Catalog/Features/SkuBarcodes`, `Myrmex.Tests/Wms/Catalog/Domain`, `Myrmex.Tests/Wms/Catalog/Features/SkuBarcodes`, and `Myrmex.Tests/Wms/Catalog/Persistence`
-- [ ] T002 [P] Review existing SKU aggregate, UoM aggregate, and Catalog feature patterns before implementation in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnit.cs`, `Myrmex.Modules.Wms/Catalog/Domain/UnitsOfMeasure/UnitOfMeasure.cs`, `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/CreateStockKeepingUnit.cs`, and `Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/CreateUnitOfMeasure.cs`
-- [ ] T003 [P] Review existing Catalog endpoint and client patterns before implementation in `Myrmex.Modules.Wms/Catalog/Endpoints/StockKeepingUnitEndpoints.cs`, `Myrmex.Modules.Wms/Catalog/Endpoints/UnitOfMeasureEndpoints.cs`, and `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
-- [ ] T004 [P] Review existing Catalog persistence and test infrastructure before implementation in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/StockKeepingUnitConfiguration.cs`, `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/UnitOfMeasureConfiguration.cs`, `Myrmex.Tests/Wms/Catalog/Persistence/StockKeepingUnitPersistenceTests.cs`, and `Myrmex.Tests/Wms/Catalog/Persistence/UnitOfMeasurePersistenceTests.cs`
+- [X] T001 Create SKU barcode source and test folders in `Myrmex.Modules.Wms/Catalog/Domain/SkuBarcodes`, `Myrmex.Modules.Wms/Catalog/Features/SkuBarcodes`, `Myrmex.Tests/Wms/Catalog/Domain`, `Myrmex.Tests/Wms/Catalog/Features/SkuBarcodes`, and `Myrmex.Tests/Wms/Catalog/Persistence`
+- [X] T002 [P] Review existing SKU aggregate, UoM aggregate, and Catalog feature patterns before implementation in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnit.cs`, `Myrmex.Modules.Wms/Catalog/Domain/UnitsOfMeasure/UnitOfMeasure.cs`, `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/CreateStockKeepingUnit.cs`, and `Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/CreateUnitOfMeasure.cs`
+- [X] T003 [P] Review existing Catalog endpoint and client patterns before implementation in `Myrmex.Modules.Wms/Catalog/Endpoints/StockKeepingUnitEndpoints.cs`, `Myrmex.Modules.Wms/Catalog/Endpoints/UnitOfMeasureEndpoints.cs`, and `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
+- [X] T004 [P] Review existing Catalog persistence and test infrastructure before implementation in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/StockKeepingUnitConfiguration.cs`, `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/UnitOfMeasureConfiguration.cs`, `Myrmex.Tests/Wms/Catalog/Persistence/StockKeepingUnitPersistenceTests.cs`, and `Myrmex.Tests/Wms/Catalog/Persistence/UnitOfMeasurePersistenceTests.cs`
 
 ---
 
@@ -41,26 +41,26 @@
 
 ### Tests for User Story 1
 
-- [ ] T005 [P] [US1] Add domain tests for create defaults, trimming-only normalization, casing preservation, required value, supported `BarcodeSymbology`, and no `NormalizedValue` behavior in `Myrmex.Tests/Wms/Catalog/Domain/SkuBarcodeTests.cs`
-- [ ] T006 [P] [US1] Add create handler tests for missing SKU, blank-after-trim value validation, duplicate trimmed value conflict, and case-sensitive coexistence of `abc` and `ABC` in `Myrmex.Tests/Wms/Catalog/Features/SkuBarcodes/CreateSkuBarcodeHandlerTests.cs`
-- [ ] T007 [US1] Add create handler tests for explicit `IsPrimary=true` clearing other active primary barcodes for the same SKU in `Myrmex.Tests/Wms/Catalog/Features/SkuBarcodes/CreateSkuBarcodeHandlerTests.cs`
-- [ ] T008 [P] [US1] Add persistence tests for `sku_barcodes` mapping, required `StockKeepingUnitId` relationship, string `Symbology`, no `NormalizedValue`, unique trimmed `Value`, and case-sensitive coexistence of `abc` and `ABC` in `Myrmex.Tests/Wms/Catalog/Persistence/SkuBarcodePersistenceTests.cs`
-- [ ] T009 [P] [US1] Add Catalog API client create route, DTO, `ApiResult<T>`, validation, missing-SKU, and duplicate-value tests in `Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs`
+- [X] T005 [P] [US1] Add domain tests for create defaults, trimming-only normalization, casing preservation, required value, supported `BarcodeSymbology`, and no `NormalizedValue` behavior in `Myrmex.Tests/Wms/Catalog/Domain/SkuBarcodeTests.cs`
+- [X] T006 [P] [US1] Add create handler tests for missing SKU, blank-after-trim value validation, duplicate trimmed value conflict, and case-sensitive coexistence of `abc` and `ABC` in `Myrmex.Tests/Wms/Catalog/Features/SkuBarcodes/CreateSkuBarcodeHandlerTests.cs`
+- [X] T007 [US1] Add create handler tests for explicit `IsPrimary=true` clearing other active primary barcodes for the same SKU in `Myrmex.Tests/Wms/Catalog/Features/SkuBarcodes/CreateSkuBarcodeHandlerTests.cs`
+- [X] T008 [P] [US1] Add persistence tests for `sku_barcodes` mapping, required `StockKeepingUnitId` relationship, string `Symbology`, no `NormalizedValue`, unique trimmed `Value`, and case-sensitive coexistence of `abc` and `ABC` in `Myrmex.Tests/Wms/Catalog/Persistence/SkuBarcodePersistenceTests.cs`
+- [X] T009 [P] [US1] Add Catalog API client create route, DTO, `ApiResult<T>`, validation, missing-SKU, and duplicate-value tests in `Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs`
 
 ### Implementation for User Story 1
 
-- [ ] T010 [P] [US1] Add `BarcodeSymbology` constrained values `Unknown`, `Ean13`, `Ean8`, `UpcA`, `Code128`, `QrCode`, and `Internal` in `Myrmex.Modules.Wms/Catalog/Domain/SkuBarcodes/BarcodeSymbology.cs`
-- [ ] T011 [P] [US1] Add SKU barcode domain events for created, details updated, deactivated, and reactivated changes in `Myrmex.Modules.Wms/Catalog/Domain/SkuBarcodes/SkuBarcodeEvents.cs`
-- [ ] T012 [US1] Implement `SkuBarcode` aggregate with `StockKeepingUnitId`, trimmed `Value`, `Symbology`, `IsPrimary`, active state, timestamps, validation, create factory, and primary-selection helpers in `Myrmex.Modules.Wms/Catalog/Domain/SkuBarcodes/SkuBarcode.cs`
-- [ ] T013 [US1] Add SKU barcode validation, duplicate-value, missing-SKU, not-found, and unsupported-primary-change errors in `Myrmex.Modules.Wms/WmsErrors.cs`
-- [ ] T014 [US1] Add `SkuBarcodes` DbSet to the WMS context in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs`
-- [ ] T015 [US1] Add SKU barcode table, primary key, required columns, SKU foreign key, `StockKeepingUnitId` index, string `Symbology`, and provider-appropriate case-sensitive unique `Value` configuration in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/SkuBarcodeConfiguration.cs`
-- [ ] T016 [US1] Add SKU barcode table, key, foreign key, value index, and SKU index constants in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs`
-- [ ] T017 [US1] Implement `SkuBarcodeDetails` projection with `Id`, `StockKeepingUnitId`, `Value`, `Symbology`, `IsPrimary`, `IsActive`, `CreatedAtUtc`, and `UpdatedAtUtc` in `Myrmex.Modules.Wms/Catalog/Features/SkuBarcodes/SkuBarcodeDetails.cs`
-- [ ] T018 [US1] Implement `CreateSkuBarcode` command and handler with SKU existence check, trimming-only normalization, case-sensitive duplicate check, symbology validation, primary clearing for explicit create, and persistence failure handling in `Myrmex.Modules.Wms/Catalog/Features/SkuBarcodes/CreateSkuBarcode.cs`
-- [ ] T019 [US1] Add initial `SkuBarcodeEndpoints` with create route `POST /api/wms/catalog/sku-barcodes` in `Myrmex.Modules.Wms/Catalog/Endpoints/SkuBarcodeEndpoints.cs`
-- [ ] T020 [US1] Register SKU barcode endpoints in the Catalog route group in `Myrmex.Modules.Wms/Catalog/Endpoints/CatalogEndpoints.cs`
-- [ ] T021 [US1] Add SKU barcode create DTOs and `TryCreateSkuBarcodeAsync` to the existing Catalog client in `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
+- [X] T010 [P] [US1] Add `BarcodeSymbology` constrained values `Unknown`, `Ean13`, `Ean8`, `UpcA`, `Code128`, `QrCode`, and `Internal` in `Myrmex.Modules.Wms/Catalog/Domain/SkuBarcodes/BarcodeSymbology.cs`
+- [X] T011 [P] [US1] Add SKU barcode domain events for created, details updated, deactivated, and reactivated changes in `Myrmex.Modules.Wms/Catalog/Domain/SkuBarcodes/SkuBarcodeEvents.cs`
+- [X] T012 [US1] Implement `SkuBarcode` aggregate with `StockKeepingUnitId`, trimmed `Value`, `Symbology`, `IsPrimary`, active state, timestamps, validation, create factory, and primary-selection helpers in `Myrmex.Modules.Wms/Catalog/Domain/SkuBarcodes/SkuBarcode.cs`
+- [X] T013 [US1] Add SKU barcode validation, duplicate-value, missing-SKU, not-found, and unsupported-primary-change errors in `Myrmex.Modules.Wms/WmsErrors.cs`
+- [X] T014 [US1] Add `SkuBarcodes` DbSet to the WMS context in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs`
+- [X] T015 [US1] Add SKU barcode table, primary key, required columns, SKU foreign key, `StockKeepingUnitId` index, string `Symbology`, and provider-appropriate case-sensitive unique `Value` configuration in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/SkuBarcodeConfiguration.cs`
+- [X] T016 [US1] Add SKU barcode table, key, foreign key, value index, and SKU index constants in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs`
+- [X] T017 [US1] Implement `SkuBarcodeDetails` projection with `Id`, `StockKeepingUnitId`, `Value`, `Symbology`, `IsPrimary`, `IsActive`, `CreatedAtUtc`, and `UpdatedAtUtc` in `Myrmex.Modules.Wms/Catalog/Features/SkuBarcodes/SkuBarcodeDetails.cs`
+- [X] T018 [US1] Implement `CreateSkuBarcode` command and handler with SKU existence check, trimming-only normalization, case-sensitive duplicate check, symbology validation, primary clearing for explicit create, and persistence failure handling in `Myrmex.Modules.Wms/Catalog/Features/SkuBarcodes/CreateSkuBarcode.cs`
+- [X] T019 [US1] Add initial `SkuBarcodeEndpoints` with create route `POST /api/wms/catalog/sku-barcodes` in `Myrmex.Modules.Wms/Catalog/Endpoints/SkuBarcodeEndpoints.cs`
+- [X] T020 [US1] Register SKU barcode endpoints in the Catalog route group in `Myrmex.Modules.Wms/Catalog/Endpoints/CatalogEndpoints.cs`
+- [X] T021 [US1] Add SKU barcode create DTOs and `TryCreateSkuBarcodeAsync` to the existing Catalog client in `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
 - [ ] T022 [US1] Review developer-generated `AddSkuBarcodes` migration artifacts for the expected table, SKU foreign key, string `Symbology`, provider-appropriate case-sensitive `Value` uniqueness, no `NormalizedValue`, and no forbidden tables in `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations`
 
 **Checkpoint**: User Story 1 should create SKU barcodes independently through domain, handler, persistence, endpoint, and client paths.

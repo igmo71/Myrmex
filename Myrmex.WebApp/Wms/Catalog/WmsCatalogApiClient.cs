@@ -54,6 +54,16 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
+    public async Task<ApiResult<SkuBarcodeDetails>> TryCreateSkuBarcodeAsync(
+        CreateSkuBarcodeRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<SkuBarcodeDetails>(
+            "/api/wms/catalog/sku-barcodes",
+            request,
+            cancellationToken);
+    }
+
     public async Task<ApiResult<UnitOfMeasureDetails>> TryCreateUnitOfMeasureAsync(
         CreateUnitOfMeasureRequest request,
         CancellationToken cancellationToken = default)
@@ -163,3 +173,19 @@ public sealed record CreateUnitOfMeasureRequest(
 public sealed record UpdateUnitOfMeasureDetailsRequest(
     string? Name,
     string? Symbol);
+
+public sealed record SkuBarcodeDetails(
+    Guid Id,
+    Guid StockKeepingUnitId,
+    string Value,
+    string Symbology,
+    bool IsPrimary,
+    bool IsActive,
+    DateTimeOffset CreatedAtUtc,
+    DateTimeOffset? UpdatedAtUtc);
+
+public sealed record CreateSkuBarcodeRequest(
+    Guid StockKeepingUnitId,
+    string? Value,
+    string? Symbology,
+    bool IsPrimary);

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using Myrmex.Modules.Wms.Catalog.Domain.SkuBarcodes;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
@@ -17,11 +18,19 @@ internal sealed class WmsDbContext(DbContextOptions<WmsDbContext> options)
     public DbSet<StorageLocationStatus> StorageLocationStatuses => Set<StorageLocationStatus>();
     public DbSet<StockKeepingUnit> StockKeepingUnits => Set<StockKeepingUnit>();
     public DbSet<UnitOfMeasure> UnitsOfMeasure => Set<UnitOfMeasure>();
+    public DbSet<SkuBarcode> SkuBarcodes => Set<SkuBarcode>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema("wms");
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(WmsDbContext).Assembly);
+
+        if (Database.IsSqlServer())
+        {
+            modelBuilder.Entity<SkuBarcode>()
+                .Property(x => x.Value)
+                .UseCollation("Latin1_General_100_BIN2");
+        }
     }
 }
