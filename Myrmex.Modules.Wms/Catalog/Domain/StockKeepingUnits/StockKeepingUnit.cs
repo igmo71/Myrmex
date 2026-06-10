@@ -120,20 +120,6 @@ internal sealed class StockKeepingUnit : AggregateRoot
         return DomainValidationResult.Valid;
     }
 
-    public static DomainValidationResult Create(
-        string? code,
-        string? name,
-        string? description,
-        out StockKeepingUnit? stockKeepingUnit)
-    {
-        return Create(
-            code,
-            name,
-            description,
-            baseUnitOfMeasureId: null,
-            out stockKeepingUnit);
-    }
-
     public static DomainValidationResult ValidateCreate(
         string? code,
         string? name,

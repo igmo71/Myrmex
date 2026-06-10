@@ -709,6 +709,69 @@ public sealed class WmsCatalogApiClientTests
     }
 
     [Fact]
+    public async Task TryUpdateStockKeepingUnitDetailsAsync_WhenSuccessful_PutsBaseUnitOfMeasureIdAndReturnsDetails()
+    {
+        // Arrange
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000001");
+        Guid baseUnitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000222");
+
+        const string responseJson = """
+            {
+              "id": "018f0000-0000-7000-8000-000000000001",
+              "code": "ITEM-001",
+              "name": "Updated Widget",
+              "description": "Updated description",
+              "baseUnitOfMeasureId": "018f0000-0000-7000-8000-000000000222",
+              "isActive": true,
+              "createdAtUtc": "2026-06-10T00:00:00+00:00",
+              "updatedAtUtc": "2026-06-10T01:00:00+00:00"
+            }
+            """;
+
+        CapturingHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            responseJson,
+            "application/json");
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("https://myrmex.test")
+        };
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        UpdateStockKeepingUnitDetailsRequest request = new(
+            Name: "Updated Widget",
+            Description: "Updated description",
+            BaseUnitOfMeasureId: baseUnitOfMeasureId);
+
+        // Act
+        ApiResult<StockKeepingUnitDetails> result = await apiClient.TryUpdateStockKeepingUnitDetailsAsync(
+            stockKeepingUnitId,
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+
+        Assert.Equal(stockKeepingUnitId, result.Value.Id);
+        Assert.Equal("ITEM-001", result.Value.Code);
+        Assert.Equal("Updated Widget", result.Value.Name);
+        Assert.Equal("Updated description", result.Value.Description);
+        Assert.Equal(baseUnitOfMeasureId, result.Value.BaseUnitOfMeasureId);
+        Assert.True(result.Value.IsActive);
+        Assert.NotNull(result.Value.UpdatedAtUtc);
+
+        Assert.Equal(HttpMethod.Put, handler.RequestMethod);
+        Assert.Equal($"/api/wms/catalog/skus/{stockKeepingUnitId}", handler.RequestPathAndQuery);
+        Assert.NotNull(handler.RequestContent);
+        Assert.Contains("\"name\":\"Updated Widget\"", handler.RequestContent);
+        Assert.Contains("\"description\":\"Updated description\"", handler.RequestContent);
+        Assert.Contains($"\"baseUnitOfMeasureId\":\"{baseUnitOfMeasureId}\"", handler.RequestContent);
+    }
+
+    [Fact]
     public async Task TryUpdateStockKeepingUnitDetailsAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
     {
         // Arrange

@@ -227,7 +227,8 @@ public sealed record CreateStockKeepingUnitRequest(
 
 public sealed record UpdateStockKeepingUnitDetailsRequest(
     string? Name,
-    string? Description);
+    string? Description,
+    Guid? BaseUnitOfMeasureId = null);
 
 public sealed record UnitOfMeasureDetails(
     Guid Id,

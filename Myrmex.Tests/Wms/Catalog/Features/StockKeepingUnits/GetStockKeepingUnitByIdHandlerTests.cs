@@ -1,5 +1,6 @@
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
+using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Catalog.Features.StockKeepingUnits;
 using Myrmex.Tests.Wms.Topology.Testing;
 
@@ -87,10 +88,15 @@ public sealed class GetStockKeepingUnitByIdHandlerTests
         string name,
         bool isActive)
     {
+        UnitOfMeasure baseUnitOfMeasure = CreateUnitOfMeasure(code);
+        testDbContext.DbContext.UnitsOfMeasure.Add(baseUnitOfMeasure);
+        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
         var result = StockKeepingUnit.Create(
             code,
             name,
             description: null,
+            baseUnitOfMeasureId: baseUnitOfMeasure.Id,
             out StockKeepingUnit? stockKeepingUnit);
 
         Assert.True(result.IsValid);
@@ -106,5 +112,23 @@ public sealed class GetStockKeepingUnitByIdHandlerTests
         await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         return stockKeepingUnit;
+    }
+
+    private static UnitOfMeasure CreateUnitOfMeasure(string skuCode)
+    {
+        string unitCode = skuCode.Replace("-", string.Empty);
+
+        var result = UnitOfMeasure.Create(
+            code: unitCode,
+            name: unitCode,
+            symbol: unitCode.ToLowerInvariant(),
+            out UnitOfMeasure? unitOfMeasure);
+
+        Assert.True(result.IsValid);
+        Assert.NotNull(unitOfMeasure);
+
+        unitOfMeasure.ClearDomainEvents();
+
+        return unitOfMeasure;
     }
 }

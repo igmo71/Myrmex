@@ -13,7 +13,8 @@ internal static class UpdateStockKeepingUnitDetails
     internal sealed record Command(
         Guid StockKeepingUnitId,
         string? Name,
-        string? Description)
+        string? Description,
+        Guid? BaseUnitOfMeasureId)
         : ICommand<ServiceResult<StockKeepingUnitDetails>>;
 
     internal sealed class Handler(
@@ -33,9 +34,36 @@ internal static class UpdateStockKeepingUnitDetails
                 return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.NotFound);
             }
 
-            DomainValidationResult validationResult = stockKeepingUnit.UpdateDetails(
+            DomainValidationResult validationResult = StockKeepingUnit.ValidateDetails(
                 command.Name,
-                command.Description);
+                command.Description,
+                command.BaseUnitOfMeasureId);
+
+            if (!validationResult.IsValid)
+            {
+                return ServiceResult<StockKeepingUnitDetails>.Invalid(validationResult.Errors);
+            }
+
+            var baseUnitOfMeasure = await dbContext.UnitsOfMeasure
+                .AsNoTracking()
+                .Where(x => x.Id == command.BaseUnitOfMeasureId!.Value)
+                .Select(x => new { x.IsActive })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (baseUnitOfMeasure is null)
+            {
+                return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureNotFound);
+            }
+
+            if (!baseUnitOfMeasure.IsActive)
+            {
+                return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureInactive);
+            }
+
+            validationResult = stockKeepingUnit.UpdateDetails(
+                command.Name,
+                command.Description,
+                command.BaseUnitOfMeasureId);
 
             if (!validationResult.IsValid)
             {
