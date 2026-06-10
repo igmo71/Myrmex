@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Myrmex.AppDispatching.CommandDispatching;
+using Myrmex.AppDispatching.QueryDispatching;
 using Myrmex.AspNetCore.Results;
+using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.SkuBarcodes;
 using Myrmex.Modules.Wms.Catalog.Features.SkuBarcodes;
@@ -16,6 +18,14 @@ internal static class SkuBarcodeEndpoints
         group.MapPost("/sku-barcodes", CreateSkuBarcodeAsync)
             .WithName("CreateSkuBarcode")
             .WithSummary("Create SKU Barcode");
+
+        group.MapGet("/sku-barcodes/{skuBarcodeId:guid}", GetSkuBarcodeByIdAsync)
+            .WithName("GetSkuBarcodeById")
+            .WithSummary("Get SKU Barcode By Id");
+
+        group.MapGet("/sku-barcodes", ListSkuBarcodesAsync)
+            .WithName("ListSkuBarcodes")
+            .WithSummary("List SKU Barcodes");
 
         return group;
     }
@@ -46,6 +56,47 @@ internal static class SkuBarcodeEndpoints
 
         var result = await commandDispatcher
             .DispatchAsync<CreateSkuBarcode.Command, ServiceResult<SkuBarcodeDetails>>(command, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> GetSkuBarcodeByIdAsync(
+        Guid skuBarcodeId,
+        IQueryDispatcher queryDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetSkuBarcodeById.Query(skuBarcodeId);
+
+        var result = await queryDispatcher
+            .DispatchAsync<GetSkuBarcodeById.Query, ServiceResult<SkuBarcodeDetails>>(query, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> ListSkuBarcodesAsync(
+        int? skip,
+        int? take,
+        string? searchText,
+        string? sortBy,
+        bool? sortDescending,
+        bool? includeInactive,
+        Guid? stockKeepingUnitId,
+        IQueryDispatcher queryDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var query = new ListSkuBarcodes.Query
+        {
+            Skip = skip ?? 0,
+            Take = take ?? ListQuery.DefaultTake,
+            SearchText = searchText,
+            SortBy = sortBy,
+            SortDescending = sortDescending ?? false,
+            IncludeInactive = includeInactive ?? false,
+            StockKeepingUnitId = stockKeepingUnitId
+        };
+
+        var result = await queryDispatcher
+            .DispatchAsync<ListSkuBarcodes.Query, ServiceResult<ListResult<SkuBarcodeDetails>>>(query, cancellationToken);
 
         return result.ToHttpResult();
     }

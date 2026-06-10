@@ -75,16 +75,16 @@
 
 ### Tests for User Story 2
 
-- [ ] T023 [P] [US2] Add list handler tests for bounded paging, default active-only behavior, include-inactive behavior, `StockKeepingUnitId` filtering, value search, supported sorting by `value`, `symbology`, and `isActive`, and fallback sorting in `Myrmex.Tests/Wms/Catalog/Features/SkuBarcodes/ListSkuBarcodesHandlerTests.cs`
-- [ ] T024 [P] [US2] Add get-by-id handler tests for active barcode, inactive barcode, and missing barcode behavior in `Myrmex.Tests/Wms/Catalog/Features/SkuBarcodes/GetSkuBarcodeByIdHandlerTests.cs`
-- [ ] T025 [US2] Add Catalog API client list/get route, query string, DTO, read/load exception, and optional SKU filter tests in `Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs`
+- [X] T023 [P] [US2] Add list handler tests for bounded paging, default active-only behavior, include-inactive behavior, `StockKeepingUnitId` filtering, value search, supported sorting by `value`, `symbology`, and `isActive`, and fallback sorting in `Myrmex.Tests/Wms/Catalog/Features/SkuBarcodes/ListSkuBarcodesHandlerTests.cs`
+- [X] T024 [P] [US2] Add get-by-id handler tests for active barcode, inactive barcode, and missing barcode behavior in `Myrmex.Tests/Wms/Catalog/Features/SkuBarcodes/GetSkuBarcodeByIdHandlerTests.cs`
+- [X] T025 [US2] Add Catalog API client list/get route, query string, DTO, read/load exception, and optional SKU filter tests in `Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs`
 
 ### Implementation for User Story 2
 
-- [ ] T026 [US2] Implement `ListSkuBarcodes` query and handler with bounded paging, active-only default, include-inactive flag, optional `StockKeepingUnitId` filter, value search, supported sorting, and provider-safe fallback ordering in `Myrmex.Modules.Wms/Catalog/Features/SkuBarcodes/ListSkuBarcodes.cs`
-- [ ] T027 [US2] Implement `GetSkuBarcodeById` query and handler returning active or inactive barcode details and not-found errors in `Myrmex.Modules.Wms/Catalog/Features/SkuBarcodes/GetSkuBarcodeById.cs`
-- [ ] T028 [US2] Add list and get routes to `SkuBarcodeEndpoints` in `Myrmex.Modules.Wms/Catalog/Endpoints/SkuBarcodeEndpoints.cs`
-- [ ] T029 [US2] Add `ListSkuBarcodesRequest`, `ListSkuBarcodesAsync`, and `GetSkuBarcodeByIdAsync` to the existing Catalog client in `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
+- [X] T026 [US2] Implement `ListSkuBarcodes` query and handler with bounded paging, active-only default, include-inactive flag, optional `StockKeepingUnitId` filter, value search, supported sorting, and provider-safe fallback ordering in `Myrmex.Modules.Wms/Catalog/Features/SkuBarcodes/ListSkuBarcodes.cs`
+- [X] T027 [US2] Implement `GetSkuBarcodeById` query and handler returning active or inactive barcode details and not-found errors in `Myrmex.Modules.Wms/Catalog/Features/SkuBarcodes/GetSkuBarcodeById.cs`
+- [X] T028 [US2] Add list and get routes to `SkuBarcodeEndpoints` in `Myrmex.Modules.Wms/Catalog/Endpoints/SkuBarcodeEndpoints.cs`
+- [X] T029 [US2] Add `ListSkuBarcodesRequest`, `ListSkuBarcodesAsync`, and `GetSkuBarcodeByIdAsync` to the existing Catalog client in `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
 
 **Checkpoint**: User Stories 1 and 2 should both work independently without UI screens.
 

@@ -1,4 +1,5 @@
 using Myrmex.WebApp.Wms.Api;
+using System.Web;
 
 namespace Myrmex.WebApp.Wms.Catalog;
 
@@ -41,6 +42,24 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
     {
         return await httpClient.GetRequiredAsync<UnitOfMeasureDetails>(
             $"/api/wms/catalog/uoms/{unitOfMeasureId}",
+            cancellationToken);
+    }
+
+    public async Task<ListResult<SkuBarcodeDetails>> ListSkuBarcodesAsync(
+        ListSkuBarcodesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        string url = BuildSkuBarcodeListUrl(request);
+
+        return await httpClient.GetRequiredAsync<ListResult<SkuBarcodeDetails>>(url, cancellationToken);
+    }
+
+    public async Task<SkuBarcodeDetails> GetSkuBarcodeByIdAsync(
+        Guid skuBarcodeId,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.GetRequiredAsync<SkuBarcodeDetails>(
+            $"/api/wms/catalog/sku-barcodes/{skuBarcodeId}",
             cancellationToken);
     }
 
@@ -136,6 +155,27 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
+    private static string BuildSkuBarcodeListUrl(ListSkuBarcodesRequest request)
+    {
+        ListRequest listRequest = new(
+            request.Skip,
+            request.Take,
+            request.SearchText,
+            request.SortBy,
+            request.SortDescending,
+            request.IncludeInactive);
+
+        string url = WmsApiUrls.BuildListUrl(
+            "/api/wms/catalog/sku-barcodes",
+            listRequest);
+
+        if (request.StockKeepingUnitId.HasValue)
+        {
+            url += $"&stockKeepingUnitId={HttpUtility.UrlEncode(request.StockKeepingUnitId.Value.ToString())}";
+        }
+
+        return url;
+    }
 }
 
 public sealed record StockKeepingUnitDetails(
@@ -189,3 +229,12 @@ public sealed record CreateSkuBarcodeRequest(
     string? Value,
     string? Symbology,
     bool IsPrimary);
+
+public sealed record ListSkuBarcodesRequest(
+    int Skip = 0,
+    int Take = 20,
+    string? SearchText = null,
+    string? SortBy = null,
+    bool SortDescending = false,
+    bool IncludeInactive = false,
+    Guid? StockKeepingUnitId = null);
