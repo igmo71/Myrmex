@@ -78,4 +78,18 @@ internal static class WmsErrors
         public static ServiceError ReactivateFailed => ServiceErrors.Failure("SkuBarcode.ReactivateFailed", "SKU barcode reactivation failed unexpectedly.");
         public static ServiceError UnsupportedPrimaryChange => ServiceErrors.Conflict("SkuBarcode.UnsupportedPrimaryChange", "Inactive SKU barcodes cannot be made primary.", "isPrimary");
     }
+
+    internal static class InventoryBalance
+    {
+        public static ServiceError NotFound => ServiceErrors.NotFound("InventoryBalance.NotFound", "Inventory balance was not found.");
+        public static ServiceError DuplicateStockKeepingUnitStorageLocation => ServiceErrors.Conflict("InventoryBalance.DuplicateStockKeepingUnitStorageLocation", "Inventory balance for the same SKU and storage location already exists.", "stockKeepingUnitId");
+        public static ServiceError CreateFailed => ServiceErrors.Failure("InventoryBalance.CreateFailed", "Inventory balance creation failed unexpectedly.");
+        public static ServiceError UpdateFailed => ServiceErrors.Failure("InventoryBalance.UpdateFailed", "Inventory balance update failed unexpectedly.");
+        public static ServiceError StockKeepingUnitNotFound => ServiceErrors.NotFound("InventoryBalance.StockKeepingUnitNotFound", "SKU was not found for inventory balance creation.", "stockKeepingUnitId");
+        public static ServiceError InvalidStockKeepingUnit => ServiceErrors.Validation("InventoryBalance.InvalidStockKeepingUnit", "SKU must be active and have an active base unit of measure.", "stockKeepingUnitId");
+        public static ServiceError StorageLocationNotFound => ServiceErrors.NotFound("InventoryBalance.StorageLocationNotFound", "Storage location was not found for inventory balance creation.", "storageLocationId");
+        public static ServiceError InvalidStorageLocation => ServiceErrors.Validation("InventoryBalance.InvalidStorageLocation", "Storage location must be active for inventory balance creation.", "storageLocationId");
+        public static ServiceError InactiveStorageLocationType => ServiceErrors.Validation("InventoryBalance.InactiveStorageLocationType", "Storage location type must be active for inventory balance creation.", "storageLocationTypeId");
+        public static ServiceError InactiveStorageLocationStatus => ServiceErrors.Validation("InventoryBalance.InactiveStorageLocationStatus", "Storage location status must be active for inventory balance creation.", "storageLocationStatusId");
+    }
 }

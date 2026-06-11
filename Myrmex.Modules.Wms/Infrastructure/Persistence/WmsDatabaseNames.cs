@@ -49,4 +49,11 @@ internal static class WmsDatabaseNames
     public const string SkuBarcodeStockKeepingUnitForeignKey = "FK_wms_sku_barcodes_stock_keeping_units_stock_keeping_unit_id";
     public const string SkuBarcodeValueUniqueIndex = "UX_wms_sku_barcodes_value";
     public const string SkuBarcodeStockKeepingUnitIdIndex = "IX_wms_sku_barcodes_stock_keeping_unit_id";
+
+    public const string InventoryBalancesTable = "inventory_balances";
+    public const string InventoryBalancePrimaryKey = "PK_wms_inventory_balances";
+    public const string InventoryBalanceStockKeepingUnitForeignKey = "FK_wms_inventory_balances_stock_keeping_units_stock_keeping_unit_id";
+    public const string InventoryBalanceStorageLocationForeignKey = "FK_wms_inventory_balances_storage_locations_storage_location_id";
+    public const string InventoryBalanceStockKeepingUnitIdStorageLocationIdUniqueIndex = "UX_wms_inventory_balances_stock_keeping_unit_id_storage_location_id";
+    public const string InventoryBalanceStorageLocationIdIndex = "IX_wms_inventory_balances_storage_location_id";
 }
