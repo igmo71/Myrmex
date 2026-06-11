@@ -23,8 +23,8 @@ internal sealed record InventoryBalanceDetails(
     DateTimeOffset? UpdatedAtUtc)
 {
     internal static IQueryable<InventoryBalanceDetails> QueryFrom(
-    WmsDbContext dbContext,
-    IQueryable<InventoryBalance> inventoryBalances)
+        WmsDbContext dbContext,
+        IQueryable<InventoryBalance> inventoryBalances)
     {
         return inventoryBalances
             .AsNoTracking()

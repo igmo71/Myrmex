@@ -1,9 +1,21 @@
+using System.Web;
 using Myrmex.WebApp.Wms.Api;
 
 namespace Myrmex.WebApp.Wms.Inventory;
 
 public sealed class WmsInventoryApiClient(HttpClient httpClient)
 {
+    public async Task<ListResult<InventoryBalanceDetails>> ListInventoryBalancesAsync(
+        ListInventoryBalancesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        string url = BuildInventoryBalanceListUrl(request);
+
+        return await httpClient.GetRequiredAsync<ListResult<InventoryBalanceDetails>>(
+            url,
+            cancellationToken);
+    }
+
     public async Task<InventoryBalanceDetails> GetInventoryBalanceByIdAsync(
         Guid inventoryBalanceId,
         CancellationToken cancellationToken = default)
@@ -21,6 +33,39 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
             "/api/wms/inventory/balances",
             request,
             cancellationToken);
+    }
+
+    private static string BuildInventoryBalanceListUrl(ListInventoryBalancesRequest request)
+    {
+        List<string> query =
+        [
+            $"skip={request.Skip}",
+            $"take={request.Take}"
+        ];
+
+        if (!string.IsNullOrWhiteSpace(request.SortBy))
+        {
+            query.Add($"sortBy={HttpUtility.UrlEncode(request.SortBy)}");
+        }
+
+        query.Add($"sortDescending={request.SortDescending.ToString().ToLowerInvariant()}");
+
+        if (request.StockKeepingUnitId.HasValue)
+        {
+            query.Add($"stockKeepingUnitId={request.StockKeepingUnitId.Value}");
+        }
+
+        if (request.StorageLocationId.HasValue)
+        {
+            query.Add($"storageLocationId={request.StorageLocationId.Value}");
+        }
+
+        if (request.WarehouseId.HasValue)
+        {
+            query.Add($"warehouseId={request.WarehouseId.Value}");
+        }
+
+        return $"/api/wms/inventory/balances?{string.Join("&", query)}";
     }
 }
 
@@ -46,3 +91,12 @@ public sealed record CreateInventoryBalanceRequest(
     Guid? StockKeepingUnitId,
     Guid? StorageLocationId,
     decimal Quantity);
+
+public sealed record ListInventoryBalancesRequest(
+    int Skip = 0,
+    int Take = 20,
+    string? SortBy = null,
+    bool SortDescending = false,
+    Guid? StockKeepingUnitId = null,
+    Guid? StorageLocationId = null,
+    Guid? WarehouseId = null);

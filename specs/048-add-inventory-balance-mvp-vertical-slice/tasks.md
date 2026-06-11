@@ -104,14 +104,14 @@
 
 ### Tests for User Story 3
 
-- [ ] T028 [P] [US3] Add list handler tests for bounded no-filter results, zero quantity inclusion, SKU filter, storage location filter, warehouse filter, SKU-within-warehouse filter, empty result behavior, supported sorting, and display context in `Myrmex.Tests/Wms/Inventory/Features/InventoryBalances/ListInventoryBalancesHandlerTests.cs`
-- [ ] T029 [P] [US3] Extend WebApp Inventory API client tests for list query string generation, optional filters, bounded list response parsing, and read/load exception behavior in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [X] T028 [P] [US3] Add list handler tests for bounded no-filter results, zero quantity inclusion, SKU filter, storage location filter, warehouse filter, SKU-within-warehouse filter, empty result behavior, supported sorting, and display context in `Myrmex.Tests/Wms/Inventory/Features/InventoryBalances/ListInventoryBalancesHandlerTests.cs`
+- [X] T029 [P] [US3] Extend WebApp Inventory API client tests for list query string generation, optional filters, bounded list response parsing, and read/load exception behavior in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation for User Story 3
 
-- [ ] T030 [US3] Implement `ListInventoryBalances` query and handler with bounded paging, optional `StockKeepingUnitId`, `StorageLocationId`, and `WarehouseId` filters, zero quantity inclusion, supported sorting, and display context projection in `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/ListInventoryBalances.cs`
-- [ ] T031 [US3] Add list route `GET /api/wms/inventory/balances` with optional filter binding to `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs`
-- [ ] T032 [US3] Add `ListInventoryBalancesRequest` and `ListInventoryBalancesAsync` to the WebApp Inventory API client in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [X] T030 [US3] Implement `ListInventoryBalances` query and handler with bounded paging, optional `StockKeepingUnitId`, `StorageLocationId`, and `WarehouseId` filters, zero quantity inclusion, supported sorting, and display context projection in `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/ListInventoryBalances.cs`
+- [X] T031 [US3] Add list route `GET /api/wms/inventory/balances` with optional filter binding to `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs`
+- [X] T032 [US3] Add `ListInventoryBalancesRequest` and `ListInventoryBalancesAsync` to the WebApp Inventory API client in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
 
 **Checkpoint**: User Stories 1 through 3 work independently; stock visibility questions can be answered through the list endpoint.
 
