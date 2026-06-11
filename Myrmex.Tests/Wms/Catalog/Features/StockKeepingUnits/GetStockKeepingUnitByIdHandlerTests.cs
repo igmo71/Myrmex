@@ -31,6 +31,7 @@ public sealed class GetStockKeepingUnitByIdHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(stockKeepingUnit.Id, result.Value.Id);
         Assert.Equal("ITEM-001", result.Value.Code);
+        Assert.Equal(stockKeepingUnit.BaseUnitOfMeasureId, result.Value.BaseUnitOfMeasureId);
         Assert.True(result.Value.IsActive);
     }
 
@@ -57,6 +58,7 @@ public sealed class GetStockKeepingUnitByIdHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(stockKeepingUnit.Id, result.Value.Id);
         Assert.Equal("ITEM-001", result.Value.Code);
+        Assert.Equal(stockKeepingUnit.BaseUnitOfMeasureId, result.Value.BaseUnitOfMeasureId);
         Assert.False(result.Value.IsActive);
     }
 

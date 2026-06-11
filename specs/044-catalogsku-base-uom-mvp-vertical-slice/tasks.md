@@ -76,16 +76,16 @@
 
 ### Tests for User Story 2
 
-- [ ] T016 [US2] Extend get-by-id handler tests to assert `BaseUnitOfMeasureId` is returned for active and inactive SKUs in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/GetStockKeepingUnitByIdHandlerTests.cs`
-- [ ] T017 [P] [US2] Extend list handler tests to assert every listed SKU includes the correct `BaseUnitOfMeasureId` in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/ListStockKeepingUnitsHandlerTests.cs`
-- [ ] T018 [P] [US2] Extend API client tests for SKU get/list response parsing with `BaseUnitOfMeasureId` in `Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs`
+- [X] T016 [US2] Extend get-by-id handler tests to assert `BaseUnitOfMeasureId` is returned for active and inactive SKUs in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/GetStockKeepingUnitByIdHandlerTests.cs`
+- [X] T017 [P] [US2] Extend list handler tests to assert every listed SKU includes the correct `BaseUnitOfMeasureId` in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/ListStockKeepingUnitsHandlerTests.cs`
+- [X] T018 [P] [US2] Extend API client tests for SKU get/list response parsing with `BaseUnitOfMeasureId` in `Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs`
 
 ### Implementation for User Story 2
 
-- [ ] T019 [US2] Add `BaseUnitOfMeasureId` to `StockKeepingUnitDetails.From` and projection in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/StockKeepingUnitDetails.cs`
-- [ ] T020 [US2] Update get-by-id query projection usage for the expanded SKU details contract in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/GetStockKeepingUnitById.cs`
-- [ ] T021 [US2] Update list query projection usage for the expanded SKU details contract in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/ListStockKeepingUnits.cs`
-- [ ] T022 [US2] Update WebApp `StockKeepingUnitDetails` record to include `BaseUnitOfMeasureId` while preserving existing SKU list client behavior in `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
+- [X] T019 [US2] Add `BaseUnitOfMeasureId` to `StockKeepingUnitDetails.From` and projection in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/StockKeepingUnitDetails.cs`
+- [X] T020 [US2] Update get-by-id query projection usage for the expanded SKU details contract in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/GetStockKeepingUnitById.cs`
+- [X] T021 [US2] Update list query projection usage for the expanded SKU details contract in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/ListStockKeepingUnits.cs`
+- [X] T022 [US2] Update WebApp `StockKeepingUnitDetails` record to include `BaseUnitOfMeasureId` while preserving existing SKU list client behavior in `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
 
 **Checkpoint**: User Stories 1 and 2 are independently functional and returned SKU details consistently expose the base UoM identity.
 

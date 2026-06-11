@@ -75,6 +75,121 @@ public sealed class WmsCatalogApiClientTests
     }
 
     [Fact]
+    public async Task ListStockKeepingUnitsAsync_WhenSuccessful_ReturnsBaseUnitOfMeasureIdForEachSku()
+    {
+        // Arrange
+        Guid firstBaseUnitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000111");
+        Guid secondBaseUnitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000222");
+
+        const string responseJson = """
+            {
+              "items": [
+                {
+                  "id": "018f0000-0000-7000-8000-000000000001",
+                  "code": "ITEM-001",
+                  "name": "Widget",
+                  "description": "Sellable widget",
+                  "baseUnitOfMeasureId": "018f0000-0000-7000-8000-000000000111",
+                  "isActive": true,
+                  "createdAtUtc": "2026-06-10T00:00:00+00:00",
+                  "updatedAtUtc": null
+                },
+                {
+                  "id": "018f0000-0000-7000-8000-000000000002",
+                  "code": "ITEM-002",
+                  "name": "Inactive widget",
+                  "description": null,
+                  "baseUnitOfMeasureId": "018f0000-0000-7000-8000-000000000222",
+                  "isActive": false,
+                  "createdAtUtc": "2026-06-10T00:00:00+00:00",
+                  "updatedAtUtc": "2026-06-10T01:00:00+00:00"
+                }
+              ],
+              "totalCount": 2,
+              "skip": 0,
+              "take": 20
+            }
+            """;
+
+        CapturingHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            responseJson,
+            "application/json");
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("https://myrmex.test")
+        };
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        ListRequest request = new(IncludeInactive: true);
+
+        // Act
+        ListResult<StockKeepingUnitDetails> result = await apiClient.ListStockKeepingUnitsAsync(
+            request,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(2, result.TotalCount);
+        Assert.Equal(
+            [firstBaseUnitOfMeasureId, secondBaseUnitOfMeasureId],
+            result.Items.Select(x => x.BaseUnitOfMeasureId).ToArray());
+
+        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
+        Assert.Equal(
+            "/api/wms/catalog/skus?skip=0&take=20&sortDescending=false&includeInactive=true",
+            handler.RequestPathAndQuery);
+    }
+
+    [Fact]
+    public async Task GetStockKeepingUnitByIdAsync_WhenSuccessful_ReturnsBaseUnitOfMeasureId()
+    {
+        // Arrange
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000001");
+        Guid baseUnitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000111");
+
+        const string responseJson = """
+            {
+              "id": "018f0000-0000-7000-8000-000000000001",
+              "code": "ITEM-001",
+              "name": "Widget",
+              "description": "Sellable widget",
+              "baseUnitOfMeasureId": "018f0000-0000-7000-8000-000000000111",
+              "isActive": true,
+              "createdAtUtc": "2026-06-10T00:00:00+00:00",
+              "updatedAtUtc": null
+            }
+            """;
+
+        CapturingHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            responseJson,
+            "application/json");
+
+        using HttpClient httpClient = new(handler)
+        {
+            BaseAddress = new Uri("https://myrmex.test")
+        };
+
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        // Act
+        StockKeepingUnitDetails result = await apiClient.GetStockKeepingUnitByIdAsync(
+            stockKeepingUnitId,
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(stockKeepingUnitId, result.Id);
+        Assert.Equal("ITEM-001", result.Code);
+        Assert.Equal(baseUnitOfMeasureId, result.BaseUnitOfMeasureId);
+        Assert.True(result.IsActive);
+
+        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
+        Assert.Equal($"/api/wms/catalog/skus/{stockKeepingUnitId}", handler.RequestPathAndQuery);
+    }
+
+    [Fact]
     public async Task TryCreateStockKeepingUnitAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
     {
         // Arrange
