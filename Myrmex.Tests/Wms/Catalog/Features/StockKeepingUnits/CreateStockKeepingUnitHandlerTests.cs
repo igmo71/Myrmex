@@ -131,7 +131,7 @@ public sealed class CreateStockKeepingUnitHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_WhenBaseUnitOfMeasureIsInactive_ReturnsFailureServiceResult()
+    public async Task HandleAsync_WhenBaseUnitOfMeasureIsInactive_ReturnsInvalidServiceResult()
     {
         // Arrange
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
@@ -162,9 +162,9 @@ public sealed class CreateStockKeepingUnitHandlerTests
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
 
-        Assert.Equal(ServiceErrorType.Failure, result.Error.Type);
-        Assert.Equal("UnitOfMeasure.Inactive", result.Error.Code);
-        Assert.Equal("Base unit of measure must be active.", result.Error.Message);
+        Assert.Equal(ServiceErrorType.Invalid, result.Error.Type);
+        Assert.Equal("StockKeepingUnit.BaseUnitOfMeasureInactive", result.Error.Code);
+        Assert.Equal("SKU base unit of measure must be active.", result.Error.Message);
         Assert.Equal("baseUnitOfMeasureId", result.Error.Field);
 
         Assert.Empty(await testDbContext.DbContext.StockKeepingUnits.ToListAsync(
