@@ -13,7 +13,8 @@ internal static class CreateStockKeepingUnit
     internal sealed record Command(
         string? Code,
         string? Name,
-        string? Description) : ICommand<ServiceResult<StockKeepingUnitDetails>>;
+        string? Description,
+        Guid? BaseUnitOfMeasureId) : ICommand<ServiceResult<StockKeepingUnitDetails>>;
 
     internal sealed class Handler(
         WmsDbContext dbContext,
@@ -28,6 +29,7 @@ internal static class CreateStockKeepingUnit
                 command.Code,
                 command.Name,
                 command.Description,
+                command.BaseUnitOfMeasureId,
                 out StockKeepingUnit? stockKeepingUnit);
 
             if (!validationResult.IsValid)
@@ -38,6 +40,22 @@ internal static class CreateStockKeepingUnit
             if (stockKeepingUnit is null)
             {
                 return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.CreateFailed);
+            }
+
+            var baseUnitOfMeasure = await dbContext.UnitsOfMeasure
+                .AsNoTracking()
+                .Where(x => x.Id == stockKeepingUnit.BaseUnitOfMeasureId)
+                .Select(x => new { x.IsActive })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (baseUnitOfMeasure is null)
+            {
+                return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureNotFound);
+            }
+
+            if (!baseUnitOfMeasure.IsActive)
+            {
+                return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureInactive);
             }
 
             bool codeAlreadyExists = await dbContext.StockKeepingUnits

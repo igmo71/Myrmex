@@ -9,11 +9,16 @@ internal sealed class StockKeepingUnit : AggregateRoot
     public const int MaxNameLength = DomainTextLengths.Name;
     public const int MaxDescriptionLength = DomainTextLengths.Description;
 
-    private StockKeepingUnit(string code, string name, string? description)
+    private StockKeepingUnit(
+        string code,
+        string name,
+        string? description,
+        Guid baseUnitOfMeasureId)
     {
         Code = code;
         Name = name;
         Description = description;
+        BaseUnitOfMeasureId = baseUnitOfMeasureId;
     }
 
     private StockKeepingUnit()
@@ -26,13 +31,17 @@ internal sealed class StockKeepingUnit : AggregateRoot
 
     public string? Description { get; private set; }
 
+    public Guid BaseUnitOfMeasureId { get; private set; }
+
     public DomainValidationResult UpdateDetails(
         string? name,
-        string? description)
+        string? description,
+        Guid? baseUnitOfMeasureId)
     {
         DomainValidationResult validationResult = ValidateDetails(
             name,
-            description);
+            description,
+            baseUnitOfMeasureId);
 
         if (!validationResult.IsValid)
         {
@@ -41,11 +50,22 @@ internal sealed class StockKeepingUnit : AggregateRoot
 
         Name = DomainText.NormalizeRequiredText(name);
         Description = DomainText.NormalizeOptionalText(description);
+        BaseUnitOfMeasureId = baseUnitOfMeasureId!.Value;
 
         Touch();
         AddDomainEvent(new StockKeepingUnitDetailsUpdatedDomainEvent(Id));
 
         return DomainValidationResult.Valid;
+    }
+
+    public DomainValidationResult UpdateDetails(
+        string? name,
+        string? description)
+    {
+        return UpdateDetails(
+            name,
+            description,
+            BaseUnitOfMeasureId);
     }
 
     public void Deactivate()
@@ -74,12 +94,14 @@ internal sealed class StockKeepingUnit : AggregateRoot
         string? code,
         string? name,
         string? description,
+        Guid? baseUnitOfMeasureId,
         out StockKeepingUnit? stockKeepingUnit)
     {
         DomainValidationResult validationResult = ValidateCreate(
             code,
             name,
-            description);
+            description,
+            baseUnitOfMeasureId);
 
         if (!validationResult.IsValid)
         {
@@ -90,7 +112,8 @@ internal sealed class StockKeepingUnit : AggregateRoot
         stockKeepingUnit = new StockKeepingUnit(
             DomainText.NormalizeCode(code),
             DomainText.NormalizeRequiredText(name),
-            DomainText.NormalizeOptionalText(description));
+            DomainText.NormalizeOptionalText(description),
+            baseUnitOfMeasureId!.Value);
 
         stockKeepingUnit.AddDomainEvent(new StockKeepingUnitCreatedDomainEvent(stockKeepingUnit.Id));
 
@@ -100,7 +123,8 @@ internal sealed class StockKeepingUnit : AggregateRoot
     public static DomainValidationResult ValidateCreate(
         string? code,
         string? name,
-        string? description)
+        string? description,
+        Guid? baseUnitOfMeasureId)
     {
         List<DomainValidationFailure> errors = [];
 
@@ -123,7 +147,8 @@ internal sealed class StockKeepingUnit : AggregateRoot
 
         DomainValidationResult detailsValidationResult = ValidateDetails(
             name,
-            description);
+            description,
+            baseUnitOfMeasureId);
 
         errors.AddRange(detailsValidationResult.Errors);
 
@@ -132,7 +157,8 @@ internal sealed class StockKeepingUnit : AggregateRoot
 
     public static DomainValidationResult ValidateDetails(
         string? name,
-        string? description)
+        string? description,
+        Guid? baseUnitOfMeasureId)
     {
         List<DomainValidationFailure> errors = [];
 
@@ -163,6 +189,25 @@ internal sealed class StockKeepingUnit : AggregateRoot
                 "description"));
         }
 
+        if (!baseUnitOfMeasureId.HasValue ||
+            baseUnitOfMeasureId.Value == Guid.Empty)
+        {
+            errors.Add(new(
+                "StockKeepingUnit.BaseUnitOfMeasureRequired",
+                "SKU base unit of measure is required.",
+                "baseUnitOfMeasureId"));
+        }
+
         return DomainValidationResult.From(errors);
+    }
+
+    public static DomainValidationResult ValidateDetails(
+        string? name,
+        string? description)
+    {
+        return ValidateDetails(
+            name,
+            description,
+            baseUnitOfMeasureId: null);
     }
 }

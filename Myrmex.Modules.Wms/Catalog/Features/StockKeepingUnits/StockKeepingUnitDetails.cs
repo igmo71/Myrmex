@@ -8,6 +8,7 @@ internal sealed record StockKeepingUnitDetails(
     string Code,
     string Name,
     string? Description,
+    Guid BaseUnitOfMeasureId,
     bool IsActive,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? UpdatedAtUtc)
@@ -19,6 +20,7 @@ internal sealed record StockKeepingUnitDetails(
             stockKeepingUnit.Code,
             stockKeepingUnit.Name,
             stockKeepingUnit.Description,
+            stockKeepingUnit.BaseUnitOfMeasureId,
             stockKeepingUnit.IsActive,
             stockKeepingUnit.CreatedAtUtc,
             stockKeepingUnit.UpdatedAtUtc);
@@ -30,6 +32,7 @@ internal sealed record StockKeepingUnitDetails(
             stockKeepingUnit.Code,
             stockKeepingUnit.Name,
             stockKeepingUnit.Description,
+            stockKeepingUnit.BaseUnitOfMeasureId,
             stockKeepingUnit.IsActive,
             stockKeepingUnit.CreatedAtUtc,
             stockKeepingUnit.UpdatedAtUtc);

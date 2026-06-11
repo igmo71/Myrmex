@@ -44,7 +44,8 @@ internal static class StockKeepingUnitEndpoints
     private sealed record CreateStockKeepingUnitRequest(
         string? Code,
         string? Name,
-        string? Description);
+        string? Description,
+        Guid? BaseUnitOfMeasureId);
 
     private static async Task<IResult> CreateStockKeepingUnitAsync(
         CreateStockKeepingUnitRequest request,
@@ -54,7 +55,8 @@ internal static class StockKeepingUnitEndpoints
         var command = new CreateStockKeepingUnit.Command(
             Code: request.Code,
             Name: request.Name,
-            Description: request.Description);
+            Description: request.Description,
+            BaseUnitOfMeasureId: request.BaseUnitOfMeasureId);
 
         var result = await commandDispatcher
             .DispatchAsync<CreateStockKeepingUnit.Command, ServiceResult<StockKeepingUnitDetails>>(command, cancellationToken);
@@ -103,7 +105,8 @@ internal static class StockKeepingUnitEndpoints
 
     private sealed record UpdateStockKeepingUnitDetailsRequest(
         string? Name,
-        string? Description);
+        string? Description,
+        Guid? BaseUnitOfMeasureId);
 
     private static async Task<IResult> UpdateStockKeepingUnitDetailsAsync(
         Guid stockKeepingUnitId,
@@ -114,7 +117,8 @@ internal static class StockKeepingUnitEndpoints
         var command = new UpdateStockKeepingUnitDetails.Command(
             StockKeepingUnitId: stockKeepingUnitId,
             Name: request.Name,
-            Description: request.Description);
+            Description: request.Description,
+            BaseUnitOfMeasureId: request.BaseUnitOfMeasureId);
 
         var result = await commandDispatcher
             .DispatchAsync<UpdateStockKeepingUnitDetails.Command, ServiceResult<StockKeepingUnitDetails>>(command, cancellationToken);

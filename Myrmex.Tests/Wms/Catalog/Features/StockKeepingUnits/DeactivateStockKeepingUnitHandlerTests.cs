@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
+using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Catalog.Features.StockKeepingUnits;
 using Myrmex.Tests.Wms.Topology.Testing;
 
@@ -42,10 +43,7 @@ public sealed class DeactivateStockKeepingUnitHandlerTests
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
         RecordingDomainEventDispatcher domainEventDispatcher = new();
 
-        StockKeepingUnit stockKeepingUnit = CreateStockKeepingUnit();
-
-        testDbContext.DbContext.StockKeepingUnits.Add(stockKeepingUnit);
-        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        StockKeepingUnit stockKeepingUnit = await AddStockKeepingUnitAsync(testDbContext);
 
         DeactivateStockKeepingUnit.Handler handler = new(
             testDbContext.DbContext,
@@ -62,6 +60,7 @@ public sealed class DeactivateStockKeepingUnitHandlerTests
         StockKeepingUnitDetails details = result.Value;
 
         Assert.Equal(stockKeepingUnit.Id, details.Id);
+        Assert.Equal(stockKeepingUnit.BaseUnitOfMeasureId, details.BaseUnitOfMeasureId);
         Assert.False(details.IsActive);
         Assert.NotNull(details.UpdatedAtUtc);
 
@@ -69,6 +68,7 @@ public sealed class DeactivateStockKeepingUnitHandlerTests
             TestContext.Current.CancellationToken);
 
         Assert.False(persistedStockKeepingUnit.IsActive);
+        Assert.Equal(stockKeepingUnit.BaseUnitOfMeasureId, persistedStockKeepingUnit.BaseUnitOfMeasureId);
 
         ListStockKeepingUnits.Handler listHandler = new(testDbContext.DbContext);
 
@@ -89,11 +89,9 @@ public sealed class DeactivateStockKeepingUnitHandlerTests
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
         RecordingDomainEventDispatcher domainEventDispatcher = new();
 
-        StockKeepingUnit stockKeepingUnit = CreateStockKeepingUnit();
+        StockKeepingUnit stockKeepingUnit = await AddStockKeepingUnitAsync(testDbContext);
         stockKeepingUnit.Deactivate();
         stockKeepingUnit.ClearDomainEvents();
-
-        testDbContext.DbContext.StockKeepingUnits.Add(stockKeepingUnit);
         await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         DeactivateStockKeepingUnit.Handler handler = new(
@@ -107,21 +105,39 @@ public sealed class DeactivateStockKeepingUnitHandlerTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
+        Assert.Equal(stockKeepingUnit.BaseUnitOfMeasureId, result.Value.BaseUnitOfMeasureId);
         Assert.False(result.Value.IsActive);
 
         StockKeepingUnit persistedStockKeepingUnit = await testDbContext.DbContext.StockKeepingUnits.SingleAsync(
             TestContext.Current.CancellationToken);
 
         Assert.False(persistedStockKeepingUnit.IsActive);
+        Assert.Equal(stockKeepingUnit.BaseUnitOfMeasureId, persistedStockKeepingUnit.BaseUnitOfMeasureId);
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
 
-    private static StockKeepingUnit CreateStockKeepingUnit()
+    private static async Task<StockKeepingUnit> AddStockKeepingUnitAsync(TestWmsDbContext testDbContext)
+    {
+        UnitOfMeasure baseUnitOfMeasure = CreateUnitOfMeasure();
+
+        testDbContext.DbContext.UnitsOfMeasure.Add(baseUnitOfMeasure);
+        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        StockKeepingUnit stockKeepingUnit = CreateStockKeepingUnit(baseUnitOfMeasure.Id);
+
+        testDbContext.DbContext.StockKeepingUnits.Add(stockKeepingUnit);
+        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return stockKeepingUnit;
+    }
+
+    private static StockKeepingUnit CreateStockKeepingUnit(Guid baseUnitOfMeasureId)
     {
         var result = StockKeepingUnit.Create(
             code: "ITEM-001",
             name: "Widget",
             description: null,
+            baseUnitOfMeasureId: baseUnitOfMeasureId,
             out StockKeepingUnit? stockKeepingUnit);
 
         Assert.True(result.IsValid);
@@ -130,5 +146,21 @@ public sealed class DeactivateStockKeepingUnitHandlerTests
         stockKeepingUnit.ClearDomainEvents();
 
         return stockKeepingUnit;
+    }
+
+    private static UnitOfMeasure CreateUnitOfMeasure()
+    {
+        var result = UnitOfMeasure.Create(
+            code: "EA",
+            name: "Each",
+            symbol: "ea",
+            out UnitOfMeasure? unitOfMeasure);
+
+        Assert.True(result.IsValid);
+        Assert.NotNull(unitOfMeasure);
+
+        unitOfMeasure.ClearDomainEvents();
+
+        return unitOfMeasure;
     }
 }

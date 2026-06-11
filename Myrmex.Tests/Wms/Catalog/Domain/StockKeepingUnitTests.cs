@@ -4,6 +4,8 @@ namespace Myrmex.Tests.Wms.Catalog.Domain;
 
 public sealed class StockKeepingUnitTests
 {
+    private static readonly Guid BaseUnitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000111");
+
     [Fact]
     public void Create_WhenCodeIsMissing_ReturnsValidationError()
     {
@@ -12,6 +14,7 @@ public sealed class StockKeepingUnitTests
             code: "",
             name: "Widget",
             description: null,
+            baseUnitOfMeasureId: BaseUnitOfMeasureId,
             out StockKeepingUnit? stockKeepingUnit);
 
         // Assert
@@ -33,6 +36,7 @@ public sealed class StockKeepingUnitTests
             code: "ITEM-001",
             name: "",
             description: null,
+            baseUnitOfMeasureId: BaseUnitOfMeasureId,
             out StockKeepingUnit? stockKeepingUnit);
 
         // Assert
@@ -54,6 +58,7 @@ public sealed class StockKeepingUnitTests
             code: "ITEM-001",
             name: "Widget",
             description: new string('A', StockKeepingUnit.MaxDescriptionLength + 1),
+            baseUnitOfMeasureId: BaseUnitOfMeasureId,
             out StockKeepingUnit? stockKeepingUnit);
 
         // Assert
@@ -70,6 +75,50 @@ public sealed class StockKeepingUnitTests
     }
 
     [Fact]
+    public void Create_WhenBaseUnitOfMeasureIsMissing_ReturnsValidationError()
+    {
+        // Act
+        var result = StockKeepingUnit.Create(
+            code: "ITEM-001",
+            name: "Widget",
+            description: null,
+            baseUnitOfMeasureId: null,
+            out StockKeepingUnit? stockKeepingUnit);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Null(stockKeepingUnit);
+
+        var error = Assert.Single(result.Errors);
+
+        Assert.Equal("StockKeepingUnit.BaseUnitOfMeasureRequired", error.Code);
+        Assert.Equal("SKU base unit of measure is required.", error.Message);
+        Assert.Equal("baseUnitOfMeasureId", error.Field);
+    }
+
+    [Fact]
+    public void Create_WhenBaseUnitOfMeasureIsEmpty_ReturnsValidationError()
+    {
+        // Act
+        var result = StockKeepingUnit.Create(
+            code: "ITEM-001",
+            name: "Widget",
+            description: null,
+            baseUnitOfMeasureId: Guid.Empty,
+            out StockKeepingUnit? stockKeepingUnit);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Null(stockKeepingUnit);
+
+        var error = Assert.Single(result.Errors);
+
+        Assert.Equal("StockKeepingUnit.BaseUnitOfMeasureRequired", error.Code);
+        Assert.Equal("SKU base unit of measure is required.", error.Message);
+        Assert.Equal("baseUnitOfMeasureId", error.Field);
+    }
+
+    [Fact]
     public void Create_WhenValuesAreValid_NormalizesValuesAndCreatesActiveSku()
     {
         // Act
@@ -77,6 +126,7 @@ public sealed class StockKeepingUnitTests
             code: " item-001 ",
             name: " Widget ",
             description: " Sellable widget ",
+            baseUnitOfMeasureId: BaseUnitOfMeasureId,
             out StockKeepingUnit? stockKeepingUnit);
 
         // Assert
@@ -87,6 +137,7 @@ public sealed class StockKeepingUnitTests
         Assert.Equal("ITEM-001", stockKeepingUnit.Code);
         Assert.Equal("Widget", stockKeepingUnit.Name);
         Assert.Equal("Sellable widget", stockKeepingUnit.Description);
+        Assert.Equal(BaseUnitOfMeasureId, stockKeepingUnit.BaseUnitOfMeasureId);
         Assert.True(stockKeepingUnit.IsActive);
         Assert.Null(stockKeepingUnit.UpdatedAtUtc);
     }
@@ -99,6 +150,7 @@ public sealed class StockKeepingUnitTests
             code: "ITEM-001",
             name: "Widget",
             description: null,
+            baseUnitOfMeasureId: BaseUnitOfMeasureId,
             out StockKeepingUnit? stockKeepingUnit);
 
         // Assert
@@ -122,7 +174,8 @@ public sealed class StockKeepingUnitTests
         // Act
         var result = stockKeepingUnit.UpdateDetails(
             name: "",
-            description: null);
+            description: null,
+            baseUnitOfMeasureId: BaseUnitOfMeasureId);
 
         // Assert
         Assert.False(result.IsValid);
@@ -135,6 +188,50 @@ public sealed class StockKeepingUnitTests
     }
 
     [Fact]
+    public void UpdateDetails_WhenBaseUnitOfMeasureIsMissing_ReturnsValidationError()
+    {
+        // Arrange
+        StockKeepingUnit stockKeepingUnit = CreateStockKeepingUnit();
+
+        // Act
+        var result = stockKeepingUnit.UpdateDetails(
+            name: "Widget",
+            description: null,
+            baseUnitOfMeasureId: null);
+
+        // Assert
+        Assert.False(result.IsValid);
+
+        var error = Assert.Single(result.Errors);
+
+        Assert.Equal("StockKeepingUnit.BaseUnitOfMeasureRequired", error.Code);
+        Assert.Equal("SKU base unit of measure is required.", error.Message);
+        Assert.Equal("baseUnitOfMeasureId", error.Field);
+    }
+
+    [Fact]
+    public void UpdateDetails_WhenBaseUnitOfMeasureIsEmpty_ReturnsValidationError()
+    {
+        // Arrange
+        StockKeepingUnit stockKeepingUnit = CreateStockKeepingUnit();
+
+        // Act
+        var result = stockKeepingUnit.UpdateDetails(
+            name: "Widget",
+            description: null,
+            baseUnitOfMeasureId: Guid.Empty);
+
+        // Assert
+        Assert.False(result.IsValid);
+
+        var error = Assert.Single(result.Errors);
+
+        Assert.Equal("StockKeepingUnit.BaseUnitOfMeasureRequired", error.Code);
+        Assert.Equal("SKU base unit of measure is required.", error.Message);
+        Assert.Equal("baseUnitOfMeasureId", error.Field);
+    }
+
+    [Fact]
     public void UpdateDetails_WhenValuesAreValid_UpdatesDetailsAndTimestamp()
     {
         // Arrange
@@ -144,13 +241,15 @@ public sealed class StockKeepingUnitTests
         // Act
         var result = stockKeepingUnit.UpdateDetails(
             name: " Updated Widget ",
-            description: " Updated description ");
+            description: " Updated description ",
+            baseUnitOfMeasureId: BaseUnitOfMeasureId);
 
         // Assert
         Assert.True(result.IsValid);
         Assert.Equal("ITEM-001", stockKeepingUnit.Code);
         Assert.Equal("Updated Widget", stockKeepingUnit.Name);
         Assert.Equal("Updated description", stockKeepingUnit.Description);
+        Assert.Equal(BaseUnitOfMeasureId, stockKeepingUnit.BaseUnitOfMeasureId);
         Assert.NotNull(stockKeepingUnit.UpdatedAtUtc);
 
         var domainEvent = Assert.Single(stockKeepingUnit.DomainEvents);
@@ -244,6 +343,7 @@ public sealed class StockKeepingUnitTests
             code: "ITEM-001",
             name: "Widget",
             description: null,
+            baseUnitOfMeasureId: BaseUnitOfMeasureId,
             out StockKeepingUnit? stockKeepingUnit);
 
         Assert.True(result.IsValid);

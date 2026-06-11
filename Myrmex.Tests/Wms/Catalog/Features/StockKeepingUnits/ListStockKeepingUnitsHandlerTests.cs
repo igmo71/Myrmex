@@ -1,6 +1,7 @@
 using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
+using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Catalog.Features.StockKeepingUnits;
 using Myrmex.Tests.Wms.Topology.Testing;
 
@@ -14,7 +15,12 @@ public sealed class ListStockKeepingUnitsHandlerTests
         // Arrange
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
 
-        await AddStockKeepingUnitAsync(testDbContext, "ITEM-001", "Widget", isActive: true);
+        StockKeepingUnit activeStockKeepingUnit = await AddStockKeepingUnitAsync(
+            testDbContext,
+            "ITEM-001",
+            "Widget",
+            isActive: true);
+
         await AddStockKeepingUnitAsync(testDbContext, "ITEM-002", "Inactive Widget", isActive: false);
 
         ListStockKeepingUnits.Handler handler = new(testDbContext.DbContext);
@@ -30,6 +36,7 @@ public sealed class ListStockKeepingUnitsHandlerTests
 
         StockKeepingUnitDetails details = Assert.Single(result.Value.Items);
         Assert.Equal("ITEM-001", details.Code);
+        Assert.Equal(activeStockKeepingUnit.BaseUnitOfMeasureId, details.BaseUnitOfMeasureId);
         Assert.True(details.IsActive);
     }
 
@@ -39,8 +46,17 @@ public sealed class ListStockKeepingUnitsHandlerTests
         // Arrange
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
 
-        await AddStockKeepingUnitAsync(testDbContext, "ITEM-001", "Widget", isActive: true);
-        await AddStockKeepingUnitAsync(testDbContext, "ITEM-002", "Inactive Widget", isActive: false);
+        StockKeepingUnit activeStockKeepingUnit = await AddStockKeepingUnitAsync(
+            testDbContext,
+            "ITEM-001",
+            "Widget",
+            isActive: true);
+
+        StockKeepingUnit inactiveStockKeepingUnit = await AddStockKeepingUnitAsync(
+            testDbContext,
+            "ITEM-002",
+            "Inactive Widget",
+            isActive: false);
 
         ListStockKeepingUnits.Handler handler = new(testDbContext.DbContext);
 
@@ -58,6 +74,15 @@ public sealed class ListStockKeepingUnitsHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(2, result.Value.TotalCount);
         Assert.Equal(["ITEM-001", "ITEM-002"], result.Value.Items.Select(x => x.Code).ToArray());
+
+        Dictionary<string, Guid> expectedBaseUnitOfMeasureIds = new()
+        {
+            [activeStockKeepingUnit.Code] = activeStockKeepingUnit.BaseUnitOfMeasureId,
+            [inactiveStockKeepingUnit.Code] = inactiveStockKeepingUnit.BaseUnitOfMeasureId
+        };
+
+        Assert.All(result.Value.Items, details =>
+            Assert.Equal(expectedBaseUnitOfMeasureIds[details.Code], details.BaseUnitOfMeasureId));
     }
 
     [Fact]
@@ -212,17 +237,22 @@ public sealed class ListStockKeepingUnitsHandlerTests
         Assert.Equal(["ITEM-A", "ITEM-B"], result.Value.Items.Select(x => x.Code).ToArray());
     }
 
-    private static async Task AddStockKeepingUnitAsync(
+    private static async Task<StockKeepingUnit> AddStockKeepingUnitAsync(
         TestWmsDbContext testDbContext,
         string code,
         string name,
         string? description = null,
         bool isActive = true)
     {
+        UnitOfMeasure baseUnitOfMeasure = CreateUnitOfMeasure(code);
+        testDbContext.DbContext.UnitsOfMeasure.Add(baseUnitOfMeasure);
+        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
         var result = StockKeepingUnit.Create(
             code,
             name,
             description,
+            baseUnitOfMeasureId: baseUnitOfMeasure.Id,
             out StockKeepingUnit? stockKeepingUnit);
 
         Assert.True(result.IsValid);
@@ -236,5 +266,25 @@ public sealed class ListStockKeepingUnitsHandlerTests
             .CurrentValue = isActive;
 
         await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return stockKeepingUnit;
+    }
+
+    private static UnitOfMeasure CreateUnitOfMeasure(string skuCode)
+    {
+        string unitCode = skuCode.Replace("-", string.Empty);
+
+        var result = UnitOfMeasure.Create(
+            code: unitCode,
+            name: unitCode,
+            symbol: unitCode.ToLowerInvariant(),
+            out UnitOfMeasure? unitOfMeasure);
+
+        Assert.True(result.IsValid);
+        Assert.NotNull(unitOfMeasure);
+
+        unitOfMeasure.ClearDomainEvents();
+
+        return unitOfMeasure;
     }
 }

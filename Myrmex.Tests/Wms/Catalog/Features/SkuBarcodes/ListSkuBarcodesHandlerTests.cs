@@ -2,6 +2,7 @@ using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.SkuBarcodes;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
+using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Catalog.Features.SkuBarcodes;
 using Myrmex.Tests.Wms.Topology.Testing;
 
@@ -254,10 +255,16 @@ public sealed class ListSkuBarcodesHandlerTests
         TestWmsDbContext testDbContext,
         string code = "ITEM-001")
     {
+        UnitOfMeasure baseUnitOfMeasure = CreateUnitOfMeasure(code);
+
+        testDbContext.DbContext.UnitsOfMeasure.Add(baseUnitOfMeasure);
+        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
         var result = StockKeepingUnit.Create(
             code,
             name: "Widget",
             description: null,
+            baseUnitOfMeasureId: baseUnitOfMeasure.Id,
             out StockKeepingUnit? stockKeepingUnit);
 
         Assert.True(result.IsValid);
@@ -269,6 +276,24 @@ public sealed class ListSkuBarcodesHandlerTests
         stockKeepingUnit.ClearDomainEvents();
 
         return stockKeepingUnit;
+    }
+
+    private static UnitOfMeasure CreateUnitOfMeasure(string skuCode)
+    {
+        string unitCode = skuCode.Replace("-", string.Empty);
+
+        var result = UnitOfMeasure.Create(
+            code: unitCode,
+            name: unitCode,
+            symbol: unitCode.ToLowerInvariant(),
+            out UnitOfMeasure? unitOfMeasure);
+
+        Assert.True(result.IsValid);
+        Assert.NotNull(unitOfMeasure);
+
+        unitOfMeasure.ClearDomainEvents();
+
+        return unitOfMeasure;
     }
 
     private static async Task<SkuBarcode> AddSkuBarcodeAsync(

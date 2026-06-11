@@ -37,6 +37,8 @@ internal static class WmsDatabaseNames
     public const string StockKeepingUnitsTable = "stock_keeping_units";
     public const string StockKeepingUnitPrimaryKey = "PK_wms_stock_keeping_units";
     public const string StockKeepingUnitCodeUniqueIndex = "UX_wms_stock_keeping_units_code";
+    public const string StockKeepingUnitBaseUnitOfMeasureForeignKey = "FK_wms_stock_keeping_units_units_of_measure_base_unit_of_measure_id";
+    public const string StockKeepingUnitBaseUnitOfMeasureIdIndex = "IX_wms_stock_keeping_units_base_unit_of_measure_id";
 
     public const string UnitsOfMeasureTable = "units_of_measure";
     public const string UnitOfMeasurePrimaryKey = "PK_wms_units_of_measure";

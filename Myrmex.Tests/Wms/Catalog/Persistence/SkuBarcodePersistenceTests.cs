@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Myrmex.Modules.Wms.Catalog.Domain.SkuBarcodes;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
+using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Tests.Wms.Topology.Testing;
 
@@ -163,10 +164,16 @@ public sealed class SkuBarcodePersistenceTests
 
     private static async Task<StockKeepingUnit> AddStockKeepingUnitAsync(TestWmsDbContext testDbContext)
     {
+        UnitOfMeasure baseUnitOfMeasure = CreateUnitOfMeasure();
+
+        testDbContext.DbContext.UnitsOfMeasure.Add(baseUnitOfMeasure);
+        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
         var result = StockKeepingUnit.Create(
             code: "ITEM-001",
             name: "Widget",
             description: null,
+            baseUnitOfMeasureId: baseUnitOfMeasure.Id,
             out StockKeepingUnit? stockKeepingUnit);
 
         Assert.True(result.IsValid);
@@ -176,6 +183,22 @@ public sealed class SkuBarcodePersistenceTests
         await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         return stockKeepingUnit;
+    }
+
+    private static UnitOfMeasure CreateUnitOfMeasure()
+    {
+        var result = UnitOfMeasure.Create(
+            code: "EA",
+            name: "Each",
+            symbol: "ea",
+            out UnitOfMeasure? unitOfMeasure);
+
+        Assert.True(result.IsValid);
+        Assert.NotNull(unitOfMeasure);
+
+        unitOfMeasure.ClearDomainEvents();
+
+        return unitOfMeasure;
     }
 
     private static SkuBarcode CreateSkuBarcode(

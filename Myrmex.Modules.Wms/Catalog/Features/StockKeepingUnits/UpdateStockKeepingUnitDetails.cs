@@ -13,7 +13,8 @@ internal static class UpdateStockKeepingUnitDetails
     internal sealed record Command(
         Guid StockKeepingUnitId,
         string? Name,
-        string? Description)
+        string? Description,
+        Guid? BaseUnitOfMeasureId)
         : ICommand<ServiceResult<StockKeepingUnitDetails>>;
 
     internal sealed class Handler(
@@ -33,9 +34,24 @@ internal static class UpdateStockKeepingUnitDetails
                 return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.NotFound);
             }
 
-            DomainValidationResult validationResult = stockKeepingUnit.UpdateDetails(
-                command.Name,
-                command.Description);
+            if (!command.BaseUnitOfMeasureId.HasValue || command.BaseUnitOfMeasureId.Value == Guid.Empty)
+            {
+                return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureRequired);
+            }
+
+            Guid baseUnitOfMeasureId = command.BaseUnitOfMeasureId.Value;
+
+            ServiceResult baseUnitOfMeasureResult = await EnsureBaseUnitOfMeasureCanBeAssignedAsync(
+                baseUnitOfMeasureId,
+                cancellationToken);
+
+            if (!baseUnitOfMeasureResult.IsSuccess)
+            {
+                return ServiceResult<StockKeepingUnitDetails>.Fail(baseUnitOfMeasureResult.Error);
+            }
+
+            DomainValidationResult validationResult = stockKeepingUnit
+                .UpdateDetails(command.Name, command.Description, baseUnitOfMeasureId);
 
             if (!validationResult.IsValid)
             {
@@ -51,6 +67,29 @@ internal static class UpdateStockKeepingUnitDetails
             }
 
             return ServiceResult<StockKeepingUnitDetails>.Success(StockKeepingUnitDetails.From(stockKeepingUnit));
+        }
+
+        private async Task<ServiceResult> EnsureBaseUnitOfMeasureCanBeAssignedAsync(
+            Guid baseUnitOfMeasureId,
+            CancellationToken cancellationToken)
+        {
+            var baseUnitOfMeasure = await dbContext.UnitsOfMeasure
+                .AsNoTracking()
+                .Where(x => x.Id == baseUnitOfMeasureId)
+                .Select(x => new { x.IsActive })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (baseUnitOfMeasure is null)
+            {
+                return ServiceResult.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureNotFound);
+            }
+
+            if (!baseUnitOfMeasure.IsActive)
+            {
+                return ServiceResult.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureInactive);
+            }
+
+            return ServiceResult.Success();
         }
     }
 }

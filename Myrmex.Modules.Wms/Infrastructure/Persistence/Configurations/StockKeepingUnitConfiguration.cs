@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
+using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 
 namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Configurations;
 
@@ -30,6 +31,18 @@ internal sealed class StockKeepingUnitConfiguration : IEntityTypeConfiguration<S
         builder.Property(x => x.Description)
             .HasMaxLength(StockKeepingUnit.MaxDescriptionLength)
             .IsRequired(false);
+
+        builder.Property(x => x.BaseUnitOfMeasureId)
+            .IsRequired();
+
+        builder.HasOne<UnitOfMeasure>()
+            .WithMany()
+            .HasForeignKey(x => x.BaseUnitOfMeasureId)
+            .HasConstraintName(WmsDatabaseNames.StockKeepingUnitBaseUnitOfMeasureForeignKey)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(x => x.BaseUnitOfMeasureId)
+            .HasDatabaseName(WmsDatabaseNames.StockKeepingUnitBaseUnitOfMeasureIdIndex);
 
         builder.Property(x => x.IsActive)
             .IsRequired();
