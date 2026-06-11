@@ -8,6 +8,13 @@
 
 **Input**: User description: `--file StakeholderDocs\Wms\Inventory\048 Add Inventory Balance MVP vertical slice.md`
 
+## Clarifications
+
+### Session 2026-06-11
+
+- Q: What should "valid storage location" mean when creating an inventory balance? → A: Existing active `StorageLocation` with active type/status; no `IsPickable` or type-code restriction.
+- Q: How should the quantity update flow prevent SKU or storage location changes? → A: Update request accepts only quantity; SKU/location are not part of the contract.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Record Current Stock at a Location (Priority: P1)
@@ -16,11 +23,11 @@ A warehouse operations user or upstream warehouse workflow records the current k
 
 **Why this priority**: This is the smallest useful inventory capability. Later warehouse workflows cannot reason about stock without a current SKU/location quantity.
 
-**Independent Test**: Can be fully tested by creating one inventory balance for an existing active SKU with a base unit of measure and an existing valid storage location, then confirming the stored quantity is available for retrieval.
+**Independent Test**: Can be fully tested by creating one inventory balance for an existing active SKU with a base unit of measure and an eligible storage location, then confirming the stored quantity is available for retrieval.
 
 **Acceptance Scenarios**:
 
-1. **Given** an active SKU with a base unit of measure and a valid storage location, **When** a user records a quantity of `10`, **Then** the system creates an inventory balance for that SKU/location pair with quantity `10` in the SKU base unit.
+1. **Given** an active SKU with a base unit of measure and an eligible storage location, **When** a user records a quantity of `10`, **Then** the system creates an inventory balance for that SKU/location pair with quantity `10` in the SKU base unit.
 2. **Given** a SKU/location pair already has an inventory balance, **When** a user attempts to create another balance for the same pair, **Then** the system rejects the duplicate and keeps the existing balance unchanged.
 3. **Given** a user provides a negative quantity, **When** the user attempts to create an inventory balance, **Then** the system rejects the request with a clear validation message.
 
@@ -70,14 +77,14 @@ A warehouse operations user updates the current known quantity of an existing in
 **Acceptance Scenarios**:
 
 1. **Given** an inventory balance exists with quantity `10`, **When** a user updates the quantity to `5`, **Then** the system stores quantity `5` for the same SKU/location pair.
-2. **Given** an inventory balance exists, **When** a user attempts to change its SKU or storage location through the quantity update flow, **Then** the system rejects or ignores those changes according to existing Myrmex request validation behavior.
+2. **Given** an inventory balance exists, **When** a user updates the balance through the quantity update flow, **Then** the update request accepts only the new quantity and provides no SKU or storage location fields.
 3. **Given** a user provides a negative quantity, **When** the user attempts to update the inventory balance, **Then** the system rejects the update with a clear validation message.
 
 ### Edge Cases
 
 - Creating a balance is rejected when the SKU does not exist, is inactive, or does not have a base unit of measure.
-- Creating a balance is rejected when the storage location does not exist or is not valid for receiving current stock state.
-- If storage locations have an activation lifecycle, inactive storage locations cannot accept new inventory balances.
+- Creating a balance is rejected when the storage location does not exist, the storage location is inactive, or its type or status is inactive.
+- A storage location does not need to be pickable and does not need a specific location type code to accept a current inventory balance.
 - Zero quantity is allowed. A zero quantity balance means the SKU/location pair is known but currently has no on-hand quantity.
 - Regular list results include zero quantity balances by default so users can see known SKU/location pairs without introducing delete or movement semantics.
 - Warehouse visibility is resolved through storage location context; the inventory balance itself must not become a conflicting source of warehouse placement.
@@ -88,11 +95,11 @@ A warehouse operations user updates the current known quantity of an existing in
 ### Functional Requirements
 
 - **FR-001**: System MUST introduce Inventory Balance as the first minimal Inventory capability for representing current stock state.
-- **FR-002**: System MUST allow users to create an inventory balance for an existing active SKU with a base unit of measure and an existing valid storage location.
+- **FR-002**: System MUST allow users to create an inventory balance for an existing active SKU with a base unit of measure and an eligible storage location.
 - **FR-003**: System MUST record SKU, storage location, quantity, creation time, and last update time for each inventory balance.
 - **FR-004**: System MUST interpret every inventory balance quantity in the SKU base unit of measure.
 - **FR-005**: System MUST reject inventory balance creation when the SKU does not exist, is inactive, lacks a base unit of measure, or cannot otherwise be used for current inventory state.
-- **FR-006**: System MUST reject inventory balance creation when the storage location does not exist or is not valid for current inventory state.
+- **FR-006**: System MUST reject inventory balance creation when the storage location does not exist, the storage location is inactive, or its type or status is inactive. `IsPickable` and storage location type code MUST NOT restrict eligibility.
 - **FR-007**: System MUST reject negative quantities for both creation and quantity update.
 - **FR-008**: System MUST allow zero quantity balances.
 - **FR-009**: System MUST prevent more than one inventory balance for the same SKU at the same storage location.
@@ -102,7 +109,7 @@ A warehouse operations user updates the current known quantity of an existing in
 - **FR-013**: System MUST allow users to filter listed balances by SKU, storage location, warehouse, and SKU within a warehouse.
 - **FR-014**: Listed inventory balances MUST include enough context to identify warehouse, storage location, SKU, base unit of measure, and quantity.
 - **FR-015**: System MUST allow users to update only the quantity of an existing inventory balance.
-- **FR-016**: System MUST reject attempts to update the SKU or storage location of an existing inventory balance as part of this MVP.
+- **FR-016**: Quantity update requests MUST accept only the new quantity; SKU and storage location MUST NOT be part of the update contract.
 - **FR-017**: System MUST report not-found and validation failures using existing Myrmex behavior.
 - **FR-018**: System MUST exclude receiving, putaway, picking, shipping, LPN, batch/lot tracking, expiry, serial numbers, reservations, transaction history, movement history, adjustment documents, unit conversions, packaging, cycle counting, seed/demo data, external integrations, WebApp UI, delete behavior, and activation/deactivation behavior from this MVP.
 
@@ -137,7 +144,7 @@ A warehouse operations user updates the current known quantity of an existing in
 
 ### Measurable Outcomes
 
-- **SC-001**: A user can create a valid inventory balance for an existing active SKU and valid storage location in under 2 minutes using the available system interface.
+- **SC-001**: A user can create a valid inventory balance for an existing active SKU and eligible storage location in under 2 minutes using the available system interface.
 - **SC-002**: 100% of accepted inventory balances have a non-negative decimal quantity expressed in the SKU base unit of measure.
 - **SC-003**: 100% of attempted duplicate balances for the same SKU/location pair are rejected or prevented.
 - **SC-004**: Users can retrieve an existing inventory balance by identifier and see SKU, storage location, warehouse, base unit, quantity, and timestamps in one result.
@@ -149,8 +156,9 @@ A warehouse operations user updates the current known quantity of an existing in
 ## Assumptions
 
 - Existing Catalog records supply SKU active status and base unit of measure information.
-- Existing Topology records supply storage location validity and warehouse relationship information.
-- If storage locations have an activation lifecycle, inactive locations are treated as invalid for new inventory balances.
+- Existing Topology records supply storage location activation, type/status activation, and warehouse relationship information.
+- Eligible storage locations are existing active `StorageLocation` records with active type/status; `IsPickable` and storage location type code do not restrict inventory balance creation.
 - Zero quantity balances remain visible in regular list results by default because the MVP has no delete or movement history behavior.
 - Quantity update does not revalidate unchanged SKU and storage location references unless existing Myrmex behavior requires that validation.
+- Quantity update requests contain only the new quantity, so SKU and storage location cannot be changed through the update flow.
 - Existing Myrmex authorization, validation, error, and diagnostics conventions apply.
