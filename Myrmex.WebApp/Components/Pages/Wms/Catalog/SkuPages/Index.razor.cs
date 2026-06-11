@@ -17,6 +17,9 @@ public partial class Index
     private ISnackbar Snackbar { get; set; } = default!;
 
     private List<StockKeepingUnitDetails> _skus = [];
+    private IReadOnlyDictionary<Guid, UnitOfMeasureDetails> _unitOfMeasureLookup =
+        new Dictionary<Guid, UnitOfMeasureDetails>();
+
     private bool _isLoading;
     private string? _errorMessage;
     private string? _searchText;
@@ -51,7 +54,7 @@ public partial class Index
 
         try
         {
-            ListRequest request = new(
+            ListRequest skuRequest = new(
                 Skip: 0,
                 Take: 100,
                 SearchText: _searchText,
@@ -59,15 +62,27 @@ public partial class Index
                 SortDescending: false,
                 IncludeInactive: _includeInactive);
 
-            ListResult<StockKeepingUnitDetails> result = await WmsCatalogApiClient
-                .ListStockKeepingUnitsAsync(request);
+            ListRequest unitOfMeasureRequest = new(
+                Skip: 0,
+                Take: 100,
+                SortBy: "code",
+                SortDescending: false,
+                IncludeInactive: false);
 
-            _skus = result.Items.ToList();
+            ListResult<StockKeepingUnitDetails> skuResult = await WmsCatalogApiClient
+                .ListStockKeepingUnitsAsync(skuRequest);
+
+            ListResult<UnitOfMeasureDetails> unitOfMeasureResult = await WmsCatalogApiClient
+                .ListUnitsOfMeasureAsync(unitOfMeasureRequest);
+
+            _skus = skuResult.Items.ToList();
+            _unitOfMeasureLookup = unitOfMeasureResult.Items.ToDictionary(unitOfMeasure => unitOfMeasure.Id);
         }
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
             _skus = [];
+            _unitOfMeasureLookup = new Dictionary<Guid, UnitOfMeasureDetails>();
         }
         finally
         {
