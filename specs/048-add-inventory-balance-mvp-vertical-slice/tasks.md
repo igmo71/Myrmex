@@ -18,10 +18,10 @@
 
 **Purpose**: Prepare the Inventory Balance folder structure and review existing WMS patterns before behavior changes.
 
-- [ ] T001 Create Inventory source and test folders in `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances`, `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances`, `Myrmex.Modules.Wms/Inventory/Endpoints`, `Myrmex.WebApp/Wms/Inventory`, `Myrmex.Tests/Wms/Inventory/Domain`, `Myrmex.Tests/Wms/Inventory/Features/InventoryBalances`, `Myrmex.Tests/Wms/Inventory/Persistence`, and `Myrmex.Tests/Wms/Inventory/Client`
-- [ ] T002 [P] Review existing Catalog SKU and UoM reference patterns in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnit.cs`, `Myrmex.Modules.Wms/Catalog/Domain/UnitsOfMeasure/UnitOfMeasure.cs`, and `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/CreateStockKeepingUnit.cs`
-- [ ] T003 [P] Review existing Topology storage location eligibility patterns in `Myrmex.Modules.Wms/Topology/Domain/StorageLocations/StorageLocation.cs`, `Myrmex.Modules.Wms/Topology/Features/StorageLocations/CreateStorageLocation.cs`, and `Myrmex.Modules.Wms/Topology/Features/StorageLocations/ListStorageLocations.cs`
-- [ ] T004 [P] Review existing WMS endpoint, client, persistence, and test infrastructure in `Myrmex.Modules.Wms/WmsModule.cs`, `Myrmex.WebApp/Wms/Topology/WmsTopologyApiClient.cs`, `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs`, and `Myrmex.Tests/Wms/Topology/Testing/TestWmsDbContext.cs`
+- [X] T001 Create Inventory source and test folders in `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances`, `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances`, `Myrmex.Modules.Wms/Inventory/Endpoints`, `Myrmex.WebApp/Wms/Inventory`, `Myrmex.Tests/Wms/Inventory/Domain`, `Myrmex.Tests/Wms/Inventory/Features/InventoryBalances`, `Myrmex.Tests/Wms/Inventory/Persistence`, and `Myrmex.Tests/Wms/Inventory/Client`
+- [X] T002 [P] Review existing Catalog SKU and UoM reference patterns in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnit.cs`, `Myrmex.Modules.Wms/Catalog/Domain/UnitsOfMeasure/UnitOfMeasure.cs`, and `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/CreateStockKeepingUnit.cs`
+- [X] T003 [P] Review existing Topology storage location eligibility patterns in `Myrmex.Modules.Wms/Topology/Domain/StorageLocations/StorageLocation.cs`, `Myrmex.Modules.Wms/Topology/Features/StorageLocations/CreateStorageLocation.cs`, and `Myrmex.Modules.Wms/Topology/Features/StorageLocations/ListStorageLocations.cs`
+- [X] T004 [P] Review existing WMS endpoint, client, persistence, and test infrastructure in `Myrmex.Modules.Wms/WmsModule.cs`, `Myrmex.WebApp/Wms/Topology/WmsTopologyApiClient.cs`, `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs`, and `Myrmex.Tests/Wms/Topology/Testing/TestWmsDbContext.cs`
 
 ---
 
@@ -33,20 +33,20 @@
 
 ### Tests for Foundation
 
-- [ ] T005 [P] Add Inventory Balance domain tests for required SKU identity, required storage location identity, non-negative quantity, zero quantity, no activation lifecycle, and quantity-only state transition in `Myrmex.Tests/Wms/Inventory/Domain/InventoryBalanceTests.cs`
-- [ ] T006 [P] Add Inventory Balance persistence mapping tests for required FK metadata, unique SKU/location index, decimal quantity configuration, timestamp mapping, and absence of warehouse/UoM columns in `Myrmex.Tests/Wms/Inventory/Persistence/InventoryBalancePersistenceTests.cs`
+- [X] T005 [P] Add Inventory Balance domain tests for required SKU identity, required storage location identity, non-negative quantity, zero quantity, no activation lifecycle, and quantity-only state transition in `Myrmex.Tests/Wms/Inventory/Domain/InventoryBalanceTests.cs`
+- [X] T006 [P] Add Inventory Balance persistence mapping tests for required FK metadata, unique SKU/location index, decimal quantity configuration, timestamp mapping, and absence of warehouse/UoM columns in `Myrmex.Tests/Wms/Inventory/Persistence/InventoryBalancePersistenceTests.cs`
 
 ### Implementation for Foundation
 
-- [ ] T007 [P] Implement `InventoryBalance` aggregate with create factory, quantity update method, SKU/location identity, quantity, timestamps, and no `IActivatable` behavior in `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances/InventoryBalance.cs`
-- [ ] T008 [P] Add Inventory Balance domain events for created and quantity-updated changes only in `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances/InventoryBalanceEvents.cs`
-- [ ] T009 [P] Add Inventory Balance validation errors for required identities and non-negative quantity in `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances/InventoryBalanceValidationErrors.cs`
-- [ ] T010 Add Inventory Balance service errors for not found, duplicate SKU/location pair, create failed, update failed, invalid SKU, invalid storage location, inactive storage location type, and inactive storage location status in `Myrmex.Modules.Wms/WmsErrors.cs`
-- [ ] T011 Add `InventoryBalances` DbSet to the WMS context in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs`
-- [ ] T012 Add Inventory Balance table, primary key, foreign key, unique index, and supporting index constants in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs`
-- [ ] T013 Configure `InventoryBalance` EF mapping with required SKU/storage location FKs, restrict delete behavior, explicit decimal quantity precision, timestamps, and unique `(StockKeepingUnitId, StorageLocationId)` index in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryBalanceConfiguration.cs`
-- [ ] T014 Map Inventory Balance unique index persistence failures to duplicate-balance service errors in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsPersistenceExceptionMapper.cs`
-- [ ] T015 Add Inventory endpoint group registration scaffolding in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryEndpoints.cs` and register it from `Myrmex.Modules.Wms/WmsModule.cs`
+- [X] T007 [P] Implement `InventoryBalance` aggregate with create factory, quantity update method, SKU/location identity, quantity, timestamps, and no `IActivatable` behavior in `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances/InventoryBalance.cs`
+- [X] T008 [P] Add Inventory Balance domain events for created and quantity-updated changes only in `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances/InventoryBalanceEvents.cs`
+- [X] T009 [P] Add Inventory Balance validation errors for required identities and non-negative quantity in `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances/InventoryBalanceValidationErrors.cs`
+- [X] T010 Add Inventory Balance service errors for not found, duplicate SKU/location pair, create failed, update failed, invalid SKU, invalid storage location, inactive storage location type, and inactive storage location status in `Myrmex.Modules.Wms/WmsErrors.cs`
+- [X] T011 Add `InventoryBalances` DbSet to the WMS context in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs`
+- [X] T012 Add Inventory Balance table, primary key, foreign key, unique index, and supporting index constants in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs`
+- [X] T013 Configure `InventoryBalance` EF mapping with required SKU/storage location FKs, restrict delete behavior, explicit decimal quantity precision, timestamps, and unique `(StockKeepingUnitId, StorageLocationId)` index in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryBalanceConfiguration.cs`
+- [X] T014 Map Inventory Balance unique index persistence failures to duplicate-balance service errors in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsPersistenceExceptionMapper.cs`
+- [X] T015 Add Inventory endpoint group registration scaffolding in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryEndpoints.cs` and register it from `Myrmex.Modules.Wms/WmsModule.cs`
 
 **Checkpoint**: Foundation ready; Inventory Balance has a persisted aggregate shape, shared errors, endpoint group, and no out-of-scope movement, lifecycle, delete, conversion, seed, integration, or UI behavior.
 
@@ -60,16 +60,16 @@
 
 ### Tests for User Story 1
 
-- [ ] T016 [P] [US1] Add create handler tests for valid create, duplicate SKU/location rejection, negative quantity rejection, zero quantity create, missing SKU, inactive SKU, SKU without base UoM, missing storage location, inactive storage location, inactive storage location type/status, and `IsPickable=false` eligibility in `Myrmex.Tests/Wms/Inventory/Features/InventoryBalances/CreateInventoryBalanceHandlerTests.cs`
-- [ ] T017 [P] [US1] Add WebApp Inventory API client create tests for `CreateInventoryBalanceRequest`, success response parsing, validation result, missing-reference result, and duplicate result behavior in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [X] T016 [P] [US1] Add create handler tests for valid create, duplicate SKU/location rejection, negative quantity rejection, zero quantity create, missing SKU, inactive SKU, SKU without base UoM, missing storage location, inactive storage location, inactive storage location type/status, and `IsPickable=false` eligibility in `Myrmex.Tests/Wms/Inventory/Features/InventoryBalances/CreateInventoryBalanceHandlerTests.cs`
+- [X] T017 [P] [US1] Add WebApp Inventory API client create tests for `CreateInventoryBalanceRequest`, success response parsing, validation result, missing-reference result, and duplicate result behavior in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation for User Story 1
 
-- [ ] T018 [US1] Implement `InventoryBalanceDetails` projection with balance, SKU, storage location, warehouse, base UoM, quantity, and timestamp fields in `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/InventoryBalanceDetails.cs`
-- [ ] T019 [US1] Implement `CreateInventoryBalance` command and handler with domain validation, active SKU/base UoM check, eligible storage location/type/status check, duplicate check, persistence save, and existing result conventions in `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/CreateInventoryBalance.cs`
-- [ ] T020 [US1] Implement create route `POST /api/wms/inventory/balances` with request binding and command dispatch in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs`
-- [ ] T021 [US1] Register Inventory Balance endpoints in the Inventory route group in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryEndpoints.cs`
-- [ ] T022 [US1] Add `WmsInventoryApiClient`, `InventoryBalanceDetails`, `CreateInventoryBalanceRequest`, and `TryCreateInventoryBalanceAsync` in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs` without adding WebApp UI pages
+- [X] T018 [US1] Implement `InventoryBalanceDetails` projection with balance, SKU, storage location, warehouse, base UoM, quantity, and timestamp fields in `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/InventoryBalanceDetails.cs`
+- [X] T019 [US1] Implement `CreateInventoryBalance` command and handler with domain validation, active SKU/base UoM check, eligible storage location/type/status check, duplicate check, persistence save, and existing result conventions in `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/CreateInventoryBalance.cs`
+- [X] T020 [US1] Implement create route `POST /api/wms/inventory/balances` with request binding and command dispatch in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs`
+- [X] T021 [US1] Register Inventory Balance endpoints in the Inventory route group in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryEndpoints.cs`
+- [X] T022 [US1] Add `WmsInventoryApiClient`, `InventoryBalanceDetails`, `CreateInventoryBalanceRequest`, and `TryCreateInventoryBalanceAsync` in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs` without adding WebApp UI pages
 
 **Checkpoint**: User Story 1 is independently functional and testable as the MVP create flow.
 
