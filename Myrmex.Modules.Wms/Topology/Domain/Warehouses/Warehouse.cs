@@ -3,7 +3,7 @@ using Myrmex.Core.Domain.Validation;
 
 namespace Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 
-internal sealed class Warehouse : AggregateRoot
+internal sealed class Warehouse : AggregateRoot, IActivatable
 {
     public const int MaxCodeLength = DomainTextLengths.Code;
     public const int MaxNameLength = DomainTextLengths.Name;
@@ -25,6 +25,8 @@ internal sealed class Warehouse : AggregateRoot
     public string Name { get; private set; } = null!;
 
     public string? Description { get; private set; }
+
+    public bool IsActive { get; private set; } = true;
 
     public static DomainValidationResult Create(
         string? code,
@@ -82,7 +84,8 @@ internal sealed class Warehouse : AggregateRoot
             return;
         }
 
-        MarkDeactivated();
+        IsActive = false;
+        Touch();
         AddDomainEvent(new WarehouseDeactivatedDomainEvent(Id));
     }
 
@@ -93,7 +96,8 @@ internal sealed class Warehouse : AggregateRoot
             return;
         }
 
-        MarkReactivated();
+        IsActive = true;
+        Touch();
         AddDomainEvent(new WarehouseReactivatedDomainEvent(Id));
     }
 
