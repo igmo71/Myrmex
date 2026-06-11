@@ -3,7 +3,7 @@ using Myrmex.Core.Domain.Validation;
 
 namespace Myrmex.Modules.Wms.Catalog.Domain.SkuBarcodes;
 
-internal sealed class SkuBarcode : AggregateRoot
+internal sealed class SkuBarcode : AggregateRoot, IActivatable
 {
     public const int MaxValueLength = 200;
 
@@ -30,6 +30,8 @@ internal sealed class SkuBarcode : AggregateRoot
     public BarcodeSymbology Symbology { get; private set; }
 
     public bool IsPrimary { get; private set; }
+
+    public bool IsActive { get; private set; } = true;
 
     public void ClearPrimary()
     {
@@ -76,7 +78,8 @@ internal sealed class SkuBarcode : AggregateRoot
         }
 
         IsPrimary = false;
-        MarkDeactivated();
+        IsActive = false;
+        Touch();
         AddDomainEvent(new SkuBarcodeDeactivatedDomainEvent(Id));
     }
 
@@ -88,7 +91,8 @@ internal sealed class SkuBarcode : AggregateRoot
         }
 
         IsPrimary = false;
-        MarkReactivated();
+        IsActive = true;
+        Touch();
         AddDomainEvent(new SkuBarcodeReactivatedDomainEvent(Id));
     }
 

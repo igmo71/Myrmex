@@ -2,7 +2,7 @@
 
 namespace Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 
-internal sealed class StorageLocationStatus : EntityBase
+internal sealed class StorageLocationStatus : EntityBase, IActivatable
 {
     public const int MaxCodeLength = DomainTextLengths.Code;
     public const int MaxNameLength = DomainTextLengths.Name;
@@ -35,6 +35,30 @@ internal sealed class StorageLocationStatus : EntityBase
     public bool IsSystem { get; private set; }
 
     public int SortOrder { get; private set; }
+
+    public bool IsActive { get; private set; } = true;
+
+    public void Deactivate()
+    {
+        if (!IsActive)
+        {
+            return;
+        }
+
+        IsActive = false;
+        Touch();
+    }
+
+    public void Reactivate()
+    {
+        if (IsActive)
+        {
+            return;
+        }
+
+        IsActive = true;
+        Touch();
+    }
 
     public static StorageLocationStatus CreateSystem(
         string code,

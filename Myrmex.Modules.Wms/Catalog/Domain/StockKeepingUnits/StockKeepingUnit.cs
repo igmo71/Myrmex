@@ -3,7 +3,7 @@ using Myrmex.Core.Domain.Validation;
 
 namespace Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 
-internal sealed class StockKeepingUnit : AggregateRoot
+internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
 {
     public const int MaxCodeLength = DomainTextLengths.Code;
     public const int MaxNameLength = DomainTextLengths.Name;
@@ -32,6 +32,8 @@ internal sealed class StockKeepingUnit : AggregateRoot
     public string? Description { get; private set; }
 
     public Guid BaseUnitOfMeasureId { get; private set; }
+
+    public bool IsActive { get; private set; } = true;
 
     public DomainValidationResult UpdateDetails(
         string? name,
@@ -75,7 +77,8 @@ internal sealed class StockKeepingUnit : AggregateRoot
             return;
         }
 
-        MarkDeactivated();
+        IsActive = false;
+        Touch();
         AddDomainEvent(new StockKeepingUnitDeactivatedDomainEvent(Id));
     }
 
@@ -86,7 +89,8 @@ internal sealed class StockKeepingUnit : AggregateRoot
             return;
         }
 
-        MarkReactivated();
+        IsActive = true;
+        Touch();
         AddDomainEvent(new StockKeepingUnitReactivatedDomainEvent(Id));
     }
 
