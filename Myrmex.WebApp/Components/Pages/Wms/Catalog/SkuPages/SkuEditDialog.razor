@@ -1,4 +1,5 @@
 @using MudBlazor
+@using Myrmex.WebApp.Wms.Api
 @using Myrmex.WebApp.Wms.Catalog
 
 <MudDialog>
@@ -36,6 +37,22 @@
                               MaxLength="1000"
                               @bind-Value="_model.Description" />
 
+                <MudSelect T="Guid?"
+                           Label="Base UoM"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Disabled="_isLoadingUnitsOfMeasure"
+                           Required="true"
+                           RequiredError="Base UoM is required."
+                           @bind-Value="_model.BaseUnitOfMeasureId">
+                    @foreach (UnitOfMeasureDetails unitOfMeasure in _unitsOfMeasure)
+                    {
+                        <MudSelectItem T="Guid?" Value="@((Guid?)unitOfMeasure.Id)">
+                            @unitOfMeasure.Code - @unitOfMeasure.Name
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+
                 @if (!string.IsNullOrWhiteSpace(_errorMessage))
                 {
                     <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
@@ -55,7 +72,7 @@
         <MudButton Color="Color.Primary"
                    Variant="Variant.Filled"
                    OnClick="SaveAsync"
-                   Disabled="_isSaving">
+                   Disabled="_isSaving || _isLoadingUnitsOfMeasure">
             @if (_isSaving)
             {
                 <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" />
@@ -77,24 +94,56 @@
 
     private MudForm? _form;
     private readonly SkuEditModel _model = new();
+    private List<UnitOfMeasureDetails> _unitsOfMeasure = [];
     private bool _isSaving;
+    private bool _isLoadingUnitsOfMeasure;
     private string? _errorMessage;
 
     private bool IsEditMode => Sku is not null;
 
     private string Title => IsEditMode ? "Edit SKU" : "Create SKU";
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        if (Sku is null)
+        if (Sku is not null)
         {
-            return;
+            _model.Code = Sku.Code;
+            _model.Name = Sku.Name;
+            _model.Description = Sku.Description;
+            _model.BaseUnitOfMeasureId = Sku.BaseUnitOfMeasureId;
         }
 
-        _model.Code = Sku.Code;
-        _model.Name = Sku.Name;
-        _model.Description = Sku.Description;
-        _model.BaseUnitOfMeasureId = Sku.BaseUnitOfMeasureId;
+        await LoadUnitsOfMeasureAsync();
+    }
+
+    private async Task LoadUnitsOfMeasureAsync()
+    {
+        _isLoadingUnitsOfMeasure = true;
+        _errorMessage = null;
+
+        try
+        {
+            ListRequest request = new(
+                Skip: 0,
+                Take: 100,
+                SortBy: "code",
+                SortDescending: false,
+                IncludeInactive: false);
+
+            ListResult<UnitOfMeasureDetails> result = await WmsCatalogApiClient
+                .ListUnitsOfMeasureAsync(request);
+
+            _unitsOfMeasure = result.Items.ToList();
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            _unitsOfMeasure = [];
+        }
+        finally
+        {
+            _isLoadingUnitsOfMeasure = false;
+        }
     }
 
     private async Task SaveAsync()
@@ -120,6 +169,12 @@
 
             if (Sku is null)
             {
+                if (_model.BaseUnitOfMeasureId is null)
+                {
+                    _errorMessage = "Base UoM is required.";
+                    return;
+                }
+
                 CreateStockKeepingUnitRequest request = new(
                     Code: _model.Code,
                     Name: _model.Name,
@@ -130,6 +185,12 @@
             }
             else
             {
+                if (_model.BaseUnitOfMeasureId is null)
+                {
+                    _errorMessage = "Base UoM is required.";
+                    return;
+                }
+
                 UpdateStockKeepingUnitDetailsRequest request = new(
                     Name: _model.Name,
                     Description: _model.Description,
