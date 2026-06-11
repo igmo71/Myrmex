@@ -172,7 +172,7 @@ public sealed class UpdateStockKeepingUnitDetailsHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_WhenBaseUnitOfMeasureIsInactive_ReturnsFailureServiceResult()
+    public async Task HandleAsync_WhenBaseUnitOfMeasureIsInactive_ReturnsInvalidServiceResult()
     {
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
         RecordingDomainEventDispatcher domainEventDispatcher = new();

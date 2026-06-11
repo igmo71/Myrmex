@@ -12,8 +12,8 @@ using Myrmex.Modules.Wms.Infrastructure.Persistence;
 namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(WmsDbContext))]
-    [Migration("20260611074457_AddBaseSkuBarcodeToSKU")]
-    partial class AddBaseSkuBarcodeToSKU
+    [Migration("20260611091510_AddStockKeepingUnitBaseUnitOfMeasure")]
+    partial class AddStockKeepingUnitBaseUnitOfMeasure
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

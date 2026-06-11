@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class AddBaseSkuBarcodeToSKU : Migration
+    public partial class AddStockKeepingUnitBaseUnitOfMeasure : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
