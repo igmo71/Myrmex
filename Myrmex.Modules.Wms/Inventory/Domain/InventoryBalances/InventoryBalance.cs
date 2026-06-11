@@ -67,7 +67,8 @@ internal sealed class InventoryBalance : AggregateRoot
             new InventoryBalanceCreatedDomainEvent(
                 inventoryBalance.Id,
                 inventoryBalance.StockKeepingUnitId,
-                inventoryBalance.StorageLocationId));
+                inventoryBalance.StorageLocationId,
+                inventoryBalance.Quantity));
 
         return DomainValidationResult.Valid;
     }

@@ -86,6 +86,7 @@ public sealed class InventoryBalanceTests
         Assert.Equal(inventoryBalance.Id, createdEvent.InventoryBalanceId);
         Assert.Equal(StockKeepingUnitId, createdEvent.StockKeepingUnitId);
         Assert.Equal(StorageLocationId, createdEvent.StorageLocationId);
+        Assert.Equal(0, createdEvent.Quantity);
     }
 
     [Fact]

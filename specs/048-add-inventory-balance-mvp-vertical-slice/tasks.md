@@ -142,12 +142,12 @@
 
 **Purpose**: Regression, migration handoff, and scope validation across the completed slice.
 
-- [ ] T038 [P] Add shared Inventory Balance test data helpers only where they reduce duplication across Inventory tests in `Myrmex.Tests/Wms/Inventory/Testing/InventoryBalanceTestData.cs`
-- [ ] T039 [P] Review Inventory Balance implementation against API contract requirements in `specs/048-add-inventory-balance-mvp-vertical-slice/contracts/inventory-balance-api-contract.md`
-- [ ] T040 [P] Review Inventory Balance implementation against data model requirements in `specs/048-add-inventory-balance-mvp-vertical-slice/data-model.md`
-- [ ] T041 Verify final code diff adds no receiving, putaway, picking, shipping, LPN, reservation, transaction, movement, adjustment, batch/lot, expiry, serial number, conversion, packaging, cycle counting, seed/demo, external integration, WebApp UI, delete, deactivate, reactivate, or zero-balance cleanup behavior across `Myrmex.Modules.Wms/`, `Myrmex.WebApp/`, and `Myrmex.Tests/`
-- [ ] T042 Stop before EF migration generation and recommend the developer-controlled migration commands documented in `specs/048-add-inventory-balance-mvp-vertical-slice/quickstart.md`
-- [ ] T043 Recommend developer-controlled validation commands from `specs/048-add-inventory-balance-mvp-vertical-slice/quickstart.md` without running build, tests, app startup, EF migration generation, database update, or migration application automatically
+- [X] T038 [P] Add shared Inventory Balance test data helpers only where they reduce duplication across Inventory tests in `Myrmex.Tests/Wms/Inventory/Testing/InventoryBalanceTestData.cs`
+- [X] T039 [P] Review Inventory Balance implementation against API contract requirements in `specs/048-add-inventory-balance-mvp-vertical-slice/contracts/inventory-balance-api-contract.md`
+- [X] T040 [P] Review Inventory Balance implementation against data model requirements in `specs/048-add-inventory-balance-mvp-vertical-slice/data-model.md`
+- [X] T041 Verify final code diff adds no receiving, putaway, picking, shipping, LPN, reservation, transaction, movement, adjustment, batch/lot, expiry, serial number, conversion, packaging, cycle counting, seed/demo, external integration, WebApp UI, delete, deactivate, reactivate, or zero-balance cleanup behavior across `Myrmex.Modules.Wms/`, `Myrmex.WebApp/`, and `Myrmex.Tests/`
+- [X] T042 Stop before EF migration generation and recommend the developer-controlled migration commands documented in `specs/048-add-inventory-balance-mvp-vertical-slice/quickstart.md`
+- [X] T043 Recommend developer-controlled validation commands from `specs/048-add-inventory-balance-mvp-vertical-slice/quickstart.md` without running build, tests, app startup, EF migration generation, database update, or migration application automatically
 
 ---
 
