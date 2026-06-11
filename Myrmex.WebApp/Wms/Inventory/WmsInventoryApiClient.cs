@@ -35,6 +35,17 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
+    public async Task<ApiResult<InventoryBalanceDetails>> TryUpdateInventoryBalanceQuantityAsync(
+        Guid inventoryBalanceId,
+        UpdateInventoryBalanceQuantityRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PutAsApiResultAsync<InventoryBalanceDetails>(
+            $"/api/wms/inventory/balances/{inventoryBalanceId}/quantity",
+            request,
+            cancellationToken);
+    }
+
     private static string BuildInventoryBalanceListUrl(ListInventoryBalancesRequest request)
     {
         List<string> query =
@@ -91,6 +102,8 @@ public sealed record CreateInventoryBalanceRequest(
     Guid? StockKeepingUnitId,
     Guid? StorageLocationId,
     decimal Quantity);
+
+public sealed record UpdateInventoryBalanceQuantityRequest(decimal Quantity);
 
 public sealed record ListInventoryBalancesRequest(
     int Skip = 0,

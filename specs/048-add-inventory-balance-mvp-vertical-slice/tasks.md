@@ -125,14 +125,14 @@
 
 ### Tests for User Story 4
 
-- [ ] T033 [P] [US4] Add update handler tests for valid quantity update, zero quantity update, missing balance not-found, negative quantity rejection, unchanged SKU/location identity, and updated timestamp behavior in `Myrmex.Tests/Wms/Inventory/Features/InventoryBalances/UpdateInventoryBalanceQuantityHandlerTests.cs`
-- [ ] T034 [P] [US4] Extend WebApp Inventory API client tests for quantity-only update payload, success response parsing, validation result, and not-found result behavior in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [X] T033 [P] [US4] Add update handler tests for valid quantity update, zero quantity update, missing balance not-found, negative quantity rejection, unchanged SKU/location identity, and updated timestamp behavior in `Myrmex.Tests/Wms/Inventory/Features/InventoryBalances/UpdateInventoryBalanceQuantityHandlerTests.cs`
+- [X] T034 [P] [US4] Extend WebApp Inventory API client tests for quantity-only update payload, success response parsing, validation result, and not-found result behavior in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation for User Story 4
 
-- [ ] T035 [US4] Implement `UpdateInventoryBalanceQuantity` command and handler with quantity-only input, missing balance handling, non-negative quantity validation, unchanged SKU/location identity, timestamp update, and existing result conventions in `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/UpdateInventoryBalanceQuantity.cs`
-- [ ] T036 [US4] Add quantity update route `PUT /api/wms/inventory/balances/{inventoryBalanceId:guid}/quantity` with request body accepting only `Quantity` in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs`
-- [ ] T037 [US4] Add `UpdateInventoryBalanceQuantityRequest` and `TryUpdateInventoryBalanceQuantityAsync` to the WebApp Inventory API client in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [X] T035 [US4] Implement `UpdateInventoryBalanceQuantity` command and handler with quantity-only input, missing balance handling, non-negative quantity validation, unchanged SKU/location identity, timestamp update, and existing result conventions in `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/UpdateInventoryBalanceQuantity.cs`
+- [X] T036 [US4] Add quantity update route `PUT /api/wms/inventory/balances/{inventoryBalanceId:guid}/quantity` with request body accepting only `Quantity` in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs`
+- [X] T037 [US4] Add `UpdateInventoryBalanceQuantityRequest` and `TryUpdateInventoryBalanceQuantityAsync` to the WebApp Inventory API client in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
 
 **Checkpoint**: All user stories are independently functional through domain, handler, persistence, endpoint, and client paths; WebApp UI remains out of scope.
 

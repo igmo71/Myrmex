@@ -72,9 +72,9 @@ internal static class ListInventoryBalances
         }
 
         private static IQueryable<InventoryBalance> ApplySorting(
-    IQueryable<InventoryBalance> query,
-    string? sortBy,
-    bool sortDescending)
+            IQueryable<InventoryBalance> query,
+            string? sortBy,
+            bool sortDescending)
         {
             string normalizedSortBy = sortBy?.Trim().ToLowerInvariant() ?? "id";
 

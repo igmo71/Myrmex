@@ -26,6 +26,10 @@ internal static class InventoryBalanceEndpoints
             .WithName("GetInventoryBalanceById")
             .WithSummary("Get Inventory Balance By Id");
 
+        group.MapPut("/balances/{inventoryBalanceId:guid}/quantity", UpdateInventoryBalanceQuantityAsync)
+            .WithName("UpdateInventoryBalanceQuantity")
+            .WithSummary("Update Inventory Balance Quantity");
+
         return group;
     }
 
@@ -33,6 +37,8 @@ internal static class InventoryBalanceEndpoints
         Guid? StockKeepingUnitId,
         Guid? StorageLocationId,
         decimal Quantity);
+
+    private sealed record UpdateInventoryBalanceQuantityRequest(decimal Quantity);
 
     private static async Task<IResult> CreateInventoryBalanceAsync(
         CreateInventoryBalanceRequest request,
@@ -88,6 +94,24 @@ internal static class InventoryBalanceEndpoints
 
         var result = await queryDispatcher
             .DispatchAsync<GetInventoryBalanceById.Query, ServiceResult<InventoryBalanceDetails>>(query, cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> UpdateInventoryBalanceQuantityAsync(
+        Guid inventoryBalanceId,
+        UpdateInventoryBalanceQuantityRequest request,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateInventoryBalanceQuantity.Command(
+            inventoryBalanceId,
+            request.Quantity);
+
+        var result = await commandDispatcher
+            .DispatchAsync<UpdateInventoryBalanceQuantity.Command, ServiceResult<InventoryBalanceDetails>>(
+                command,
+                cancellationToken);
+
         return result.ToHttpResult();
     }
 }
