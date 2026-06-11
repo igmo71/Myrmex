@@ -99,15 +99,15 @@
 
 ### Tests for User Story 3
 
-- [ ] T023 [US3] Extend update handler tests for valid base UoM change, missing base UoM, nonexistent UoM, inactive UoM, and unchanged assignment on failure in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/UpdateStockKeepingUnitDetailsHandlerTests.cs`
-- [ ] T024 [US3] Extend API client tests for SKU update request and response `BaseUnitOfMeasureId` behavior in `Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs`
+- [X] T023 [US3] Extend update handler tests for valid base UoM change, missing base UoM, nonexistent UoM, inactive UoM, and unchanged assignment on failure in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/UpdateStockKeepingUnitDetailsHandlerTests.cs`
+- [X] T024 [US3] Extend API client tests for SKU update request and response `BaseUnitOfMeasureId` behavior in `Myrmex.Tests/Wms/Catalog/Client/WmsCatalogApiClientTests.cs`
 
 ### Implementation for User Story 3
 
-- [ ] T025 [US3] Update `UpdateStockKeepingUnitDetails.Command` and handler to accept `BaseUnitOfMeasureId`, validate existing active UoM, and preserve the current assignment on validation failure in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/UpdateStockKeepingUnitDetails.cs`
-- [ ] T026 [US3] Update SKU update request binding to include nullable/validatable `BaseUnitOfMeasureId` in `Myrmex.Modules.Wms/Catalog/Endpoints/StockKeepingUnitEndpoints.cs`
-- [ ] T027 [US3] Update WebApp SKU update request record and serialization contract for `BaseUnitOfMeasureId` without adding a new SKU Base UoM UI workflow in `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
-- [ ] T028 [US3] Update existing SKU edit compatibility only as needed for compile-time contract changes, without adding Base UoM selection controls, in `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages/SkuEditDialog.razor`
+- [X] T025 [US3] Update `UpdateStockKeepingUnitDetails.Command` and handler to accept `BaseUnitOfMeasureId`, validate existing active UoM, and preserve the current assignment on validation failure in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/UpdateStockKeepingUnitDetails.cs`
+- [X] T026 [US3] Update SKU update request binding to include nullable/validatable `BaseUnitOfMeasureId` in `Myrmex.Modules.Wms/Catalog/Endpoints/StockKeepingUnitEndpoints.cs`
+- [X] T027 [US3] Update WebApp SKU update request record and serialization contract for `BaseUnitOfMeasureId` without adding a new SKU Base UoM UI workflow in `Myrmex.WebApp/Wms/Catalog/WmsCatalogApiClient.cs`
+- [X] T028 [US3] Update existing SKU edit compatibility only as needed for compile-time contract changes, without adding Base UoM selection controls, in `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages/SkuEditDialog.razor`
 
 **Checkpoint**: All three user stories are independently functional and SKU Base UoM can be created, reviewed, and changed through the existing SKU contract surface.
 

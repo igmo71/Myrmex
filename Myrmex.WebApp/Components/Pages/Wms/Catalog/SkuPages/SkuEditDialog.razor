@@ -94,6 +94,7 @@
         _model.Code = Sku.Code;
         _model.Name = Sku.Name;
         _model.Description = Sku.Description;
+        _model.BaseUnitOfMeasureId = Sku.BaseUnitOfMeasureId;
     }
 
     private async Task SaveAsync()
@@ -122,7 +123,8 @@
                 CreateStockKeepingUnitRequest request = new(
                     Code: _model.Code,
                     Name: _model.Name,
-                    Description: _model.Description);
+                    Description: _model.Description,
+                    BaseUnitOfMeasureId: _model.BaseUnitOfMeasureId);
 
                 result = await WmsCatalogApiClient.TryCreateStockKeepingUnitAsync(request);
             }
@@ -130,7 +132,8 @@
             {
                 UpdateStockKeepingUnitDetailsRequest request = new(
                     Name: _model.Name,
-                    Description: _model.Description);
+                    Description: _model.Description,
+                    BaseUnitOfMeasureId: _model.BaseUnitOfMeasureId);
 
                 result = await WmsCatalogApiClient.TryUpdateStockKeepingUnitDetailsAsync(
                     Sku.Id,
@@ -173,5 +176,7 @@
         public string? Name { get; set; }
 
         public string? Description { get; set; }
+
+        public Guid? BaseUnitOfMeasureId { get; set; }
     }
 }

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
@@ -261,6 +262,25 @@ public sealed class UpdateStockKeepingUnitDetailsHandlerTests
         Assert.Equal("Updated Widget", persistedStockKeepingUnit.Name);
         Assert.Equal("Updated description", persistedStockKeepingUnit.Description);
         Assert.Equal(newBaseUnitOfMeasure.Id, persistedStockKeepingUnit.BaseUnitOfMeasureId);
+
+        GetStockKeepingUnitById.Handler getHandler = new(testDbContext.DbContext);
+        ServiceResult<StockKeepingUnitDetails> getResult = await getHandler.HandleAsync(
+            new GetStockKeepingUnitById.Query(stockKeepingUnit.Id),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(getResult.IsSuccess);
+        Assert.Equal(newBaseUnitOfMeasure.Id, getResult.Value.BaseUnitOfMeasureId);
+
+        ListStockKeepingUnits.Handler listHandler = new(testDbContext.DbContext);
+        ServiceResult<ListResult<StockKeepingUnitDetails>> listResult = await listHandler.HandleAsync(
+            new ListStockKeepingUnits.Query(),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(listResult.IsSuccess);
+
+        StockKeepingUnitDetails listedDetails = Assert.Single(listResult.Value.Items);
+        Assert.Equal(stockKeepingUnit.Id, listedDetails.Id);
+        Assert.Equal(newBaseUnitOfMeasure.Id, listedDetails.BaseUnitOfMeasureId);
 
         var dispatchedEvent = Assert.Single(domainEventDispatcher.DispatchedEvents);
         Assert.IsType<StockKeepingUnitDetailsUpdatedDomainEvent>(dispatchedEvent);
