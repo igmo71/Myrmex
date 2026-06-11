@@ -83,14 +83,14 @@
 
 ### Tests for User Story 2
 
-- [ ] T023 [P] [US2] Add get-by-id handler tests for existing balance display context, zero quantity display, updated timestamp display, and missing balance not-found behavior in `Myrmex.Tests/Wms/Inventory/Features/InventoryBalances/GetInventoryBalanceByIdHandlerTests.cs`
-- [ ] T024 [P] [US2] Extend WebApp Inventory API client tests for get-by-id success parsing and read/load exception behavior in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [X] T023 [P] [US2] Add get-by-id handler tests for existing balance display context, zero quantity display, updated timestamp display, and missing balance not-found behavior in `Myrmex.Tests/Wms/Inventory/Features/InventoryBalances/GetInventoryBalanceByIdHandlerTests.cs`
+- [X] T024 [P] [US2] Extend WebApp Inventory API client tests for get-by-id success parsing and read/load exception behavior in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation for User Story 2
 
-- [ ] T025 [US2] Implement `GetInventoryBalanceById` query and handler returning active or inactive referenced context through projection joins and Inventory Balance not-found errors in `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/GetInventoryBalanceById.cs`
-- [ ] T026 [US2] Add get route `GET /api/wms/inventory/balances/{inventoryBalanceId:guid}` to `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs`
-- [ ] T027 [US2] Add `GetInventoryBalanceByIdAsync` to the WebApp Inventory API client in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [X] T025 [US2] Implement `GetInventoryBalanceById` query and handler returning active or inactive referenced context through projection joins and Inventory Balance not-found errors in `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/GetInventoryBalanceById.cs`
+- [X] T026 [US2] Add get route `GET /api/wms/inventory/balances/{inventoryBalanceId:guid}` to `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs`
+- [X] T027 [US2] Add `GetInventoryBalanceByIdAsync` to the WebApp Inventory API client in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
 
 **Checkpoint**: User Stories 1 and 2 work independently; users can create and retrieve one balance with display context.
 

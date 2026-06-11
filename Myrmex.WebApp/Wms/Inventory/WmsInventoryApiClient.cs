@@ -4,6 +4,15 @@ namespace Myrmex.WebApp.Wms.Inventory;
 
 public sealed class WmsInventoryApiClient(HttpClient httpClient)
 {
+    public async Task<InventoryBalanceDetails> GetInventoryBalanceByIdAsync(
+        Guid inventoryBalanceId,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.GetRequiredAsync<InventoryBalanceDetails>(
+            $"/api/wms/inventory/balances/{inventoryBalanceId}",
+            cancellationToken);
+    }
+
     public async Task<ApiResult<InventoryBalanceDetails>> TryCreateInventoryBalanceAsync(
         CreateInventoryBalanceRequest request,
         CancellationToken cancellationToken = default)

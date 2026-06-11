@@ -129,70 +129,14 @@ internal static class CreateInventoryBalance
                 return ServiceResult<InventoryBalanceDetails>.Fail(saveResult.Error);
             }
 
-            InventoryBalanceDetails? details = await ProjectDetails(inventoryBalance.Id)
+            InventoryBalanceDetails? details = await InventoryBalanceDetails
+                .QueryFrom(dbContext)
+                .Where(x => x.Id == inventoryBalance.Id)
                 .SingleOrDefaultAsync(cancellationToken);
 
             return details is null
                 ? ServiceResult<InventoryBalanceDetails>.Fail(WmsErrors.InventoryBalance.CreateFailed)
                 : ServiceResult<InventoryBalanceDetails>.Success(details);
-        }
-
-        private IQueryable<InventoryBalanceDetails> ProjectDetails(Guid inventoryBalanceId)
-        {
-            return dbContext.InventoryBalances
-                .AsNoTracking()
-                .Where(inventoryBalance => inventoryBalance.Id == inventoryBalanceId)
-                .Join(
-                    dbContext.StockKeepingUnits.AsNoTracking(),
-                    inventoryBalance => inventoryBalance.StockKeepingUnitId,
-                    stockKeepingUnit => stockKeepingUnit.Id,
-                    (inventoryBalance, stockKeepingUnit) => new
-                    {
-                        InventoryBalance = inventoryBalance,
-                        StockKeepingUnit = stockKeepingUnit
-                    })
-                .Join(
-                    dbContext.StorageLocations.AsNoTracking(),
-                    x => x.InventoryBalance.StorageLocationId,
-                    storageLocation => storageLocation.Id,
-                    (x, storageLocation) => new
-                    {
-                        x.InventoryBalance,
-                        x.StockKeepingUnit,
-                        StorageLocation = storageLocation
-                    })
-                .Join(
-                    dbContext.Warehouses.AsNoTracking(),
-                    x => x.StorageLocation.WarehouseId,
-                    warehouse => warehouse.Id,
-                    (x, warehouse) => new
-                    {
-                        x.InventoryBalance,
-                        x.StockKeepingUnit,
-                        x.StorageLocation,
-                        Warehouse = warehouse
-                    })
-                .Join(
-                    dbContext.UnitsOfMeasure.AsNoTracking(),
-                    x => x.StockKeepingUnit.BaseUnitOfMeasureId,
-                    baseUnitOfMeasure => baseUnitOfMeasure.Id,
-                    (x, baseUnitOfMeasure) => new InventoryBalanceDetails(
-                        x.InventoryBalance.Id,
-                        x.InventoryBalance.StockKeepingUnitId,
-                        x.StockKeepingUnit.Code,
-                        x.StockKeepingUnit.Name,
-                        x.InventoryBalance.StorageLocationId,
-                        x.StorageLocation.Code,
-                        x.StorageLocation.Name,
-                        x.Warehouse.Id,
-                        x.Warehouse.Code,
-                        x.Warehouse.Name,
-                        baseUnitOfMeasure.Id,
-                        baseUnitOfMeasure.Code,
-                        baseUnitOfMeasure.Symbol,
-                        x.InventoryBalance.Quantity,
-                        x.InventoryBalance.CreatedAtUtc,
-                        x.InventoryBalance.UpdatedAtUtc));
         }
     }
 }
