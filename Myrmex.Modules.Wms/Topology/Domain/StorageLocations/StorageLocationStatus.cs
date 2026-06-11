@@ -38,6 +38,28 @@ internal sealed class StorageLocationStatus : EntityBase, IActivatable
 
     public bool IsActive { get; private set; } = true;
 
+    public void Deactivate()
+    {
+        if (!IsActive)
+        {
+            return;
+        }
+
+        IsActive = false;
+        Touch();
+    }
+
+    public void Reactivate()
+    {
+        if (IsActive)
+        {
+            return;
+        }
+
+        IsActive = true;
+        Touch();
+    }
+
     public static StorageLocationStatus CreateSystem(
         string code,
         string name,
