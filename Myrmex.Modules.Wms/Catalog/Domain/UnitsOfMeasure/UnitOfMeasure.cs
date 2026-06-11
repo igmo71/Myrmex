@@ -3,7 +3,7 @@ using Myrmex.Core.Domain.Validation;
 
 namespace Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 
-internal sealed class UnitOfMeasure : AggregateRoot
+internal sealed class UnitOfMeasure : AggregateRoot, IActivatable
 {
     public const int MaxCodeLength = DomainTextLengths.Code;
     public const int MaxNameLength = DomainTextLengths.Name;
@@ -25,6 +25,8 @@ internal sealed class UnitOfMeasure : AggregateRoot
     public string Name { get; private set; } = null!;
 
     public string? Symbol { get; private set; }
+
+    public bool IsActive { get; private set; } = true;
 
     public DomainValidationResult UpdateDetails(
         string? name,
@@ -55,7 +57,8 @@ internal sealed class UnitOfMeasure : AggregateRoot
             return;
         }
 
-        MarkDeactivated();
+        IsActive = false;
+        Touch();
         AddDomainEvent(new UnitOfMeasureDeactivatedDomainEvent(Id));
     }
 
@@ -66,7 +69,8 @@ internal sealed class UnitOfMeasure : AggregateRoot
             return;
         }
 
-        MarkReactivated();
+        IsActive = true;
+        Touch();
         AddDomainEvent(new UnitOfMeasureReactivatedDomainEvent(Id));
     }
 

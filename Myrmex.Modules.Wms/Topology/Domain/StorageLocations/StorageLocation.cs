@@ -3,7 +3,7 @@ using Myrmex.Core.Domain.Validation;
 
 namespace Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 
-internal sealed class StorageLocation : AggregateRoot
+internal sealed class StorageLocation : AggregateRoot, IActivatable
 {
     public const int MaxCodeLength = DomainTextLengths.Code;
     public const int MaxNameLength = DomainTextLengths.Name;
@@ -48,6 +48,8 @@ internal sealed class StorageLocation : AggregateRoot
     public string? Description { get; private set; }
 
     public bool IsPickable { get; private set; }
+
+    public bool IsActive { get; private set; } = true;
 
     public static DomainValidationResult Create(
         Guid warehouseId,
@@ -130,7 +132,8 @@ internal sealed class StorageLocation : AggregateRoot
             return;
         }
 
-        MarkDeactivated();
+        IsActive = false;
+        Touch();
 
         AddDomainEvent(
             new StorageLocationDeactivatedDomainEvent(
@@ -146,7 +149,8 @@ internal sealed class StorageLocation : AggregateRoot
             return;
         }
 
-        MarkReactivated();
+        IsActive = true;
+        Touch();
 
         AddDomainEvent(
             new StorageLocationReactivatedDomainEvent(
