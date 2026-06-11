@@ -14,6 +14,13 @@
         <PropertyColumn Property="x => x.Code" Title="Code" />
         <PropertyColumn Property="x => x.Name" Title="Name" />
         <PropertyColumn Property="x => x.Description" Title="Description" />
+        <TemplateColumn Title="Base UoM"
+                        Sortable="false"
+                        Filterable="false">
+            <CellTemplate>
+                @GetBaseUnitOfMeasureDisplay(context.Item)
+            </CellTemplate>
+        </TemplateColumn>
 
         <TemplateColumn Title="Active"
                         Sortable="false"
@@ -84,6 +91,10 @@
     public IReadOnlyList<StockKeepingUnitDetails> Skus { get; set; } = [];
 
     [Parameter]
+    public IReadOnlyDictionary<Guid, UnitOfMeasureDetails> UnitOfMeasureLookup { get; set; } =
+        new Dictionary<Guid, UnitOfMeasureDetails>();
+
+    [Parameter]
     public bool IsLoading { get; set; }
 
     [Parameter]
@@ -94,4 +105,14 @@
 
     [Parameter]
     public EventCallback<StockKeepingUnitDetails> ReactivateRequested { get; set; }
+
+    private string GetBaseUnitOfMeasureDisplay(StockKeepingUnitDetails sku)
+    {
+        if (UnitOfMeasureLookup.TryGetValue(sku.BaseUnitOfMeasureId, out UnitOfMeasureDetails? unitOfMeasure))
+        {
+            return $"{unitOfMeasure.Code} - {unitOfMeasure.Name}";
+        }
+
+        return sku.BaseUnitOfMeasureId.ToString();
+    }
 }
