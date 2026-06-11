@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
+using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
 
 namespace Myrmex.Modules.Wms.Inventory.Features.InventoryBalances;
 
@@ -21,9 +22,11 @@ internal sealed record InventoryBalanceDetails(
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? UpdatedAtUtc)
 {
-    internal static IQueryable<InventoryBalanceDetails> QueryFrom(WmsDbContext dbContext)
+    internal static IQueryable<InventoryBalanceDetails> QueryFrom(
+    WmsDbContext dbContext,
+    IQueryable<InventoryBalance> inventoryBalances)
     {
-        return dbContext.InventoryBalances
+        return inventoryBalances
             .AsNoTracking()
             .Join(
                 dbContext.StockKeepingUnits.AsNoTracking(),

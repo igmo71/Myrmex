@@ -129,9 +129,11 @@ internal static class CreateInventoryBalance
                 return ServiceResult<InventoryBalanceDetails>.Fail(saveResult.Error);
             }
 
+            IQueryable<InventoryBalance> inventoryBalanceQuery = dbContext.InventoryBalances
+                .Where(x => x.Id == inventoryBalance.Id);
+
             InventoryBalanceDetails? details = await InventoryBalanceDetails
-                .QueryFrom(dbContext)
-                .Where(x => x.Id == inventoryBalance.Id)
+                .QueryFrom(dbContext, inventoryBalanceQuery)
                 .SingleOrDefaultAsync(cancellationToken);
 
             return details is null
