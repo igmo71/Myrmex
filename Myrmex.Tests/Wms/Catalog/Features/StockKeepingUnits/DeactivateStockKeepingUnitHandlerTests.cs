@@ -60,6 +60,7 @@ public sealed class DeactivateStockKeepingUnitHandlerTests
         StockKeepingUnitDetails details = result.Value;
 
         Assert.Equal(stockKeepingUnit.Id, details.Id);
+        Assert.Equal(stockKeepingUnit.BaseUnitOfMeasureId, details.BaseUnitOfMeasureId);
         Assert.False(details.IsActive);
         Assert.NotNull(details.UpdatedAtUtc);
 
@@ -67,6 +68,7 @@ public sealed class DeactivateStockKeepingUnitHandlerTests
             TestContext.Current.CancellationToken);
 
         Assert.False(persistedStockKeepingUnit.IsActive);
+        Assert.Equal(stockKeepingUnit.BaseUnitOfMeasureId, persistedStockKeepingUnit.BaseUnitOfMeasureId);
 
         ListStockKeepingUnits.Handler listHandler = new(testDbContext.DbContext);
 
@@ -103,12 +105,14 @@ public sealed class DeactivateStockKeepingUnitHandlerTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
+        Assert.Equal(stockKeepingUnit.BaseUnitOfMeasureId, result.Value.BaseUnitOfMeasureId);
         Assert.False(result.Value.IsActive);
 
         StockKeepingUnit persistedStockKeepingUnit = await testDbContext.DbContext.StockKeepingUnits.SingleAsync(
             TestContext.Current.CancellationToken);
 
         Assert.False(persistedStockKeepingUnit.IsActive);
+        Assert.Equal(stockKeepingUnit.BaseUnitOfMeasureId, persistedStockKeepingUnit.BaseUnitOfMeasureId);
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
 

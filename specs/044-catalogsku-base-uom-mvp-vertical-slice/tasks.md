@@ -117,13 +117,13 @@
 
 **Purpose**: Regression coverage, migration handoff, and scope validation across the feature.
 
-- [ ] T029 [P] Add lifecycle regression assertions that deactivate/reactivate results retain `BaseUnitOfMeasureId` in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/DeactivateStockKeepingUnitHandlerTests.cs` and `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/ReactivateStockKeepingUnitHandlerTests.cs`
-- [ ] T030 [P] Update SKU Barcode test setup to create SKUs with valid base UoMs in `Myrmex.Tests/Wms/Catalog/Features/SkuBarcodes/` and `Myrmex.Tests/Wms/Catalog/Persistence/SkuBarcodePersistenceTests.cs`
-- [ ] T031 Update existing SKU domain, handler, and persistence tests to provide valid base UoMs where the required constructor/factory signature changes in `Myrmex.Tests/Wms/Catalog/Domain/StockKeepingUnitTests.cs`, `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/`, and `Myrmex.Tests/Wms/Catalog/Persistence/StockKeepingUnitPersistenceTests.cs`
-- [ ] T032 [P] Update existing SKU grid display only if needed to remain compatible with the expanded details record, without adding Base UoM columns or selection UI, in `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages/SkuGrid.razor`
-- [ ] T033 Stop before EF migration generation and recommend the developer-controlled migration commands documented in `specs/044-catalogsku-base-uom-mvp-vertical-slice/quickstart.md`
-- [ ] T034 Verify final code diff adds no alternative UoM, conversion, packaging, inventory, receiving, LPN, picking, shipping, seed/demo, new UI page, or integration behavior across `Myrmex.Modules.Wms/`, `Myrmex.WebApp/`, and `Myrmex.Tests/`
-- [ ] T035 Recommend developer-controlled validation commands from `specs/044-catalogsku-base-uom-mvp-vertical-slice/quickstart.md` without running build, tests, app startup, EF migration generation, database update, or migration application automatically
+- [X] T029 [P] Add lifecycle regression assertions that deactivate/reactivate results retain `BaseUnitOfMeasureId` in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/DeactivateStockKeepingUnitHandlerTests.cs` and `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/ReactivateStockKeepingUnitHandlerTests.cs`
+- [X] T030 [P] Update SKU Barcode test setup to create SKUs with valid base UoMs in `Myrmex.Tests/Wms/Catalog/Features/SkuBarcodes/` and `Myrmex.Tests/Wms/Catalog/Persistence/SkuBarcodePersistenceTests.cs`
+- [X] T031 Update existing SKU domain, handler, and persistence tests to provide valid base UoMs where the required constructor/factory signature changes in `Myrmex.Tests/Wms/Catalog/Domain/StockKeepingUnitTests.cs`, `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/`, and `Myrmex.Tests/Wms/Catalog/Persistence/StockKeepingUnitPersistenceTests.cs`
+- [X] T032 [P] Update existing SKU grid display only if needed to remain compatible with the expanded details record, without adding Base UoM columns or selection UI, in `Myrmex.WebApp/Components/Pages/Wms/Catalog/SkuPages/SkuGrid.razor`
+- [X] T033 Stop before EF migration generation and recommend the developer-controlled migration commands documented in `specs/044-catalogsku-base-uom-mvp-vertical-slice/quickstart.md`
+- [X] T034 Verify final code diff adds no alternative UoM, conversion, packaging, inventory, receiving, LPN, picking, shipping, seed/demo, new UI page, or integration behavior across `Myrmex.Modules.Wms/`, `Myrmex.WebApp/`, and `Myrmex.Tests/`
+- [X] T035 Recommend developer-controlled validation commands from `specs/044-catalogsku-base-uom-mvp-vertical-slice/quickstart.md` without running build, tests, app startup, EF migration generation, database update, or migration application automatically
 
 ---
 
