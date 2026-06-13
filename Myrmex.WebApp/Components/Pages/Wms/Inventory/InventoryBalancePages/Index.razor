@@ -1,0 +1,65 @@
+@page "/wms/inventory/balances"
+
+<PageTitle>WMS Inventory Balances</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <div>
+                <MudText Typo="Typo.h5">Inventory Balances</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Current SKU quantities by warehouse and storage location.
+                </MudText>
+            </div>
+
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="CreateInventoryBalanceAsync"
+                           Disabled="_isLoadingBalances || _isLoadingWarehouses || _isLoadingSkus">
+                    Create
+                </MudButton>
+
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Refresh"
+                           OnClick="ReloadAsync"
+                           Disabled="_isLoadingBalances">
+                    Refresh
+                </MudButton>
+            </MudStack>
+        </MudStack>
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+                @_errorMessage
+            </MudAlert>
+        }
+
+        <InventoryBalanceFilters Warehouses="@_warehouses"
+                                 StorageLocations="@_storageLocations"
+                                 Skus="@_skus"
+                                 SelectedWarehouseId="@_selectedWarehouseId"
+                                 SelectedWarehouseIdChanged="OnWarehouseChanged"
+                                 SelectedStorageLocationId="@_selectedStorageLocationId"
+                                 SelectedStorageLocationIdChanged="OnStorageLocationChanged"
+                                 SelectedStockKeepingUnitId="@_selectedStockKeepingUnitId"
+                                 SelectedStockKeepingUnitIdChanged="OnStockKeepingUnitChanged"
+                                 IsLoadingWarehouses="@_isLoadingWarehouses"
+                                 IsLoadingStorageLocations="@_isLoadingStorageLocations"
+                                 IsLoadingSkus="@_isLoadingSkus" />
+
+        @if (!_isLoadingBalances && _inventoryBalances.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+                No inventory balances match the current filters.
+            </MudAlert>
+        }
+
+        <InventoryBalanceGrid InventoryBalances="@_inventoryBalances"
+                              IsLoading="@_isLoadingBalances"
+                              UpdateQuantityRequested="UpdateInventoryBalanceQuantityAsync" />
+    </MudStack>
+</MudContainer>

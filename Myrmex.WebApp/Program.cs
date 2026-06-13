@@ -2,6 +2,7 @@ using MudBlazor.Services;
 using Myrmex.WebApp;
 using Myrmex.WebApp.Components;
 using Myrmex.WebApp.Wms.Catalog;
+using Myrmex.WebApp.Wms.Inventory;
 using Myrmex.WebApp.Wms.Topology;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,11 @@ builder.Services.AddHttpClient<WmsTopologyApiClient>(client =>
 });
 
 builder.Services.AddHttpClient<WmsCatalogApiClient>(client =>
+{
+    client.BaseAddress = new("https+http://apiservice");
+});
+
+builder.Services.AddHttpClient<WmsInventoryApiClient>(client =>
 {
     client.BaseAddress = new("https+http://apiservice");
 });
