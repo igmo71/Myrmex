@@ -1,0 +1,81 @@
+<MudDataGrid T="InventoryBalanceDetails"
+             Items="InventoryBalances"
+             Loading="IsLoading"
+             Dense="true"
+             Hover="true"
+             Bordered="true"
+             Striped="true"
+             SortMode="SortMode.Multiple"
+             Filterable="false">
+    <Columns>
+        <TemplateColumn Title="SKU" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <MudText Typo="Typo.body2">@context.Item.StockKeepingUnitCode</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @context.Item.StockKeepingUnitName
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Warehouse" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <MudText Typo="Typo.body2">@context.Item.WarehouseCode</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @context.Item.WarehouseName
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Storage location" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <MudText Typo="Typo.body2">@context.Item.StorageLocationCode</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @context.Item.StorageLocationName
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Quantity" Sortable="false" Filterable="false">
+            <CellTemplate>
+                @context.Item.Quantity @GetBaseUnitOfMeasureDisplay(context.Item)
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+            <CellTemplate>
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert"
+                         Size="Size.Small"
+                         Dense="true"
+                         AnchorOrigin="Origin.BottomRight"
+                         TransformOrigin="Origin.TopRight">
+                    <MudMenuItem Icon="@Icons.Material.Filled.Edit"
+                                 OnClick="@(() => UpdateQuantityRequested.InvokeAsync(context.Item))">
+                        Update quantity
+                    </MudMenuItem>
+                </MudMenu>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <PagerContent>
+        <MudDataGridPager T="InventoryBalanceDetails" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    [Parameter]
+    public IEnumerable<InventoryBalanceDetails> InventoryBalances { get; set; } = [];
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public EventCallback<InventoryBalanceDetails> UpdateQuantityRequested { get; set; }
+
+    private static string GetBaseUnitOfMeasureDisplay(InventoryBalanceDetails inventoryBalance)
+    {
+        return string.IsNullOrWhiteSpace(inventoryBalance.BaseUnitOfMeasureSymbol)
+            ? inventoryBalance.BaseUnitOfMeasureCode
+            : inventoryBalance.BaseUnitOfMeasureSymbol;
+    }
+}

@@ -362,6 +362,7 @@ MigrationBackup/
 # Universal OS/editor files
 .DS_Store
 Thumbs.db
+*.swp
 .vscode/
 .idea/
 

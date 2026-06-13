@@ -1,0 +1,175 @@
+@using System.Globalization
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Update inventory balance quantity</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudStack Spacing="3">
+                <MudTextField T="string"
+                              Label="SKU"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Value="@StockKeepingUnitDisplay"
+                              Disabled="true" />
+
+                <MudTextField T="string"
+                              Label="Warehouse"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Value="@WarehouseDisplay"
+                              Disabled="true" />
+
+                <MudTextField T="string"
+                              Label="Storage location"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Value="@StorageLocationDisplay"
+                              Disabled="true" />
+
+                <MudTextField T="string"
+                              Label="Base UoM"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Value="@BaseUnitOfMeasureDisplay"
+                              Disabled="true" />
+
+                <MudNumericField T="decimal"
+                                 Label="Quantity"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Min="0"
+                                 Required="true"
+                                 RequiredError="Quantity is required."
+                                 Culture="@QuantityCulture"
+                                 Format="0.####"
+                                 InputMode="@(InputMode.@decimal)"
+                                 @bind-Value="_quantity" />
+
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+                        @_errorMessage
+                    </MudAlert>
+                }
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel"
+                   Disabled="_isSaving">
+            Cancel
+        </MudButton>
+
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="SaveAsync"
+                   Disabled="_isSaving">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Size="Size.Small"
+                                     Indeterminate="true"
+                                     Class="me-2" />
+            }
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public InventoryBalanceDetails InventoryBalance { get; set; } = null!;
+
+    [Inject]
+    private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = null!;
+
+    private MudForm? _form;
+    private decimal _quantity;
+    private bool _isSaving;
+    private string? _errorMessage;
+    
+    private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
+
+    private string StockKeepingUnitDisplay =>
+        $"{InventoryBalance.StockKeepingUnitCode} - {InventoryBalance.StockKeepingUnitName}";
+
+    private string WarehouseDisplay =>
+        $"{InventoryBalance.WarehouseCode} - {InventoryBalance.WarehouseName}";
+
+    private string StorageLocationDisplay =>
+        $"{InventoryBalance.StorageLocationCode} - {InventoryBalance.StorageLocationName}";
+
+    private string BaseUnitOfMeasureDisplay =>
+        string.IsNullOrWhiteSpace(InventoryBalance.BaseUnitOfMeasureSymbol)
+            ? InventoryBalance.BaseUnitOfMeasureCode
+            : $"{InventoryBalance.BaseUnitOfMeasureCode} ({InventoryBalance.BaseUnitOfMeasureSymbol})";
+
+    protected override void OnInitialized()
+    {
+        _quantity = InventoryBalance.Quantity;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        if (_quantity < 0)
+        {
+            _errorMessage = "Quantity must be greater than or equal to zero.";
+            return;
+        }
+
+        _isSaving = true;
+        _errorMessage = null;
+
+        try
+        {
+            UpdateInventoryBalanceQuantityRequest request = new(_quantity);
+
+            ApiResult<InventoryBalanceDetails> result = await WmsInventoryApiClient
+                .TryUpdateInventoryBalanceQuantityAsync(InventoryBalance.Id, request);
+
+            if (result.IsFailure)
+            {
+                _errorMessage = result.Error?.Message ?? "Inventory balance quantity update failed.";
+                return;
+            }
+
+            if (result.Value is null)
+            {
+                _errorMessage = "The operation completed without returning inventory balance details.";
+                return;
+            }
+
+            MudDialog.Close(DialogResult.Ok(result.Value));
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

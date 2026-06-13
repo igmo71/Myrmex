@@ -1,0 +1,400 @@
+@using System.Globalization
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Create inventory balance</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudStack Spacing="3">
+                <MudSelect T="Guid?"
+                           Label="SKU"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Required="true"
+                           RequiredError="SKU is required."
+                           Disabled="_isLoadingSkus"
+                           Value="_model.StockKeepingUnitId"
+                           ValueChanged="OnStockKeepingUnitChanged">
+                    @foreach (StockKeepingUnitDetails sku in _skus)
+                    {
+                        <MudSelectItem T="Guid?" Value="@((Guid?)sku.Id)">
+                            @sku.Code - @sku.Name
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudTextField T="string"
+                              Label="Base UoM"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Value="@SelectedBaseUnitOfMeasureDisplay"
+                              Disabled="true" />
+
+                <MudSelect T="Guid?"
+                           Label="Warehouse"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Required="true"
+                           RequiredError="Warehouse is required."
+                           Disabled="_isLoadingWarehouses"
+                           Value="_model.WarehouseId"
+                           ValueChanged="OnWarehouseChanged">
+                    @foreach (WarehouseDetails warehouse in _warehouses)
+                    {
+                        <MudSelectItem T="Guid?" Value="@((Guid?)warehouse.Id)">
+                            @warehouse.Code - @warehouse.Name
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudSelect T="Guid?"
+                           Label="Storage location"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Required="true"
+                           RequiredError="Storage location is required."
+                           Disabled="_model.WarehouseId is null || _isLoadingStorageLocations"
+                           HelperText="@StorageLocationHelperText"
+                           @bind-Value="_model.StorageLocationId">
+                    @foreach (StorageLocationDetails storageLocation in _storageLocations)
+                    {
+                        <MudSelectItem T="Guid?" Value="@((Guid?)storageLocation.Id)">
+                            @storageLocation.Code - @storageLocation.Name
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudNumericField T="decimal"
+                                 Label="Quantity"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Min="0"
+                                 Required="true"
+                                 RequiredError="Quantity is required."
+                                 Culture="@QuantityCulture"
+                                 Format="0.####"
+                                 InputMode="@(InputMode.@decimal)"
+                                 @bind-Value="_model.Quantity" />
+
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+                        @_errorMessage
+                    </MudAlert>
+                }
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel"
+                   Disabled="_isSaving">
+            Cancel
+        </MudButton>
+
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="SaveAsync"
+                   Disabled="_isSaving || _isLoadingSkus || _isLoadingWarehouses || _isLoadingStorageLocations">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Size="Size.Small"
+                                     Indeterminate="true"
+                                     Class="me-2" />
+            }
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private const int LookupTake = 100;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Inject]
+    private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = null!;
+
+    [Inject]
+    private WmsCatalogApiClient WmsCatalogApiClient { get; set; } = null!;
+
+    [Inject]
+    private WmsTopologyApiClient WmsTopologyApiClient { get; set; } = null!;
+
+    private MudForm? _form;
+    private readonly CreateInventoryBalanceModel _model = new();
+    private List<StockKeepingUnitDetails> _skus = [];
+    private List<WarehouseDetails> _warehouses = [];
+    private List<StorageLocationDetails> _storageLocations = [];
+    private IReadOnlyDictionary<Guid, UnitOfMeasureDetails> _unitOfMeasureLookup =
+        new Dictionary<Guid, UnitOfMeasureDetails>();
+    private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
+
+    private bool _isLoadingSkus;
+    private bool _isLoadingWarehouses;
+    private bool _isLoadingStorageLocations;
+    private bool _isSaving;
+    private string? _errorMessage;
+
+    private string? StorageLocationHelperText =>
+        _model.WarehouseId is null ? "Select a warehouse first." : null;
+
+    private string SelectedBaseUnitOfMeasureDisplay
+    {
+        get
+        {
+            StockKeepingUnitDetails? sku = _skus.FirstOrDefault(x => x.Id == _model.StockKeepingUnitId);
+
+            if (sku is null)
+            {
+                return "Select a SKU to view base UoM.";
+            }
+
+            if (!_unitOfMeasureLookup.TryGetValue(sku.BaseUnitOfMeasureId, out UnitOfMeasureDetails? unitOfMeasure))
+            {
+                return sku.BaseUnitOfMeasureId.ToString();
+            }
+
+            return string.IsNullOrWhiteSpace(unitOfMeasure.Symbol)
+                ? $"{unitOfMeasure.Code} - {unitOfMeasure.Name}"
+                : $"{unitOfMeasure.Code} ({unitOfMeasure.Symbol}) - {unitOfMeasure.Name}";
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSkusAsync();
+        await LoadUnitsOfMeasureAsync();
+        await LoadWarehousesAsync();
+    }
+
+    private async Task OnStockKeepingUnitChanged(Guid? value)
+    {
+        _model.StockKeepingUnitId = value;
+        await Task.CompletedTask;
+    }
+
+    private async Task OnWarehouseChanged(Guid? value)
+    {
+        _model.WarehouseId = value;
+        _model.StorageLocationId = null;
+        _storageLocations = [];
+
+        if (_model.WarehouseId is not null)
+        {
+            await LoadStorageLocationsAsync();
+        }
+    }
+
+    private async Task LoadSkusAsync()
+    {
+        _isLoadingSkus = true;
+        _errorMessage = null;
+
+        try
+        {
+            ListRequest request = new(
+                Skip: 0,
+                Take: LookupTake,
+                SortBy: "code",
+                SortDescending: false,
+                IncludeInactive: false);
+
+            ListResult<StockKeepingUnitDetails> result = await WmsCatalogApiClient
+                .ListStockKeepingUnitsAsync(request);
+
+            _skus = result.Items.ToList();
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            _skus = [];
+        }
+        finally
+        {
+            _isLoadingSkus = false;
+        }
+    }
+
+    private async Task LoadUnitsOfMeasureAsync()
+    {
+        try
+        {
+            ListRequest request = new(
+                Skip: 0,
+                Take: LookupTake,
+                SortBy: "code",
+                SortDescending: false,
+                IncludeInactive: false);
+
+            ListResult<UnitOfMeasureDetails> result = await WmsCatalogApiClient
+                .ListUnitsOfMeasureAsync(request);
+
+            _unitOfMeasureLookup = result.Items.ToDictionary(unitOfMeasure => unitOfMeasure.Id);
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            _unitOfMeasureLookup = new Dictionary<Guid, UnitOfMeasureDetails>();
+        }
+    }
+
+    private async Task LoadWarehousesAsync()
+    {
+        _isLoadingWarehouses = true;
+        _errorMessage = null;
+
+        try
+        {
+            ListRequest request = new(
+                Skip: 0,
+                Take: LookupTake,
+                SortBy: "code",
+                SortDescending: false,
+                IncludeInactive: false);
+
+            ListResult<WarehouseDetails> result = await WmsTopologyApiClient
+                .ListWarehousesAsync(request);
+
+            _warehouses = result.Items.ToList();
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            _warehouses = [];
+        }
+        finally
+        {
+            _isLoadingWarehouses = false;
+        }
+    }
+
+    private async Task LoadStorageLocationsAsync()
+    {
+        if (_model.WarehouseId is null)
+        {
+            _storageLocations = [];
+            return;
+        }
+
+        _isLoadingStorageLocations = true;
+        _errorMessage = null;
+
+        try
+        {
+            ListRequest request = new(
+                Skip: 0,
+                Take: LookupTake,
+                SortBy: "code",
+                SortDescending: false,
+                IncludeInactive: false);
+
+            ListResult<StorageLocationDetails> result = await WmsTopologyApiClient
+                .ListStorageLocationsByWarehouseAsync(_model.WarehouseId.Value, request);
+
+            _storageLocations = result.Items.ToList();
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            _storageLocations = [];
+        }
+        finally
+        {
+            _isLoadingStorageLocations = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        if (_model.StockKeepingUnitId is null)
+        {
+            _errorMessage = "SKU is required.";
+            return;
+        }
+
+        if (_model.WarehouseId is null)
+        {
+            _errorMessage = "Warehouse is required.";
+            return;
+        }
+
+        if (_model.StorageLocationId is null)
+        {
+            _errorMessage = "Storage location is required.";
+            return;
+        }
+
+        if (_model.Quantity < 0)
+        {
+            _errorMessage = "Quantity must be greater than or equal to zero.";
+            return;
+        }
+
+        _isSaving = true;
+        _errorMessage = null;
+
+        try
+        {
+            CreateInventoryBalanceRequest request = new(
+                _model.StockKeepingUnitId,
+                _model.StorageLocationId,
+                _model.Quantity);
+
+            ApiResult<InventoryBalanceDetails> result = await WmsInventoryApiClient
+                .TryCreateInventoryBalanceAsync(request);
+
+            if (result.IsFailure)
+            {
+                _errorMessage = result.Error?.Message ?? "Inventory balance creation failed.";
+                return;
+            }
+
+            if (result.Value is null)
+            {
+                _errorMessage = "The operation completed without returning inventory balance details.";
+                return;
+            }
+
+            MudDialog.Close(DialogResult.Ok(result.Value));
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private sealed class CreateInventoryBalanceModel
+    {
+        public Guid? StockKeepingUnitId { get; set; }
+
+        public Guid? WarehouseId { get; set; }
+
+        public Guid? StorageLocationId { get; set; }
+
+        public decimal Quantity { get; set; }
+    }
+}

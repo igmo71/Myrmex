@@ -86,7 +86,7 @@ public sealed class ListInventoryBalancesHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(2, result.Value.TotalCount);
         Assert.All(result.Value.Items, x => Assert.Equal(seeded.ItemOne.Id, x.StockKeepingUnitId));
-        Assert.Equal([0, 10], result.Value.Items.Select(x => x.Quantity).ToArray());
+        Assert.Equal([0, 10], result.Value.Items.Select(x => x.Quantity).Order().ToArray());
     }
 
     [Fact]

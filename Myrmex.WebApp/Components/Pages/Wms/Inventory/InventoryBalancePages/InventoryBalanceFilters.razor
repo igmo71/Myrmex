@@ -1,0 +1,111 @@
+<MudPaper Class="pa-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+        <MudSelect T="Guid?"
+                   Label="Warehouse"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Clearable="true"
+                   Value="SelectedWarehouseId"
+                   ValueChanged="OnWarehouseChanged"
+                   Disabled="IsLoadingWarehouses"
+                   Class="min-width-300">
+            @foreach (WarehouseDetails warehouse in Warehouses)
+            {
+                <MudSelectItem T="Guid?" Value="@((Guid?)warehouse.Id)">
+                    @warehouse.Code - @warehouse.Name
+                </MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="Guid?"
+                   Label="Storage location"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Clearable="true"
+                   Value="SelectedStorageLocationId"
+                   ValueChanged="OnStorageLocationChanged"
+                   Disabled="SelectedWarehouseId is null || IsLoadingStorageLocations"
+                   HelperText="@StorageLocationHelperText"
+                   Class="min-width-300">
+            @foreach (StorageLocationDetails storageLocation in StorageLocations)
+            {
+                <MudSelectItem T="Guid?" Value="@((Guid?)storageLocation.Id)">
+                    @storageLocation.Code - @storageLocation.Name
+                </MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="Guid?"
+                   Label="SKU"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Clearable="true"
+                   Value="SelectedStockKeepingUnitId"
+                   ValueChanged="OnStockKeepingUnitChanged"
+                   Disabled="IsLoadingSkus"
+                   Class="min-width-300">
+            @foreach (StockKeepingUnitDetails sku in Skus)
+            {
+                <MudSelectItem T="Guid?" Value="@((Guid?)sku.Id)">
+                    @sku.Code - @sku.Name
+                </MudSelectItem>
+            }
+        </MudSelect>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<WarehouseDetails> Warehouses { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<StorageLocationDetails> StorageLocations { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<StockKeepingUnitDetails> Skus { get; set; } = [];
+
+    [Parameter]
+    public Guid? SelectedWarehouseId { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid?> SelectedWarehouseIdChanged { get; set; }
+
+    [Parameter]
+    public Guid? SelectedStorageLocationId { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid?> SelectedStorageLocationIdChanged { get; set; }
+
+    [Parameter]
+    public Guid? SelectedStockKeepingUnitId { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid?> SelectedStockKeepingUnitIdChanged { get; set; }
+
+    [Parameter]
+    public bool IsLoadingWarehouses { get; set; }
+
+    [Parameter]
+    public bool IsLoadingStorageLocations { get; set; }
+
+    [Parameter]
+    public bool IsLoadingSkus { get; set; }
+
+    private string? StorageLocationHelperText =>
+        SelectedWarehouseId is null ? "Select a warehouse first." : null;
+
+    private async Task OnWarehouseChanged(Guid? value)
+    {
+        await SelectedWarehouseIdChanged.InvokeAsync(value);
+    }
+
+    private async Task OnStorageLocationChanged(Guid? value)
+    {
+        await SelectedStorageLocationIdChanged.InvokeAsync(value);
+    }
+
+    private async Task OnStockKeepingUnitChanged(Guid? value)
+    {
+        await SelectedStockKeepingUnitIdChanged.InvokeAsync(value);
+    }
+}

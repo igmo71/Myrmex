@@ -5,6 +5,6 @@ Durable project guidance lives in `.specify/memory/`. Read only the files releva
 - `myrmex-development-workflow.md` before executing or recommending work.
 - Architecture, testing, API, and roadmap memory only when that area is touched.
 
-For active feature work on Inventory Balance, start with `specs/048-add-inventory-balance-mvp-vertical-slice/plan.md` and `tasks.md` when it exists. Read other feature artifacts only when directly relevant.
+For active feature work on WebApp Inventory Balance management UI, start with `specs/052-add-webapp-inventory-balance-management-ui/plan.md` and `tasks.md` when it exists. Read other feature artifacts only when directly relevant.
 
 <!-- SPECKIT END -->
