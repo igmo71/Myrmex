@@ -2,9 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
+using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
 using Myrmex.Modules.Wms.Inventory.Features.InventoryBalances;
-using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 using Myrmex.Modules.Wms.Topology.Domain.Zones;
@@ -101,45 +101,38 @@ public sealed class CreateInventoryBalanceHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_WhenStockKeepingUnitHasNoBaseUnitOfMeasure_ReturnsInvalid()
+    public async Task HandleAsync_WhenBaseUnitOfMeasureIsInactive_ReturnsInvalid()
     {
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        await using TestWmsDbContext testDbContext =
+            await TestWmsDbContext.CreateAsync();
+
         RecordingDomainEventDispatcher domainEventDispatcher = new();
-        StorageLocation storageLocation = await SeedEligibleStorageLocationAsync(testDbContext.DbContext);
 
-        StockKeepingUnit stockKeepingUnit = CreateStockKeepingUnit(Guid.NewGuid());
-        typeof(StockKeepingUnit)
-            .GetProperty(nameof(StockKeepingUnit.BaseUnitOfMeasureId))!
-            .SetValue(stockKeepingUnit, Guid.Empty);
+        SeededReferences references =
+            await SeedValidReferencesAsync(testDbContext.DbContext);
 
-        await testDbContext.DbContext.Database.ExecuteSqlRawAsync(
-            "PRAGMA foreign_keys = OFF;",
-            TestContext.Current.CancellationToken);
+        references.BaseUnitOfMeasure.Deactivate();
 
-        testDbContext.DbContext.StockKeepingUnits.Add(stockKeepingUnit);
-        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
-
-        await testDbContext.DbContext.Database.ExecuteSqlRawAsync(
-            "PRAGMA foreign_keys = ON;",
+        await testDbContext.DbContext.SaveChangesAsync(
             TestContext.Current.CancellationToken);
 
         testDbContext.DbContext.ChangeTracker.Clear();
 
-        CreateInventoryBalance.Handler handler = new(testDbContext.DbContext, domainEventDispatcher);
+        CreateInventoryBalance.Handler handler =
+            new(testDbContext.DbContext, domainEventDispatcher);
 
-        CreateInventoryBalance.Command command = new(
-            StockKeepingUnitId: stockKeepingUnit.Id,
-            StorageLocationId: storageLocation.Id,
-            Quantity: 10);
-
-        ServiceResult<InventoryBalanceDetails> result = await handler.HandleAsync(
-            command,
-            TestContext.Current.CancellationToken);
+        ServiceResult<InventoryBalanceDetails> result =
+            await handler.HandleAsync(
+                CreateCommand(references),
+                TestContext.Current.CancellationToken);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
         Assert.Equal(ServiceErrorType.Invalid, result.Error.Type);
-        Assert.Equal("InventoryBalance.InvalidStockKeepingUnit", result.Error.Code);
+        Assert.Equal(
+            "InventoryBalance.InvalidStockKeepingUnit",
+            result.Error.Code);
+        Assert.Equal("stockKeepingUnitId", result.Error.Field);
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
 
