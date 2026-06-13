@@ -1,43 +1,123 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 
 namespace Myrmex.Tests.Wms.Topology.Testing;
 
 internal sealed class TestWmsDbContext : IAsyncDisposable
 {
-    private readonly SqliteConnection _connection;
+    private const string ConnectionStringEnvironmentVariable =
+        "MYRMEX_WMS_TEST_CONNECTION";
+
+    private static readonly SemaphoreSlim DatabaseGate = new(1, 1);
+    private static bool _migrationStateChecked;
+
+    private readonly IDbContextTransaction _transaction;
+    private bool _disposed;
 
     private TestWmsDbContext(
-        SqliteConnection connection,
-        WmsDbContext dbContext)
+        WmsDbContext dbContext,
+        IDbContextTransaction transaction)
     {
-        _connection = connection;
         DbContext = dbContext;
+        _transaction = transaction;
     }
 
     public WmsDbContext DbContext { get; }
 
     public static async Task<TestWmsDbContext> CreateAsync()
     {
-        SqliteConnection connection = new("Data Source=:memory:");
+        await DatabaseGate.WaitAsync(TestContext.Current.CancellationToken);
 
-        await connection.OpenAsync(TestContext.Current.CancellationToken);
+        try
+        {
+            string connectionString =
+                Environment.GetEnvironmentVariable(
+                    ConnectionStringEnvironmentVariable)
+                ?? throw new InvalidOperationException(
+                    $"Environment variable " +
+                    $"'{ConnectionStringEnvironmentVariable}' is not configured.");
 
-        DbContextOptions<WmsDbContext> options = new DbContextOptionsBuilder<WmsDbContext>()
-            .UseSqlite(connection)
-            .Options;
+            ValidateTestDatabase(connectionString);
 
-        WmsDbContext dbContext = new(options);
+            DbContextOptions<WmsDbContext> options =
+                new DbContextOptionsBuilder<WmsDbContext>()
+                    .UseSqlServer(connectionString)
+                    .Options;
 
-        await dbContext.Database.EnsureCreatedAsync(TestContext.Current.CancellationToken);
+            WmsDbContext dbContext = new(options);
 
-        return new TestWmsDbContext(connection, dbContext);
+            await EnsureMigrationStateAsync(dbContext);
+
+            IDbContextTransaction transaction =
+                await dbContext.Database.BeginTransactionAsync(
+                    TestContext.Current.CancellationToken);
+
+            return new TestWmsDbContext(dbContext, transaction);
+        }
+        catch
+        {
+            DatabaseGate.Release();
+            throw;
+        }
+    }
+
+    private static async Task EnsureMigrationStateAsync(
+        WmsDbContext dbContext)
+    {
+        if (_migrationStateChecked)
+        {
+            return;
+        }
+
+        string[] pendingMigrations =
+            (await dbContext.Database.GetPendingMigrationsAsync(
+                TestContext.Current.CancellationToken))
+            .ToArray();
+
+        if (pendingMigrations.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "The WMS test database has pending migrations: " +
+                string.Join(", ", pendingMigrations));
+        }
+
+        _migrationStateChecked = true;
+    }
+
+    private static void ValidateTestDatabase(string connectionString)
+    {
+        SqlConnectionStringBuilder builder = new(connectionString);
+
+        if (string.IsNullOrWhiteSpace(builder.InitialCatalog) ||
+            !builder.InitialCatalog.EndsWith(
+                "_test",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "WMS database tests require a dedicated database " +
+                "whose name ends with '_test'.");
+        }
     }
 
     public async ValueTask DisposeAsync()
     {
-        await DbContext.DisposeAsync();
-        await _connection.DisposeAsync();
+        if (_disposed)
+        {
+            return;
+        }
+
+        try
+        {
+            await _transaction.RollbackAsync();
+            await _transaction.DisposeAsync();
+            await DbContext.DisposeAsync();
+        }
+        finally
+        {
+            _disposed = true;
+            DatabaseGate.Release();
+        }
     }
 }

@@ -48,25 +48,33 @@ public sealed class ListInventoryBalancesHandlerTests
     [Fact]
     public async Task HandleAsync_WhenPagingIsProvided_ReturnsBoundedNoFilterResults()
     {
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-        await SeedInventoryBalancesAsync(testDbContext.DbContext);
-        ListInventoryBalances.Handler handler = new(testDbContext.DbContext);
+        await using TestWmsDbContext testDbContext =
+            await TestWmsDbContext.CreateAsync();
 
-        ServiceResult<ListResult<InventoryBalanceDetails>> result = await handler.HandleAsync(
-            new ListInventoryBalances.Query
-            {
-                Skip = 1,
-                Take = 1
-            },
-            TestContext.Current.CancellationToken);
+        await SeedInventoryBalancesAsync(testDbContext.DbContext);
+
+        ListInventoryBalances.Handler handler =
+            new(testDbContext.DbContext);
+
+        ServiceResult<ListResult<InventoryBalanceDetails>> result =
+            await handler.HandleAsync(
+                new ListInventoryBalances.Query
+                {
+                    Skip = 1,
+                    Take = 1,
+                    SortBy = "quantity"
+                },
+                TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(3, result.Value.TotalCount);
         Assert.Equal(1, result.Value.Skip);
         Assert.Equal(1, result.Value.Take);
 
-        InventoryBalanceDetails details = Assert.Single(result.Value.Items);
-        Assert.Equal(5, details.Quantity);
+        InventoryBalanceDetails details =
+            Assert.Single(result.Value.Items);
+
+        Assert.Equal(5m, details.Quantity);
     }
 
     [Fact]
