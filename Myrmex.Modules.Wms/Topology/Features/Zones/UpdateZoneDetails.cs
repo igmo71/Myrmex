@@ -29,7 +29,7 @@ internal static class UpdateZoneDetails
 
             if (zone is null)
             {
-                return ServiceResult<ZoneDetails>.Fail(WmsErrors.Zone.NotFound);
+                return ServiceResult<ZoneDetails>.Fail(ServiceError.NotFound<Zone>());
             }
 
             DomainValidationResult validationResult = zone.UpdateDetails(

@@ -6,7 +6,6 @@ internal static class WmsErrors
 {
     internal static class Warehouse
     {
-        public static ServiceError NotFound => ServiceErrors.NotFound("Warehouse.NotFound", "Warehouse was not found.");
         public static ServiceError CodeAlreadyExists => ServiceErrors.Conflict("Warehouse.CodeAlreadyExists", "Warehouse with the same code already exists.", "code");
         public static ServiceError CreateFailed => ServiceErrors.Failure("Warehouse.CreateFailed", "Warehouse creation failed unexpectedly.");
         public static ServiceError NotFoundById => ServiceErrors.NotFound("Warehouse.NotFound", "Warehouse was not found.", "warehouseId");

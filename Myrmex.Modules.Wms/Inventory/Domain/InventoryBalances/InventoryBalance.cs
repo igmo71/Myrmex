@@ -84,12 +84,12 @@ internal sealed class InventoryBalance : AggregateRoot
 
         if (!stockKeepingUnitId.HasValue || stockKeepingUnitId.Value == Guid.Empty)
         {
-            errors.Add(DomainValidationFailureFactory.Required<InventoryBalance>(nameof(stockKeepingUnitId)));
+            errors.Add(DomainValidationFailure.Required<InventoryBalance>(nameof(stockKeepingUnitId)));
         }
 
         if (!storageLocationId.HasValue || storageLocationId.Value == Guid.Empty)
         {
-            errors.Add(DomainValidationFailureFactory.Required<InventoryBalance>(nameof(storageLocationId)));
+            errors.Add(DomainValidationFailure.Required<InventoryBalance>(nameof(storageLocationId)));
         }
 
         errors.AddRange(ValidateQuantity(quantity).Errors);
@@ -103,7 +103,7 @@ internal sealed class InventoryBalance : AggregateRoot
 
         if (quantity < 0)
         {
-            errors.Add(DomainValidationFailureFactory.MustBeNonNegative<InventoryBalance>(nameof(quantity)));
+            errors.Add(DomainValidationFailure.MustBeNonNegative<InventoryBalance>(nameof(quantity)));
         }
 
         return DomainValidationResult.From(errors);

@@ -4,6 +4,8 @@ using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
+using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
+using Myrmex.Modules.Wms.Topology.Domain.Zones;
 
 namespace Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 
@@ -32,7 +34,7 @@ internal static class ListStorageLocations
 
                 if (!warehouseExists)
                 {
-                    return ServiceResult<ListResult<StorageLocationDetails>>.Fail(WmsErrors.Warehouse.NotFoundById);
+                    return ServiceResult<ListResult<StorageLocationDetails>>.Fail(ServiceError.NotFound<Warehouse>());
                 }
             }
 
@@ -46,12 +48,12 @@ internal static class ListStorageLocations
 
                 if (zone is null)
                 {
-                    return ServiceResult<ListResult<StorageLocationDetails>>.Fail(WmsErrors.Zone.NotFoundById);
+                    return ServiceResult<ListResult<StorageLocationDetails>>.Fail(ServiceError.NotFound<Zone>());
                 }
 
                 if (query.WarehouseId.HasValue && zone.WarehouseId != query.WarehouseId.Value)
                 {
-                    return ServiceResult<ListResult<StorageLocationDetails>>.Fail(WmsErrors.StorageLocation.ZoneWarehouseMismatch);
+                    return ServiceResult<ListResult<StorageLocationDetails>>.Fail(ServiceError.Conflict<StorageLocation>(message: "Zone - Warehouse Mismatch"));
                 }
             }
 

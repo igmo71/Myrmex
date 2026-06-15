@@ -4,6 +4,7 @@ using Myrmex.Core.Application;
 using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
+using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 using Myrmex.Modules.Wms.Topology.Domain.Zones;
 
 namespace Myrmex.Modules.Wms.Topology.Features.Zones;
@@ -37,7 +38,7 @@ internal static class CreateZone
 
             if (zone is null)
             {
-                return ServiceResult<ZoneDetails>.Fail(WmsErrors.Zone.CreateFailed);
+                return ServiceResult<ZoneDetails>.Fail(ServiceError.Failure<Zone>("CreateFailed"));
             }
 
             bool warehouseExists = await dbContext.Warehouses
@@ -45,7 +46,7 @@ internal static class CreateZone
 
             if (!warehouseExists)
             {
-                return ServiceResult<ZoneDetails>.Fail(WmsErrors.Warehouse.NotFoundById);
+                return ServiceResult<ZoneDetails>.Fail(ServiceError.NotFound<Warehouse>());
             }
 
             bool codeAlreadyExists = await dbContext.Zones
@@ -53,7 +54,7 @@ internal static class CreateZone
 
             if (codeAlreadyExists)
             {
-                return ServiceResult<ZoneDetails>.Fail(WmsErrors.Zone.CodeAlreadyExists);
+                return ServiceResult<ZoneDetails>.Fail(ServiceError.Conflict<Zone>("code"));
             }
 
             dbContext.Zones.Add(zone);

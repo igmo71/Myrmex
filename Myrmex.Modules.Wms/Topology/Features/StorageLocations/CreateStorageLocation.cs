@@ -5,6 +5,8 @@ using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
+using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
+using Myrmex.Modules.Wms.Topology.Domain.Zones;
 
 namespace Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 
@@ -55,7 +57,7 @@ internal static class CreateStorageLocation
 
             if (!warehouseExists)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.Warehouse.NotFoundById);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<Warehouse>());
             }
 
             var zone = await dbContext.Zones
@@ -66,12 +68,12 @@ internal static class CreateStorageLocation
 
             if (zone is null)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.Zone.NotFoundById);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<Zone>());
             }
 
             if (zone.WarehouseId != storageLocation.WarehouseId)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.StorageLocation.ZoneWarehouseMismatch);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.Conflict<StorageLocation>(message: "Zone - Warehouse Mismatch"));
             }
 
             bool typeExists = await dbContext.StorageLocationTypes
@@ -79,7 +81,7 @@ internal static class CreateStorageLocation
 
             if (!typeExists)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.StorageLocation.TypeNotFound);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<StorageLocationType>());
             }
 
             bool statusExists = await dbContext.StorageLocationStatuses

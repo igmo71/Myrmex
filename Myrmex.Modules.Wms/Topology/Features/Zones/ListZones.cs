@@ -3,6 +3,7 @@ using Myrmex.Core.Application;
 using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
+using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 using Myrmex.Modules.Wms.Topology.Domain.Zones;
 
 namespace Myrmex.Modules.Wms.Topology.Features.Zones;
@@ -25,7 +26,7 @@ internal static class ListZones
 
             if (!warehouseExists)
             {
-                return ServiceResult<ListResult<ZoneDetails>>.Fail(WmsErrors.Warehouse.NotFoundById);
+                return ServiceResult<ListResult<ZoneDetails>>.Fail(ServiceError.NotFound<Warehouse>());
             }
 
             IQueryable<Zone> queryable = dbContext.Zones
