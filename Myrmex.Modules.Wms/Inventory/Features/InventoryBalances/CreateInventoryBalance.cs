@@ -20,90 +20,26 @@ internal static class CreateInventoryBalance
         IDomainEventDispatcher domainEventDispatcher)
         : ICommandHandler<Command, ServiceResult<InventoryBalanceDetails>>
     {
-        public async Task<ServiceResult<InventoryBalanceDetails>> HandleAsync(
-            Command command,
-            CancellationToken cancellationToken = default)
+        public async Task<ServiceResult<InventoryBalanceDetails>> HandleAsync(Command command, CancellationToken cancellationToken = default)
         {
-            DomainValidationResult validationResult = InventoryBalance.Create(
+            DomainValidationResult domainValidationResult = InventoryBalance.Create(
                 command.StockKeepingUnitId,
                 command.StorageLocationId,
                 command.Quantity,
-                out InventoryBalance? inventoryBalance);
+                out InventoryBalance? validInventoryBalance);
 
-            if (!validationResult.IsValid)
+            if (!domainValidationResult.IsValid)
             {
-                return ServiceResult<InventoryBalanceDetails>.Invalid(validationResult.Errors);
+                return ServiceResult<InventoryBalanceDetails>.Invalid(domainValidationResult.Errors);
             }
 
-            if (inventoryBalance is null)
+            InventoryBalance? inventoryBalance = validInventoryBalance!;
+
+            ServiceError? externalValidationError = await ValidateExternalDependenciesAsync(inventoryBalance, cancellationToken);
+
+            if (externalValidationError is not null)
             {
-                return ServiceResult<InventoryBalanceDetails>.Fail(WmsErrors.InventoryBalance.CreateFailed);
-            }
-
-            var stockKeepingUnit = await dbContext.StockKeepingUnits
-                .AsNoTracking()
-                .Where(x => x.Id == inventoryBalance.StockKeepingUnitId)
-                .Select(x => new { x.Id, x.IsActive, x.BaseUnitOfMeasureId })
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (stockKeepingUnit is null)
-            {
-                return ServiceResult<InventoryBalanceDetails>.Fail(WmsErrors.InventoryBalance.StockKeepingUnitNotFound);
-            }
-
-            if (!stockKeepingUnit.IsActive || stockKeepingUnit.BaseUnitOfMeasureId == Guid.Empty)
-            {
-                return ServiceResult<InventoryBalanceDetails>.Fail(WmsErrors.InventoryBalance.InvalidStockKeepingUnit);
-            }
-
-            bool baseUnitOfMeasureIsActive = await dbContext.UnitsOfMeasure
-                .AnyAsync(x => x.Id == stockKeepingUnit.BaseUnitOfMeasureId && x.IsActive, cancellationToken);
-
-            if (!baseUnitOfMeasureIsActive)
-            {
-                return ServiceResult<InventoryBalanceDetails>.Fail(WmsErrors.InventoryBalance.InvalidStockKeepingUnit);
-            }
-
-            var storageLocation = await dbContext.StorageLocations
-                .AsNoTracking()
-                .Where(x => x.Id == inventoryBalance.StorageLocationId)
-                .Select(x => new
-                {
-                    x.Id,
-                    x.StorageLocationTypeId,
-                    x.StorageLocationStatusId,
-                    x.IsActive
-                })
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (storageLocation is null)
-            {
-                return ServiceResult<InventoryBalanceDetails>.Fail(WmsErrors.InventoryBalance.StorageLocationNotFound);
-            }
-
-            if (!storageLocation.IsActive)
-            {
-                return ServiceResult<InventoryBalanceDetails>.Fail(WmsErrors.InventoryBalance.InvalidStorageLocation);
-            }
-
-            bool storageLocationTypeIsActive = await dbContext.StorageLocationTypes
-                .AnyAsync(
-                    x => x.Id == storageLocation.StorageLocationTypeId && x.IsActive,
-                    cancellationToken);
-
-            if (!storageLocationTypeIsActive)
-            {
-                return ServiceResult<InventoryBalanceDetails>.Fail(WmsErrors.InventoryBalance.InactiveStorageLocationType);
-            }
-
-            bool storageLocationStatusIsActive = await dbContext.StorageLocationStatuses
-                .AnyAsync(
-                    x => x.Id == storageLocation.StorageLocationStatusId && x.IsActive,
-                    cancellationToken);
-
-            if (!storageLocationStatusIsActive)
-            {
-                return ServiceResult<InventoryBalanceDetails>.Fail(WmsErrors.InventoryBalance.InactiveStorageLocationStatus);
+                return ServiceResult<InventoryBalanceDetails>.Fail(externalValidationError);
             }
 
             bool duplicateExists = await dbContext.InventoryBalances
@@ -128,13 +64,40 @@ internal static class CreateInventoryBalance
             }
 
             InventoryBalanceDetails? details = await dbContext.InventoryBalances
-                .Select(InventoryBalanceDetails.Project)
                 .Where(x => x.Id == inventoryBalance.Id)
+                .Select(InventoryBalanceDetails.Project)
                 .SingleOrDefaultAsync(cancellationToken);
 
             return details is null
                 ? ServiceResult<InventoryBalanceDetails>.Fail(WmsErrors.InventoryBalance.CreateFailed)
                 : ServiceResult<InventoryBalanceDetails>.Success(details);
+        }
+
+        private async Task<ServiceError?> ValidateExternalDependenciesAsync(InventoryBalance balance, CancellationToken cancellationToken)
+        {
+            var sku = await dbContext.StockKeepingUnits
+                .AsNoTracking()
+                .Include(s => s.BaseUnitOfMeasure)
+                .FirstOrDefaultAsync(x => x.Id == balance.StockKeepingUnitId, cancellationToken);
+
+            var location = await dbContext.StorageLocations
+                .AsNoTracking()
+                .Include(l => l.StorageLocationType)
+                .Include(l => l.StorageLocationStatus)
+                .FirstOrDefaultAsync(x => x.Id == balance.StorageLocationId, cancellationToken);
+
+            return (sku, location) switch
+            {
+                (null, _) => WmsErrors.InventoryBalance.StockKeepingUnitNotFound,
+                ({ IsActive: false } or { BaseUnitOfMeasure.IsActive: false }, _) => WmsErrors.InventoryBalance.InvalidStockKeepingUnit,
+
+                (_, null) => WmsErrors.InventoryBalance.StorageLocationNotFound,
+                (_, { IsActive: false }) => WmsErrors.InventoryBalance.InvalidStorageLocation,
+                (_, { StorageLocationType.IsActive: false }) => WmsErrors.InventoryBalance.InactiveStorageLocationType,
+                (_, { StorageLocationStatus.IsActive: false }) => WmsErrors.InventoryBalance.InactiveStorageLocationStatus,
+
+                _ => null
+            };
         }
     }
 }

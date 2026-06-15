@@ -33,7 +33,7 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
     public string? Description { get; private set; }
 
     public Guid BaseUnitOfMeasureId { get; private set; }
-    public UnitOfMeasure BaseUnitOfMeasure { get; init; } = null!;
+    public UnitOfMeasure BaseUnitOfMeasure { get; private set; } = null!;
 
     public bool IsActive { get; private set; } = true;
 

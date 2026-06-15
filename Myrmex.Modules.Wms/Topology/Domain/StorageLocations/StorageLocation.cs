@@ -36,18 +36,18 @@ internal sealed class StorageLocation : AggregateRoot, IActivatable
     }
 
     public Guid WarehouseId { get; private set; }
-    public Warehouse Warehouse { get; init; } = null!;
+    public Warehouse Warehouse { get; private set; } = null!;
 
     public Guid ZoneId { get; private set; }
-    public Zone Zone { get; init; } = null!;
+    public Zone Zone { get; private set; } = null!;
 
 
     public Guid StorageLocationTypeId { get; private set; }
-    public StorageLocationType StorageLocationType { get; init; } = null!;
+    public StorageLocationType StorageLocationType { get; private set; } = null!;
 
 
     public Guid StorageLocationStatusId { get; private set; }
-    public StorageLocationStatus StorageLocationStatus { get; init; } = null!;
+    public StorageLocationStatus StorageLocationStatus { get; private set; } = null!;
 
 
     public string Code { get; private set; } = null!;

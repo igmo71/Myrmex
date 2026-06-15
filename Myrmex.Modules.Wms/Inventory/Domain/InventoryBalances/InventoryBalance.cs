@@ -20,10 +20,10 @@ internal sealed class InventoryBalance : AggregateRoot
     }
 
     public Guid StockKeepingUnitId { get; private set; }
-    public StockKeepingUnit StockKeepingUnit { get; init; } = null!;
+    public StockKeepingUnit StockKeepingUnit { get; private set; } = null!;
 
     public Guid StorageLocationId { get; private set; }
-    public StorageLocation StorageLocation { get; init; } = null!;
+    public StorageLocation StorageLocation { get; private set; } = null!;
 
     public decimal Quantity { get; private set; }
 
