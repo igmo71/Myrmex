@@ -1,10 +1,14 @@
 using Myrmex.Core.Domain;
 using Myrmex.Core.Domain.Validation;
+using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
+using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 
 namespace Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
 
 internal sealed class InventoryBalance : AggregateRoot
 {
+    private InventoryBalance() { }
+
     private InventoryBalance(
         Guid stockKeepingUnitId,
         Guid storageLocationId,
@@ -15,13 +19,11 @@ internal sealed class InventoryBalance : AggregateRoot
         Quantity = quantity;
     }
 
-    private InventoryBalance()
-    {
-    }
-
     public Guid StockKeepingUnitId { get; private set; }
+    public StockKeepingUnit StockKeepingUnit { get; init; } = null!;
 
     public Guid StorageLocationId { get; private set; }
+    public StorageLocation StorageLocation { get; init; } = null!;
 
     public decimal Quantity { get; private set; }
 
@@ -82,12 +84,12 @@ internal sealed class InventoryBalance : AggregateRoot
 
         if (!stockKeepingUnitId.HasValue || stockKeepingUnitId.Value == Guid.Empty)
         {
-            errors.Add(InventoryBalanceValidationErrors.StockKeepingUnitIdRequired);
+            errors.Add(DomainValidationFailureFactory.Required<InventoryBalance>(nameof(stockKeepingUnitId)));
         }
 
         if (!storageLocationId.HasValue || storageLocationId.Value == Guid.Empty)
         {
-            errors.Add(InventoryBalanceValidationErrors.StorageLocationIdRequired);
+            errors.Add(DomainValidationFailureFactory.Required<InventoryBalance>(nameof(storageLocationId)));
         }
 
         errors.AddRange(ValidateQuantity(quantity).Errors);
@@ -101,7 +103,7 @@ internal sealed class InventoryBalance : AggregateRoot
 
         if (quantity < 0)
         {
-            errors.Add(InventoryBalanceValidationErrors.QuantityMustBeNonNegative);
+            errors.Add(DomainValidationFailureFactory.MustBeNonNegative<InventoryBalance>(nameof(quantity)));
         }
 
         return DomainValidationResult.From(errors);

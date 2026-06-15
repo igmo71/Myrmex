@@ -1,5 +1,7 @@
 ﻿using Myrmex.Core.Domain;
 using Myrmex.Core.Domain.Validation;
+using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
+using Myrmex.Modules.Wms.Topology.Domain.Zones;
 
 namespace Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 
@@ -34,12 +36,19 @@ internal sealed class StorageLocation : AggregateRoot, IActivatable
     }
 
     public Guid WarehouseId { get; private set; }
+    public Warehouse Warehouse { get; init; } = null!;
 
     public Guid ZoneId { get; private set; }
+    public Zone Zone { get; init; } = null!;
+
 
     public Guid StorageLocationTypeId { get; private set; }
+    public StorageLocationType StorageLocationType { get; init; } = null!;
+
 
     public Guid StorageLocationStatusId { get; private set; }
+    public StorageLocationStatus StorageLocationStatus { get; init; } = null!;
+
 
     public string Code { get; private set; } = null!;
 

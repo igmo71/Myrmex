@@ -1,5 +1,6 @@
 using Myrmex.Core.Domain;
 using Myrmex.Core.Domain.Validation;
+using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 
 namespace Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 
@@ -32,6 +33,7 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
     public string? Description { get; private set; }
 
     public Guid BaseUnitOfMeasureId { get; private set; }
+    public UnitOfMeasure BaseUnitOfMeasure { get; init; } = null!;
 
     public bool IsActive { get; private set; } = true;
 

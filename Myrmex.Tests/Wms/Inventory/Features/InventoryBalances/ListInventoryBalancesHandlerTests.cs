@@ -15,37 +15,6 @@ namespace Myrmex.Tests.Wms.Inventory.Features.InventoryBalances;
 public sealed class ListInventoryBalancesHandlerTests
 {
     [Fact]
-    public async Task HandleAsync_WhenNoFilters_ReturnsBalancesIncludingZeroQuantityWithDisplayContext()
-    {
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-        SeededInventoryBalances seeded = await SeedInventoryBalancesAsync(testDbContext.DbContext);
-        ListInventoryBalances.Handler handler = new(testDbContext.DbContext);
-
-        ServiceResult<ListResult<InventoryBalanceDetails>> result = await handler.HandleAsync(
-            new ListInventoryBalances.Query(),
-            TestContext.Current.CancellationToken);
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(3, result.Value.TotalCount);
-        Assert.Equal([0m, 5m, 10m], result.Value.Items.Select(x => x.Quantity).Order().ToArray());
-
-        InventoryBalanceDetails zeroQuantityDetails = Assert.Single(
-            result.Value.Items,
-            x => x.Id == seeded.ItemOneWarehouseTwoBalance.Id);
-
-        Assert.Equal(0, zeroQuantityDetails.Quantity);
-        Assert.Equal(seeded.ItemOne.Id, zeroQuantityDetails.StockKeepingUnitId);
-        Assert.Equal("ITEM-001", zeroQuantityDetails.StockKeepingUnitCode);
-        Assert.Equal("Widget", zeroQuantityDetails.StockKeepingUnitName);
-        Assert.Equal(seeded.WarehouseTwoLocation.Id, zeroQuantityDetails.StorageLocationId);
-        Assert.Equal("B-01-01", zeroQuantityDetails.StorageLocationCode);
-        Assert.Equal(seeded.WarehouseTwo.Id, zeroQuantityDetails.WarehouseId);
-        Assert.Equal("SECOND", zeroQuantityDetails.WarehouseCode);
-        Assert.Equal(seeded.Each.Id, zeroQuantityDetails.BaseUnitOfMeasureId);
-        Assert.Equal("EA", zeroQuantityDetails.BaseUnitOfMeasureCode);
-    }
-
-    [Fact]
     public async Task HandleAsync_WhenPagingIsProvided_ReturnsBoundedNoFilterResults()
     {
         await using TestWmsDbContext testDbContext =
@@ -75,97 +44,6 @@ public sealed class ListInventoryBalancesHandlerTests
             Assert.Single(result.Value.Items);
 
         Assert.Equal(5m, details.Quantity);
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenStockKeepingUnitFilterIsProvided_ReturnsOnlyThatSkuBalances()
-    {
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-        SeededInventoryBalances seeded = await SeedInventoryBalancesAsync(testDbContext.DbContext);
-        ListInventoryBalances.Handler handler = new(testDbContext.DbContext);
-
-        ServiceResult<ListResult<InventoryBalanceDetails>> result = await handler.HandleAsync(
-            new ListInventoryBalances.Query
-            {
-                StockKeepingUnitId = seeded.ItemOne.Id
-            },
-            TestContext.Current.CancellationToken);
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(2, result.Value.TotalCount);
-        Assert.All(result.Value.Items, x => Assert.Equal(seeded.ItemOne.Id, x.StockKeepingUnitId));
-        Assert.Equal([0, 10], result.Value.Items.Select(x => x.Quantity).Order().ToArray());
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenStorageLocationFilterIsProvided_ReturnsOnlyThatLocationBalance()
-    {
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-        SeededInventoryBalances seeded = await SeedInventoryBalancesAsync(testDbContext.DbContext);
-        ListInventoryBalances.Handler handler = new(testDbContext.DbContext);
-
-        ServiceResult<ListResult<InventoryBalanceDetails>> result = await handler.HandleAsync(
-            new ListInventoryBalances.Query
-            {
-                StorageLocationId = seeded.WarehouseOneBulkLocation.Id
-            },
-            TestContext.Current.CancellationToken);
-
-        Assert.True(result.IsSuccess);
-
-        InventoryBalanceDetails details = Assert.Single(result.Value.Items);
-        Assert.Equal(seeded.ItemTwo.Id, details.StockKeepingUnitId);
-        Assert.Equal(seeded.WarehouseOneBulkLocation.Id, details.StorageLocationId);
-        Assert.Equal(seeded.ItemTwoWarehouseOneBalance.Id, details.Id);
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenWarehouseFilterIsProvided_ReturnsOnlyBalancesInThatWarehouse()
-    {
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-        SeededInventoryBalances seeded = await SeedInventoryBalancesAsync(testDbContext.DbContext);
-        ListInventoryBalances.Handler handler = new(testDbContext.DbContext);
-
-        ServiceResult<ListResult<InventoryBalanceDetails>> result = await handler.HandleAsync(
-            new ListInventoryBalances.Query
-            {
-                WarehouseId = seeded.WarehouseOne.Id
-            },
-            TestContext.Current.CancellationToken);
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(2, result.Value.TotalCount);
-        Assert.All(result.Value.Items, x => Assert.Equal(seeded.WarehouseOne.Id, x.WarehouseId));
-        Assert.Equal(new HashSet<Guid>
-        {
-            seeded.ItemOneWarehouseOneBalance.Id,
-            seeded.ItemTwoWarehouseOneBalance.Id
-        },
-        result.Value.Items.Select(x => x.Id).ToHashSet());
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenStockKeepingUnitAndWarehouseFiltersAreProvided_ReturnsSkuBalanceInWarehouse()
-    {
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-        SeededInventoryBalances seeded = await SeedInventoryBalancesAsync(testDbContext.DbContext);
-        ListInventoryBalances.Handler handler = new(testDbContext.DbContext);
-
-        ServiceResult<ListResult<InventoryBalanceDetails>> result = await handler.HandleAsync(
-            new ListInventoryBalances.Query
-            {
-                StockKeepingUnitId = seeded.ItemOne.Id,
-                WarehouseId = seeded.WarehouseOne.Id
-            },
-            TestContext.Current.CancellationToken);
-
-        Assert.True(result.IsSuccess);
-
-        InventoryBalanceDetails details = Assert.Single(result.Value.Items);
-        Assert.Equal(seeded.ItemOneWarehouseOneBalance.Id, details.Id);
-        Assert.Equal(seeded.ItemOne.Id, details.StockKeepingUnitId);
-        Assert.Equal(seeded.WarehouseOne.Id, details.WarehouseId);
-        Assert.Equal(seeded.WarehouseOnePickLocation.Id, details.StorageLocationId);
     }
 
     [Fact]

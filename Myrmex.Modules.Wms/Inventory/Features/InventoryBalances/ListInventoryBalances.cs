@@ -18,8 +18,7 @@ internal static class ListInventoryBalances
         public Guid? WarehouseId { get; init; }
     }
 
-    internal sealed class Handler(WmsDbContext dbContext)
-        : IQueryHandler<Query, ServiceResult<ListResult<InventoryBalanceDetails>>>
+    internal sealed class Handler(WmsDbContext dbContext) : IQueryHandler<Query, ServiceResult<ListResult<InventoryBalanceDetails>>>
     {
         public async Task<ServiceResult<ListResult<InventoryBalanceDetails>>> HandleAsync(
             Query query,
@@ -31,65 +30,36 @@ internal static class ListInventoryBalances
             IQueryable<InventoryBalance> inventoryBalances = dbContext.InventoryBalances
                 .AsNoTracking();
 
-            if (query.StockKeepingUnitId.HasValue)
+            if (query.StockKeepingUnitId is Guid stockKeepingUnitId)
             {
                 inventoryBalances = inventoryBalances
-                    .Where(x => x.StockKeepingUnitId == query.StockKeepingUnitId.Value);
+                    .Where(x => x.StockKeepingUnitId == stockKeepingUnitId);
             }
 
-            if (query.StorageLocationId.HasValue)
+            if (query.StorageLocationId is Guid storageLocationId)
             {
                 inventoryBalances = inventoryBalances
-                    .Where(x => x.StorageLocationId == query.StorageLocationId.Value);
+                    .Where(x => x.StorageLocationId == storageLocationId);
             }
 
-            if (query.WarehouseId.HasValue)
+            if (query.WarehouseId is Guid warehouseId)
             {
-                IQueryable<Guid> warehouseStorageLocationIds = dbContext.StorageLocations
-                    .AsNoTracking()
-                    .Where(x => x.WarehouseId == query.WarehouseId.Value)
-                    .Select(x => x.Id);
-
                 inventoryBalances = inventoryBalances
-                    .Where(x => warehouseStorageLocationIds.Contains(x.StorageLocationId));
+                    .Where(x => x.StorageLocation.WarehouseId == warehouseId);
             }
 
             int totalCount = await inventoryBalances.CountAsync(cancellationToken);
 
-            inventoryBalances = ApplySorting(
-                inventoryBalances,
-                query.SortBy,
-                query.SortDescending);
 
-            List<InventoryBalanceDetails> items = await InventoryBalanceDetails
-                .QueryFrom(dbContext, inventoryBalances)
+            List<InventoryBalanceDetails> items = await inventoryBalances
+                .ApplySorting(query.SortBy, query.SortDescending)
                 .Skip(skip)
                 .Take(take)
+                .Select(InventoryBalanceDetails.Project)
                 .ToListAsync(cancellationToken);
 
             return ServiceResult<ListResult<InventoryBalanceDetails>>
                 .Success(new ListResult<InventoryBalanceDetails>(items, totalCount, skip, take));
-        }
-
-        private static IQueryable<InventoryBalance> ApplySorting(
-            IQueryable<InventoryBalance> query,
-            string? sortBy,
-            bool sortDescending)
-        {
-            string normalizedSortBy = sortBy?.Trim().ToLowerInvariant() ?? "id";
-
-            return normalizedSortBy switch
-            {
-                "id" => sortDescending
-                    ? query.OrderByDescending(x => x.Id)
-                    : query.OrderBy(x => x.Id),
-
-                "quantity" => sortDescending
-                    ? query.OrderByDescending(x => x.Quantity).ThenBy(x => x.Id)
-                    : query.OrderBy(x => x.Quantity).ThenBy(x => x.Id),
-
-                _ => query.OrderBy(x => x.Id)
-            };
         }
     }
 }

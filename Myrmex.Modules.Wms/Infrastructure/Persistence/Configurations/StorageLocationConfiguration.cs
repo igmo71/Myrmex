@@ -1,8 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
-using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
-using Myrmex.Modules.Wms.Topology.Domain.Zones;
 
 namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Configurations;
 
@@ -29,25 +27,25 @@ internal sealed class StorageLocationConfiguration : IEntityTypeConfiguration<St
         builder.Property(x => x.StorageLocationStatusId)
             .IsRequired();
 
-        builder.HasOne<Warehouse>()
+        builder.HasOne(x => x.Warehouse)
             .WithMany()
             .HasForeignKey(x => x.WarehouseId)
             .HasConstraintName(WmsDatabaseNames.StorageLocationWarehouseForeignKey)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<Zone>()
+        builder.HasOne(x => x.Zone)
             .WithMany()
             .HasForeignKey(x => x.ZoneId)
             .HasConstraintName(WmsDatabaseNames.StorageLocationZoneForeignKey)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<StorageLocationType>()
+        builder.HasOne(x => x.StorageLocationType)
             .WithMany()
             .HasForeignKey(x => x.StorageLocationTypeId)
             .HasConstraintName(WmsDatabaseNames.StorageLocationTypeForeignKey)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<StorageLocationStatus>()
+        builder.HasOne(x => x.StorageLocationStatus)
             .WithMany()
             .HasForeignKey(x => x.StorageLocationStatusId)
             .HasConstraintName(WmsDatabaseNames.StorageLocationStatusForeignKey)

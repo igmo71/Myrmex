@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Myrmex.Core.Application;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
-using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
 
 namespace Myrmex.Modules.Wms.Inventory.Features.InventoryBalances;
 
@@ -17,11 +16,9 @@ internal static class GetInventoryBalanceById
             Query query,
             CancellationToken cancellationToken = default)
         {
-            IQueryable<InventoryBalance> inventoryBalanceQuery = dbContext.InventoryBalances
-                .Where(x => x.Id == query.InventoryBalanceId);
-
-            InventoryBalanceDetails? details = await InventoryBalanceDetails
-                .QueryFrom(dbContext, inventoryBalanceQuery)
+            InventoryBalanceDetails? details = await dbContext.InventoryBalances
+                .Select(InventoryBalanceDetails.Project)
+                .Where(x => x.Id == query.InventoryBalanceId)
                 .SingleOrDefaultAsync(cancellationToken);
 
             if (details is null)

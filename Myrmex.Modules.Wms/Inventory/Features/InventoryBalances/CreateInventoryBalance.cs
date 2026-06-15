@@ -57,9 +57,7 @@ internal static class CreateInventoryBalance
             }
 
             bool baseUnitOfMeasureIsActive = await dbContext.UnitsOfMeasure
-                .AnyAsync(
-                    x => x.Id == stockKeepingUnit.BaseUnitOfMeasureId && x.IsActive,
-                    cancellationToken);
+                .AnyAsync(x => x.Id == stockKeepingUnit.BaseUnitOfMeasureId && x.IsActive, cancellationToken);
 
             if (!baseUnitOfMeasureIsActive)
             {
@@ -129,11 +127,9 @@ internal static class CreateInventoryBalance
                 return ServiceResult<InventoryBalanceDetails>.Fail(saveResult.Error);
             }
 
-            IQueryable<InventoryBalance> inventoryBalanceQuery = dbContext.InventoryBalances
-                .Where(x => x.Id == inventoryBalance.Id);
-
-            InventoryBalanceDetails? details = await InventoryBalanceDetails
-                .QueryFrom(dbContext, inventoryBalanceQuery)
+            InventoryBalanceDetails? details = await dbContext.InventoryBalances
+                .Select(InventoryBalanceDetails.Project)
+                .Where(x => x.Id == inventoryBalance.Id)
                 .SingleOrDefaultAsync(cancellationToken);
 
             return details is null

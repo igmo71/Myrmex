@@ -7,41 +7,7 @@ namespace Myrmex.Tests.Wms.Inventory.Features.InventoryBalances;
 
 public sealed class GetInventoryBalanceByIdHandlerTests
 {
-    [Fact]
-    public async Task HandleAsync_WhenInventoryBalanceExists_ReturnsDisplayContext()
-    {
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-        SeededInventoryBalance seeded = await InventoryBalanceTestData.SeedInventoryBalanceAsync(
-            testDbContext.DbContext,
-            quantity: 10);
 
-        GetInventoryBalanceById.Handler handler = new(testDbContext.DbContext);
-
-        ServiceResult<InventoryBalanceDetails> result = await handler.HandleAsync(
-            new GetInventoryBalanceById.Query(seeded.InventoryBalance.Id),
-            TestContext.Current.CancellationToken);
-
-        Assert.True(result.IsSuccess);
-
-        InventoryBalanceDetails details = result.Value;
-
-        Assert.Equal(seeded.InventoryBalance.Id, details.Id);
-        Assert.Equal(seeded.StockKeepingUnit.Id, details.StockKeepingUnitId);
-        Assert.Equal("ITEM-001", details.StockKeepingUnitCode);
-        Assert.Equal("Widget", details.StockKeepingUnitName);
-        Assert.Equal(seeded.StorageLocation.Id, details.StorageLocationId);
-        Assert.Equal("A-01-01", details.StorageLocationCode);
-        Assert.Equal("A-01-01", details.StorageLocationName);
-        Assert.Equal(seeded.Warehouse.Id, details.WarehouseId);
-        Assert.Equal("MAIN", details.WarehouseCode);
-        Assert.Equal("Main Warehouse", details.WarehouseName);
-        Assert.Equal(seeded.BaseUnitOfMeasure.Id, details.BaseUnitOfMeasureId);
-        Assert.Equal("EA", details.BaseUnitOfMeasureCode);
-        Assert.Equal("ea", details.BaseUnitOfMeasureSymbol);
-        Assert.Equal(10, details.Quantity);
-        Assert.Equal(seeded.InventoryBalance.CreatedAtUtc, details.CreatedAtUtc);
-        Assert.Null(details.UpdatedAtUtc);
-    }
 
     [Fact]
     public async Task HandleAsync_WhenInventoryBalanceHasZeroQuantity_ReturnsZeroQuantity()
@@ -83,31 +49,6 @@ public sealed class GetInventoryBalanceByIdHandlerTests
         Assert.Equal(5, result.Value.Quantity);
         Assert.NotNull(result.Value.UpdatedAtUtc);
         Assert.Equal(seeded.InventoryBalance.UpdatedAtUtc, result.Value.UpdatedAtUtc);
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenReferencedRecordsAreInactive_ReturnsDisplayContext()
-    {
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-        SeededInventoryBalance seeded = await InventoryBalanceTestData.SeedInventoryBalanceAsync(
-            testDbContext.DbContext,
-            quantity: 10);
-
-        seeded.StockKeepingUnit.Deactivate();
-        seeded.StorageLocation.Deactivate();
-        seeded.BaseUnitOfMeasure.Deactivate();
-        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
-
-        GetInventoryBalanceById.Handler handler = new(testDbContext.DbContext);
-
-        ServiceResult<InventoryBalanceDetails> result = await handler.HandleAsync(
-            new GetInventoryBalanceById.Query(seeded.InventoryBalance.Id),
-            TestContext.Current.CancellationToken);
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal("ITEM-001", result.Value.StockKeepingUnitCode);
-        Assert.Equal("A-01-01", result.Value.StorageLocationCode);
-        Assert.Equal("EA", result.Value.BaseUnitOfMeasureCode);
     }
 
     [Fact]

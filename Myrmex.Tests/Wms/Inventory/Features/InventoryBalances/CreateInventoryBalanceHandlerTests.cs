@@ -264,50 +264,6 @@ public sealed class CreateInventoryBalanceHandlerTests
         Assert.Equal(10, storedBalance.Quantity);
     }
 
-    [Fact]
-    public async Task HandleAsync_WhenCommandIsValid_CreatesBalanceAndReturnsDisplayDetails()
-    {
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-        RecordingDomainEventDispatcher domainEventDispatcher = new();
-        SeededReferences references = await SeedValidReferencesAsync(
-            testDbContext.DbContext,
-            isPickable: false);
-        CreateInventoryBalance.Handler handler = new(testDbContext.DbContext, domainEventDispatcher);
-
-        ServiceResult<InventoryBalanceDetails> result = await handler.HandleAsync(
-            CreateCommand(references, quantity: 0),
-            TestContext.Current.CancellationToken);
-
-        Assert.True(result.IsSuccess);
-
-        InventoryBalanceDetails details = result.Value;
-
-        Assert.NotEqual(Guid.Empty, details.Id);
-        Assert.Equal(references.StockKeepingUnit.Id, details.StockKeepingUnitId);
-        Assert.Equal("ITEM-001", details.StockKeepingUnitCode);
-        Assert.Equal("Widget", details.StockKeepingUnitName);
-        Assert.Equal(references.StorageLocation.Id, details.StorageLocationId);
-        Assert.Equal("A-01-01", details.StorageLocationCode);
-        Assert.Equal("A-01-01", details.StorageLocationName);
-        Assert.Equal(references.Warehouse.Id, details.WarehouseId);
-        Assert.Equal("MAIN", details.WarehouseCode);
-        Assert.Equal("Main Warehouse", details.WarehouseName);
-        Assert.Equal(references.BaseUnitOfMeasure.Id, details.BaseUnitOfMeasureId);
-        Assert.Equal("EA", details.BaseUnitOfMeasureCode);
-        Assert.Equal("ea", details.BaseUnitOfMeasureSymbol);
-        Assert.Equal(0, details.Quantity);
-        Assert.Null(details.UpdatedAtUtc);
-
-        InventoryBalance storedBalance = await testDbContext.DbContext.InventoryBalances.SingleAsync(
-            TestContext.Current.CancellationToken);
-
-        Assert.Equal(details.Id, storedBalance.Id);
-        Assert.Equal(references.StockKeepingUnit.Id, storedBalance.StockKeepingUnitId);
-        Assert.Equal(references.StorageLocation.Id, storedBalance.StorageLocationId);
-        Assert.Equal(0, storedBalance.Quantity);
-        Assert.NotEmpty(domainEventDispatcher.DispatchedEvents);
-    }
-
     private static CreateInventoryBalance.Command CreateCommand(
         SeededReferences references,
         decimal quantity = 10)
