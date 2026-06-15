@@ -4,49 +4,63 @@ namespace Myrmex.Modules.Wms.Inventory.Features.InventoryBalances;
 
 internal static class InventoryBalanceQueryableExtensions
 {
-    public static IQueryable<InventoryBalance> ApplySorting(
-            this IQueryable<InventoryBalance> query,
-            string? sortBy,
-            bool sortDescending)
+    public static IQueryable<InventoryBalance> ApplyFilters(this IQueryable<InventoryBalance> queryable, ListInventoryBalances.Query query)
     {
-        if (string.IsNullOrWhiteSpace(sortBy))
+        if (query.StockKeepingUnitId is Guid stockKeepingUnitId)
         {
-            return sortDescending ? query.OrderByDescending(x => x.Id) : query.OrderBy(x => x.Id);
+            queryable = queryable
+                .Where(x => x.StockKeepingUnitId == stockKeepingUnitId);
         }
 
-        return sortBy switch
+        if (query.StorageLocationId is Guid storageLocationId)
         {
-            nameof(InventoryBalanceDetails.Quantity) => sortDescending
-                ? query.OrderByDescending(x => x.Quantity).ThenBy(x => x.Id)
-                : query.OrderBy(x => x.Quantity).ThenBy(x => x.Id),
+            queryable = queryable
+                .Where(x => x.StorageLocationId == storageLocationId);
+        }
 
-            nameof(InventoryBalanceDetails.CreatedAtUtc) => sortDescending
-                ? query.OrderByDescending(x => x.CreatedAtUtc).ThenBy(x => x.Id)
-                : query.OrderBy(x => x.CreatedAtUtc).ThenBy(x => x.Id),
+        if (query.WarehouseId is Guid warehouseId)
+        {
+            queryable = queryable
+                .Where(x => x.StorageLocation.WarehouseId == warehouseId);
+        }
 
-            _ when sortBy == InventoryBalanceDetails.SortPath.SkuCode => sortDescending
-                ? query.OrderByDescending(x => x.StockKeepingUnit.Code).ThenBy(x => x.Id)
-                : query.OrderBy(x => x.StockKeepingUnit.Code).ThenBy(x => x.Id),
+        return queryable;
+    }
 
-            _ when sortBy == InventoryBalanceDetails.SortPath.SkuName => sortDescending
-                ? query.OrderByDescending(x => x.StockKeepingUnit.Name).ThenBy(x => x.Id)
-                : query.OrderBy(x => x.StockKeepingUnit.Name).ThenBy(x => x.Id),
+    public static IQueryable<InventoryBalance> ApplySorting(this IQueryable<InventoryBalance> queryable, string? sortBy, bool sortDescending)
+    {
+        if (sortBy == ListInventoryBalances.SortBy.Quantity)
+            return sortDescending
+                ? queryable.OrderByDescending(x => x.Quantity).ThenBy(x => x.Id)
+                : queryable.OrderBy(x => x.Quantity).ThenBy(x => x.Id);
 
-            _ when sortBy == InventoryBalanceDetails.SortPath.SkuNameBaseUomSymbol => sortDescending
-                ? query.OrderByDescending(x => x.StockKeepingUnit.BaseUnitOfMeasure.Symbol).ThenBy(x => x.Id)
-                : query.OrderBy(x => x.StockKeepingUnit.BaseUnitOfMeasure.Symbol).ThenBy(x => x.Id),
+        if (sortBy == ListInventoryBalances.SortBy.SkuCode)
+            return sortDescending
+                ? queryable.OrderByDescending(x => x.StockKeepingUnit.Code).ThenBy(x => x.Id)
+                : queryable.OrderBy(x => x.StockKeepingUnit.Code).ThenBy(x => x.Id);
 
-            _ when sortBy == InventoryBalanceDetails.SortPath.LocationCode => sortDescending
-                ? query.OrderByDescending(x => x.StorageLocation.Code).ThenBy(x => x.Id)
-                : query.OrderBy(x => x.StorageLocation.Code).ThenBy(x => x.Id),
+        if (sortBy == ListInventoryBalances.SortBy.SkuName)
+            return sortDescending
+                ? queryable.OrderByDescending(x => x.StockKeepingUnit.Name).ThenBy(x => x.Id)
+                : queryable.OrderBy(x => x.StockKeepingUnit.Name).ThenBy(x => x.Id);
 
-            _ when sortBy == InventoryBalanceDetails.SortPath.WarehouseName => sortDescending
-                ? query.OrderByDescending(x => x.StorageLocation.Warehouse.Name).ThenBy(x => x.Id)
-                : query.OrderBy(x => x.StorageLocation.Warehouse.Name).ThenBy(x => x.Id),
+        if (sortBy == ListInventoryBalances.SortBy.SkuBaseUomSymbol)
+            return sortDescending
+                ? queryable.OrderByDescending(x => x.StockKeepingUnit.BaseUnitOfMeasure.Symbol ?? x.StockKeepingUnit.BaseUnitOfMeasure.Code).ThenBy(x => x.Id)
+                : queryable.OrderBy(x => x.StockKeepingUnit.BaseUnitOfMeasure.Symbol ?? x.StockKeepingUnit.BaseUnitOfMeasure.Code).ThenBy(x => x.Id);
 
-            _ => sortDescending
-                ? query.OrderByDescending(x => x.Id)
-                : query.OrderBy(x => x.Id)
-        };
+        if (sortBy == ListInventoryBalances.SortBy.LocationCode)
+            return sortDescending
+                ? queryable.OrderByDescending(x => x.StorageLocation.Code).ThenBy(x => x.Id)
+                : queryable.OrderBy(x => x.StorageLocation.Code).ThenBy(x => x.Id);
+
+        if (sortBy == ListInventoryBalances.SortBy.WarehouseName)
+            return sortDescending
+                ? queryable.OrderByDescending(x => x.StorageLocation.Warehouse.Name).ThenBy(x => x.Id)
+                : queryable.OrderBy(x => x.StorageLocation.Warehouse.Name).ThenBy(x => x.Id);
+
+        return sortDescending
+            ? queryable.OrderByDescending(x => x.Id)
+            : queryable.OrderBy(x => x.Id);
     }
 }

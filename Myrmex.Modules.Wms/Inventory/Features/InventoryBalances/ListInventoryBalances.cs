@@ -12,10 +12,18 @@ internal static class ListInventoryBalances
     internal sealed record Query : ListQuery, IQuery<ServiceResult<ListResult<InventoryBalanceDetails>>>
     {
         public Guid? StockKeepingUnitId { get; init; }
-
         public Guid? StorageLocationId { get; init; }
-
         public Guid? WarehouseId { get; init; }
+    }
+
+    internal static class SortBy
+    {
+        public const string Quantity = "Quantity";
+        public const string SkuCode = "SkuCode";
+        public const string SkuName = "SkuName";
+        public const string SkuBaseUomSymbol = "SkuBaseUomSymbol";
+        public const string LocationCode = "LocationCode";
+        public const string WarehouseName = "WarehouseName";
     }
 
     internal sealed class Handler(WmsDbContext dbContext) : IQueryHandler<Query, ServiceResult<ListResult<InventoryBalanceDetails>>>
@@ -28,28 +36,11 @@ internal static class ListInventoryBalances
             int take = ListQuery.NormalizeTake(query.Take);
 
             IQueryable<InventoryBalance> inventoryBalances = dbContext.InventoryBalances
-                .AsNoTracking();
+                .AsNoTracking()
+                .ApplyFilters(query);
 
-            if (query.StockKeepingUnitId is Guid stockKeepingUnitId)
-            {
-                inventoryBalances = inventoryBalances
-                    .Where(x => x.StockKeepingUnitId == stockKeepingUnitId);
-            }
-
-            if (query.StorageLocationId is Guid storageLocationId)
-            {
-                inventoryBalances = inventoryBalances
-                    .Where(x => x.StorageLocationId == storageLocationId);
-            }
-
-            if (query.WarehouseId is Guid warehouseId)
-            {
-                inventoryBalances = inventoryBalances
-                    .Where(x => x.StorageLocation.WarehouseId == warehouseId);
-            }
-
-            int totalCount = await inventoryBalances.CountAsync(cancellationToken);
-
+            int totalCount = await inventoryBalances
+                .CountAsync(cancellationToken);
 
             List<InventoryBalanceDetails> items = await inventoryBalances
                 .ApplySorting(query.SortBy, query.SortDescending)

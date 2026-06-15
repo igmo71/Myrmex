@@ -62,13 +62,4 @@ internal sealed record InventoryBalanceDetails(
                 )
             )
         );
-
-    internal static class SortPath
-    {
-        public static readonly string SkuCode = $"{nameof(Sku)}.{nameof(SkuInfo.Code)}";       // "Sku.Code"
-        public static readonly string SkuName = $"{nameof(Sku)}.{nameof(SkuInfo.Name)}";       // "Sku.Name"
-        public static readonly string SkuNameBaseUomSymbol = $"{nameof(Sku)}.{nameof(SkuInfo.BaseUom)}.{nameof(UomInfo.Symbol)}";       // "Sku.BaseUom.Symbol"
-        public static readonly string LocationCode = $"{nameof(Location)}.{nameof(LocationInfo.Code)}"; // "Location.Code"
-        public static readonly string WarehouseName = $"{nameof(Location)}.{nameof(LocationInfo.Warehouse)}.{nameof(WarehouseInfo.Name)}"; // "Location.Warehouse.Name"
-    }
 }
