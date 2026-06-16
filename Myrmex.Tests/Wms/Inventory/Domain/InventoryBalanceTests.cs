@@ -40,8 +40,8 @@ public sealed class InventoryBalanceTests
     {
         Assert.False(typeof(IActivatable).IsAssignableFrom(typeof(InventoryBalance)));
         Assert.Null(typeof(InventoryBalance).GetProperty("IsActive"));
-        Assert.Empty(typeof(InventoryBalance).GetMethods().Where(method =>
-            method.Name is "Deactivate" or "Reactivate"));
+        Assert.DoesNotContain(typeof(InventoryBalance).GetMethods(), method =>
+            method.Name is "Deactivate" or "Reactivate");
     }
 
     [Fact]
