@@ -138,17 +138,11 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedCode))
         {
-            errors.Add(new(
-                "StockKeepingUnit.CodeRequired",
-                "SKU code is required.",
-                "code"));
+            errors.Add(DomainValidationFailure.Required<StockKeepingUnit>("Code"));
         }
         else if (normalizedCode.Length > MaxCodeLength)
         {
-            errors.Add(new(
-                "StockKeepingUnit.CodeTooLong",
-                $"SKU code must not exceed {MaxCodeLength} characters.",
-                "code"));
+            errors.Add(DomainValidationFailure.TooLong<StockKeepingUnit>("Code", MaxCodeLength));
         }
 
         DomainValidationResult detailsValidationResult = ValidateDetails(
@@ -173,35 +167,23 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedName))
         {
-            errors.Add(new(
-                "StockKeepingUnit.NameRequired",
-                "SKU name is required.",
-                "name"));
+            errors.Add(DomainValidationFailure.Required<StockKeepingUnit>("Name"));
         }
         else if (normalizedName.Length > MaxNameLength)
         {
-            errors.Add(new(
-                "StockKeepingUnit.NameTooLong",
-                $"SKU name must not exceed {MaxNameLength} characters.",
-                "name"));
+            errors.Add(DomainValidationFailure.TooLong<StockKeepingUnit>("Name", MaxNameLength));
         }
 
         if (normalizedDescription is not null &&
             normalizedDescription.Length > MaxDescriptionLength)
         {
-            errors.Add(new(
-                "StockKeepingUnit.DescriptionTooLong",
-                $"SKU description must not exceed {MaxDescriptionLength} characters.",
-                "description"));
+            errors.Add(DomainValidationFailure.TooLong<StockKeepingUnit>("Description", MaxDescriptionLength));
         }
 
         if (!baseUnitOfMeasureId.HasValue ||
             baseUnitOfMeasureId.Value == Guid.Empty)
         {
-            errors.Add(new(
-                "StockKeepingUnit.BaseUnitOfMeasureRequired",
-                "SKU base unit of measure is required.",
-                "baseUnitOfMeasureId"));
+            errors.Add(DomainValidationFailure.Required<StockKeepingUnit>("BaseUnitOfMeasureId"));
         }
 
         return DomainValidationResult.From(errors);

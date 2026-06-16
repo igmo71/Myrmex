@@ -181,33 +181,33 @@ internal sealed class StorageLocation : AggregateRoot, IActivatable
 
         if (warehouseId == Guid.Empty)
         {
-            errors.Add(StorageLocationValidationErrors.WarehouseIdRequired);
+            errors.Add(DomainValidationFailure.Required<StorageLocation>("WarehouseId"));
         }
 
         if (zoneId == Guid.Empty)
         {
-            errors.Add(StorageLocationValidationErrors.ZoneIdRequired);
+            errors.Add(DomainValidationFailure.Required<StorageLocation>("ZoneId"));
         }
 
         if (storageLocationTypeId == Guid.Empty)
         {
-            errors.Add(StorageLocationValidationErrors.TypeIdRequired);
+            errors.Add(DomainValidationFailure.Required<StorageLocation>("StorageLocationTypeId"));
         }
 
         if (storageLocationStatusId == Guid.Empty)
         {
-            errors.Add(StorageLocationValidationErrors.StatusIdRequired);
+            errors.Add(DomainValidationFailure.Required<StorageLocation>("StorageLocationStatusId"));
         }
 
         string normalizedCode = DomainText.NormalizeCode(code);
 
         if (string.IsNullOrWhiteSpace(normalizedCode))
         {
-            errors.Add(StorageLocationValidationErrors.CodeRequired);
+            errors.Add(DomainValidationFailure.Required<StorageLocation>("Code"));
         }
         else if (normalizedCode.Length > MaxCodeLength)
         {
-            errors.Add(StorageLocationValidationErrors.CodeTooLong(MaxCodeLength));
+            errors.Add(DomainValidationFailure.TooLong<StorageLocation>("Code", MaxCodeLength));
         }
 
         DomainValidationResult detailsValidationResult = ValidateDetails(
@@ -230,17 +230,17 @@ internal sealed class StorageLocation : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedName))
         {
-            errors.Add(StorageLocationValidationErrors.NameRequired);
+            errors.Add(DomainValidationFailure.Required<StorageLocation>("Name"));
         }
         else if (normalizedName.Length > MaxNameLength)
         {
-            errors.Add(StorageLocationValidationErrors.NameTooLong(MaxNameLength));
+            errors.Add(DomainValidationFailure.TooLong<StorageLocation>("Name", MaxNameLength));
         }
 
         if (normalizedDescription is not null &&
             normalizedDescription.Length > MaxDescriptionLength)
         {
-            errors.Add(StorageLocationValidationErrors.DescriptionTooLong(MaxDescriptionLength));
+            errors.Add(DomainValidationFailure.TooLong<StorageLocation>("Description", MaxDescriptionLength));
         }
 
         return DomainValidationResult.From(errors);
