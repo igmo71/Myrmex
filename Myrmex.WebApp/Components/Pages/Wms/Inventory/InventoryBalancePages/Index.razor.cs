@@ -4,13 +4,13 @@ using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Catalog;
 using Myrmex.WebApp.Wms.Inventory;
 using Myrmex.WebApp.Wms.Topology;
+using static Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryBalancePages.InventoryBalanceGrid;
 
 namespace Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryBalancePages;
 
 public partial class Index
 {
     private const int LookupTake = 100;
-    private const int BalanceTake = 100;
 
     [Inject]
     private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = default!;
@@ -27,7 +27,8 @@ public partial class Index
     [Inject]
     private ISnackbar Snackbar { get; set; } = default!;
 
-    private List<InventoryBalanceDetails> _inventoryBalances = [];
+    private InventoryBalanceGrid? _inventoryBalanceGrid;
+
     private List<WarehouseDetails> _warehouses = [];
     private List<StorageLocationDetails> _storageLocations = [];
     private List<StockKeepingUnitDetails> _skus = [];
@@ -36,7 +37,6 @@ public partial class Index
     private Guid? _selectedStorageLocationId;
     private Guid? _selectedStockKeepingUnitId;
 
-    private bool _isLoadingBalances;
     private bool _isLoadingWarehouses;
     private bool _isLoadingStorageLocations;
     private bool _isLoadingSkus;
@@ -44,14 +44,14 @@ public partial class Index
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadWarehousesAsync();
-        await LoadSkusAsync();
-        await LoadInventoryBalancesAsync();
+        await Task.WhenAll(
+            LoadWarehousesAsync(),
+            LoadSkusAsync());
     }
 
-    private async Task ReloadAsync()
+    private Task ReloadAsync()
     {
-        await LoadInventoryBalancesAsync();
+        return ReloadInventoryBalancesAsync();
     }
 
     private async Task OnWarehouseChanged(Guid? value)
@@ -65,19 +65,68 @@ public partial class Index
             await LoadStorageLocationsAsync();
         }
 
-        await LoadInventoryBalancesAsync();
+        await ResetAndReloadInventoryBalancesAsync();
     }
 
     private async Task OnStorageLocationChanged(Guid? value)
     {
         _selectedStorageLocationId = value;
-        await LoadInventoryBalancesAsync();
+        await ResetAndReloadInventoryBalancesAsync();
     }
 
     private async Task OnStockKeepingUnitChanged(Guid? value)
     {
         _selectedStockKeepingUnitId = value;
-        await LoadInventoryBalancesAsync();
+        await ResetAndReloadInventoryBalancesAsync();
+    }
+
+    private async Task<GridData<InventoryBalanceDetails>> LoadInventoryBalancesAsync(
+        InventoryBalanceGridRequest gridRequest,
+        CancellationToken cancellationToken)
+    {
+        _errorMessage = null;
+
+        try
+        {
+            ListInventoryBalancesRequest request = new(
+            Skip: gridRequest.Skip,
+            Take: gridRequest.Take,
+            SortBy: gridRequest.SortBy,
+            SortDescending: gridRequest.SortDescending,
+            StockKeepingUnitId: _selectedStockKeepingUnitId,
+            StorageLocationId: _selectedStorageLocationId,
+            WarehouseId: _selectedWarehouseId);
+
+            ListResult<InventoryBalanceDetails> result =
+                await WmsInventoryApiClient.ListInventoryBalancesAsync(request, cancellationToken);
+
+            return new GridData<InventoryBalanceDetails>
+            {
+                Items = result.Items,
+                TotalItems = result.TotalCount
+            };
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+
+            return new GridData<InventoryBalanceDetails>
+            {
+                Items = [],
+                TotalItems = 0
+            };
+        }
+    }
+
+    private Task ReloadInventoryBalancesAsync()
+    {
+        return _inventoryBalanceGrid?.ReloadServerDataAsync()
+            ?? Task.CompletedTask;
+    }
+    private Task ResetAndReloadInventoryBalancesAsync()
+    {
+        return _inventoryBalanceGrid?.ResetAndReloadServerDataAsync()
+            ?? Task.CompletedTask;
     }
 
     private async Task LoadWarehousesAsync()
@@ -183,38 +232,6 @@ public partial class Index
         }
     }
 
-    private async Task LoadInventoryBalancesAsync()
-    {
-        _isLoadingBalances = true;
-        _errorMessage = null;
-
-        try
-        {
-            ListInventoryBalancesRequest request = new(
-                Skip: 0,
-                Take: BalanceTake,
-                SortBy: "id",
-                SortDescending: false,
-                StockKeepingUnitId: _selectedStockKeepingUnitId,
-                StorageLocationId: _selectedStorageLocationId,
-                WarehouseId: _selectedWarehouseId);
-
-            ListResult<InventoryBalanceDetails> result = await WmsInventoryApiClient
-                .ListInventoryBalancesAsync(request);
-
-            _inventoryBalances = result.Items.ToList();
-        }
-        catch (Exception exception)
-        {
-            _errorMessage = exception.Message;
-            _inventoryBalances = [];
-        }
-        finally
-        {
-            _isLoadingBalances = false;
-        }
-    }
-
     private async Task CreateInventoryBalanceAsync()
     {
         DialogOptions options = new()
@@ -241,7 +258,7 @@ public partial class Index
 
         Snackbar.Add(message, Severity.Success);
 
-        await LoadInventoryBalancesAsync();
+        await ReloadInventoryBalancesAsync();
     }
 
     private async Task UpdateInventoryBalanceQuantityAsync(InventoryBalanceDetails inventoryBalance)
@@ -272,7 +289,7 @@ public partial class Index
 
         Snackbar.Add("Inventory balance quantity updated.", Severity.Success);
 
-        await LoadInventoryBalancesAsync();
+        await ReloadInventoryBalancesAsync();
     }
 
     private bool MatchesActiveFilters(InventoryBalanceDetails inventoryBalance)

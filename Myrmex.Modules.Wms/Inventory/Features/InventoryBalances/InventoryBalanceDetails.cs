@@ -8,21 +8,21 @@ internal sealed record InventoryBalanceDetails(
     decimal Quantity,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? UpdatedAtUtc,
-    InventoryBalanceDetails.SkuInfo Sku,
-    InventoryBalanceDetails.LocationInfo Location)
+    InventoryBalanceDetails.StockKeepingUnitInfo Sku,
+    InventoryBalanceDetails.StorageLocationInfo Location)
 {
-    public sealed record SkuInfo(
+    public sealed record StockKeepingUnitInfo(
         Guid Id,
         string Code,
         string Name,
-        UomInfo BaseUom);
+        UnitOfMeasureInfo BaseUom);
 
-    public sealed record UomInfo(
+    public sealed record UnitOfMeasureInfo(
         Guid Id,
         string Code,
         string? Symbol);
 
-    public sealed record LocationInfo(
+    public sealed record StorageLocationInfo(
         Guid Id,
         string Code,
         string Name,
@@ -40,18 +40,18 @@ internal sealed record InventoryBalanceDetails(
             balance.CreatedAtUtc,
             balance.UpdatedAtUtc,
 
-            new SkuInfo(
+            new StockKeepingUnitInfo(
                 balance.StockKeepingUnitId,
                 balance.StockKeepingUnit.Code,
                 balance.StockKeepingUnit.Name,
-                new UomInfo(
+                new UnitOfMeasureInfo(
                     balance.StockKeepingUnit.BaseUnitOfMeasureId,
                     balance.StockKeepingUnit.BaseUnitOfMeasure.Code,
                     balance.StockKeepingUnit.BaseUnitOfMeasure.Symbol
                 )
             ),
 
-            new LocationInfo(
+            new StorageLocationInfo(
                 balance.StorageLocationId,
                 balance.StorageLocation.Code,
                 balance.StorageLocation.Name,

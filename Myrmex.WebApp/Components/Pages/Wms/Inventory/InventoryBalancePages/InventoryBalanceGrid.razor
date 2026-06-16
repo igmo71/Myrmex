@@ -1,14 +1,18 @@
 <MudDataGrid T="InventoryBalanceDetails"
-             Items="InventoryBalances"
-             Loading="IsLoading"
+             @ref="_dataGrid"
+             ServerData="LoadServerDataAsync"
              Dense="true"
              Hover="true"
              Bordered="true"
              Striped="true"
-             SortMode="SortMode.Multiple"
+             SortMode="SortMode.Single"
              Filterable="false">
     <Columns>
-        <TemplateColumn Title="SKU" Sortable="false" Filterable="false">
+        <TemplateColumn Title="SKU"
+                        Tag="@InventoryBalanceSortBy.SkuCode"
+                        SortBy="@(balance => balance.Sku.Code)"
+                        Sortable="true"
+                        Filterable="false">
             <CellTemplate>
                 <MudText Typo="Typo.body2">@context.Item.Sku.Code</MudText>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
@@ -17,7 +21,11 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Warehouse" Sortable="false" Filterable="false">
+        <TemplateColumn Title="Warehouse"
+                        Tag="@InventoryBalanceSortBy.WarehouseName"
+                        SortBy="@(balance => balance.Location.Warehouse.Name)"
+                        Sortable="true"
+                        Filterable="false">
             <CellTemplate>
                 <MudText Typo="Typo.body2">@context.Item.Location.Warehouse.Code</MudText>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
@@ -26,7 +34,11 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Storage location" Sortable="false" Filterable="false">
+        <TemplateColumn Title="Storage location"
+                        Tag="@InventoryBalanceSortBy.LocationCode"
+                        SortBy="@(balance => balance.Location.Code)"
+                        Sortable="true"
+                        Filterable="false">
             <CellTemplate>
                 <MudText Typo="Typo.body2">@context.Item.Location.Code</MudText>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
@@ -35,13 +47,19 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Quantity" Sortable="false" Filterable="false">
+        <TemplateColumn Title="Quantity"
+                        Tag="@InventoryBalanceSortBy.Quantity"
+                        SortBy="@(balance => balance.Quantity)"
+                        Sortable="true"
+                        Filterable="false">
             <CellTemplate>
                 @context.Item.Quantity @GetBaseUnitOfMeasureDisplay(context.Item)
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+        <TemplateColumn Title="Actions"
+                        Sortable="false"
+                        Filterable="false">
             <CellTemplate>
                 <MudMenu Icon="@Icons.Material.Filled.MoreVert"
                          Size="Size.Small"
@@ -57,20 +75,75 @@
         </TemplateColumn>
     </Columns>
 
+    <NoRecordsContent>
+        <MudText>No inventory balances match the current filters.</MudText>
+    </NoRecordsContent>
+
     <PagerContent>
-        <MudDataGridPager T="InventoryBalanceDetails" />
+        <MudDataGridPager T="InventoryBalanceDetails" PageSizeOptions="@PageSizeOptions" />
     </PagerContent>
 </MudDataGrid>
 
 @code {
-    [Parameter]
-    public IEnumerable<InventoryBalanceDetails> InventoryBalances { get; set; } = [];
+    private static readonly int[] PageSizeOptions = [1, 2, 3, 10, 25, 50, 100];
 
-    [Parameter]
-    public bool IsLoading { get; set; }
+    private MudDataGrid<InventoryBalanceDetails>? _dataGrid;
+
+    [Parameter, EditorRequired]
+    public Func<InventoryBalanceGridRequest, CancellationToken, Task<GridData<InventoryBalanceDetails>>> LoadData { get; set; } = default!;
 
     [Parameter]
     public EventCallback<InventoryBalanceDetails> UpdateQuantityRequested { get; set; }
+
+    private async Task<GridData<InventoryBalanceDetails>> LoadServerDataAsync(GridState<InventoryBalanceDetails> state, CancellationToken cancellationToken)
+    {
+        SortDefinition<InventoryBalanceDetails>? sortDefinition =
+            state.SortDefinitions.FirstOrDefault();
+
+        InventoryBalanceGridRequest request = new(
+            Skip: state.Page * state.PageSize,
+            Take: state.PageSize,
+            SortBy: ResolveSortBy(sortDefinition),
+            SortDescending: sortDefinition?.Descending ?? false);
+
+        return await LoadData(request, cancellationToken);
+    }
+
+    private string ResolveSortBy(SortDefinition<InventoryBalanceDetails>? sortDefinition)
+    {
+        if (sortDefinition is null)
+        {
+            return InventoryBalanceSortBy.SkuCode;
+        }
+
+        Column<InventoryBalanceDetails>? column =
+            _dataGrid?.GetColumnByPropertyName(sortDefinition.SortBy);
+
+        return column?.Tag as string
+            ?? InventoryBalanceSortBy.SkuCode;
+    }
+
+    public Task ReloadServerDataAsync()
+    {
+        return _dataGrid?.ReloadServerData()
+            ?? Task.CompletedTask;
+    }
+
+    public async Task ResetAndReloadServerDataAsync()
+    {
+        if (_dataGrid is null)
+        {
+            return;
+        }
+
+        if (_dataGrid.CurrentPage == 0)
+        {
+            await _dataGrid.ReloadServerData();
+            return;
+        }
+
+        _dataGrid.NavigateTo(Page.First);
+    }
 
     private static string GetBaseUnitOfMeasureDisplay(InventoryBalanceDetails inventoryBalance)
     {
@@ -78,4 +151,10 @@
             ? inventoryBalance.Sku.BaseUom.Code
             : inventoryBalance.Sku.BaseUom.Symbol;
     }
+
+    public sealed record InventoryBalanceGridRequest(
+        int Skip,
+        int Take,
+        string SortBy,
+        bool SortDescending);
 }
