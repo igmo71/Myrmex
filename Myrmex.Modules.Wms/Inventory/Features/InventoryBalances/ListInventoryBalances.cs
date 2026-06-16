@@ -23,6 +23,7 @@ internal static class ListInventoryBalances
         public const string SkuName = "SkuName";
         public const string SkuBaseUomSymbol = "SkuBaseUomSymbol";
         public const string LocationCode = "LocationCode";
+        public const string WarehouseCode = "WarehouseCode";
         public const string WarehouseName = "WarehouseName";
     }
 

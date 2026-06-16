@@ -4,7 +4,9 @@
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
     <MudStack Spacing="3">
-        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudStack Row="true"
+                  AlignItems="AlignItems.Center"
+                  Justify="Justify.SpaceBetween">
             <div>
                 <MudText Typo="Typo.h5">Inventory Balances</MudText>
                 <MudText Typo="Typo.body2" Color="Color.Secondary">
@@ -17,15 +19,14 @@
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="CreateInventoryBalanceAsync"
-                           Disabled="_isLoadingBalances || _isLoadingWarehouses || _isLoadingSkus">
+                           Disabled="_isLoadingWarehouses || _isLoadingSkus">
                     Create
                 </MudButton>
 
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.Refresh"
-                           OnClick="ReloadAsync"
-                           Disabled="_isLoadingBalances">
+                           OnClick="ReloadAsync">
                     Refresh
                 </MudButton>
             </MudStack>
@@ -51,15 +52,8 @@
                                  IsLoadingStorageLocations="@_isLoadingStorageLocations"
                                  IsLoadingSkus="@_isLoadingSkus" />
 
-        @if (!_isLoadingBalances && _inventoryBalances.Count == 0)
-        {
-            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
-                No inventory balances match the current filters.
-            </MudAlert>
-        }
-
-        <InventoryBalanceGrid InventoryBalances="@_inventoryBalances"
-                              IsLoading="@_isLoadingBalances"
+        <InventoryBalanceGrid @ref="_inventoryBalanceGrid"
+                              LoadData="LoadInventoryBalancesAsync"
                               UpdateQuantityRequested="UpdateInventoryBalanceQuantityAsync" />
     </MudStack>
 </MudContainer>

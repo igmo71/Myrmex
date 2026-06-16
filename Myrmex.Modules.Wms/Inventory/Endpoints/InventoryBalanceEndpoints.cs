@@ -43,7 +43,7 @@ internal static class InventoryBalanceEndpoints
     private static async Task<IResult> CreateInventoryBalanceAsync(
         CreateInventoryBalanceRequest request,
         ICommandDispatcher commandDispatcher,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         var command = new CreateInventoryBalance.Command(
             request.StockKeepingUnitId,
@@ -64,7 +64,7 @@ internal static class InventoryBalanceEndpoints
         Guid? storageLocationId,
         Guid? warehouseId,
         IQueryDispatcher queryDispatcher,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         var query = new ListInventoryBalances.Query
         {
@@ -88,7 +88,7 @@ internal static class InventoryBalanceEndpoints
     private static async Task<IResult> GetInventoryBalanceByIdAsync(
         Guid inventoryBalanceId,
         IQueryDispatcher queryDispatcher,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         var query = new GetInventoryBalanceById.Query(inventoryBalanceId);
 
@@ -101,7 +101,7 @@ internal static class InventoryBalanceEndpoints
         Guid inventoryBalanceId,
         UpdateInventoryBalanceQuantityRequest request,
         ICommandDispatcher commandDispatcher,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         var command = new UpdateInventoryBalanceQuantity.Command(
             inventoryBalanceId,

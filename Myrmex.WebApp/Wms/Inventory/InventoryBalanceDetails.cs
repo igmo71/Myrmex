@@ -5,21 +5,21 @@ public sealed record InventoryBalanceDetails(
     decimal Quantity,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? UpdatedAtUtc,
-    InventoryBalanceDetails.SkuInfo Sku,
-    InventoryBalanceDetails.LocationInfo Location)
+    InventoryBalanceDetails.StockKeepingUnitInfo Sku,
+    InventoryBalanceDetails.StorageLocationInfo Location)
 {
-    public sealed record SkuInfo(
+    public sealed record StockKeepingUnitInfo(
         Guid Id,
         string Code,
         string Name,
-        UomInfo BaseUom);
+        UnitOfMeasureInfo BaseUom);
 
-    public sealed record UomInfo(
+    public sealed record UnitOfMeasureInfo(
         Guid Id,
         string Code,
         string? Symbol);
 
-    public sealed record LocationInfo(
+    public sealed record StorageLocationInfo(
         Guid Id,
         string Code,
         string Name,
