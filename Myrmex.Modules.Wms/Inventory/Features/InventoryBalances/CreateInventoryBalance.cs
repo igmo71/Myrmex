@@ -88,14 +88,14 @@ internal static class CreateInventoryBalance
 
             return (sku, location) switch
             {
-                (null, _) => ServiceError.NotFound<InventoryBalance>("StockKeepingUnit not found"),
-                ({ IsActive: false }, _) => ServiceError.Validation<InventoryBalance>("StockKeepingUnit is inactive"),
-                ({ BaseUnitOfMeasure.IsActive: false }, _) => ServiceError.Validation<InventoryBalance>("BaseUnitOfMeasure is inactive"),
+                (null, _) => ServiceError.NotFound<InventoryBalance>("StockKeepingUnit not found", "StockKeepingUnit"),
+                ({ IsActive: false }, _) => ServiceError.Validation<InventoryBalance>("StockKeepingUnit is inactive", "StockKeepingUnit"),
+                ({ BaseUnitOfMeasure.IsActive: false }, _) => ServiceError.Validation<InventoryBalance>("BaseUnitOfMeasure is inactive", "BaseUnitOfMeasure"),
 
-                (_, null) => ServiceError.NotFound<InventoryBalance>("StorageLocation not found"),
-                (_, { IsActive: false }) => ServiceError.Validation<InventoryBalance>("StorageLocation is inactive"),
-                (_, { StorageLocationType.IsActive: false }) => ServiceError.Validation<InventoryBalance>("StorageLocationType is inactive"),
-                (_, { StorageLocationStatus.IsActive: false }) => ServiceError.Validation<InventoryBalance>("StorageLocationStatus is inactive"),
+                (_, null) => ServiceError.NotFound<InventoryBalance>("StorageLocation not found", "StorageLocation"),
+                (_, { IsActive: false }) => ServiceError.Validation<InventoryBalance>("StorageLocation is inactive", "StorageLocation"),
+                (_, { StorageLocationType.IsActive: false }) => ServiceError.Validation<InventoryBalance>("StorageLocationType is inactive", "StorageLocationType"),
+                (_, { StorageLocationStatus.IsActive: false }) => ServiceError.Validation<InventoryBalance>("StorageLocationStatus is inactive", "StorageLocationStatus"),
 
                 _ => null
             };
