@@ -30,7 +30,7 @@ internal static class UpdateStorageLocationDetails
 
             if (storageLocation is null)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.StorageLocation.NotFound);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<StorageLocation>());
             }
 
             DomainValidationResult validationResult = storageLocation.UpdateDetails(

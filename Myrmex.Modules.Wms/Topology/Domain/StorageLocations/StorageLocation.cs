@@ -1,5 +1,7 @@
 ﻿using Myrmex.Core.Domain;
 using Myrmex.Core.Domain.Validation;
+using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
+using Myrmex.Modules.Wms.Topology.Domain.Zones;
 
 namespace Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 
@@ -34,12 +36,19 @@ internal sealed class StorageLocation : AggregateRoot, IActivatable
     }
 
     public Guid WarehouseId { get; private set; }
+    public Warehouse Warehouse { get; private set; } = null!;
 
     public Guid ZoneId { get; private set; }
+    public Zone Zone { get; private set; } = null!;
+
 
     public Guid StorageLocationTypeId { get; private set; }
+    public StorageLocationType StorageLocationType { get; private set; } = null!;
+
 
     public Guid StorageLocationStatusId { get; private set; }
+    public StorageLocationStatus StorageLocationStatus { get; private set; } = null!;
+
 
     public string Code { get; private set; } = null!;
 
@@ -172,33 +181,33 @@ internal sealed class StorageLocation : AggregateRoot, IActivatable
 
         if (warehouseId == Guid.Empty)
         {
-            errors.Add(StorageLocationValidationErrors.WarehouseIdRequired);
+            errors.Add(DomainValidationFailure.Required<StorageLocation>(nameof(WarehouseId)));
         }
 
         if (zoneId == Guid.Empty)
         {
-            errors.Add(StorageLocationValidationErrors.ZoneIdRequired);
+            errors.Add(DomainValidationFailure.Required<StorageLocation>(nameof(ZoneId)));
         }
 
         if (storageLocationTypeId == Guid.Empty)
         {
-            errors.Add(StorageLocationValidationErrors.TypeIdRequired);
+            errors.Add(DomainValidationFailure.Required<StorageLocation>(nameof(StorageLocationTypeId)));
         }
 
         if (storageLocationStatusId == Guid.Empty)
         {
-            errors.Add(StorageLocationValidationErrors.StatusIdRequired);
+            errors.Add(DomainValidationFailure.Required<StorageLocation>(nameof(StorageLocationStatusId)));
         }
 
         string normalizedCode = DomainText.NormalizeCode(code);
 
         if (string.IsNullOrWhiteSpace(normalizedCode))
         {
-            errors.Add(StorageLocationValidationErrors.CodeRequired);
+            errors.Add(DomainValidationFailure.Required<StorageLocation>(nameof(Code)));
         }
         else if (normalizedCode.Length > MaxCodeLength)
         {
-            errors.Add(StorageLocationValidationErrors.CodeTooLong(MaxCodeLength));
+            errors.Add(DomainValidationFailure.TooLong<StorageLocation>(nameof(Code), MaxCodeLength));
         }
 
         DomainValidationResult detailsValidationResult = ValidateDetails(
@@ -221,17 +230,17 @@ internal sealed class StorageLocation : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedName))
         {
-            errors.Add(StorageLocationValidationErrors.NameRequired);
+            errors.Add(DomainValidationFailure.Required<StorageLocation>(nameof(Name)));
         }
         else if (normalizedName.Length > MaxNameLength)
         {
-            errors.Add(StorageLocationValidationErrors.NameTooLong(MaxNameLength));
+            errors.Add(DomainValidationFailure.TooLong<StorageLocation>(nameof(Name), MaxNameLength));
         }
 
         if (normalizedDescription is not null &&
             normalizedDescription.Length > MaxDescriptionLength)
         {
-            errors.Add(StorageLocationValidationErrors.DescriptionTooLong(MaxDescriptionLength));
+            errors.Add(DomainValidationFailure.TooLong<StorageLocation>(nameof(Description), MaxDescriptionLength));
         }
 
         return DomainValidationResult.From(errors);

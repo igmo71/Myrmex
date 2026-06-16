@@ -112,17 +112,11 @@ internal sealed class UnitOfMeasure : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedCode))
         {
-            errors.Add(new(
-                "UnitOfMeasure.CodeRequired",
-                "UoM code is required.",
-                "code"));
+            errors.Add(DomainValidationFailure.Required<UnitOfMeasure>(nameof(Code)));
         }
         else if (normalizedCode.Length > MaxCodeLength)
         {
-            errors.Add(new(
-                "UnitOfMeasure.CodeTooLong",
-                $"UoM code must not exceed {MaxCodeLength} characters.",
-                "code"));
+            errors.Add(DomainValidationFailure.TooLong<UnitOfMeasure>(nameof(Code), MaxCodeLength));
         }
 
         DomainValidationResult detailsValidationResult = ValidateDetails(
@@ -144,17 +138,11 @@ internal sealed class UnitOfMeasure : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedName))
         {
-            errors.Add(new(
-                "UnitOfMeasure.NameRequired",
-                "UoM name is required.",
-                "name"));
+            errors.Add(DomainValidationFailure.Required<UnitOfMeasure>(nameof(Name)));
         }
         else if (normalizedName.Length > MaxNameLength)
         {
-            errors.Add(new(
-                "UnitOfMeasure.NameTooLong",
-                $"UoM name must not exceed {MaxNameLength} characters.",
-                "name"));
+            errors.Add(DomainValidationFailure.TooLong<UnitOfMeasure>(nameof(Name), MaxNameLength));
         }
 
         string? normalizedSymbol = DomainText.NormalizeOptionalText(symbol);
@@ -162,10 +150,7 @@ internal sealed class UnitOfMeasure : AggregateRoot, IActivatable
         if (normalizedSymbol is not null &&
             normalizedSymbol.Length > MaxSymbolLength)
         {
-            errors.Add(new(
-                "UnitOfMeasure.SymbolTooLong",
-                $"UoM symbol must not exceed {MaxSymbolLength} characters.",
-                "symbol"));
+            errors.Add(DomainValidationFailure.TooLong<UnitOfMeasure>(nameof(Symbol), MaxSymbolLength));
         }
 
         return DomainValidationResult.From(errors);

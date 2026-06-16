@@ -82,14 +82,14 @@ public sealed class WmsInventoryApiClientTests
 
         InventoryBalanceDetails details = Assert.Single(result.Items);
         Assert.Equal(inventoryBalanceId, details.Id);
-        Assert.Equal(stockKeepingUnitId, details.StockKeepingUnitId);
-        Assert.Equal("ITEM-001", details.StockKeepingUnitCode);
-        Assert.Equal(storageLocationId, details.StorageLocationId);
-        Assert.Equal("A-01-01", details.StorageLocationCode);
-        Assert.Equal(warehouseId, details.WarehouseId);
-        Assert.Equal("MAIN", details.WarehouseCode);
-        Assert.Equal(baseUnitOfMeasureId, details.BaseUnitOfMeasureId);
-        Assert.Equal("EA", details.BaseUnitOfMeasureCode);
+        Assert.Equal(stockKeepingUnitId, details.Sku.Id);
+        Assert.Equal("ITEM-001", details.Sku.Code);
+        Assert.Equal(storageLocationId, details.Location.Id);
+        Assert.Equal("A-01-01", details.Location.Code);
+        Assert.Equal(warehouseId, details.Location.Warehouse.Id);
+        Assert.Equal("MAIN", details.Location.Warehouse.Code);
+        Assert.Equal(baseUnitOfMeasureId, details.Sku.BaseUom.Id);
+        Assert.Equal("EA", details.Sku.BaseUom.Code);
         Assert.Equal(10, details.Quantity);
     }
 
@@ -239,14 +239,14 @@ public sealed class WmsInventoryApiClientTests
         InventoryBalanceDetails details = result.Value;
 
         Assert.Equal(inventoryBalanceId, details.Id);
-        Assert.Equal(stockKeepingUnitId, details.StockKeepingUnitId);
-        Assert.Equal("ITEM-001", details.StockKeepingUnitCode);
-        Assert.Equal(storageLocationId, details.StorageLocationId);
-        Assert.Equal("A-01-01", details.StorageLocationCode);
-        Assert.Equal(warehouseId, details.WarehouseId);
-        Assert.Equal("MAIN", details.WarehouseCode);
-        Assert.Equal(baseUnitOfMeasureId, details.BaseUnitOfMeasureId);
-        Assert.Equal("EA", details.BaseUnitOfMeasureCode);
+        Assert.Equal(stockKeepingUnitId, details.Sku.Id);
+        Assert.Equal("ITEM-001", details.Sku.Code);
+        Assert.Equal(storageLocationId, details.Location.Id);
+        Assert.Equal("A-01-01", details.Location.Code);
+        Assert.Equal(warehouseId, details.Location.Warehouse.Id);
+        Assert.Equal("MAIN", details.Location.Warehouse.Code);
+        Assert.Equal(baseUnitOfMeasureId, details.Sku.BaseUom.Id);
+        Assert.Equal("EA", details.Sku.BaseUom.Code);
         Assert.Equal(10, details.Quantity);
         Assert.Null(details.UpdatedAtUtc);
     }
@@ -400,10 +400,10 @@ public sealed class WmsInventoryApiClientTests
 
         InventoryBalanceDetails details = result.Value;
         Assert.Equal(inventoryBalanceId, details.Id);
-        Assert.Equal(stockKeepingUnitId, details.StockKeepingUnitId);
-        Assert.Equal(storageLocationId, details.StorageLocationId);
-        Assert.Equal(warehouseId, details.WarehouseId);
-        Assert.Equal(baseUnitOfMeasureId, details.BaseUnitOfMeasureId);
+        Assert.Equal(stockKeepingUnitId, details.Sku.Id);
+        Assert.Equal(storageLocationId, details.Location.Id);
+        Assert.Equal(warehouseId, details.Location.Warehouse.Id);
+        Assert.Equal(baseUnitOfMeasureId, details.Sku.BaseUom.Id);
         Assert.Equal(5, details.Quantity);
         Assert.NotNull(details.UpdatedAtUtc);
     }
@@ -517,12 +517,12 @@ public sealed class WmsInventoryApiClientTests
         Assert.Equal(HttpMethod.Get, handler.RequestMethod);
         Assert.Equal($"/api/wms/inventory/balances/{inventoryBalanceId}", handler.RequestPath);
         Assert.Equal(inventoryBalanceId, details.Id);
-        Assert.Equal(stockKeepingUnitId, details.StockKeepingUnitId);
-        Assert.Equal("ITEM-001", details.StockKeepingUnitCode);
-        Assert.Equal(storageLocationId, details.StorageLocationId);
-        Assert.Equal("A-01-01", details.StorageLocationCode);
-        Assert.Equal(warehouseId, details.WarehouseId);
-        Assert.Equal(baseUnitOfMeasureId, details.BaseUnitOfMeasureId);
+        Assert.Equal(stockKeepingUnitId, details.Sku.Id);
+        Assert.Equal("ITEM-001", details.Sku.Code);
+        Assert.Equal(storageLocationId, details.Location.Id);
+        Assert.Equal("A-01-01", details.Location.Code);
+        Assert.Equal(warehouseId, details.Location.Warehouse.Id);
+        Assert.Equal(baseUnitOfMeasureId, details.Sku.BaseUom.Id);
         Assert.Equal(0, details.Quantity);
         Assert.NotNull(details.UpdatedAtUtc);
     }

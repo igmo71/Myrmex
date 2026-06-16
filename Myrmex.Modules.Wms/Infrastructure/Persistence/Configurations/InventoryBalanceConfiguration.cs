@@ -1,8 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
-using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 
 namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Configurations;
 
@@ -23,13 +21,13 @@ internal sealed class InventoryBalanceConfiguration : IEntityTypeConfiguration<I
         builder.Property(x => x.StorageLocationId)
             .IsRequired();
 
-        builder.HasOne<StockKeepingUnit>()
+        builder.HasOne(x => x.StockKeepingUnit)
             .WithMany()
             .HasForeignKey(x => x.StockKeepingUnitId)
             .HasConstraintName(WmsDatabaseNames.InventoryBalanceStockKeepingUnitForeignKey)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<StorageLocation>()
+        builder.HasOne(x => x.StorageLocation)
             .WithMany()
             .HasForeignKey(x => x.StorageLocationId)
             .HasConstraintName(WmsDatabaseNames.InventoryBalanceStorageLocationForeignKey)

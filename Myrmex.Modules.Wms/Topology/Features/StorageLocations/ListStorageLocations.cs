@@ -32,7 +32,7 @@ internal static class ListStorageLocations
 
                 if (!warehouseExists)
                 {
-                    return ServiceResult<ListResult<StorageLocationDetails>>.Fail(WmsErrors.Warehouse.NotFoundById);
+                    return ServiceResult<ListResult<StorageLocationDetails>>.Fail(ServiceError.NotFound<StorageLocation>("Warehouse not found", "Warehouse"));
                 }
             }
 
@@ -46,12 +46,12 @@ internal static class ListStorageLocations
 
                 if (zone is null)
                 {
-                    return ServiceResult<ListResult<StorageLocationDetails>>.Fail(WmsErrors.Zone.NotFoundById);
+                    return ServiceResult<ListResult<StorageLocationDetails>>.Fail(ServiceError.NotFound<StorageLocation>("Zone not found", "Zone"));
                 }
 
                 if (query.WarehouseId.HasValue && zone.WarehouseId != query.WarehouseId.Value)
                 {
-                    return ServiceResult<ListResult<StorageLocationDetails>>.Fail(WmsErrors.StorageLocation.ZoneWarehouseMismatch);
+                    return ServiceResult<ListResult<StorageLocationDetails>>.Fail(ServiceError.Conflict<StorageLocation>(message: "Zone - Warehouse Mismatch"));
                 }
             }
 

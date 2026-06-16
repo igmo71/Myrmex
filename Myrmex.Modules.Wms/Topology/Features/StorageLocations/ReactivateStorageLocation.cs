@@ -25,7 +25,7 @@ internal static class ReactivateStorageLocation
 
             if (storageLocation is null)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.StorageLocation.NotFound);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<StorageLocation>());
             }
 
             storageLocation.Reactivate();

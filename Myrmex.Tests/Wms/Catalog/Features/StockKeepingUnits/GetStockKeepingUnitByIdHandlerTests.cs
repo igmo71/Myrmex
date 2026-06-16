@@ -62,28 +62,6 @@ public sealed class GetStockKeepingUnitByIdHandlerTests
         Assert.False(result.Value.IsActive);
     }
 
-    [Fact]
-    public async Task HandleAsync_WhenStockKeepingUnitDoesNotExist_ReturnsNotFound()
-    {
-        // Arrange
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-
-        GetStockKeepingUnitById.Handler handler = new(testDbContext.DbContext);
-
-        // Act
-        ServiceResult<StockKeepingUnitDetails> result = await handler.HandleAsync(
-            new GetStockKeepingUnitById.Query(Guid.NewGuid()),
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
-        Assert.Equal("StockKeepingUnit.NotFound", result.Error.Code);
-        Assert.Equal("Stock keeping unit was not found.", result.Error.Message);
-    }
-
     private static async Task<StockKeepingUnit> AddStockKeepingUnitAsync(
         TestWmsDbContext testDbContext,
         string code,

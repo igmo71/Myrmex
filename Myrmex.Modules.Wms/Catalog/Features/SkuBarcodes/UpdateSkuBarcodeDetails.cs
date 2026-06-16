@@ -10,8 +10,6 @@ namespace Myrmex.Modules.Wms.Catalog.Features.SkuBarcodes;
 
 internal static class UpdateSkuBarcodeDetails
 {
-    private const string UnsupportedPrimaryChangeCode = "SkuBarcode.UnsupportedPrimaryChange";
-
     internal sealed record Command(
         Guid SkuBarcodeId,
         string? Value,
@@ -33,23 +31,7 @@ internal static class UpdateSkuBarcodeDetails
 
             if (skuBarcode is null)
             {
-                return ServiceResult<SkuBarcodeDetails>.Fail(WmsErrors.SkuBarcode.NotFound);
-            }
-
-            DomainValidationResult validationResult = SkuBarcode.ValidateDetails(
-                command.Value,
-                command.Symbology,
-                command.IsPrimary,
-                skuBarcode.IsActive);
-
-            if (!validationResult.IsValid)
-            {
-                if (validationResult.Errors.Any(x => x.Code == UnsupportedPrimaryChangeCode))
-                {
-                    return ServiceResult<SkuBarcodeDetails>.Fail(WmsErrors.SkuBarcode.UnsupportedPrimaryChange);
-                }
-
-                return ServiceResult<SkuBarcodeDetails>.Invalid(validationResult.Errors);
+                return ServiceResult<SkuBarcodeDetails>.Fail(ServiceError.NotFound<SkuBarcode>());
             }
 
             string normalizedValue = SkuBarcode.NormalizeValue(command.Value);
@@ -62,13 +44,18 @@ internal static class UpdateSkuBarcodeDetails
 
             if (valueAlreadyExists)
             {
-                return ServiceResult<SkuBarcodeDetails>.Fail(WmsErrors.SkuBarcode.ValueAlreadyExists);
+                return ServiceResult<SkuBarcodeDetails>.Fail(ServiceError.Conflict<SkuBarcode>("Value already exists", nameof(SkuBarcode.Value)));
             }
 
-            skuBarcode.UpdateDetails(
+            DomainValidationResult validationResult = skuBarcode.UpdateDetails(
                 command.Value,
                 command.Symbology,
                 command.IsPrimary);
+
+            if (!validationResult.IsValid)
+            {
+                return ServiceResult<SkuBarcodeDetails>.Invalid(validationResult.Errors);
+            }
 
             if (skuBarcode.IsPrimary)
             {

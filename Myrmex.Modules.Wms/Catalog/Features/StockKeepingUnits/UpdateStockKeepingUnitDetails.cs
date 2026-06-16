@@ -31,12 +31,12 @@ internal static class UpdateStockKeepingUnitDetails
 
             if (stockKeepingUnit is null)
             {
-                return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.NotFound);
+                return ServiceResult<StockKeepingUnitDetails>.Fail(ServiceError.NotFound<StockKeepingUnit>());
             }
 
             if (!command.BaseUnitOfMeasureId.HasValue || command.BaseUnitOfMeasureId.Value == Guid.Empty)
             {
-                return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureRequired);
+                return ServiceResult<StockKeepingUnitDetails>.Fail(ServiceError.Validation<StockKeepingUnit>("UnitOfMeasure is required", nameof(StockKeepingUnit.BaseUnitOfMeasureId)));
             }
 
             Guid baseUnitOfMeasureId = command.BaseUnitOfMeasureId.Value;
@@ -81,12 +81,12 @@ internal static class UpdateStockKeepingUnitDetails
 
             if (baseUnitOfMeasure is null)
             {
-                return ServiceResult.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureNotFound);
+                return ServiceResult.Fail(ServiceError.NotFound<StockKeepingUnit>("BaseUnitOfMeasure not found", nameof(StockKeepingUnit.BaseUnitOfMeasureId)));
             }
 
             if (!baseUnitOfMeasure.IsActive)
             {
-                return ServiceResult.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureInactive);
+                return ServiceResult.Fail(ServiceError.Validation<StockKeepingUnit>("BaseUnitOfMeasure is inactive", nameof(StockKeepingUnit.BaseUnitOfMeasureId)));
             }
 
             return ServiceResult.Success();

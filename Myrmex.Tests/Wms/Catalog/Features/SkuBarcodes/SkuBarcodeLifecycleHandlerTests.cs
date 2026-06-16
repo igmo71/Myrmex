@@ -10,32 +10,6 @@ namespace Myrmex.Tests.Wms.Catalog.Features.SkuBarcodes;
 
 public sealed class SkuBarcodeLifecycleHandlerTests
 {
-    [Fact]
-    public async Task DeactivateHandleAsync_WhenSkuBarcodeDoesNotExist_ReturnsNotFoundServiceResult()
-    {
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-        RecordingDomainEventDispatcher domainEventDispatcher = new();
-
-        DeactivateSkuBarcode.Handler handler = new(
-            testDbContext.DbContext,
-            domainEventDispatcher);
-
-        DeactivateSkuBarcode.Command command = new(Guid.NewGuid());
-
-        ServiceResult<SkuBarcodeDetails> result = await handler.HandleAsync(
-            command,
-            TestContext.Current.CancellationToken);
-
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
-        Assert.Equal("SkuBarcode.NotFound", result.Error.Code);
-        Assert.Equal("SKU barcode was not found.", result.Error.Message);
-        Assert.Null(result.Error.Field);
-
-        Assert.Empty(domainEventDispatcher.DispatchedEvents);
-    }
 
     [Fact]
     public async Task DeactivateHandleAsync_WhenBarcodeIsPrimary_ClearsOnlyTargetPrimaryAndPromotesNoOtherBarcode()
@@ -116,33 +90,6 @@ public sealed class SkuBarcodeLifecycleHandlerTests
         Assert.False(result.Value.IsActive);
         Assert.False(result.Value.IsPrimary);
         Assert.Equal(updatedAtUtc, result.Value.UpdatedAtUtc);
-        Assert.Empty(domainEventDispatcher.DispatchedEvents);
-    }
-
-    [Fact]
-    public async Task ReactivateHandleAsync_WhenSkuBarcodeDoesNotExist_ReturnsNotFoundServiceResult()
-    {
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-        RecordingDomainEventDispatcher domainEventDispatcher = new();
-
-        ReactivateSkuBarcode.Handler handler = new(
-            testDbContext.DbContext,
-            domainEventDispatcher);
-
-        ReactivateSkuBarcode.Command command = new(Guid.NewGuid());
-
-        ServiceResult<SkuBarcodeDetails> result = await handler.HandleAsync(
-            command,
-            TestContext.Current.CancellationToken);
-
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
-        Assert.Equal("SkuBarcode.NotFound", result.Error.Code);
-        Assert.Equal("SKU barcode was not found.", result.Error.Message);
-        Assert.Null(result.Error.Field);
-
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
 

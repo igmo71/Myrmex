@@ -10,27 +10,27 @@
     <Columns>
         <TemplateColumn Title="SKU" Sortable="false" Filterable="false">
             <CellTemplate>
-                <MudText Typo="Typo.body2">@context.Item.StockKeepingUnitCode</MudText>
+                <MudText Typo="Typo.body2">@context.Item.Sku.Code</MudText>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    @context.Item.StockKeepingUnitName
+                    @context.Item.Sku.Name
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
 
         <TemplateColumn Title="Warehouse" Sortable="false" Filterable="false">
             <CellTemplate>
-                <MudText Typo="Typo.body2">@context.Item.WarehouseCode</MudText>
+                <MudText Typo="Typo.body2">@context.Item.Location.Warehouse.Code</MudText>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    @context.Item.WarehouseName
+                    @context.Item.Location.Warehouse.Name
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
 
         <TemplateColumn Title="Storage location" Sortable="false" Filterable="false">
             <CellTemplate>
-                <MudText Typo="Typo.body2">@context.Item.StorageLocationCode</MudText>
+                <MudText Typo="Typo.body2">@context.Item.Location.Code</MudText>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    @context.Item.StorageLocationName
+                    @context.Item.Location.Name
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
@@ -74,8 +74,8 @@
 
     private static string GetBaseUnitOfMeasureDisplay(InventoryBalanceDetails inventoryBalance)
     {
-        return string.IsNullOrWhiteSpace(inventoryBalance.BaseUnitOfMeasureSymbol)
-            ? inventoryBalance.BaseUnitOfMeasureCode
-            : inventoryBalance.BaseUnitOfMeasureSymbol;
+        return string.IsNullOrWhiteSpace(inventoryBalance.Sku.BaseUom.Symbol)
+            ? inventoryBalance.Sku.BaseUom.Code
+            : inventoryBalance.Sku.BaseUom.Symbol;
     }
 }

@@ -278,19 +278,19 @@ public partial class Index
     private bool MatchesActiveFilters(InventoryBalanceDetails inventoryBalance)
     {
         if (_selectedWarehouseId is not null &&
-            inventoryBalance.WarehouseId != _selectedWarehouseId.Value)
+            inventoryBalance.Location.Warehouse.Id != _selectedWarehouseId.Value)
         {
             return false;
         }
 
         if (_selectedStorageLocationId is not null &&
-            inventoryBalance.StorageLocationId != _selectedStorageLocationId.Value)
+            inventoryBalance.Location.Id != _selectedStorageLocationId.Value)
         {
             return false;
         }
 
         if (_selectedStockKeepingUnitId is not null &&
-            inventoryBalance.StockKeepingUnitId != _selectedStockKeepingUnitId.Value)
+            inventoryBalance.Sku.Id != _selectedStockKeepingUnitId.Value)
         {
             return false;
         }

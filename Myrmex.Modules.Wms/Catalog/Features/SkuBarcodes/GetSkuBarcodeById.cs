@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Myrmex.Core.Application;
 using Myrmex.Core.Results;
+using Myrmex.Modules.Wms.Catalog.Domain.SkuBarcodes;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 
 namespace Myrmex.Modules.Wms.Catalog.Features.SkuBarcodes;
@@ -23,7 +24,7 @@ internal static class GetSkuBarcodeById
 
             if (result is null)
             {
-                return ServiceResult<SkuBarcodeDetails>.Fail(WmsErrors.SkuBarcode.NotFound);
+                return ServiceResult<SkuBarcodeDetails>.Fail(ServiceError.NotFound<SkuBarcode>());
             }
 
             return ServiceResult<SkuBarcodeDetails>.Success(result);

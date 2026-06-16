@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Myrmex.Core.Application;
 using Myrmex.Core.Results;
+using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 
 namespace Myrmex.Modules.Wms.Catalog.Features.UnitsOfMeasure;
@@ -23,7 +24,7 @@ internal static class GetUnitOfMeasureById
 
             if (result is null)
             {
-                return ServiceResult<UnitOfMeasureDetails>.Fail(WmsErrors.UnitOfMeasure.NotFound);
+                return ServiceResult<UnitOfMeasureDetails>.Fail(ServiceError.NotFound<UnitOfMeasure>());
             }
 
             return ServiceResult<UnitOfMeasureDetails>.Success(result);

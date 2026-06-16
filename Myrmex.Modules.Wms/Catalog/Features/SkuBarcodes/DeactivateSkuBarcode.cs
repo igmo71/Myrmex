@@ -25,7 +25,7 @@ internal static class DeactivateSkuBarcode
 
             if (skuBarcode is null)
             {
-                return ServiceResult<SkuBarcodeDetails>.Fail(WmsErrors.SkuBarcode.NotFound);
+                return ServiceResult<SkuBarcodeDetails>.Fail(ServiceError.NotFound<SkuBarcode>());
             }
 
             skuBarcode.Deactivate();

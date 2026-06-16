@@ -25,7 +25,7 @@ internal static class ReactivateWarehouse
 
             if (warehouse is null)
             {
-                return ServiceResult<WarehouseDetails>.Fail(WmsErrors.Warehouse.NotFound);
+                return ServiceResult<WarehouseDetails>.Fail(ServiceError.NotFound<Warehouse>());
             }
 
             warehouse.Reactivate();

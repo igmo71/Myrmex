@@ -50,9 +50,9 @@ public static class ServiceResultHttpExtensions
 
         problemDetails.Extensions["code"] = error.Code;
 
-        if (!string.IsNullOrWhiteSpace(error.Field))
+        if (!string.IsNullOrWhiteSpace(error.Property))
         {
-            problemDetails.Extensions["field"] = error.Field;
+            problemDetails.Extensions["property"] = error.Property;
         }
 
         return TypedResults.Json(
@@ -75,9 +75,9 @@ public static class ServiceResultHttpExtensions
 
         validationProblemDetails.Extensions["code"] = error.Code;
 
-        if (!string.IsNullOrWhiteSpace(error.Field))
+        if (!string.IsNullOrWhiteSpace(error.Property))
         {
-            validationProblemDetails.Extensions["field"] = error.Field;
+            validationProblemDetails.Extensions["field"] = error.Property;
         }
 
         return TypedResults.Json(
@@ -105,10 +105,10 @@ public static class ServiceResultHttpExtensions
         return statusCode switch
         {
             StatusCodes.Status400BadRequest => "Bad Request",
-            StatusCodes.Status401Unauthorized => "Unauthorized",
-            StatusCodes.Status403Forbidden => "Forbidden",
             StatusCodes.Status404NotFound => "Not Found",
             StatusCodes.Status409Conflict => "Conflict",
+            StatusCodes.Status401Unauthorized => "Unauthorized",
+            StatusCodes.Status403Forbidden => "Forbidden",
             StatusCodes.Status500InternalServerError => "Internal Server Error",
             _ => "Error"
         };
@@ -126,7 +126,7 @@ public static class ServiceResultHttpExtensions
             : [error];
 
         return validationErrors
-            .GroupBy(e => e.Field ?? "_error")
+            .GroupBy(e => e.Property ?? "_error")
             .ToDictionary(g => g.Key, g => g.Select(e => e.Message).ToArray());
     }
 }

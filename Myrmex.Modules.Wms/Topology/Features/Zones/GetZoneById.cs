@@ -2,6 +2,7 @@
 using Myrmex.Core.Application;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
+using Myrmex.Modules.Wms.Topology.Domain.Zones;
 
 namespace Myrmex.Modules.Wms.Topology.Features.Zones;
 
@@ -23,7 +24,7 @@ internal static class GetZoneById
 
             if (result is null)
             {
-                return ServiceResult<ZoneDetails>.Fail(WmsErrors.Zone.NotFound);
+                return ServiceResult<ZoneDetails>.Fail(ServiceError.NotFound<Zone>());
             }
 
             return ServiceResult<ZoneDetails>.Success(result);

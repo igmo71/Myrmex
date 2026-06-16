@@ -1,5 +1,6 @@
 using Myrmex.Core.Domain;
 using Myrmex.Core.Domain.Validation;
+using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 
 namespace Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 
@@ -32,6 +33,7 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
     public string? Description { get; private set; }
 
     public Guid BaseUnitOfMeasureId { get; private set; }
+    public UnitOfMeasure BaseUnitOfMeasure { get; private set; } = null!;
 
     public bool IsActive { get; private set; } = true;
 
@@ -136,17 +138,11 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedCode))
         {
-            errors.Add(new(
-                "StockKeepingUnit.CodeRequired",
-                "SKU code is required.",
-                "code"));
+            errors.Add(DomainValidationFailure.Required<StockKeepingUnit>(nameof(Code)));
         }
         else if (normalizedCode.Length > MaxCodeLength)
         {
-            errors.Add(new(
-                "StockKeepingUnit.CodeTooLong",
-                $"SKU code must not exceed {MaxCodeLength} characters.",
-                "code"));
+            errors.Add(DomainValidationFailure.TooLong<StockKeepingUnit>(nameof(Code), MaxCodeLength));
         }
 
         DomainValidationResult detailsValidationResult = ValidateDetails(
@@ -171,35 +167,23 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedName))
         {
-            errors.Add(new(
-                "StockKeepingUnit.NameRequired",
-                "SKU name is required.",
-                "name"));
+            errors.Add(DomainValidationFailure.Required<StockKeepingUnit>(nameof(Name)));
         }
         else if (normalizedName.Length > MaxNameLength)
         {
-            errors.Add(new(
-                "StockKeepingUnit.NameTooLong",
-                $"SKU name must not exceed {MaxNameLength} characters.",
-                "name"));
+            errors.Add(DomainValidationFailure.TooLong<StockKeepingUnit>(nameof(Name), MaxNameLength));
         }
 
         if (normalizedDescription is not null &&
             normalizedDescription.Length > MaxDescriptionLength)
         {
-            errors.Add(new(
-                "StockKeepingUnit.DescriptionTooLong",
-                $"SKU description must not exceed {MaxDescriptionLength} characters.",
-                "description"));
+            errors.Add(DomainValidationFailure.TooLong<StockKeepingUnit>(nameof(Description), MaxDescriptionLength));
         }
 
         if (!baseUnitOfMeasureId.HasValue ||
             baseUnitOfMeasureId.Value == Guid.Empty)
         {
-            errors.Add(new(
-                "StockKeepingUnit.BaseUnitOfMeasureRequired",
-                "SKU base unit of measure is required.",
-                "baseUnitOfMeasureId"));
+            errors.Add(DomainValidationFailure.Required<StockKeepingUnit>(nameof(BaseUnitOfMeasureId)));
         }
 
         return DomainValidationResult.From(errors);

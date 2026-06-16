@@ -17,16 +17,14 @@ internal static class GetInventoryBalanceById
             Query query,
             CancellationToken cancellationToken = default)
         {
-            IQueryable<InventoryBalance> inventoryBalanceQuery = dbContext.InventoryBalances
-                .Where(x => x.Id == query.InventoryBalanceId);
-
-            InventoryBalanceDetails? details = await InventoryBalanceDetails
-                .QueryFrom(dbContext, inventoryBalanceQuery)
+            InventoryBalanceDetails? details = await dbContext.InventoryBalances
+                .Select(InventoryBalanceDetails.Project)
+                .Where(x => x.Id == query.InventoryBalanceId)
                 .SingleOrDefaultAsync(cancellationToken);
 
             if (details is null)
             {
-                return ServiceResult<InventoryBalanceDetails>.Fail(WmsErrors.InventoryBalance.NotFound);
+                return ServiceResult<InventoryBalanceDetails>.Fail(ServiceError.NotFound<InventoryBalance>());
             }
 
             return ServiceResult<InventoryBalanceDetails>.Success(details);

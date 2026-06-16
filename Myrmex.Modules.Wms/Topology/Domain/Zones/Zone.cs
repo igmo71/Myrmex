@@ -121,21 +121,18 @@ internal sealed class Zone : AggregateRoot, IActivatable
 
         if (warehouseId == Guid.Empty)
         {
-            errors.Add(new(
-                "Zone.WarehouseIdRequired", "Warehouse id is required.", "warehouseId"));
+            errors.Add(DomainValidationFailure.Required<Zone>(nameof(WarehouseId)));
         }
 
         string normalizedCode = DomainText.NormalizeCode(code);
 
         if (string.IsNullOrWhiteSpace(normalizedCode))
         {
-            errors.Add(new(
-                "Zone.CodeRequired", "Zone code is required.", "code"));
+            errors.Add(DomainValidationFailure.Required<Zone>(nameof(Code)));
         }
         else if (normalizedCode.Length > MaxCodeLength)
         {
-            errors.Add(new(
-                "Zone.CodeTooLong", $"Zone code must not exceed {MaxCodeLength} characters.", "code"));
+            errors.Add(DomainValidationFailure.TooLong<Zone>(nameof(Code), MaxCodeLength));
         }
 
         DomainValidationResult detailsValidationResult = ValidateDetails(
@@ -158,20 +155,17 @@ internal sealed class Zone : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedName))
         {
-            errors.Add(new(
-                "Zone.NameRequired", "Zone name is required.", "name"));
+            errors.Add(DomainValidationFailure.Required<Zone>(nameof(Name)));
         }
         else if (normalizedName.Length > MaxNameLength)
         {
-            errors.Add(new(
-                "Zone.NameTooLong", $"Zone name must not exceed {MaxNameLength} characters.", "name"));
+            errors.Add(DomainValidationFailure.TooLong<Zone>(nameof(Name), MaxNameLength));
         }
 
         if (normalizedDescription is not null &&
             normalizedDescription.Length > MaxDescriptionLength)
         {
-            errors.Add(new(
-                "Zone.DescriptionTooLong", $"Zone description must not exceed {MaxDescriptionLength} characters.", "description"));
+            errors.Add(DomainValidationFailure.TooLong<Zone>(nameof(Description), MaxDescriptionLength));
         }
 
         return DomainValidationResult.From(errors);

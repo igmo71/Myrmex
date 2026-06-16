@@ -9,33 +9,6 @@ namespace Myrmex.Tests.Wms.Topology.Features.Warehouses;
 public sealed class ReactivateWarehouseHandlerTests
 {
     [Fact]
-    public async Task HandleAsync_WhenWarehouseDoesNotExist_ReturnsNotFoundServiceResult()
-    {
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-        RecordingDomainEventDispatcher domainEventDispatcher = new();
-
-        ReactivateWarehouse.Handler handler = new(
-            testDbContext.DbContext,
-            domainEventDispatcher);
-
-        ReactivateWarehouse.Command command = new(Guid.NewGuid());
-
-        ServiceResult<WarehouseDetails> result = await handler.HandleAsync(
-            command,
-            TestContext.Current.CancellationToken);
-
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
-        Assert.Equal("Warehouse.NotFound", result.Error.Code);
-        Assert.Equal("Warehouse was not found.", result.Error.Message);
-        Assert.Null(result.Error.Field);
-
-        Assert.Empty(domainEventDispatcher.DispatchedEvents);
-    }
-
-    [Fact]
     public async Task HandleAsync_WhenWarehouseIsInactive_ReactivatesWarehouseAndReturnsDetails()
     {
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();

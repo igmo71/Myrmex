@@ -2,6 +2,7 @@
 using Myrmex.Core.Application;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
+using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 
 namespace Myrmex.Modules.Wms.Topology.Features.Warehouses;
 
@@ -23,7 +24,7 @@ internal static class GetWarehouseById
 
             if (result is null)
             {
-                return ServiceResult<WarehouseDetails>.Fail(WmsErrors.Warehouse.NotFound);
+                return ServiceResult<WarehouseDetails>.Fail(ServiceError.NotFound<Warehouse>());
             }
 
             return ServiceResult<WarehouseDetails>.Success(result);

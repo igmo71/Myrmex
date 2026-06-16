@@ -112,13 +112,11 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedCode))
         {
-            errors.Add(new(
-                "Warehouse.CodeRequired", "Warehouse code is required.", "code"));
+            errors.Add(DomainValidationFailure.Required<Warehouse>(nameof(Code)));
         }
         else if (normalizedCode.Length > MaxCodeLength)
         {
-            errors.Add(new(
-                "Warehouse.CodeTooLong", $"Warehouse code must not exceed {MaxCodeLength} characters.", "code"));
+            errors.Add(DomainValidationFailure.TooLong<Warehouse>(nameof(Code), MaxCodeLength));
         }
 
         DomainValidationResult detailsValidationResult = ValidateDetails(
@@ -141,20 +139,17 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedName))
         {
-            errors.Add(new(
-                "Warehouse.NameRequired", "Warehouse name is required.", "name"));
+            errors.Add(DomainValidationFailure.Required<Warehouse>(nameof(Name)));
         }
         else if (normalizedName.Length > MaxNameLength)
         {
-            errors.Add(new(
-                "Warehouse.NameTooLong", $"Warehouse name must not exceed {MaxNameLength} characters.", "name"));
+            errors.Add(DomainValidationFailure.TooLong<Warehouse>(nameof(Name), MaxNameLength));
         }
 
         if (normalizedDescription is not null &&
             normalizedDescription.Length > MaxDescriptionLength)
         {
-            errors.Add(new(
-                "Warehouse.DescriptionTooLong", $"Warehouse description must not exceed {MaxDescriptionLength} characters.", "description"));
+            errors.Add(DomainValidationFailure.TooLong<Warehouse>(nameof(Description), MaxDescriptionLength));
         }
 
         return DomainValidationResult.From(errors);

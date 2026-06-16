@@ -25,7 +25,7 @@ internal static class ReactivateStockKeepingUnit
 
             if (stockKeepingUnit is null)
             {
-                return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.NotFound);
+                return ServiceResult<StockKeepingUnitDetails>.Fail(ServiceError.NotFound<StockKeepingUnit>());
             }
 
             stockKeepingUnit.Reactivate();

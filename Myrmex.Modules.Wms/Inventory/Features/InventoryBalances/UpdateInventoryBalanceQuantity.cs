@@ -28,7 +28,7 @@ internal static class UpdateInventoryBalanceQuantity
 
             if (inventoryBalance is null)
             {
-                return ServiceResult<InventoryBalanceDetails>.Fail(WmsErrors.InventoryBalance.NotFound);
+                return ServiceResult<InventoryBalanceDetails>.Fail(ServiceError.NotFound<InventoryBalance>());
             }
 
             DomainValidationResult validationResult = inventoryBalance.UpdateQuantity(command.Quantity);
@@ -46,15 +46,13 @@ internal static class UpdateInventoryBalanceQuantity
                 return ServiceResult<InventoryBalanceDetails>.Fail(saveResult.Error);
             }
 
-            IQueryable<InventoryBalance> inventoryBalanceQuery = dbContext.InventoryBalances
-                .Where(x => x.Id == inventoryBalance.Id);
-
-            InventoryBalanceDetails? details = await InventoryBalanceDetails
-                .QueryFrom(dbContext, inventoryBalanceQuery)
+            InventoryBalanceDetails? details = await dbContext.InventoryBalances
+                .Where(x => x.Id == inventoryBalance.Id)
+                .Select(InventoryBalanceDetails.Project)
                 .SingleOrDefaultAsync(cancellationToken);
 
             return details is null
-                ? ServiceResult<InventoryBalanceDetails>.Fail(WmsErrors.InventoryBalance.UpdateFailed)
+                ? ServiceResult<InventoryBalanceDetails>.Fail(ServiceError.Failure<InventoryBalance>("Failed to update InventoryBalance"))
                 : ServiceResult<InventoryBalanceDetails>.Success(details);
         }
     }

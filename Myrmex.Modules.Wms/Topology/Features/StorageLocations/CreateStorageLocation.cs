@@ -47,7 +47,7 @@ internal static class CreateStorageLocation
 
             if (storageLocation is null)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.StorageLocation.CreateFailed);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.Failure<StorageLocation>("Failed to create StorageLocation."));
             }
 
             bool warehouseExists = await dbContext.Warehouses
@@ -55,7 +55,7 @@ internal static class CreateStorageLocation
 
             if (!warehouseExists)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.Warehouse.NotFoundById);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<StorageLocation>("Warehouse not found", nameof(StorageLocation.WarehouseId)));
             }
 
             var zone = await dbContext.Zones
@@ -66,12 +66,12 @@ internal static class CreateStorageLocation
 
             if (zone is null)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.Zone.NotFoundById);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<StorageLocation>("Zone not found", nameof(StorageLocation.ZoneId)));
             }
 
             if (zone.WarehouseId != storageLocation.WarehouseId)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.StorageLocation.ZoneWarehouseMismatch);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.Conflict<StorageLocation>(message: "Zone - Warehouse Mismatch", property: $"{nameof(StorageLocation.ZoneId)}-{nameof(StorageLocation.WarehouseId)}"));
             }
 
             bool typeExists = await dbContext.StorageLocationTypes
@@ -79,7 +79,7 @@ internal static class CreateStorageLocation
 
             if (!typeExists)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.StorageLocation.TypeNotFound);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<StorageLocationType>());
             }
 
             bool statusExists = await dbContext.StorageLocationStatuses
@@ -87,7 +87,7 @@ internal static class CreateStorageLocation
 
             if (!statusExists)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.StorageLocation.StatusNotFound);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<StorageLocationStatus>());
             }
 
             bool codeAlreadyExists = await dbContext.StorageLocations
@@ -95,7 +95,7 @@ internal static class CreateStorageLocation
 
             if (codeAlreadyExists)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.StorageLocation.CodeAlreadyExists);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.Conflict<StorageLocation>("Code already exists", "Code"));
             }
 
             dbContext.StorageLocations.Add(storageLocation);

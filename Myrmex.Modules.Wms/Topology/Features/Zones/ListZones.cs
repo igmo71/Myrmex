@@ -25,7 +25,7 @@ internal static class ListZones
 
             if (!warehouseExists)
             {
-                return ServiceResult<ListResult<ZoneDetails>>.Fail(WmsErrors.Warehouse.NotFoundById);
+                return ServiceResult<ListResult<ZoneDetails>>.Fail(ServiceError.NotFound<Zone>("Warehouse not found", "Warehouse"));
             }
 
             IQueryable<Zone> queryable = dbContext.Zones

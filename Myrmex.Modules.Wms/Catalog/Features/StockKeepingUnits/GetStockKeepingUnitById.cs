@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Myrmex.Core.Application;
 using Myrmex.Core.Results;
+using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 
 namespace Myrmex.Modules.Wms.Catalog.Features.StockKeepingUnits;
@@ -23,7 +24,7 @@ internal static class GetStockKeepingUnitById
 
             if (result is null)
             {
-                return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.NotFound);
+                return ServiceResult<StockKeepingUnitDetails>.Fail(ServiceError.NotFound<StockKeepingUnit>());
             }
 
             return ServiceResult<StockKeepingUnitDetails>.Success(result);

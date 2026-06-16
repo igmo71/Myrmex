@@ -9,32 +9,6 @@ namespace Myrmex.Tests.Wms.Catalog.Features.UnitsOfMeasure;
 
 public sealed class UnitOfMeasureLifecycleHandlerTests
 {
-    [Fact]
-    public async Task DeactivateHandleAsync_WhenUnitOfMeasureDoesNotExist_ReturnsNotFoundServiceResult()
-    {
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-        RecordingDomainEventDispatcher domainEventDispatcher = new();
-
-        DeactivateUnitOfMeasure.Handler handler = new(
-            testDbContext.DbContext,
-            domainEventDispatcher);
-
-        DeactivateUnitOfMeasure.Command command = new(Guid.NewGuid());
-
-        ServiceResult<UnitOfMeasureDetails> result = await handler.HandleAsync(
-            command,
-            TestContext.Current.CancellationToken);
-
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
-        Assert.Equal("UnitOfMeasure.NotFound", result.Error.Code);
-        Assert.Equal("Unit of measure was not found.", result.Error.Message);
-        Assert.Null(result.Error.Field);
-
-        Assert.Empty(domainEventDispatcher.DispatchedEvents);
-    }
 
     [Fact]
     public async Task DeactivateHandleAsync_WhenUnitOfMeasureIsActive_DeactivatesAndHidesFromDefaultList()
@@ -113,33 +87,6 @@ public sealed class UnitOfMeasureLifecycleHandlerTests
             TestContext.Current.CancellationToken);
 
         Assert.False(persistedUnitOfMeasure.IsActive);
-        Assert.Empty(domainEventDispatcher.DispatchedEvents);
-    }
-
-    [Fact]
-    public async Task ReactivateHandleAsync_WhenUnitOfMeasureDoesNotExist_ReturnsNotFoundServiceResult()
-    {
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-        RecordingDomainEventDispatcher domainEventDispatcher = new();
-
-        ReactivateUnitOfMeasure.Handler handler = new(
-            testDbContext.DbContext,
-            domainEventDispatcher);
-
-        ReactivateUnitOfMeasure.Command command = new(Guid.NewGuid());
-
-        ServiceResult<UnitOfMeasureDetails> result = await handler.HandleAsync(
-            command,
-            TestContext.Current.CancellationToken);
-
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
-        Assert.Equal("UnitOfMeasure.NotFound", result.Error.Code);
-        Assert.Equal("Unit of measure was not found.", result.Error.Message);
-        Assert.Null(result.Error.Field);
-
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
 

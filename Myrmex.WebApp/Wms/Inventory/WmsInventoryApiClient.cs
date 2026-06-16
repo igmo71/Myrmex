@@ -1,5 +1,5 @@
-using System.Web;
 using Myrmex.WebApp.Wms.Api;
+using System.Web;
 
 namespace Myrmex.WebApp.Wms.Inventory;
 
@@ -79,24 +79,6 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
         return $"/api/wms/inventory/balances?{string.Join("&", query)}";
     }
 }
-
-public sealed record InventoryBalanceDetails(
-    Guid Id,
-    Guid StockKeepingUnitId,
-    string StockKeepingUnitCode,
-    string StockKeepingUnitName,
-    Guid StorageLocationId,
-    string StorageLocationCode,
-    string StorageLocationName,
-    Guid WarehouseId,
-    string WarehouseCode,
-    string WarehouseName,
-    Guid BaseUnitOfMeasureId,
-    string BaseUnitOfMeasureCode,
-    string? BaseUnitOfMeasureSymbol,
-    decimal Quantity,
-    DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? UpdatedAtUtc);
 
 public sealed record CreateInventoryBalanceRequest(
     Guid? StockKeepingUnitId,

@@ -1,10 +1,14 @@
 using Myrmex.Core.Domain;
 using Myrmex.Core.Domain.Validation;
+using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
+using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 
 namespace Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
 
 internal sealed class InventoryBalance : AggregateRoot
 {
+    private InventoryBalance() { }
+
     private InventoryBalance(
         Guid stockKeepingUnitId,
         Guid storageLocationId,
@@ -15,13 +19,11 @@ internal sealed class InventoryBalance : AggregateRoot
         Quantity = quantity;
     }
 
-    private InventoryBalance()
-    {
-    }
-
     public Guid StockKeepingUnitId { get; private set; }
+    public StockKeepingUnit StockKeepingUnit { get; private set; } = null!;
 
     public Guid StorageLocationId { get; private set; }
+    public StorageLocation StorageLocation { get; private set; } = null!;
 
     public decimal Quantity { get; private set; }
 
@@ -82,12 +84,12 @@ internal sealed class InventoryBalance : AggregateRoot
 
         if (!stockKeepingUnitId.HasValue || stockKeepingUnitId.Value == Guid.Empty)
         {
-            errors.Add(InventoryBalanceValidationErrors.StockKeepingUnitIdRequired);
+            errors.Add(DomainValidationFailure.Required<InventoryBalance>(nameof(StockKeepingUnitId)));
         }
 
         if (!storageLocationId.HasValue || storageLocationId.Value == Guid.Empty)
         {
-            errors.Add(InventoryBalanceValidationErrors.StorageLocationIdRequired);
+            errors.Add(DomainValidationFailure.Required<InventoryBalance>(nameof(StorageLocationId)));
         }
 
         errors.AddRange(ValidateQuantity(quantity).Errors);
@@ -101,7 +103,7 @@ internal sealed class InventoryBalance : AggregateRoot
 
         if (quantity < 0)
         {
-            errors.Add(InventoryBalanceValidationErrors.QuantityMustBeNonNegative);
+            errors.Add(DomainValidationFailure.MustBeNonNegative<InventoryBalance>(nameof(Quantity)));
         }
 
         return DomainValidationResult.From(errors);

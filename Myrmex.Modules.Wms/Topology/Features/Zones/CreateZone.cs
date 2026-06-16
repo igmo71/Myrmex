@@ -37,7 +37,7 @@ internal static class CreateZone
 
             if (zone is null)
             {
-                return ServiceResult<ZoneDetails>.Fail(WmsErrors.Zone.CreateFailed);
+                return ServiceResult<ZoneDetails>.Fail(ServiceError.Failure<Zone>("Failed to create Zone."));
             }
 
             bool warehouseExists = await dbContext.Warehouses
@@ -45,7 +45,7 @@ internal static class CreateZone
 
             if (!warehouseExists)
             {
-                return ServiceResult<ZoneDetails>.Fail(WmsErrors.Warehouse.NotFoundById);
+                return ServiceResult<ZoneDetails>.Fail(ServiceError.NotFound<Zone>("Warehouse not found", "Warehouse"));
             }
 
             bool codeAlreadyExists = await dbContext.Zones
@@ -53,7 +53,7 @@ internal static class CreateZone
 
             if (codeAlreadyExists)
             {
-                return ServiceResult<ZoneDetails>.Fail(WmsErrors.Zone.CodeAlreadyExists);
+                return ServiceResult<ZoneDetails>.Fail(ServiceError.Conflict<Zone>("Code already exists", "Code"));
             }
 
             dbContext.Zones.Add(zone);
