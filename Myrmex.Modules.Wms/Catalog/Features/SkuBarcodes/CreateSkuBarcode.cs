@@ -39,7 +39,7 @@ internal static class CreateSkuBarcode
 
             if (skuBarcode is null)
             {
-                return ServiceResult<SkuBarcodeDetails>.Fail(WmsErrors.SkuBarcode.CreateFailed);
+                return ServiceResult<SkuBarcodeDetails>.Fail(ServiceError.Failure<SkuBarcode>("Failed to create SkuBarcode"));
             }
 
             bool stockKeepingUnitExists = await dbContext.StockKeepingUnits
@@ -47,7 +47,7 @@ internal static class CreateSkuBarcode
 
             if (!stockKeepingUnitExists)
             {
-                return ServiceResult<SkuBarcodeDetails>.Fail(WmsErrors.StockKeepingUnit.NotFoundById);
+                return ServiceResult<SkuBarcodeDetails>.Fail(ServiceError.NotFound<SkuBarcode>("StockKeepingUnit not found"));
             }
 
             bool valueAlreadyExists = await dbContext.SkuBarcodes
@@ -55,7 +55,7 @@ internal static class CreateSkuBarcode
 
             if (valueAlreadyExists)
             {
-                return ServiceResult<SkuBarcodeDetails>.Fail(WmsErrors.SkuBarcode.ValueAlreadyExists);
+                return ServiceResult<SkuBarcodeDetails>.Fail(ServiceError.Conflict<SkuBarcode>("Value already exists", "Value"));
             }
 
             if (skuBarcode.IsPrimary)

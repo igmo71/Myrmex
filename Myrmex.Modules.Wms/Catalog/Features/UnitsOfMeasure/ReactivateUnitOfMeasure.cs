@@ -25,7 +25,7 @@ internal static class ReactivateUnitOfMeasure
 
             if (unitOfMeasure is null)
             {
-                return ServiceResult<UnitOfMeasureDetails>.Fail(WmsErrors.UnitOfMeasure.NotFound);
+                return ServiceResult<UnitOfMeasureDetails>.Fail(ServiceError.NotFound<UnitOfMeasure>());
             }
 
             unitOfMeasure.Reactivate();

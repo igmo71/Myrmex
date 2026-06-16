@@ -5,8 +5,6 @@ using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
-using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
-using Myrmex.Modules.Wms.Topology.Domain.Zones;
 
 namespace Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 
@@ -49,7 +47,7 @@ internal static class CreateStorageLocation
 
             if (storageLocation is null)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.StorageLocation.CreateFailed);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.Failure<StorageLocation>("Failed to create StorageLocation."));
             }
 
             bool warehouseExists = await dbContext.Warehouses
@@ -57,7 +55,7 @@ internal static class CreateStorageLocation
 
             if (!warehouseExists)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<Warehouse>());
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<StorageLocation>("Warehouse not found", "Warehouse"));
             }
 
             var zone = await dbContext.Zones
@@ -68,7 +66,7 @@ internal static class CreateStorageLocation
 
             if (zone is null)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<Zone>());
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<StorageLocation>("Zone not found", "Zone"));
             }
 
             if (zone.WarehouseId != storageLocation.WarehouseId)
@@ -89,7 +87,7 @@ internal static class CreateStorageLocation
 
             if (!statusExists)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.StorageLocation.StatusNotFound);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<StorageLocationStatus>());
             }
 
             bool codeAlreadyExists = await dbContext.StorageLocations
@@ -97,7 +95,7 @@ internal static class CreateStorageLocation
 
             if (codeAlreadyExists)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.StorageLocation.CodeAlreadyExists);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.Conflict<StorageLocation>("Code already exists", "Code"));
             }
 
             dbContext.StorageLocations.Add(storageLocation);

@@ -2,6 +2,7 @@
 using Myrmex.Core.Application;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
+using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 
 namespace Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 
@@ -24,7 +25,7 @@ internal static class GetStorageLocationById
 
             if (result is null)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(WmsErrors.StorageLocation.NotFound);
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<StorageLocation>());
             }
 
             return ServiceResult<StorageLocationDetails>.Success(result);

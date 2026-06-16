@@ -30,7 +30,7 @@ internal static class UpdateUnitOfMeasureDetails
 
             if (unitOfMeasure is null)
             {
-                return ServiceResult<UnitOfMeasureDetails>.Fail(WmsErrors.UnitOfMeasure.NotFound);
+                return ServiceResult<UnitOfMeasureDetails>.Fail(ServiceError.NotFound<UnitOfMeasure>());
             }
 
             DomainValidationResult validationResult = unitOfMeasure.UpdateDetails(

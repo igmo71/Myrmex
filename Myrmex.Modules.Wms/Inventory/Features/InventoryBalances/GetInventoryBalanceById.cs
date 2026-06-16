@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Myrmex.Core.Application;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
+using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
 
 namespace Myrmex.Modules.Wms.Inventory.Features.InventoryBalances;
 
@@ -23,7 +24,7 @@ internal static class GetInventoryBalanceById
 
             if (details is null)
             {
-                return ServiceResult<InventoryBalanceDetails>.Fail(WmsErrors.InventoryBalance.NotFound);
+                return ServiceResult<InventoryBalanceDetails>.Fail(ServiceError.NotFound<InventoryBalance>());
             }
 
             return ServiceResult<InventoryBalanceDetails>.Success(details);

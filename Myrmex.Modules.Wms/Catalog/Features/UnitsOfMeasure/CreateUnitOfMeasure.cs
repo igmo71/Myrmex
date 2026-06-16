@@ -37,7 +37,7 @@ internal static class CreateUnitOfMeasure
 
             if (unitOfMeasure is null)
             {
-                return ServiceResult<UnitOfMeasureDetails>.Fail(WmsErrors.UnitOfMeasure.CreateFailed);
+                return ServiceResult<UnitOfMeasureDetails>.Fail(ServiceError.Failure<UnitOfMeasure>("Failed to create UnitOfMeasure"));
             }
 
             bool codeAlreadyExists = await dbContext.UnitsOfMeasure
@@ -45,7 +45,7 @@ internal static class CreateUnitOfMeasure
 
             if (codeAlreadyExists)
             {
-                return ServiceResult<UnitOfMeasureDetails>.Fail(WmsErrors.UnitOfMeasure.CodeAlreadyExists);
+                return ServiceResult<UnitOfMeasureDetails>.Fail(ServiceError.Conflict<UnitOfMeasure>("Code already exists", "Code"));
             }
 
             dbContext.UnitsOfMeasure.Add(unitOfMeasure);

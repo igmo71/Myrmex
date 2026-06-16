@@ -17,39 +17,39 @@ internal static class WmsPersistenceExceptionMapper
     {
         if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.WarehouseCodeUniqueIndex))
         {
-            return ServiceError.Conflict<Warehouse>("code", "Already Exists");
+            return ServiceError.Conflict<Warehouse>("Code already exists", "Code");
         }
         if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.ZoneWarehouseIdCodeUniqueIndex))
         {
-            return ServiceError.Conflict<Zone>("code", "Already Exists");
+            return ServiceError.Conflict<Zone>("Code already exists", "Code");
         }
         if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.StorageLocationWarehouseIdCodeUniqueIndex))
         {
-            return ServiceError.Conflict<StorageLocation>("code", "Already Exists");
+            return ServiceError.Conflict<StorageLocation>("Code already exists", "Code");
         }
         if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.StorageLocationTypeCodeUniqueIndex))
         {
-            return ServiceError.Conflict<StorageLocationType>("code", "Already Exists");
+            return ServiceError.Conflict<StorageLocationType>("Code already exists", "Code");
         }
         if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.StorageLocationStatusCodeUniqueIndex))
         {
-            return ServiceError.Conflict<StorageLocationStatus>("code", "Already Exists");
+            return ServiceError.Conflict<StorageLocationStatus>("Code already exists", "Code");
         }
         if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.StockKeepingUnitCodeUniqueIndex))
         {
-            return ServiceError.Conflict<StockKeepingUnit>("code", "Already Exists");
+            return ServiceError.Conflict<StockKeepingUnit>("Code already exists", "Code");
         }
         if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.UnitOfMeasureCodeUniqueIndex))
         {
-            return ServiceError.Conflict<UnitOfMeasure>("code", "Already Exists");
+            return ServiceError.Conflict<UnitOfMeasure>("Code already exists", "Code");
         }
         if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.SkuBarcodeValueUniqueIndex))
         {
-            return ServiceError.Conflict<SkuBarcode>("value", "Already Exists");
+            return ServiceError.Conflict<SkuBarcode>("Value already exists", "Value");
         }
         if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.InventoryBalanceStockKeepingUnitIdStorageLocationIdUniqueIndex))
         {
-            return ServiceError.Conflict<InventoryBalance>("stockKeepingUnitId, storageLocationId", "Already Exists");
+            return ServiceError.Conflict<InventoryBalance>("StockKeepingUnitId, StorageLocationId already exists", "StockKeepingUnitId, StorageLocationId");
         }
         return null;
     }

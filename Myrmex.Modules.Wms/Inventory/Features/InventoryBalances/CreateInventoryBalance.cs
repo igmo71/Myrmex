@@ -50,7 +50,7 @@ internal static class CreateInventoryBalance
 
             if (duplicateExists)
             {
-                return ServiceResult<InventoryBalanceDetails>.Fail(WmsErrors.InventoryBalance.DuplicateStockKeepingUnitStorageLocation);
+                return ServiceResult<InventoryBalanceDetails>.Fail(ServiceError.Conflict<InventoryBalance>("StockKeepingUnitId, StorageLocationId already exists", "StockKeepingUnitId, StorageLocationId"));
             }
 
             dbContext.InventoryBalances.Add(inventoryBalance);
@@ -69,7 +69,7 @@ internal static class CreateInventoryBalance
                 .SingleOrDefaultAsync(cancellationToken);
 
             return details is null
-                ? ServiceResult<InventoryBalanceDetails>.Fail(WmsErrors.InventoryBalance.CreateFailed)
+                ? ServiceResult<InventoryBalanceDetails>.Fail(ServiceError.Failure<InventoryBalance>("Failed to create InventoryBalance"))
                 : ServiceResult<InventoryBalanceDetails>.Success(details);
         }
 
@@ -88,13 +88,14 @@ internal static class CreateInventoryBalance
 
             return (sku, location) switch
             {
-                (null, _) => WmsErrors.InventoryBalance.StockKeepingUnitNotFound,
-                ({ IsActive: false } or { BaseUnitOfMeasure.IsActive: false }, _) => WmsErrors.InventoryBalance.InvalidStockKeepingUnit,
+                (null, _) => ServiceError.NotFound<InventoryBalance>("StockKeepingUnit not found"),
+                ({ IsActive: false }, _) => ServiceError.Validation<InventoryBalance>("StockKeepingUnit is inactive"),
+                ({ BaseUnitOfMeasure.IsActive: false }, _) => ServiceError.Validation<InventoryBalance>("BaseUnitOfMeasure is inactive"),
 
-                (_, null) => WmsErrors.InventoryBalance.StorageLocationNotFound,
-                (_, { IsActive: false }) => WmsErrors.InventoryBalance.InvalidStorageLocation,
-                (_, { StorageLocationType.IsActive: false }) => WmsErrors.InventoryBalance.InactiveStorageLocationType,
-                (_, { StorageLocationStatus.IsActive: false }) => WmsErrors.InventoryBalance.InactiveStorageLocationStatus,
+                (_, null) => ServiceError.NotFound<InventoryBalance>("StorageLocation not found"),
+                (_, { IsActive: false }) => ServiceError.Validation<InventoryBalance>("StorageLocation is inactive"),
+                (_, { StorageLocationType.IsActive: false }) => ServiceError.Validation<InventoryBalance>("StorageLocationType is inactive"),
+                (_, { StorageLocationStatus.IsActive: false }) => ServiceError.Validation<InventoryBalance>("StorageLocationStatus is inactive"),
 
                 _ => null
             };

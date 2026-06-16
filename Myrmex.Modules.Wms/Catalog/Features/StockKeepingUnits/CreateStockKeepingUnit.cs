@@ -39,7 +39,7 @@ internal static class CreateStockKeepingUnit
 
             if (stockKeepingUnit is null)
             {
-                return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.CreateFailed);
+                return ServiceResult<StockKeepingUnitDetails>.Fail(ServiceError.Failure<StockKeepingUnit>("Failed to create StockKeepingUnit"));
             }
 
             var baseUnitOfMeasure = await dbContext.UnitsOfMeasure
@@ -50,12 +50,12 @@ internal static class CreateStockKeepingUnit
 
             if (baseUnitOfMeasure is null)
             {
-                return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureNotFound);
+                return ServiceResult<StockKeepingUnitDetails>.Fail(ServiceError.NotFound<StockKeepingUnit>("BaseUnitOfMeasure not found", "BaseUnitOfMeasure"));
             }
 
             if (!baseUnitOfMeasure.IsActive)
             {
-                return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.BaseUnitOfMeasureInactive);
+                return ServiceResult<StockKeepingUnitDetails>.Fail(ServiceError.Validation<StockKeepingUnit>("BaseUnitOfMeasure is inactive", "BaseUnitOfMeasure"));
             }
 
             bool codeAlreadyExists = await dbContext.StockKeepingUnits
@@ -63,7 +63,7 @@ internal static class CreateStockKeepingUnit
 
             if (codeAlreadyExists)
             {
-                return ServiceResult<StockKeepingUnitDetails>.Fail(WmsErrors.StockKeepingUnit.CodeAlreadyExists);
+                return ServiceResult<StockKeepingUnitDetails>.Fail(ServiceError.Conflict<StockKeepingUnit>("Code already exists", "Code"));
             }
 
             dbContext.StockKeepingUnits.Add(stockKeepingUnit);
