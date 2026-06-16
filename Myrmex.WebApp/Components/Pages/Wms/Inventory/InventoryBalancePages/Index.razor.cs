@@ -4,7 +4,6 @@ using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Catalog;
 using Myrmex.WebApp.Wms.Inventory;
 using Myrmex.WebApp.Wms.Topology;
-using static Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryBalancePages.InventoryBalanceGrid;
 
 namespace Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryBalancePages;
 
@@ -106,7 +105,7 @@ public partial class Index
                 TotalItems = result.TotalCount
             };
         }
-        catch (Exception exception)
+        catch (Exception exception) when (exception is not OperationCanceledException)
         {
             _errorMessage = exception.Message;
 

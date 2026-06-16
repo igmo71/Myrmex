@@ -11,8 +11,7 @@
         <TemplateColumn Title="SKU"
                         Tag="@InventoryBalanceSortBy.SkuCode"
                         SortBy="@(balance => balance.Sku.Code)"
-                        Sortable="true"
-                        Filterable="false">
+                        Sortable="true">
             <CellTemplate>
                 <MudText Typo="Typo.body2">@context.Item.Sku.Code</MudText>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
@@ -24,8 +23,7 @@
         <TemplateColumn Title="Warehouse"
                         Tag="@InventoryBalanceSortBy.WarehouseName"
                         SortBy="@(balance => balance.Location.Warehouse.Name)"
-                        Sortable="true"
-                        Filterable="false">
+                        Sortable="true">
             <CellTemplate>
                 <MudText Typo="Typo.body2">@context.Item.Location.Warehouse.Code</MudText>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
@@ -37,8 +35,7 @@
         <TemplateColumn Title="Storage location"
                         Tag="@InventoryBalanceSortBy.LocationCode"
                         SortBy="@(balance => balance.Location.Code)"
-                        Sortable="true"
-                        Filterable="false">
+                        Sortable="true">
             <CellTemplate>
                 <MudText Typo="Typo.body2">@context.Item.Location.Code</MudText>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
@@ -50,16 +47,14 @@
         <TemplateColumn Title="Quantity"
                         Tag="@InventoryBalanceSortBy.Quantity"
                         SortBy="@(balance => balance.Quantity)"
-                        Sortable="true"
-                        Filterable="false">
+                        Sortable="true">
             <CellTemplate>
                 @context.Item.Quantity @GetBaseUnitOfMeasureDisplay(context.Item)
             </CellTemplate>
         </TemplateColumn>
 
         <TemplateColumn Title="Actions"
-                        Sortable="false"
-                        Filterable="false">
+                        Sortable="false">
             <CellTemplate>
                 <MudMenu Icon="@Icons.Material.Filled.MoreVert"
                          Size="Size.Small"
@@ -85,7 +80,7 @@
 </MudDataGrid>
 
 @code {
-    private static readonly int[] PageSizeOptions = [1, 2, 3, 10, 25, 50, 100];
+    private static readonly int[] PageSizeOptions = [10, 25, 50, 100];
 
     private MudDataGrid<InventoryBalanceDetails>? _dataGrid;
 
@@ -95,7 +90,7 @@
     [Parameter]
     public EventCallback<InventoryBalanceDetails> UpdateQuantityRequested { get; set; }
 
-    private async Task<GridData<InventoryBalanceDetails>> LoadServerDataAsync(GridState<InventoryBalanceDetails> state, CancellationToken cancellationToken)
+    private Task<GridData<InventoryBalanceDetails>> LoadServerDataAsync(GridState<InventoryBalanceDetails> state, CancellationToken cancellationToken)
     {
         SortDefinition<InventoryBalanceDetails>? sortDefinition =
             state.SortDefinitions.FirstOrDefault();
@@ -106,7 +101,7 @@
             SortBy: ResolveSortBy(sortDefinition),
             SortDescending: sortDefinition?.Descending ?? false);
 
-        return await LoadData(request, cancellationToken);
+        return LoadData(request, cancellationToken);
     }
 
     private string ResolveSortBy(SortDefinition<InventoryBalanceDetails>? sortDefinition)
@@ -151,10 +146,4 @@
             ? inventoryBalance.Sku.BaseUom.Code
             : inventoryBalance.Sku.BaseUom.Symbol;
     }
-
-    public sealed record InventoryBalanceGridRequest(
-        int Skip,
-        int Take,
-        string SortBy,
-        bool SortDescending);
 }
