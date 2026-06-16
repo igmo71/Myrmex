@@ -121,18 +121,18 @@ internal sealed class Zone : AggregateRoot, IActivatable
 
         if (warehouseId == Guid.Empty)
         {
-            errors.Add(DomainValidationFailure.Required<Zone>("WarehouseId"));
+            errors.Add(DomainValidationFailure.Required<Zone>(nameof(WarehouseId)));
         }
 
         string normalizedCode = DomainText.NormalizeCode(code);
 
         if (string.IsNullOrWhiteSpace(normalizedCode))
         {
-            errors.Add(DomainValidationFailure.Required<Zone>("Code"));
+            errors.Add(DomainValidationFailure.Required<Zone>(nameof(Code)));
         }
         else if (normalizedCode.Length > MaxCodeLength)
         {
-            errors.Add(DomainValidationFailure.TooLong<Zone>("Code", MaxCodeLength));
+            errors.Add(DomainValidationFailure.TooLong<Zone>(nameof(Code), MaxCodeLength));
         }
 
         DomainValidationResult detailsValidationResult = ValidateDetails(
@@ -155,17 +155,17 @@ internal sealed class Zone : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedName))
         {
-            errors.Add(DomainValidationFailure.Required<Zone>("Name"));
+            errors.Add(DomainValidationFailure.Required<Zone>(nameof(Name)));
         }
         else if (normalizedName.Length > MaxNameLength)
         {
-            errors.Add(DomainValidationFailure.TooLong<Zone>("Name", MaxNameLength));
+            errors.Add(DomainValidationFailure.TooLong<Zone>(nameof(Name), MaxNameLength));
         }
 
         if (normalizedDescription is not null &&
             normalizedDescription.Length > MaxDescriptionLength)
         {
-            errors.Add(DomainValidationFailure.TooLong<Zone>("Description", MaxDescriptionLength));
+            errors.Add(DomainValidationFailure.TooLong<Zone>(nameof(Description), MaxDescriptionLength));
         }
 
         return DomainValidationResult.From(errors);

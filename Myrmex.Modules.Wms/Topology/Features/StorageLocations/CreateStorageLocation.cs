@@ -55,7 +55,7 @@ internal static class CreateStorageLocation
 
             if (!warehouseExists)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<StorageLocation>("Warehouse not found", "Warehouse"));
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<StorageLocation>("Warehouse not found", nameof(StorageLocation.WarehouseId)));
             }
 
             var zone = await dbContext.Zones
@@ -66,12 +66,12 @@ internal static class CreateStorageLocation
 
             if (zone is null)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<StorageLocation>("Zone not found", "Zone"));
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.NotFound<StorageLocation>("Zone not found", nameof(StorageLocation.ZoneId)));
             }
 
             if (zone.WarehouseId != storageLocation.WarehouseId)
             {
-                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.Conflict<StorageLocation>(message: "Zone - Warehouse Mismatch"));
+                return ServiceResult<StorageLocationDetails>.Fail(ServiceError.Conflict<StorageLocation>(message: "Zone - Warehouse Mismatch", property: $"{nameof(StorageLocation.ZoneId)}-{nameof(StorageLocation.WarehouseId)}"));
             }
 
             bool typeExists = await dbContext.StorageLocationTypes

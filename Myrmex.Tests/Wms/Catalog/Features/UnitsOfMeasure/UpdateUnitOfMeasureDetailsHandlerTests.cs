@@ -33,7 +33,7 @@ public sealed class UpdateUnitOfMeasureDetailsHandlerTests
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("UnitOfMeasure.NotFound", result.Error.Code);
         Assert.Equal("Unit of measure was not found.", result.Error.Message);
-        Assert.Null(result.Error.Field);
+        Assert.Null(result.Error.Property);
 
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
@@ -73,7 +73,7 @@ public sealed class UpdateUnitOfMeasureDetailsHandlerTests
 
         Assert.Equal("UnitOfMeasure.NameRequired", error.Code);
         Assert.Equal("UoM name is required.", error.Message);
-        Assert.Equal("name", error.Field);
+        Assert.Equal("name", error.Property);
 
         UnitOfMeasure persistedUnitOfMeasure = await testDbContext.DbContext.UnitsOfMeasure.SingleAsync(
             TestContext.Current.CancellationToken);

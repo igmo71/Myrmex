@@ -41,11 +41,11 @@ public sealed class CreateStockKeepingUnitHandlerTests
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "StockKeepingUnit.CodeRequired" &&
-            error.Field == "code");
+            error.Property == "code");
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "StockKeepingUnit.NameRequired" &&
-            error.Field == "name");
+            error.Property == "name");
 
         Assert.Empty(await testDbContext.DbContext.StockKeepingUnits.ToListAsync(
             TestContext.Current.CancellationToken));
@@ -85,7 +85,7 @@ public sealed class CreateStockKeepingUnitHandlerTests
         var error = Assert.Single(result.Error.DetailList);
 
         Assert.Equal("StockKeepingUnit.BaseUnitOfMeasureRequired", error.Code);
-        Assert.Equal("baseUnitOfMeasureId", error.Field);
+        Assert.Equal("baseUnitOfMeasureId", error.Property);
 
         Assert.Empty(await testDbContext.DbContext.StockKeepingUnits.ToListAsync(
             TestContext.Current.CancellationToken));
@@ -122,7 +122,7 @@ public sealed class CreateStockKeepingUnitHandlerTests
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("UnitOfMeasure.NotFound", result.Error.Code);
         Assert.Equal("Base unit of measure was not found.", result.Error.Message);
-        Assert.Equal("baseUnitOfMeasureId", result.Error.Field);
+        Assert.Equal("baseUnitOfMeasureId", result.Error.Property);
 
         Assert.Empty(await testDbContext.DbContext.StockKeepingUnits.ToListAsync(
             TestContext.Current.CancellationToken));
@@ -165,7 +165,7 @@ public sealed class CreateStockKeepingUnitHandlerTests
         Assert.Equal(ServiceErrorType.Invalid, result.Error.Type);
         Assert.Equal("StockKeepingUnit.BaseUnitOfMeasureInactive", result.Error.Code);
         Assert.Equal("SKU base unit of measure must be active.", result.Error.Message);
-        Assert.Equal("baseUnitOfMeasureId", result.Error.Field);
+        Assert.Equal("baseUnitOfMeasureId", result.Error.Property);
 
         Assert.Empty(await testDbContext.DbContext.StockKeepingUnits.ToListAsync(
             TestContext.Current.CancellationToken));
@@ -219,7 +219,7 @@ public sealed class CreateStockKeepingUnitHandlerTests
         Assert.Equal(ServiceErrorType.Conflict, result.Error.Type);
         Assert.Equal("StockKeepingUnit.CodeAlreadyExists", result.Error.Code);
         Assert.Equal("Stock keeping unit with the same code already exists.", result.Error.Message);
-        Assert.Equal("code", result.Error.Field);
+        Assert.Equal("code", result.Error.Property);
 
         int stockKeepingUnitCount = await testDbContext.DbContext.StockKeepingUnits.CountAsync(
             TestContext.Current.CancellationToken);

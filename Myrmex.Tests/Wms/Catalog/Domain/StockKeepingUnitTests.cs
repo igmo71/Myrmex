@@ -25,7 +25,7 @@ public sealed class StockKeepingUnitTests
 
         Assert.Equal("StockKeepingUnit.CodeRequired", error.Code);
         Assert.Equal("SKU code is required.", error.Message);
-        Assert.Equal("code", error.Field);
+        Assert.Equal("code", error.Property);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public sealed class StockKeepingUnitTests
 
         Assert.Equal("StockKeepingUnit.NameRequired", error.Code);
         Assert.Equal("SKU name is required.", error.Message);
-        Assert.Equal("name", error.Field);
+        Assert.Equal("name", error.Property);
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public sealed class StockKeepingUnitTests
         Assert.Equal(
             $"SKU description must not exceed {StockKeepingUnit.MaxDescriptionLength} characters.",
             error.Message);
-        Assert.Equal("description", error.Field);
+        Assert.Equal("description", error.Property);
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public sealed class StockKeepingUnitTests
 
         Assert.Equal("StockKeepingUnit.BaseUnitOfMeasureRequired", error.Code);
         Assert.Equal("SKU base unit of measure is required.", error.Message);
-        Assert.Equal("baseUnitOfMeasureId", error.Field);
+        Assert.Equal("baseUnitOfMeasureId", error.Property);
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public sealed class StockKeepingUnitTests
 
         Assert.Equal("StockKeepingUnit.BaseUnitOfMeasureRequired", error.Code);
         Assert.Equal("SKU base unit of measure is required.", error.Message);
-        Assert.Equal("baseUnitOfMeasureId", error.Field);
+        Assert.Equal("baseUnitOfMeasureId", error.Property);
     }
 
     [Fact]
@@ -184,7 +184,7 @@ public sealed class StockKeepingUnitTests
 
         Assert.Equal("StockKeepingUnit.NameRequired", error.Code);
         Assert.Equal("SKU name is required.", error.Message);
-        Assert.Equal("name", error.Field);
+        Assert.Equal("name", error.Property);
     }
 
     [Fact]
@@ -206,7 +206,7 @@ public sealed class StockKeepingUnitTests
 
         Assert.Equal("StockKeepingUnit.BaseUnitOfMeasureRequired", error.Code);
         Assert.Equal("SKU base unit of measure is required.", error.Message);
-        Assert.Equal("baseUnitOfMeasureId", error.Field);
+        Assert.Equal("baseUnitOfMeasureId", error.Property);
     }
 
     [Fact]
@@ -228,7 +228,7 @@ public sealed class StockKeepingUnitTests
 
         Assert.Equal("StockKeepingUnit.BaseUnitOfMeasureRequired", error.Code);
         Assert.Equal("SKU base unit of measure is required.", error.Message);
-        Assert.Equal("baseUnitOfMeasureId", error.Field);
+        Assert.Equal("baseUnitOfMeasureId", error.Property);
     }
 
     [Fact]

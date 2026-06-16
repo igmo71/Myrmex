@@ -22,7 +22,7 @@ public sealed class WarehouseTests
 
         Assert.Equal("Warehouse.CodeRequired", error.Code);
         Assert.Equal("Warehouse code is required.", error.Message);
-        Assert.Equal("code", error.Field);
+        Assert.Equal("code", error.Property);
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public sealed class WarehouseTests
 
         Assert.Equal("Warehouse.NameRequired", error.Code);
         Assert.Equal("Warehouse name is required.", error.Message);
-        Assert.Equal("name", error.Field);
+        Assert.Equal("name", error.Property);
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public sealed class WarehouseTests
 
         Assert.Equal("Warehouse.NameRequired", error.Code);
         Assert.Equal("Warehouse name is required.", error.Message);
-        Assert.Equal("name", error.Field);
+        Assert.Equal("name", error.Property);
     }
 
     [Fact]

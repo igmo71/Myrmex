@@ -55,7 +55,7 @@ internal static class CreateSkuBarcode
 
             if (valueAlreadyExists)
             {
-                return ServiceResult<SkuBarcodeDetails>.Fail(ServiceError.Conflict<SkuBarcode>("Value already exists", "Value"));
+                return ServiceResult<SkuBarcodeDetails>.Fail(ServiceError.Conflict<SkuBarcode>("Value already exists", nameof(SkuBarcode.Value)));
             }
 
             if (skuBarcode.IsPrimary)

@@ -44,7 +44,7 @@ internal static class UpdateSkuBarcodeDetails
 
             if (valueAlreadyExists)
             {
-                return ServiceResult<SkuBarcodeDetails>.Fail(ServiceError.Conflict<SkuBarcode>("Value already exists", "Value"));
+                return ServiceResult<SkuBarcodeDetails>.Fail(ServiceError.Conflict<SkuBarcode>("Value already exists", nameof(SkuBarcode.Value)));
             }
 
             DomainValidationResult validationResult = skuBarcode.UpdateDetails(

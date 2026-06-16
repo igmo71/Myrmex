@@ -33,7 +33,7 @@ public sealed class UpdateWarehouseDetailsHandlerTests
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("Warehouse.NotFound", result.Error.Code);
         Assert.Equal("Warehouse was not found.", result.Error.Message);
-        Assert.Null(result.Error.Field);
+        Assert.Null(result.Error.Property);
 
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
@@ -73,7 +73,7 @@ public sealed class UpdateWarehouseDetailsHandlerTests
 
         Assert.Equal("Warehouse.NameRequired", error.Code);
         Assert.Equal("Warehouse name is required.", error.Message);
-        Assert.Equal("name", error.Field);
+        Assert.Equal("name", error.Property);
 
         Warehouse persistedWarehouse = await testDbContext.DbContext.Warehouses.SingleAsync(
             TestContext.Current.CancellationToken);

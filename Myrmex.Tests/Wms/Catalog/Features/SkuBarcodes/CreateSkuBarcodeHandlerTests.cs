@@ -38,7 +38,7 @@ public sealed class CreateSkuBarcodeHandlerTests
 
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("StockKeepingUnit.NotFound", result.Error.Code);
-        Assert.Equal("stockKeepingUnitId", result.Error.Field);
+        Assert.Equal("stockKeepingUnitId", result.Error.Property);
 
         Assert.Empty(await testDbContext.DbContext.SkuBarcodes.ToListAsync(
             TestContext.Current.CancellationToken));
@@ -78,7 +78,7 @@ public sealed class CreateSkuBarcodeHandlerTests
 
         var detail = Assert.Single(result.Error.DetailList);
         Assert.Equal("SkuBarcode.ValueRequired", detail.Code);
-        Assert.Equal("value", detail.Field);
+        Assert.Equal("value", detail.Property);
 
         Assert.Empty(await testDbContext.DbContext.SkuBarcodes.ToListAsync(
             TestContext.Current.CancellationToken));
@@ -127,7 +127,7 @@ public sealed class CreateSkuBarcodeHandlerTests
 
         Assert.Equal(ServiceErrorType.Conflict, result.Error.Type);
         Assert.Equal("SkuBarcode.ValueAlreadyExists", result.Error.Code);
-        Assert.Equal("value", result.Error.Field);
+        Assert.Equal("value", result.Error.Property);
 
         int skuBarcodeCount = await testDbContext.DbContext.SkuBarcodes.CountAsync(
             TestContext.Current.CancellationToken);

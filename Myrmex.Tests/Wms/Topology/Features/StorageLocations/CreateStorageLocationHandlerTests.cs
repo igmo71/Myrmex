@@ -44,27 +44,27 @@ public sealed class CreateStorageLocationHandlerTests
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "StorageLocation.WarehouseIdRequired" &&
-            error.Field == "warehouseId");
+            error.Property == "warehouseId");
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "StorageLocation.ZoneIdRequired" &&
-            error.Field == "zoneId");
+            error.Property == "zoneId");
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "StorageLocation.TypeIdRequired" &&
-            error.Field == "storageLocationTypeId");
+            error.Property == "storageLocationTypeId");
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "StorageLocation.StatusIdRequired" &&
-            error.Field == "storageLocationStatusId");
+            error.Property == "storageLocationStatusId");
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "StorageLocation.CodeRequired" &&
-            error.Field == "code");
+            error.Property == "code");
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "StorageLocation.NameRequired" &&
-            error.Field == "name");
+            error.Property == "name");
 
         Assert.Empty(await testDbContext.DbContext.StorageLocations.ToListAsync(
             TestContext.Current.CancellationToken));
@@ -105,7 +105,7 @@ public sealed class CreateStorageLocationHandlerTests
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("Warehouse.NotFound", result.Error.Code);
         Assert.Equal("Warehouse was not found.", result.Error.Message);
-        Assert.Equal("warehouseId", result.Error.Field);
+        Assert.Equal("warehouseId", result.Error.Property);
 
         Assert.Empty(await testDbContext.DbContext.StorageLocations.ToListAsync(
             TestContext.Current.CancellationToken));
@@ -150,7 +150,7 @@ public sealed class CreateStorageLocationHandlerTests
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("Zone.NotFound", result.Error.Code);
         Assert.Equal("Zone was not found.", result.Error.Message);
-        Assert.Equal("zoneId", result.Error.Field);
+        Assert.Equal("zoneId", result.Error.Property);
 
         Assert.Empty(await testDbContext.DbContext.StorageLocations.ToListAsync(
             TestContext.Current.CancellationToken));
@@ -243,7 +243,7 @@ public sealed class CreateStorageLocationHandlerTests
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("StorageLocationType.NotFound", result.Error.Code);
         Assert.Equal("Storage location type was not found.", result.Error.Message);
-        Assert.Equal("storageLocationTypeId", result.Error.Field);
+        Assert.Equal("storageLocationTypeId", result.Error.Property);
 
         Assert.Empty(await testDbContext.DbContext.StorageLocations.ToListAsync(
             TestContext.Current.CancellationToken));
@@ -289,7 +289,7 @@ public sealed class CreateStorageLocationHandlerTests
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("StorageLocationStatus.NotFound", result.Error.Code);
         Assert.Equal("Storage location status was not found.", result.Error.Message);
-        Assert.Equal("storageLocationStatusId", result.Error.Field);
+        Assert.Equal("storageLocationStatusId", result.Error.Property);
 
         Assert.Empty(await testDbContext.DbContext.StorageLocations.ToListAsync(
             TestContext.Current.CancellationToken));
@@ -352,7 +352,7 @@ public sealed class CreateStorageLocationHandlerTests
         Assert.Equal(ServiceErrorType.Conflict, result.Error.Type);
         Assert.Equal("StorageLocation.CodeAlreadyExists", result.Error.Code);
         Assert.Equal("Storage location with the same code already exists in this warehouse.", result.Error.Message);
-        Assert.Equal("code", result.Error.Field);
+        Assert.Equal("code", result.Error.Property);
 
         int storageLocationCount = await testDbContext.DbContext.StorageLocations.CountAsync(
             TestContext.Current.CancellationToken);

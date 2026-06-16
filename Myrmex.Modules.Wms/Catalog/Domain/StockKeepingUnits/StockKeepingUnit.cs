@@ -138,11 +138,11 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedCode))
         {
-            errors.Add(DomainValidationFailure.Required<StockKeepingUnit>("Code"));
+            errors.Add(DomainValidationFailure.Required<StockKeepingUnit>(nameof(Code)));
         }
         else if (normalizedCode.Length > MaxCodeLength)
         {
-            errors.Add(DomainValidationFailure.TooLong<StockKeepingUnit>("Code", MaxCodeLength));
+            errors.Add(DomainValidationFailure.TooLong<StockKeepingUnit>(nameof(Code), MaxCodeLength));
         }
 
         DomainValidationResult detailsValidationResult = ValidateDetails(
@@ -167,23 +167,23 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedName))
         {
-            errors.Add(DomainValidationFailure.Required<StockKeepingUnit>("Name"));
+            errors.Add(DomainValidationFailure.Required<StockKeepingUnit>(nameof(Name)));
         }
         else if (normalizedName.Length > MaxNameLength)
         {
-            errors.Add(DomainValidationFailure.TooLong<StockKeepingUnit>("Name", MaxNameLength));
+            errors.Add(DomainValidationFailure.TooLong<StockKeepingUnit>(nameof(Name), MaxNameLength));
         }
 
         if (normalizedDescription is not null &&
             normalizedDescription.Length > MaxDescriptionLength)
         {
-            errors.Add(DomainValidationFailure.TooLong<StockKeepingUnit>("Description", MaxDescriptionLength));
+            errors.Add(DomainValidationFailure.TooLong<StockKeepingUnit>(nameof(Description), MaxDescriptionLength));
         }
 
         if (!baseUnitOfMeasureId.HasValue ||
             baseUnitOfMeasureId.Value == Guid.Empty)
         {
-            errors.Add(DomainValidationFailure.Required<StockKeepingUnit>("BaseUnitOfMeasureId"));
+            errors.Add(DomainValidationFailure.Required<StockKeepingUnit>(nameof(BaseUnitOfMeasureId)));
         }
 
         return DomainValidationResult.From(errors);

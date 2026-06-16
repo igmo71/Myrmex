@@ -23,7 +23,7 @@ public sealed class InventoryBalanceTests
         var error = Assert.Single(result.Errors);
 
         Assert.Equal("InventoryBalance.StockKeepingUnitIdRequired", error.Code);
-        Assert.Equal("stockKeepingUnitId", error.Field);
+        Assert.Equal("stockKeepingUnitId", error.Property);
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public sealed class InventoryBalanceTests
         var error = Assert.Single(result.Errors);
 
         Assert.Equal("InventoryBalance.StorageLocationIdRequired", error.Code);
-        Assert.Equal("storageLocationId", error.Field);
+        Assert.Equal("storageLocationId", error.Property);
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public sealed class InventoryBalanceTests
         var error = Assert.Single(result.Errors);
 
         Assert.Equal("InventoryBalance.QuantityMustBeNonNegative", error.Code);
-        Assert.Equal("quantity", error.Field);
+        Assert.Equal("quantity", error.Property);
     }
 
     [Fact]

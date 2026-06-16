@@ -45,7 +45,7 @@ internal static class CreateUnitOfMeasure
 
             if (codeAlreadyExists)
             {
-                return ServiceResult<UnitOfMeasureDetails>.Fail(ServiceError.Conflict<UnitOfMeasure>("Code already exists", "Code"));
+                return ServiceResult<UnitOfMeasureDetails>.Fail(ServiceError.Conflict<UnitOfMeasure>("Code already exists", nameof(UnitOfMeasure.Code)));
             }
 
             dbContext.UnitsOfMeasure.Add(unitOfMeasure);

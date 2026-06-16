@@ -75,7 +75,7 @@ public sealed class UpdateInventoryBalanceQuantityHandlerTests
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "InventoryBalance.QuantityMustBeNonNegative" &&
-            error.Field == "quantity");
+            error.Property == "quantity");
 
         InventoryBalance storedBalance = await testDbContext.DbContext.InventoryBalances.SingleAsync(
             TestContext.Current.CancellationToken);

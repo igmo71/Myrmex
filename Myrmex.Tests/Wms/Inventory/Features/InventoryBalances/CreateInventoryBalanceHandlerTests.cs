@@ -37,15 +37,15 @@ public sealed class CreateInventoryBalanceHandlerTests
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "InventoryBalance.StockKeepingUnitIdRequired" &&
-            error.Field == "stockKeepingUnitId");
+            error.Property == "stockKeepingUnitId");
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "InventoryBalance.StorageLocationIdRequired" &&
-            error.Field == "storageLocationId");
+            error.Property == "storageLocationId");
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "InventoryBalance.QuantityMustBeNonNegative" &&
-            error.Field == "quantity");
+            error.Property == "quantity");
 
         Assert.Empty(await testDbContext.DbContext.InventoryBalances.ToListAsync(
             TestContext.Current.CancellationToken));
@@ -73,7 +73,7 @@ public sealed class CreateInventoryBalanceHandlerTests
         Assert.NotNull(result.Error);
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("InventoryBalance.StockKeepingUnitNotFound", result.Error.Code);
-        Assert.Equal("stockKeepingUnitId", result.Error.Field);
+        Assert.Equal("stockKeepingUnitId", result.Error.Property);
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
 
@@ -96,7 +96,7 @@ public sealed class CreateInventoryBalanceHandlerTests
         Assert.NotNull(result.Error);
         Assert.Equal(ServiceErrorType.Invalid, result.Error.Type);
         Assert.Equal("InventoryBalance.InvalidStockKeepingUnit", result.Error.Code);
-        Assert.Equal("stockKeepingUnitId", result.Error.Field);
+        Assert.Equal("stockKeepingUnitId", result.Error.Property);
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
 
@@ -132,7 +132,7 @@ public sealed class CreateInventoryBalanceHandlerTests
         Assert.Equal(
             "InventoryBalance.InvalidStockKeepingUnit",
             result.Error.Code);
-        Assert.Equal("stockKeepingUnitId", result.Error.Field);
+        Assert.Equal("stockKeepingUnitId", result.Error.Property);
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
 
@@ -162,7 +162,7 @@ public sealed class CreateInventoryBalanceHandlerTests
         Assert.NotNull(result.Error);
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("InventoryBalance.StorageLocationNotFound", result.Error.Code);
-        Assert.Equal("storageLocationId", result.Error.Field);
+        Assert.Equal("storageLocationId", result.Error.Property);
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
 
@@ -185,7 +185,7 @@ public sealed class CreateInventoryBalanceHandlerTests
         Assert.NotNull(result.Error);
         Assert.Equal(ServiceErrorType.Invalid, result.Error.Type);
         Assert.Equal("InventoryBalance.InvalidStorageLocation", result.Error.Code);
-        Assert.Equal("storageLocationId", result.Error.Field);
+        Assert.Equal("storageLocationId", result.Error.Property);
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
 
@@ -208,7 +208,7 @@ public sealed class CreateInventoryBalanceHandlerTests
         Assert.NotNull(result.Error);
         Assert.Equal(ServiceErrorType.Invalid, result.Error.Type);
         Assert.Equal("InventoryBalance.InactiveStorageLocationType", result.Error.Code);
-        Assert.Equal("storageLocationTypeId", result.Error.Field);
+        Assert.Equal("storageLocationTypeId", result.Error.Property);
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
 
@@ -231,7 +231,7 @@ public sealed class CreateInventoryBalanceHandlerTests
         Assert.NotNull(result.Error);
         Assert.Equal(ServiceErrorType.Invalid, result.Error.Type);
         Assert.Equal("InventoryBalance.InactiveStorageLocationStatus", result.Error.Code);
-        Assert.Equal("storageLocationStatusId", result.Error.Field);
+        Assert.Equal("storageLocationStatusId", result.Error.Property);
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
 
@@ -257,7 +257,7 @@ public sealed class CreateInventoryBalanceHandlerTests
         Assert.NotNull(duplicateResult.Error);
         Assert.Equal(ServiceErrorType.Conflict, duplicateResult.Error.Type);
         Assert.Equal("InventoryBalance.DuplicateStockKeepingUnitStorageLocation", duplicateResult.Error.Code);
-        Assert.Equal("stockKeepingUnitId", duplicateResult.Error.Field);
+        Assert.Equal("stockKeepingUnitId", duplicateResult.Error.Property);
 
         InventoryBalance storedBalance = await testDbContext.DbContext.InventoryBalances.SingleAsync(
             TestContext.Current.CancellationToken);

@@ -23,7 +23,7 @@ public sealed class SkuBarcodeTests
 
         Assert.Equal("SkuBarcode.ValueRequired", error.Code);
         Assert.Equal("SKU barcode value is required.", error.Message);
-        Assert.Equal("value", error.Field);
+        Assert.Equal("value", error.Property);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public sealed class SkuBarcodeTests
         Assert.Equal(
             $"SKU barcode value must not exceed {SkuBarcode.MaxValueLength} characters.",
             error.Message);
-        Assert.Equal("value", error.Field);
+        Assert.Equal("value", error.Property);
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public sealed class SkuBarcodeTests
 
         Assert.Equal("SkuBarcode.SymbologyUnsupported", error.Code);
         Assert.Equal("SKU barcode symbology is not supported.", error.Message);
-        Assert.Equal("symbology", error.Field);
+        Assert.Equal("symbology", error.Property);
     }
 
     [Fact]
@@ -186,7 +186,7 @@ public sealed class SkuBarcodeTests
         var error = Assert.Single(result.Errors);
 
         Assert.Equal("SkuBarcode.ValueRequired", error.Code);
-        Assert.Equal("value", error.Field);
+        Assert.Equal("value", error.Property);
         Assert.Equal("ABC-123", skuBarcode.Value);
     }
 
@@ -208,7 +208,7 @@ public sealed class SkuBarcodeTests
         var error = Assert.Single(result.Errors);
 
         Assert.Equal("SkuBarcode.SymbologyUnsupported", error.Code);
-        Assert.Equal("symbology", error.Field);
+        Assert.Equal("symbology", error.Property);
         Assert.Equal(BarcodeSymbology.Code128, skuBarcode.Symbology);
     }
 
@@ -232,7 +232,7 @@ public sealed class SkuBarcodeTests
         var error = Assert.Single(result.Errors);
 
         Assert.Equal("SkuBarcode.UnsupportedPrimaryChange", error.Code);
-        Assert.Equal("isPrimary", error.Field);
+        Assert.Equal("isPrimary", error.Property);
         Assert.False(skuBarcode.IsActive);
         Assert.False(skuBarcode.IsPrimary);
         Assert.Empty(skuBarcode.DomainEvents);

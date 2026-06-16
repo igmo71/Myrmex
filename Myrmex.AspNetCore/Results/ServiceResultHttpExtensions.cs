@@ -50,9 +50,9 @@ public static class ServiceResultHttpExtensions
 
         problemDetails.Extensions["code"] = error.Code;
 
-        if (!string.IsNullOrWhiteSpace(error.Field))
+        if (!string.IsNullOrWhiteSpace(error.Property))
         {
-            problemDetails.Extensions["field"] = error.Field;
+            problemDetails.Extensions["field"] = error.Property;
         }
 
         return TypedResults.Json(
@@ -75,9 +75,9 @@ public static class ServiceResultHttpExtensions
 
         validationProblemDetails.Extensions["code"] = error.Code;
 
-        if (!string.IsNullOrWhiteSpace(error.Field))
+        if (!string.IsNullOrWhiteSpace(error.Property))
         {
-            validationProblemDetails.Extensions["field"] = error.Field;
+            validationProblemDetails.Extensions["field"] = error.Property;
         }
 
         return TypedResults.Json(
@@ -126,7 +126,7 @@ public static class ServiceResultHttpExtensions
             : [error];
 
         return validationErrors
-            .GroupBy(e => e.Field ?? "_error")
+            .GroupBy(e => e.Property ?? "_error")
             .ToDictionary(g => g.Key, g => g.Select(e => e.Message).ToArray());
     }
 }

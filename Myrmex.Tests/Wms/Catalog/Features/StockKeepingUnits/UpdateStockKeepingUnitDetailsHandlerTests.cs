@@ -36,7 +36,7 @@ public sealed class UpdateStockKeepingUnitDetailsHandlerTests
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("StockKeepingUnit.NotFound", result.Error.Code);
         Assert.Equal("Stock keeping unit was not found.", result.Error.Message);
-        Assert.Null(result.Error.Field);
+        Assert.Null(result.Error.Property);
 
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
@@ -78,7 +78,7 @@ public sealed class UpdateStockKeepingUnitDetailsHandlerTests
 
         Assert.Equal("StockKeepingUnit.NameRequired", error.Code);
         Assert.Equal("SKU name is required.", error.Message);
-        Assert.Equal("name", error.Field);
+        Assert.Equal("name", error.Property);
 
         StockKeepingUnit persistedStockKeepingUnit = await testDbContext.DbContext.StockKeepingUnits.SingleAsync(
             TestContext.Current.CancellationToken);
@@ -121,7 +121,7 @@ public sealed class UpdateStockKeepingUnitDetailsHandlerTests
         Assert.Equal(ServiceErrorType.Invalid, result.Error.Type);
         Assert.Equal("StockKeepingUnit.BaseUnitOfMeasureRequired", result.Error.Code);
         Assert.Equal("SKU base unit of measure is required.", result.Error.Message);
-        Assert.Equal("baseUnitOfMeasureId", result.Error.Field);
+        Assert.Equal("baseUnitOfMeasureId", result.Error.Property);
 
         StockKeepingUnit persistedStockKeepingUnit = await testDbContext.DbContext.StockKeepingUnits.SingleAsync(
             TestContext.Current.CancellationToken);
@@ -162,7 +162,7 @@ public sealed class UpdateStockKeepingUnitDetailsHandlerTests
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("UnitOfMeasure.NotFound", result.Error.Code);
         Assert.Equal("Base unit of measure was not found.", result.Error.Message);
-        Assert.Equal("baseUnitOfMeasureId", result.Error.Field);
+        Assert.Equal("baseUnitOfMeasureId", result.Error.Property);
 
         StockKeepingUnit persistedStockKeepingUnit = await testDbContext.DbContext.StockKeepingUnits.SingleAsync(
             TestContext.Current.CancellationToken);
@@ -207,7 +207,7 @@ public sealed class UpdateStockKeepingUnitDetailsHandlerTests
         Assert.Equal(ServiceErrorType.Invalid, result.Error.Type);
         Assert.Equal("StockKeepingUnit.BaseUnitOfMeasureInactive", result.Error.Code);
         Assert.Equal("SKU base unit of measure must be active.", result.Error.Message);
-        Assert.Equal("baseUnitOfMeasureId", result.Error.Field);
+        Assert.Equal("baseUnitOfMeasureId", result.Error.Property);
 
         StockKeepingUnit persistedStockKeepingUnit = await testDbContext.DbContext.StockKeepingUnits.SingleAsync(
             TestContext.Current.CancellationToken);

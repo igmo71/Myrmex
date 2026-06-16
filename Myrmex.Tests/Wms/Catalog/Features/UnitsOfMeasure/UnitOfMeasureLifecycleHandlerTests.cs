@@ -31,7 +31,7 @@ public sealed class UnitOfMeasureLifecycleHandlerTests
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("UnitOfMeasure.NotFound", result.Error.Code);
         Assert.Equal("Unit of measure was not found.", result.Error.Message);
-        Assert.Null(result.Error.Field);
+        Assert.Null(result.Error.Property);
 
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
@@ -138,7 +138,7 @@ public sealed class UnitOfMeasureLifecycleHandlerTests
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("UnitOfMeasure.NotFound", result.Error.Code);
         Assert.Equal("Unit of measure was not found.", result.Error.Message);
-        Assert.Null(result.Error.Field);
+        Assert.Null(result.Error.Property);
 
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }

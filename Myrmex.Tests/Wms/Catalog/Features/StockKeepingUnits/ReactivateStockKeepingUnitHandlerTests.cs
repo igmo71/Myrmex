@@ -32,7 +32,7 @@ public sealed class ReactivateStockKeepingUnitHandlerTests
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("StockKeepingUnit.NotFound", result.Error.Code);
         Assert.Equal("Stock keeping unit was not found.", result.Error.Message);
-        Assert.Null(result.Error.Field);
+        Assert.Null(result.Error.Property);
 
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }

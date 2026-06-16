@@ -39,11 +39,11 @@ public sealed class CreateUnitOfMeasureHandlerTests
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "UnitOfMeasure.CodeRequired" &&
-            error.Field == "code");
+            error.Property == "code");
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "UnitOfMeasure.NameRequired" &&
-            error.Field == "name");
+            error.Property == "name");
 
         Assert.Empty(await testDbContext.DbContext.UnitsOfMeasure.ToListAsync(
             TestContext.Current.CancellationToken));
@@ -90,7 +90,7 @@ public sealed class CreateUnitOfMeasureHandlerTests
         Assert.Equal(ServiceErrorType.Conflict, result.Error.Type);
         Assert.Equal("UnitOfMeasure.CodeAlreadyExists", result.Error.Code);
         Assert.Equal("Unit of measure with the same code already exists.", result.Error.Message);
-        Assert.Equal("code", result.Error.Field);
+        Assert.Equal("code", result.Error.Property);
 
         int unitOfMeasureCount = await testDbContext.DbContext.UnitsOfMeasure.CountAsync(
             TestContext.Current.CancellationToken);

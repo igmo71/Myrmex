@@ -38,11 +38,11 @@ public sealed class CreateWarehouseHandlerTests
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "Warehouse.CodeRequired" &&
-            error.Field == "code");
+            error.Property == "code");
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "Warehouse.NameRequired" &&
-            error.Field == "name");
+            error.Property == "name");
 
         Assert.Empty(await testDbContext.DbContext.Warehouses.ToListAsync(
             TestContext.Current.CancellationToken));
@@ -89,7 +89,7 @@ public sealed class CreateWarehouseHandlerTests
         Assert.Equal(ServiceErrorType.Conflict, result.Error.Type);
         Assert.Equal("Warehouse.CodeAlreadyExists", result.Error.Code);
         Assert.Equal("Warehouse with the same code already exists.", result.Error.Message);
-        Assert.Equal("code", result.Error.Field);
+        Assert.Equal("code", result.Error.Property);
 
         int warehouseCount = await testDbContext.DbContext.Warehouses.CountAsync(
             TestContext.Current.CancellationToken);

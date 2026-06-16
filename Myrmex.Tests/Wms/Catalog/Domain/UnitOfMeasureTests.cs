@@ -22,7 +22,7 @@ public sealed class UnitOfMeasureTests
 
         Assert.Equal("UnitOfMeasure.CodeRequired", error.Code);
         Assert.Equal("UoM code is required.", error.Message);
-        Assert.Equal("code", error.Field);
+        Assert.Equal("code", error.Property);
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public sealed class UnitOfMeasureTests
 
         Assert.Equal("UnitOfMeasure.NameRequired", error.Code);
         Assert.Equal("UoM name is required.", error.Message);
-        Assert.Equal("name", error.Field);
+        Assert.Equal("name", error.Property);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class UnitOfMeasureTests
         Assert.Equal(
             $"UoM symbol must not exceed {UnitOfMeasure.MaxSymbolLength} characters.",
             error.Message);
-        Assert.Equal("symbol", error.Field);
+        Assert.Equal("symbol", error.Property);
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public sealed class UnitOfMeasureTests
 
         Assert.Equal("UnitOfMeasure.NameRequired", error.Code);
         Assert.Equal("UoM name is required.", error.Message);
-        Assert.Equal("name", error.Field);
+        Assert.Equal("name", error.Property);
     }
 
     [Fact]

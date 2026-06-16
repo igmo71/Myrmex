@@ -30,7 +30,7 @@ public sealed class ReactivateWarehouseHandlerTests
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("Warehouse.NotFound", result.Error.Code);
         Assert.Equal("Warehouse was not found.", result.Error.Message);
-        Assert.Null(result.Error.Field);
+        Assert.Null(result.Error.Property);
 
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }

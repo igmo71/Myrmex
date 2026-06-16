@@ -36,7 +36,7 @@ public sealed class UpdateSkuBarcodeDetailsHandlerTests
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("SkuBarcode.NotFound", result.Error.Code);
         Assert.Equal("SKU barcode was not found.", result.Error.Message);
-        Assert.Null(result.Error.Field);
+        Assert.Null(result.Error.Property);
 
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
@@ -72,11 +72,11 @@ public sealed class UpdateSkuBarcodeDetailsHandlerTests
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "SkuBarcode.ValueRequired" &&
-            error.Field == "value");
+            error.Property == "value");
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "SkuBarcode.SymbologyUnsupported" &&
-            error.Field == "symbology");
+            error.Property == "symbology");
 
         SkuBarcode persistedSkuBarcode = await testDbContext.DbContext.SkuBarcodes.SingleAsync(
             TestContext.Current.CancellationToken);
@@ -115,7 +115,7 @@ public sealed class UpdateSkuBarcodeDetailsHandlerTests
 
         Assert.Equal(ServiceErrorType.Conflict, result.Error.Type);
         Assert.Equal("SkuBarcode.ValueAlreadyExists", result.Error.Code);
-        Assert.Equal("value", result.Error.Field);
+        Assert.Equal("value", result.Error.Property);
     }
 
     [Fact]
@@ -315,7 +315,7 @@ public sealed class UpdateSkuBarcodeDetailsHandlerTests
 
         Assert.Equal(ServiceErrorType.Conflict, result.Error.Type);
         Assert.Equal("SkuBarcode.UnsupportedPrimaryChange", result.Error.Code);
-        Assert.Equal("isPrimary", result.Error.Field);
+        Assert.Equal("isPrimary", result.Error.Property);
 
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }

@@ -134,23 +134,23 @@ internal sealed class SkuBarcode : AggregateRoot, IActivatable
 
         if (stockKeepingUnitId == Guid.Empty)
         {
-            errors.Add(DomainValidationFailure.Required<SkuBarcode>("StockKeepingUnitId"));
+            errors.Add(DomainValidationFailure.Required<SkuBarcode>(nameof(StockKeepingUnitId)));
         }
 
         string normalizedValue = NormalizeValue(value);
 
         if (string.IsNullOrWhiteSpace(normalizedValue))
         {
-            errors.Add(DomainValidationFailure.Required<SkuBarcode>("Value"));
+            errors.Add(DomainValidationFailure.Required<SkuBarcode>(nameof(Value)));
         }
         else if (normalizedValue.Length > MaxValueLength)
         {
-            errors.Add(DomainValidationFailure.TooLong<SkuBarcode>("Value", MaxValueLength));
+            errors.Add(DomainValidationFailure.TooLong<SkuBarcode>(nameof(Value), MaxValueLength));
         }
 
         if (!Enum.IsDefined(symbology))
         {
-            errors.Add(DomainValidationFailure.Unsupported<SkuBarcode>("Symbology"));
+            errors.Add(DomainValidationFailure.Unsupported<SkuBarcode>(nameof(Symbology)));
         }
 
         return DomainValidationResult.From(errors);
@@ -168,21 +168,21 @@ internal sealed class SkuBarcode : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedValue))
         {
-            errors.Add(DomainValidationFailure.Required<SkuBarcode>("Value"));
+            errors.Add(DomainValidationFailure.Required<SkuBarcode>(nameof(Value)));
         }
         else if (normalizedValue.Length > MaxValueLength)
         {
-            errors.Add(DomainValidationFailure.TooLong<SkuBarcode>("Value", MaxValueLength));
+            errors.Add(DomainValidationFailure.TooLong<SkuBarcode>(nameof(Value), MaxValueLength));
         }
 
         if (!Enum.IsDefined(symbology))
         {
-            errors.Add(DomainValidationFailure.Unsupported<SkuBarcode>("Symbology"));
+            errors.Add(DomainValidationFailure.Unsupported<SkuBarcode>(nameof(Symbology)));
         }
 
         if (!isActive && isPrimary)
         {
-            errors.Add(DomainValidationFailure.IncorrectState<SkuBarcode>("!isActive, isPrimary"));
+            errors.Add(DomainValidationFailure.IncorrectState<SkuBarcode>(nameof(IsPrimary)));
         }
 
         return DomainValidationResult.From(errors);

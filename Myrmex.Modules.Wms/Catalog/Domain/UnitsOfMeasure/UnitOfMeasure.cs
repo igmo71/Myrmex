@@ -112,11 +112,11 @@ internal sealed class UnitOfMeasure : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedCode))
         {
-            errors.Add(DomainValidationFailure.Required<UnitOfMeasure>("Code"));
+            errors.Add(DomainValidationFailure.Required<UnitOfMeasure>(nameof(Code)));
         }
         else if (normalizedCode.Length > MaxCodeLength)
         {
-            errors.Add(DomainValidationFailure.TooLong<UnitOfMeasure>("Code", MaxCodeLength));
+            errors.Add(DomainValidationFailure.TooLong<UnitOfMeasure>(nameof(Code), MaxCodeLength));
         }
 
         DomainValidationResult detailsValidationResult = ValidateDetails(
@@ -138,11 +138,11 @@ internal sealed class UnitOfMeasure : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedName))
         {
-            errors.Add(DomainValidationFailure.Required<UnitOfMeasure>("Name"));
+            errors.Add(DomainValidationFailure.Required<UnitOfMeasure>(nameof(Name)));
         }
         else if (normalizedName.Length > MaxNameLength)
         {
-            errors.Add(DomainValidationFailure.TooLong<UnitOfMeasure>("Name", MaxNameLength));
+            errors.Add(DomainValidationFailure.TooLong<UnitOfMeasure>(nameof(Name), MaxNameLength));
         }
 
         string? normalizedSymbol = DomainText.NormalizeOptionalText(symbol);
@@ -150,7 +150,7 @@ internal sealed class UnitOfMeasure : AggregateRoot, IActivatable
         if (normalizedSymbol is not null &&
             normalizedSymbol.Length > MaxSymbolLength)
         {
-            errors.Add(DomainValidationFailure.TooLong<UnitOfMeasure>("Symbol", MaxSymbolLength));
+            errors.Add(DomainValidationFailure.TooLong<UnitOfMeasure>(nameof(Symbol), MaxSymbolLength));
         }
 
         return DomainValidationResult.From(errors);

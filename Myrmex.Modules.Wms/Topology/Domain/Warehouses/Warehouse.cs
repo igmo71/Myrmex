@@ -112,11 +112,11 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedCode))
         {
-            errors.Add(DomainValidationFailure.Required<Warehouse>("Code"));
+            errors.Add(DomainValidationFailure.Required<Warehouse>(nameof(Code)));
         }
         else if (normalizedCode.Length > MaxCodeLength)
         {
-            errors.Add(DomainValidationFailure.TooLong<Warehouse>("Code", MaxCodeLength));
+            errors.Add(DomainValidationFailure.TooLong<Warehouse>(nameof(Code), MaxCodeLength));
         }
 
         DomainValidationResult detailsValidationResult = ValidateDetails(
@@ -139,17 +139,17 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
 
         if (string.IsNullOrWhiteSpace(normalizedName))
         {
-            errors.Add(DomainValidationFailure.Required<Warehouse>("Name"));
+            errors.Add(DomainValidationFailure.Required<Warehouse>(nameof(Name)));
         }
         else if (normalizedName.Length > MaxNameLength)
         {
-            errors.Add(DomainValidationFailure.TooLong<Warehouse>("Name", MaxNameLength));
+            errors.Add(DomainValidationFailure.TooLong<Warehouse>(nameof(Name), MaxNameLength));
         }
 
         if (normalizedDescription is not null &&
             normalizedDescription.Length > MaxDescriptionLength)
         {
-            errors.Add(DomainValidationFailure.TooLong<Warehouse>("Description", MaxDescriptionLength));
+            errors.Add(DomainValidationFailure.TooLong<Warehouse>(nameof(Description), MaxDescriptionLength));
         }
 
         return DomainValidationResult.From(errors);

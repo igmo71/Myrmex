@@ -35,7 +35,7 @@ public class ServiceResult : IServiceResult
         ArgumentNullException.ThrowIfNull(failures);
 
         ServiceError[] details = failures
-            .Select(f => new ServiceError(ServiceErrorType.Invalid, f.Code, f.Message, f.Field))
+            .Select(f => new ServiceError(ServiceErrorType.Invalid, f.Code, f.Message, f.Property))
             .ToArray();
 
         if (details.Length == 0)
@@ -82,7 +82,7 @@ public sealed class ServiceResult<TValue> : ServiceResult, IServiceResult<TValue
         ArgumentNullException.ThrowIfNull(failures);
 
         ServiceError[] details = failures
-            .Select(f => new ServiceError(ServiceErrorType.Invalid, f.Code, f.Message, f.Field))
+            .Select(f => new ServiceError(ServiceErrorType.Invalid, f.Code, f.Message, f.Property))
             .ToArray();
 
         if (details.Length == 0)

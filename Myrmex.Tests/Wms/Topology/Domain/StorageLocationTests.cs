@@ -25,19 +25,19 @@ public sealed class StorageLocationTests
 
         Assert.Contains(result.Errors, error =>
             error.Code == "StorageLocation.WarehouseIdRequired" &&
-            error.Field == "warehouseId");
+            error.Property == "warehouseId");
 
         Assert.Contains(result.Errors, error =>
             error.Code == "StorageLocation.ZoneIdRequired" &&
-            error.Field == "zoneId");
+            error.Property == "zoneId");
 
         Assert.Contains(result.Errors, error =>
             error.Code == "StorageLocation.TypeIdRequired" &&
-            error.Field == "storageLocationTypeId");
+            error.Property == "storageLocationTypeId");
 
         Assert.Contains(result.Errors, error =>
             error.Code == "StorageLocation.StatusIdRequired" &&
-            error.Field == "storageLocationStatusId");
+            error.Property == "storageLocationStatusId");
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public sealed class StorageLocationTests
 
         Assert.Equal("StorageLocation.CodeRequired", error.Code);
         Assert.Equal("Storage location code is required.", error.Message);
-        Assert.Equal("code", error.Field);
+        Assert.Equal("code", error.Property);
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public sealed class StorageLocationTests
 
         Assert.Equal("StorageLocation.NameRequired", error.Code);
         Assert.Equal("Storage location name is required.", error.Message);
-        Assert.Equal("name", error.Field);
+        Assert.Equal("name", error.Property);
     }
 
     [Fact]
@@ -147,7 +147,7 @@ public sealed class StorageLocationTests
 
         Assert.Equal("StorageLocation.NameRequired", error.Code);
         Assert.Equal("Storage location name is required.", error.Message);
-        Assert.Equal("name", error.Field);
+        Assert.Equal("name", error.Property);
     }
 
     [Fact]

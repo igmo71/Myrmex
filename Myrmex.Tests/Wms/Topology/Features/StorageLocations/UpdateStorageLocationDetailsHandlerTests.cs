@@ -37,7 +37,7 @@ public sealed class UpdateStorageLocationDetailsHandlerTests
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("StorageLocation.NotFound", result.Error.Code);
         Assert.Equal("Storage location was not found.", result.Error.Message);
-        Assert.Null(result.Error.Field);
+        Assert.Null(result.Error.Property);
 
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
@@ -75,7 +75,7 @@ public sealed class UpdateStorageLocationDetailsHandlerTests
 
         Assert.Equal("StorageLocation.NameRequired", error.Code);
         Assert.Equal("Storage location name is required.", error.Message);
-        Assert.Equal("name", error.Field);
+        Assert.Equal("name", error.Property);
 
         StorageLocation persistedStorageLocation = await testDbContext.DbContext.StorageLocations.SingleAsync(
             TestContext.Current.CancellationToken);

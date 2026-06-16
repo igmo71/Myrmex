@@ -21,7 +21,7 @@ public sealed class ZoneTests
 
         Assert.Equal("Zone.WarehouseIdRequired", error.Code);
         Assert.Equal("Warehouse id is required.", error.Message);
-        Assert.Equal("warehouseId", error.Field);
+        Assert.Equal("warehouseId", error.Property);
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public sealed class ZoneTests
 
         Assert.Equal("Zone.CodeRequired", error.Code);
         Assert.Equal("Zone code is required.", error.Message);
-        Assert.Equal("code", error.Field);
+        Assert.Equal("code", error.Property);
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public sealed class ZoneTests
 
         Assert.Equal("Zone.NameRequired", error.Code);
         Assert.Equal("Zone name is required.", error.Message);
-        Assert.Equal("name", error.Field);
+        Assert.Equal("name", error.Property);
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public sealed class ZoneTests
 
         Assert.Equal("Zone.NameRequired", error.Code);
         Assert.Equal("Zone name is required.", error.Message);
-        Assert.Equal("name", error.Field);
+        Assert.Equal("name", error.Property);
     }
 
     [Fact]

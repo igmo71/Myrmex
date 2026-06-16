@@ -50,7 +50,9 @@ internal static class CreateInventoryBalance
 
             if (duplicateExists)
             {
-                return ServiceResult<InventoryBalanceDetails>.Fail(ServiceError.Conflict<InventoryBalance>("StockKeepingUnitId, StorageLocationId already exists", "StockKeepingUnitId, StorageLocationId"));
+                return ServiceResult<InventoryBalanceDetails>.Fail(
+                    ServiceError.Conflict<InventoryBalance>("StockKeepingUnitId - StorageLocationId already exists",
+                    $"{nameof(InventoryBalance.StockKeepingUnitId)}-{nameof(InventoryBalance.StorageLocationId)}"));
             }
 
             dbContext.InventoryBalances.Add(inventoryBalance);

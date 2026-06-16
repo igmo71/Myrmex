@@ -36,15 +36,15 @@ public sealed class CreateZoneHandlerTests
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "Zone.WarehouseIdRequired" &&
-            error.Field == "warehouseId");
+            error.Property == "warehouseId");
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "Zone.CodeRequired" &&
-            error.Field == "code");
+            error.Property == "code");
 
         Assert.Contains(result.Error.DetailList, error =>
             error.Code == "Zone.NameRequired" &&
-            error.Field == "name");
+            error.Property == "name");
 
         Assert.Empty(await testDbContext.DbContext.Zones.ToListAsync(
             TestContext.Current.CancellationToken));
@@ -78,7 +78,7 @@ public sealed class CreateZoneHandlerTests
         Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
         Assert.Equal("Warehouse.NotFound", result.Error.Code);
         Assert.Equal("Warehouse was not found.", result.Error.Message);
-        Assert.Equal("warehouseId", result.Error.Field);
+        Assert.Equal("warehouseId", result.Error.Property);
 
         Assert.Empty(await testDbContext.DbContext.Zones.ToListAsync(
             TestContext.Current.CancellationToken));
@@ -126,7 +126,7 @@ public sealed class CreateZoneHandlerTests
         Assert.Equal(ServiceErrorType.Conflict, result.Error.Type);
         Assert.Equal("Zone.CodeAlreadyExists", result.Error.Code);
         Assert.Equal("Zone with the same code already exists in this warehouse.", result.Error.Message);
-        Assert.Equal("code", result.Error.Field);
+        Assert.Equal("code", result.Error.Property);
 
         int zoneCount = await testDbContext.DbContext.Zones.CountAsync(
             TestContext.Current.CancellationToken);
