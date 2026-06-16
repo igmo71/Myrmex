@@ -96,18 +96,18 @@
     private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
 
     private string StockKeepingUnitDisplay =>
-        $"{InventoryBalance.StockKeepingUnitCode} - {InventoryBalance.StockKeepingUnitName}";
+        $"{InventoryBalance.Sku.Code} - {InventoryBalance.Sku.Name}";
 
     private string WarehouseDisplay =>
-        $"{InventoryBalance.WarehouseCode} - {InventoryBalance.WarehouseName}";
+        $"{InventoryBalance.Location.Warehouse.Code} - {InventoryBalance.Location.Warehouse.Name}";
 
     private string StorageLocationDisplay =>
-        $"{InventoryBalance.StorageLocationCode} - {InventoryBalance.StorageLocationName}";
+        $"{InventoryBalance.Location.Code} - {InventoryBalance.Location.Name}";
 
     private string BaseUnitOfMeasureDisplay =>
-        string.IsNullOrWhiteSpace(InventoryBalance.BaseUnitOfMeasureSymbol)
-            ? InventoryBalance.BaseUnitOfMeasureCode
-            : $"{InventoryBalance.BaseUnitOfMeasureCode} ({InventoryBalance.BaseUnitOfMeasureSymbol})";
+        string.IsNullOrWhiteSpace(InventoryBalance.Sku.BaseUom.Symbol)
+            ? InventoryBalance.Sku.BaseUom.Code
+            : $"{InventoryBalance.Sku.BaseUom.Code} ({InventoryBalance.Sku.BaseUom.Symbol})";
 
     protected override void OnInitialized()
     {
