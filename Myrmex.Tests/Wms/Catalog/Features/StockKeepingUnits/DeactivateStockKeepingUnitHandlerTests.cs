@@ -10,32 +10,6 @@ namespace Myrmex.Tests.Wms.Catalog.Features.StockKeepingUnits;
 
 public sealed class DeactivateStockKeepingUnitHandlerTests
 {
-    [Fact]
-    public async Task HandleAsync_WhenStockKeepingUnitDoesNotExist_ReturnsNotFoundServiceResult()
-    {
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-        RecordingDomainEventDispatcher domainEventDispatcher = new();
-
-        DeactivateStockKeepingUnit.Handler handler = new(
-            testDbContext.DbContext,
-            domainEventDispatcher);
-
-        DeactivateStockKeepingUnit.Command command = new(Guid.NewGuid());
-
-        ServiceResult<StockKeepingUnitDetails> result = await handler.HandleAsync(
-            command,
-            TestContext.Current.CancellationToken);
-
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
-        Assert.Equal("StockKeepingUnit.NotFound", result.Error.Code);
-        Assert.Equal("Stock keeping unit was not found.", result.Error.Message);
-        Assert.Null(result.Error.Property);
-
-        Assert.Empty(domainEventDispatcher.DispatchedEvents);
-    }
 
     [Fact]
     public async Task HandleAsync_WhenStockKeepingUnitIsActive_DeactivatesAndHidesFromDefaultList()

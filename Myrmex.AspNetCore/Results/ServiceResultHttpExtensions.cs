@@ -52,7 +52,7 @@ public static class ServiceResultHttpExtensions
 
         if (!string.IsNullOrWhiteSpace(error.Property))
         {
-            problemDetails.Extensions["field"] = error.Property;
+            problemDetails.Extensions["property"] = error.Property;
         }
 
         return TypedResults.Json(

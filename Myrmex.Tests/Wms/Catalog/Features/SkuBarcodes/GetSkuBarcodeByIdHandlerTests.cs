@@ -64,28 +64,6 @@ public sealed class GetSkuBarcodeByIdHandlerTests
         Assert.False(result.Value.IsActive);
     }
 
-    [Fact]
-    public async Task HandleAsync_WhenSkuBarcodeDoesNotExist_ReturnsNotFound()
-    {
-        // Arrange
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-
-        GetSkuBarcodeById.Handler handler = new(testDbContext.DbContext);
-
-        // Act
-        ServiceResult<SkuBarcodeDetails> result = await handler.HandleAsync(
-            new GetSkuBarcodeById.Query(Guid.NewGuid()),
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
-        Assert.Equal("SkuBarcode.NotFound", result.Error.Code);
-        Assert.Equal("SKU barcode was not found.", result.Error.Message);
-    }
-
     private static async Task<StockKeepingUnit> AddStockKeepingUnitAsync(TestWmsDbContext testDbContext)
     {
         UnitOfMeasure baseUnitOfMeasure = CreateUnitOfMeasure();

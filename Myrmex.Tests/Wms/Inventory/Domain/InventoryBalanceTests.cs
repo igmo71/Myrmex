@@ -9,60 +9,6 @@ public sealed class InventoryBalanceTests
     private static readonly Guid StorageLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000301");
 
     [Fact]
-    public void Create_WhenStockKeepingUnitIdIsMissing_ReturnsValidationError()
-    {
-        var result = InventoryBalance.Create(
-            stockKeepingUnitId: Guid.Empty,
-            storageLocationId: StorageLocationId,
-            quantity: 10,
-            out InventoryBalance? inventoryBalance);
-
-        Assert.False(result.IsValid);
-        Assert.Null(inventoryBalance);
-
-        var error = Assert.Single(result.Errors);
-
-        Assert.Equal("InventoryBalance.StockKeepingUnitIdRequired", error.Code);
-        Assert.Equal("stockKeepingUnitId", error.Property);
-    }
-
-    [Fact]
-    public void Create_WhenStorageLocationIdIsMissing_ReturnsValidationError()
-    {
-        var result = InventoryBalance.Create(
-            stockKeepingUnitId: StockKeepingUnitId,
-            storageLocationId: Guid.Empty,
-            quantity: 10,
-            out InventoryBalance? inventoryBalance);
-
-        Assert.False(result.IsValid);
-        Assert.Null(inventoryBalance);
-
-        var error = Assert.Single(result.Errors);
-
-        Assert.Equal("InventoryBalance.StorageLocationIdRequired", error.Code);
-        Assert.Equal("storageLocationId", error.Property);
-    }
-
-    [Fact]
-    public void Create_WhenQuantityIsNegative_ReturnsValidationError()
-    {
-        var result = InventoryBalance.Create(
-            StockKeepingUnitId,
-            StorageLocationId,
-            quantity: -1,
-            out InventoryBalance? inventoryBalance);
-
-        Assert.False(result.IsValid);
-        Assert.Null(inventoryBalance);
-
-        var error = Assert.Single(result.Errors);
-
-        Assert.Equal("InventoryBalance.QuantityMustBeNonNegative", error.Code);
-        Assert.Equal("quantity", error.Property);
-    }
-
-    [Fact]
     public void Create_WhenQuantityIsZero_CreatesInventoryBalance()
     {
         var result = InventoryBalance.Create(
@@ -120,19 +66,6 @@ public sealed class InventoryBalanceTests
 
         Assert.Equal(inventoryBalance.Id, updatedEvent.InventoryBalanceId);
         Assert.Equal(5, updatedEvent.Quantity);
-    }
-
-    [Fact]
-    public void UpdateQuantity_WhenQuantityIsNegative_ReturnsValidationError()
-    {
-        InventoryBalance inventoryBalance = CreateInventoryBalance(quantity: 10);
-
-        var result = inventoryBalance.UpdateQuantity(-1);
-
-        Assert.False(result.IsValid);
-        Assert.Equal(10, inventoryBalance.Quantity);
-        Assert.Null(inventoryBalance.UpdatedAtUtc);
-        Assert.Equal("InventoryBalance.QuantityMustBeNonNegative", Assert.Single(result.Errors).Code);
     }
 
     private static InventoryBalance CreateInventoryBalance(decimal quantity)

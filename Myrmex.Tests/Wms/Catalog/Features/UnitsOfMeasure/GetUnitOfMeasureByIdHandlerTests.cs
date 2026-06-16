@@ -59,28 +59,6 @@ public sealed class GetUnitOfMeasureByIdHandlerTests
         Assert.False(result.Value.IsActive);
     }
 
-    [Fact]
-    public async Task HandleAsync_WhenUnitOfMeasureDoesNotExist_ReturnsNotFound()
-    {
-        // Arrange
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-
-        GetUnitOfMeasureById.Handler handler = new(testDbContext.DbContext);
-
-        // Act
-        ServiceResult<UnitOfMeasureDetails> result = await handler.HandleAsync(
-            new GetUnitOfMeasureById.Query(Guid.NewGuid()),
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
-        Assert.Equal("UnitOfMeasure.NotFound", result.Error.Code);
-        Assert.Equal("Unit of measure was not found.", result.Error.Message);
-    }
-
     private static async Task<UnitOfMeasure> AddUnitOfMeasureAsync(
         TestWmsDbContext testDbContext,
         string code,

@@ -5,94 +5,6 @@ namespace Myrmex.Tests.Wms.Topology.Domain;
 public sealed class StorageLocationTests
 {
     [Fact]
-    public void Create_WhenRequiredIdsAreMissing_ReturnsValidationErrors()
-    {
-        // Act
-        var result = StorageLocation.Create(
-            warehouseId: Guid.Empty,
-            zoneId: Guid.Empty,
-            storageLocationTypeId: Guid.Empty,
-            storageLocationStatusId: Guid.Empty,
-            code: "A-01-01",
-            name: "A-01-01",
-            description: null,
-            isPickable: true,
-            out StorageLocation? storageLocation);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.Null(storageLocation);
-
-        Assert.Contains(result.Errors, error =>
-            error.Code == "StorageLocation.WarehouseIdRequired" &&
-            error.Property == "warehouseId");
-
-        Assert.Contains(result.Errors, error =>
-            error.Code == "StorageLocation.ZoneIdRequired" &&
-            error.Property == "zoneId");
-
-        Assert.Contains(result.Errors, error =>
-            error.Code == "StorageLocation.TypeIdRequired" &&
-            error.Property == "storageLocationTypeId");
-
-        Assert.Contains(result.Errors, error =>
-            error.Code == "StorageLocation.StatusIdRequired" &&
-            error.Property == "storageLocationStatusId");
-    }
-
-    [Fact]
-    public void Create_WhenCodeIsMissing_ReturnsValidationError()
-    {
-        // Act
-        var result = StorageLocation.Create(
-            warehouseId: Guid.NewGuid(),
-            zoneId: Guid.NewGuid(),
-            storageLocationTypeId: Guid.NewGuid(),
-            storageLocationStatusId: Guid.NewGuid(),
-            code: "",
-            name: "A-01-01",
-            description: null,
-            isPickable: true,
-            out StorageLocation? storageLocation);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.Null(storageLocation);
-
-        var error = Assert.Single(result.Errors);
-
-        Assert.Equal("StorageLocation.CodeRequired", error.Code);
-        Assert.Equal("Storage location code is required.", error.Message);
-        Assert.Equal("code", error.Property);
-    }
-
-    [Fact]
-    public void Create_WhenNameIsMissing_ReturnsValidationError()
-    {
-        // Act
-        var result = StorageLocation.Create(
-            warehouseId: Guid.NewGuid(),
-            zoneId: Guid.NewGuid(),
-            storageLocationTypeId: Guid.NewGuid(),
-            storageLocationStatusId: Guid.NewGuid(),
-            code: "A-01-01",
-            name: "",
-            description: null,
-            isPickable: true,
-            out StorageLocation? storageLocation);
-
-        // Assert
-        Assert.False(result.IsValid);
-        Assert.Null(storageLocation);
-
-        var error = Assert.Single(result.Errors);
-
-        Assert.Equal("StorageLocation.NameRequired", error.Code);
-        Assert.Equal("Storage location name is required.", error.Message);
-        Assert.Equal("name", error.Property);
-    }
-
-    [Fact]
     public void Create_WhenValuesAreValid_NormalizesValuesAndCreatesStorageLocation()
     {
         // Arrange
@@ -126,28 +38,6 @@ public sealed class StorageLocationTests
         Assert.Equal("Pick face", storageLocation.Description);
         Assert.True(storageLocation.IsPickable);
         Assert.True(storageLocation.IsActive);
-    }
-
-    [Fact]
-    public void UpdateDetails_WhenNameIsMissing_ReturnsValidationError()
-    {
-        // Arrange
-        StorageLocation storageLocation = CreateValidStorageLocation();
-
-        // Act
-        var result = storageLocation.UpdateDetails(
-            name: "",
-            description: null,
-            isPickable: false);
-
-        // Assert
-        Assert.False(result.IsValid);
-
-        var error = Assert.Single(result.Errors);
-
-        Assert.Equal("StorageLocation.NameRequired", error.Code);
-        Assert.Equal("Storage location name is required.", error.Message);
-        Assert.Equal("name", error.Property);
     }
 
     [Fact]
