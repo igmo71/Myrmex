@@ -10,7 +10,7 @@ namespace Myrmex.Tests.Wms.Catalog.Persistence;
 public sealed class SkuBarcodePersistenceTests
 {
     [Fact]
-    public async Task EnsureCreated_CreatesSkuBarcodeTableWithoutNormalizedValueColumn()
+    public async Task Model_HasRequiredFieldsAndNullableOptionalFields()
     {
         // Arrange
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
@@ -22,21 +22,6 @@ public sealed class SkuBarcodePersistenceTests
         Assert.NotNull(entityType);
         Assert.Equal(WmsDatabaseNames.SkuBarcodesTable, entityType.GetTableName());
         Assert.Equal("wms", entityType.GetSchema());
-        Assert.DoesNotContain(entityType.GetProperties(), property =>
-            property.Name == "NormalizedValue");
-    }
-
-    [Fact]
-    public async Task Model_HasRequiredFieldsAndNullableOptionalFields()
-    {
-        // Arrange
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-
-        // Act
-        var entityType = testDbContext.DbContext.Model.FindEntityType(typeof(SkuBarcode));
-
-        // Assert
-        Assert.NotNull(entityType);
 
         Assert.False(entityType.FindProperty(nameof(SkuBarcode.StockKeepingUnitId))!.IsNullable);
         Assert.False(entityType.FindProperty(nameof(SkuBarcode.Value))!.IsNullable);

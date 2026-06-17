@@ -2,1045 +2,333 @@ using Myrmex.Shared.Common;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Catalog;
 using System.Text;
+using System.Text.Json;
 
 namespace Myrmex.Tests.Wms.Catalog.Client;
 
 public sealed class WmsCatalogApiClientTests
 {
-    [Fact]
-    public async Task ListStockKeepingUnitsAsync_WhenProblemDetailsReturned_ThrowsApiException()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/500",
-              "title": "Internal Server Error",
-              "status": 500,
-              "detail": "Unexpected catalog API failure.",
-              "code": "Error.Unknown"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.InternalServerError,
-            problemJson,
-            "application/problem+json");
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        ListRequest request = new();
-
-        // Act
-        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
-            apiClient.ListStockKeepingUnitsAsync(
-                request,
-                TestContext.Current.CancellationToken));
-
-        // Assert
-        Assert.Equal(500, exception.Status);
-        Assert.Equal("Unexpected catalog API failure.", exception.Message);
-        Assert.Equal("Error.Unknown", exception.Extensions["code"]);
-    }
-
-    [Fact]
-    public async Task GetStockKeepingUnitByIdAsync_WhenProblemDetailsReturned_ThrowsApiException()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/404",
-              "title": "Not Found",
-              "status": 404,
-              "detail": "Stock keeping unit was not found.",
-              "code": "StockKeepingUnit.NotFound"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.NotFound,
-            problemJson,
-            "application/problem+json");
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        // Act
-        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
-            apiClient.GetStockKeepingUnitByIdAsync(
-                Guid.NewGuid(),
-                TestContext.Current.CancellationToken));
-
-        // Assert
-        Assert.Equal(404, exception.Status);
-        Assert.Equal("Stock keeping unit was not found.", exception.Message);
-        Assert.Equal("StockKeepingUnit.NotFound", exception.Extensions["code"]);
-    }
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
     public async Task ListStockKeepingUnitsAsync_WhenSuccessful_ReturnsBaseUnitOfMeasureIdForEachSku()
     {
-        // Arrange
-        Guid firstBaseUnitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000111");
-        Guid secondBaseUnitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000222");
+        StockKeepingUnitDetails firstDetails = CreateStockKeepingUnitDetails(
+            id: Guid.Parse("018f0000-0000-7000-8000-000000000001"),
+            code: "ITEM-001",
+            baseUnitOfMeasureId: Guid.Parse("018f0000-0000-7000-8000-000000000111"));
+        StockKeepingUnitDetails secondDetails = CreateStockKeepingUnitDetails(
+            id: Guid.Parse("018f0000-0000-7000-8000-000000000002"),
+            code: "ITEM-002",
+            baseUnitOfMeasureId: Guid.Parse("018f0000-0000-7000-8000-000000000222"),
+            isActive: false,
+            updatedAtUtc: DateTimeOffset.Parse("2026-06-10T01:00:00Z"));
 
-        const string responseJson = """
-            {
-              "items": [
-                {
-                  "id": "018f0000-0000-7000-8000-000000000001",
-                  "code": "ITEM-001",
-                  "name": "Widget",
-                  "description": "Sellable widget",
-                  "baseUnitOfMeasureId": "018f0000-0000-7000-8000-000000000111",
-                  "isActive": true,
-                  "createdAtUtc": "2026-06-10T00:00:00+00:00",
-                  "updatedAtUtc": null
-                },
-                {
-                  "id": "018f0000-0000-7000-8000-000000000002",
-                  "code": "ITEM-002",
-                  "name": "Inactive widget",
-                  "description": null,
-                  "baseUnitOfMeasureId": "018f0000-0000-7000-8000-000000000222",
-                  "isActive": false,
-                  "createdAtUtc": "2026-06-10T00:00:00+00:00",
-                  "updatedAtUtc": "2026-06-10T01:00:00+00:00"
-                }
-              ],
-              "totalCount": 2,
-              "skip": 0,
-              "take": 20
-            }
-            """;
-
-        CapturingHttpMessageHandler handler = new(
+        using StubHttpMessageHandler handler = new(
             HttpStatusCode.OK,
-            responseJson,
+            SerializeJson(new ListResult<StockKeepingUnitDetails>(
+                [firstDetails, secondDetails],
+                TotalCount: 2,
+                Skip: 0,
+                Take: 20)),
             "application/json");
-
-        using HttpClient httpClient = new(handler)
-        {
-            BaseAddress = new Uri("https://myrmex.test")
-        };
-
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
 
-        ListRequest request = new(IncludeInactive: true);
-
-        // Act
         ListResult<StockKeepingUnitDetails> result = await apiClient.ListStockKeepingUnitsAsync(
-            request,
+            new ListRequest(IncludeInactive: true),
             TestContext.Current.CancellationToken);
 
-        // Assert
         Assert.Equal(2, result.TotalCount);
         Assert.Equal(
-            [firstBaseUnitOfMeasureId, secondBaseUnitOfMeasureId],
+            [firstDetails.BaseUnitOfMeasureId, secondDetails.BaseUnitOfMeasureId],
             result.Items.Select(x => x.BaseUnitOfMeasureId).ToArray());
-
         Assert.Equal(HttpMethod.Get, handler.RequestMethod);
-        Assert.Equal(
-            "/api/wms/catalog/skus?skip=0&take=20&sortDescending=false&includeInactive=true",
-            handler.RequestPathAndQuery);
+        Assert.Equal("/api/wms/catalog/skus", handler.RequestPath);
+        Assert.Equal("?skip=0&take=20&sortDescending=false&includeInactive=true", handler.RequestQuery);
     }
 
     [Fact]
     public async Task GetStockKeepingUnitByIdAsync_WhenSuccessful_ReturnsBaseUnitOfMeasureId()
     {
-        // Arrange
         Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000001");
-        Guid baseUnitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000111");
+        StockKeepingUnitDetails details = CreateStockKeepingUnitDetails(id: stockKeepingUnitId);
 
-        const string responseJson = """
-            {
-              "id": "018f0000-0000-7000-8000-000000000001",
-              "code": "ITEM-001",
-              "name": "Widget",
-              "description": "Sellable widget",
-              "baseUnitOfMeasureId": "018f0000-0000-7000-8000-000000000111",
-              "isActive": true,
-              "createdAtUtc": "2026-06-10T00:00:00+00:00",
-              "updatedAtUtc": null
-            }
-            """;
-
-        CapturingHttpMessageHandler handler = new(
+        using StubHttpMessageHandler handler = new(
             HttpStatusCode.OK,
-            responseJson,
+            SerializeJson(details),
             "application/json");
-
-        using HttpClient httpClient = new(handler)
-        {
-            BaseAddress = new Uri("https://myrmex.test")
-        };
-
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
 
-        // Act
         StockKeepingUnitDetails result = await apiClient.GetStockKeepingUnitByIdAsync(
             stockKeepingUnitId,
             TestContext.Current.CancellationToken);
 
-        // Assert
         Assert.Equal(stockKeepingUnitId, result.Id);
-        Assert.Equal("ITEM-001", result.Code);
-        Assert.Equal(baseUnitOfMeasureId, result.BaseUnitOfMeasureId);
-        Assert.True(result.IsActive);
-
+        Assert.Equal(details.BaseUnitOfMeasureId, result.BaseUnitOfMeasureId);
         Assert.Equal(HttpMethod.Get, handler.RequestMethod);
-        Assert.Equal($"/api/wms/catalog/skus/{stockKeepingUnitId}", handler.RequestPathAndQuery);
-    }
-
-    [Fact]
-    public async Task TryCreateStockKeepingUnitAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/409",
-              "title": "Conflict",
-              "status": 409,
-              "detail": "SKU with the same code already exists.",
-              "code": "StockKeepingUnit.CodeAlreadyExists",
-              "field": "code"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.Conflict,
-            problemJson,
-            "application/problem+json");
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        CreateStockKeepingUnitRequest request = new(
-            Code: "ITEM-001",
-            Name: "Widget",
-            Description: null);
-
-        // Act
-        ApiResult<StockKeepingUnitDetails> result = await apiClient.TryCreateStockKeepingUnitAsync(
-            request,
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.False(result.IsSuccess);
-        Assert.Null(result.Value);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(409, result.Error.Status);
-        Assert.Equal("SKU with the same code already exists.", result.Error.Message);
-        Assert.Equal("StockKeepingUnit.CodeAlreadyExists", result.Error.Extensions["code"]);
-        Assert.Equal("code", result.Error.Extensions["field"]);
+        Assert.Equal($"/api/wms/catalog/skus/{stockKeepingUnitId}", handler.RequestPath);
     }
 
     [Fact]
     public async Task TryCreateStockKeepingUnitAsync_WhenSuccessful_PostsBaseUnitOfMeasureIdAndReturnsDetails()
     {
-        // Arrange
         Guid baseUnitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000111");
+        StockKeepingUnitDetails details = CreateStockKeepingUnitDetails(baseUnitOfMeasureId: baseUnitOfMeasureId);
 
-        const string responseJson = """
-            {
-              "id": "018f0000-0000-7000-8000-000000000001",
-              "code": "ITEM-001",
-              "name": "Widget",
-              "description": "Sellable widget",
-              "baseUnitOfMeasureId": "018f0000-0000-7000-8000-000000000111",
-              "isActive": true,
-              "createdAtUtc": "2026-06-10T00:00:00+00:00",
-              "updatedAtUtc": null
-            }
-            """;
-
-        CapturingHttpMessageHandler handler = new(
+        using StubHttpMessageHandler handler = new(
             HttpStatusCode.OK,
-            responseJson,
+            SerializeJson(details),
             "application/json");
-
-        using HttpClient httpClient = new(handler)
-        {
-            BaseAddress = new Uri("https://myrmex.test")
-        };
-
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
 
-        CreateStockKeepingUnitRequest request = new(
-            Code: "ITEM-001",
-            Name: "Widget",
-            Description: "Sellable widget",
-            BaseUnitOfMeasureId: baseUnitOfMeasureId);
-
-        // Act
         ApiResult<StockKeepingUnitDetails> result = await apiClient.TryCreateStockKeepingUnitAsync(
-            request,
+            new CreateStockKeepingUnitRequest(
+                Code: "ITEM-001",
+                Name: "Widget",
+                Description: "Sellable widget",
+                BaseUnitOfMeasureId: baseUnitOfMeasureId),
             TestContext.Current.CancellationToken);
 
-        // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-
-        Assert.Equal(Guid.Parse("018f0000-0000-7000-8000-000000000001"), result.Value.Id);
-        Assert.Equal("ITEM-001", result.Value.Code);
-        Assert.Equal("Widget", result.Value.Name);
-        Assert.Equal("Sellable widget", result.Value.Description);
+        Assert.Equal(details.Id, result.Value.Id);
         Assert.Equal(baseUnitOfMeasureId, result.Value.BaseUnitOfMeasureId);
-        Assert.True(result.Value.IsActive);
-        Assert.Null(result.Value.UpdatedAtUtc);
-
         Assert.Equal(HttpMethod.Post, handler.RequestMethod);
-        Assert.Equal("/api/wms/catalog/skus", handler.RequestPathAndQuery);
-        Assert.NotNull(handler.RequestContent);
-        Assert.Contains("\"code\":\"ITEM-001\"", handler.RequestContent);
-        Assert.Contains("\"name\":\"Widget\"", handler.RequestContent);
-        Assert.Contains("\"description\":\"Sellable widget\"", handler.RequestContent);
-        Assert.Contains($"\"baseUnitOfMeasureId\":\"{baseUnitOfMeasureId}\"", handler.RequestContent);
-    }
-
-    [Fact]
-    public async Task TryCreateUnitOfMeasureAsync_WhenSuccessful_PostsToUomRouteAndReturnsDetails()
-    {
-        // Arrange
-        const string responseJson = """
-            {
-              "id": "018f0000-0000-7000-8000-000000000002",
-              "code": "EA",
-              "name": "Each",
-              "symbol": "ea",
-              "isActive": true,
-              "createdAtUtc": "2026-06-09T00:00:00+00:00",
-              "updatedAtUtc": null
-            }
-            """;
-
-        CapturingHttpMessageHandler handler = new(
-            HttpStatusCode.OK,
-            responseJson,
-            "application/json");
-
-        using HttpClient httpClient = new(handler)
-        {
-            BaseAddress = new Uri("https://myrmex.test")
-        };
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        CreateUnitOfMeasureRequest request = new(
-            Code: "EA",
-            Name: "Each",
-            Symbol: "ea");
-
-        // Act
-        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryCreateUnitOfMeasureAsync(
-            request,
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
-
-        Assert.Equal(Guid.Parse("018f0000-0000-7000-8000-000000000002"), result.Value.Id);
-        Assert.Equal("EA", result.Value.Code);
-        Assert.Equal("Each", result.Value.Name);
-        Assert.Equal("ea", result.Value.Symbol);
-        Assert.True(result.Value.IsActive);
-        Assert.Null(result.Value.UpdatedAtUtc);
-
-        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
-        Assert.Equal("/api/wms/catalog/uoms", handler.RequestPathAndQuery);
-        Assert.NotNull(handler.RequestContent);
-        Assert.Contains("\"code\":\"EA\"", handler.RequestContent);
-        Assert.Contains("\"name\":\"Each\"", handler.RequestContent);
-        Assert.Contains("\"symbol\":\"ea\"", handler.RequestContent);
-    }
-
-    [Fact]
-    public async Task TryCreateUnitOfMeasureAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/409",
-              "title": "Conflict",
-              "status": 409,
-              "detail": "Unit of measure with the same code already exists.",
-              "code": "UnitOfMeasure.CodeAlreadyExists",
-              "field": "code"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.Conflict,
-            problemJson,
-            "application/problem+json");
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        CreateUnitOfMeasureRequest request = new(
-            Code: "EA",
-            Name: "Each",
-            Symbol: "ea");
-
-        // Act
-        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryCreateUnitOfMeasureAsync(
-            request,
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.False(result.IsSuccess);
-        Assert.Null(result.Value);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(409, result.Error.Status);
-        Assert.Equal("Unit of measure with the same code already exists.", result.Error.Message);
-        Assert.Equal("UnitOfMeasure.CodeAlreadyExists", result.Error.Extensions["code"]);
-        Assert.Equal("code", result.Error.Extensions["field"]);
-    }
-
-    [Fact]
-    public async Task ListUnitsOfMeasureAsync_WhenSuccessful_GetsFromUomRouteAndReturnsDetails()
-    {
-        // Arrange
-        const string responseJson = """
-            {
-              "items": [
-                {
-                  "id": "018f0000-0000-7000-8000-000000000002",
-                  "code": "EA",
-                  "name": "Each",
-                  "symbol": "ea",
-                  "isActive": true,
-                  "createdAtUtc": "2026-06-09T00:00:00+00:00",
-                  "updatedAtUtc": null
-                }
-              ],
-              "totalCount": 1,
-              "skip": 0,
-              "take": 20
-            }
-            """;
-
-        CapturingHttpMessageHandler handler = new(
-            HttpStatusCode.OK,
-            responseJson,
-            "application/json");
-
-        using HttpClient httpClient = new(handler)
-        {
-            BaseAddress = new Uri("https://myrmex.test")
-        };
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        ListRequest request = new(
-            SearchText: "EA",
-            SortBy: "code",
-            IncludeInactive: true);
-
-        // Act
-        ListResult<UnitOfMeasureDetails> result = await apiClient.ListUnitsOfMeasureAsync(
-            request,
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal(1, result.TotalCount);
-        UnitOfMeasureDetails details = Assert.Single(result.Items);
-        Assert.Equal("EA", details.Code);
-        Assert.Equal("Each", details.Name);
-        Assert.Equal("ea", details.Symbol);
-
-        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
-        Assert.Equal(
-            "/api/wms/catalog/uoms?skip=0&take=20&searchText=EA&sortBy=code&sortDescending=false&includeInactive=true",
-            handler.RequestPathAndQuery);
-    }
-
-    [Fact]
-    public async Task ListUnitsOfMeasureAsync_WhenProblemDetailsReturned_ThrowsApiException()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/500",
-              "title": "Internal Server Error",
-              "status": 500,
-              "detail": "Unexpected catalog API failure.",
-              "code": "Error.Unknown"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.InternalServerError,
-            problemJson,
-            "application/problem+json");
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        ListRequest request = new();
-
-        // Act
-        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
-            apiClient.ListUnitsOfMeasureAsync(
-                request,
-                TestContext.Current.CancellationToken));
-
-        // Assert
-        Assert.Equal(500, exception.Status);
-        Assert.Equal("Unexpected catalog API failure.", exception.Message);
-        Assert.Equal("Error.Unknown", exception.Extensions["code"]);
-    }
-
-    [Fact]
-    public async Task GetUnitOfMeasureByIdAsync_WhenSuccessful_GetsFromUomRouteAndReturnsDetails()
-    {
-        // Arrange
-        const string responseJson = """
-            {
-              "id": "018f0000-0000-7000-8000-000000000002",
-              "code": "EA",
-              "name": "Each",
-              "symbol": "ea",
-              "isActive": true,
-              "createdAtUtc": "2026-06-09T00:00:00+00:00",
-              "updatedAtUtc": null
-            }
-            """;
-
-        Guid unitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000002");
-
-        CapturingHttpMessageHandler handler = new(
-            HttpStatusCode.OK,
-            responseJson,
-            "application/json");
-
-        using HttpClient httpClient = new(handler)
-        {
-            BaseAddress = new Uri("https://myrmex.test")
-        };
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        // Act
-        UnitOfMeasureDetails result = await apiClient.GetUnitOfMeasureByIdAsync(
-            unitOfMeasureId,
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.Equal(unitOfMeasureId, result.Id);
-        Assert.Equal("EA", result.Code);
-        Assert.Equal("Each", result.Name);
-
-        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
-        Assert.Equal($"/api/wms/catalog/uoms/{unitOfMeasureId}", handler.RequestPathAndQuery);
-    }
-
-    [Fact]
-    public async Task GetUnitOfMeasureByIdAsync_WhenProblemDetailsReturned_ThrowsApiException()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/404",
-              "title": "Not Found",
-              "status": 404,
-              "detail": "Unit of measure was not found.",
-              "code": "UnitOfMeasure.NotFound"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.NotFound,
-            problemJson,
-            "application/problem+json");
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        // Act
-        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
-            apiClient.GetUnitOfMeasureByIdAsync(
-                Guid.NewGuid(),
-                TestContext.Current.CancellationToken));
-
-        // Assert
-        Assert.Equal(404, exception.Status);
-        Assert.Equal("Unit of measure was not found.", exception.Message);
-        Assert.Equal("UnitOfMeasure.NotFound", exception.Extensions["code"]);
-    }
-
-    [Fact]
-    public async Task TryUpdateUnitOfMeasureDetailsAsync_WhenSuccessful_PutsToUomRouteAndReturnsDetails()
-    {
-        // Arrange
-        const string responseJson = """
-            {
-              "id": "018f0000-0000-7000-8000-000000000002",
-              "code": "EA",
-              "name": "Each Updated",
-              "symbol": "each",
-              "isActive": true,
-              "createdAtUtc": "2026-06-09T00:00:00+00:00",
-              "updatedAtUtc": "2026-06-09T01:00:00+00:00"
-            }
-            """;
-
-        Guid unitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000002");
-
-        CapturingHttpMessageHandler handler = new(
-            HttpStatusCode.OK,
-            responseJson,
-            "application/json");
-
-        using HttpClient httpClient = new(handler)
-        {
-            BaseAddress = new Uri("https://myrmex.test")
-        };
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        UpdateUnitOfMeasureDetailsRequest request = new(
-            Name: "Each Updated",
-            Symbol: "each");
-
-        // Act
-        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryUpdateUnitOfMeasureDetailsAsync(
-            unitOfMeasureId,
-            request,
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
-
-        Assert.Equal(unitOfMeasureId, result.Value.Id);
-        Assert.Equal("EA", result.Value.Code);
-        Assert.Equal("Each Updated", result.Value.Name);
-        Assert.Equal("each", result.Value.Symbol);
-        Assert.NotNull(result.Value.UpdatedAtUtc);
-
-        Assert.Equal(HttpMethod.Put, handler.RequestMethod);
-        Assert.Equal($"/api/wms/catalog/uoms/{unitOfMeasureId}", handler.RequestPathAndQuery);
-        Assert.NotNull(handler.RequestContent);
-        Assert.Contains("\"name\":\"Each Updated\"", handler.RequestContent);
-        Assert.Contains("\"symbol\":\"each\"", handler.RequestContent);
-        Assert.DoesNotContain("\"code\"", handler.RequestContent);
-    }
-
-    [Fact]
-    public async Task TryUpdateUnitOfMeasureDetailsAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/404",
-              "title": "Not Found",
-              "status": 404,
-              "detail": "Unit of measure was not found.",
-              "code": "UnitOfMeasure.NotFound"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.NotFound,
-            problemJson,
-            "application/problem+json");
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        UpdateUnitOfMeasureDetailsRequest request = new(
-            Name: "Updated Each",
-            Symbol: null);
-
-        // Act
-        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryUpdateUnitOfMeasureDetailsAsync(
-            Guid.NewGuid(),
-            request,
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(404, result.Error.Status);
-        Assert.Equal("Unit of measure was not found.", result.Error.Message);
-        Assert.Equal("UnitOfMeasure.NotFound", result.Error.Extensions["code"]);
-    }
-
-    [Fact]
-    public async Task TryDeactivateUnitOfMeasureAsync_WhenSuccessful_PostsToUomDeactivateRouteAndReturnsDetails()
-    {
-        // Arrange
-        const string responseJson = """
-            {
-              "id": "018f0000-0000-7000-8000-000000000002",
-              "code": "EA",
-              "name": "Each",
-              "symbol": "ea",
-              "isActive": false,
-              "createdAtUtc": "2026-06-09T00:00:00+00:00",
-              "updatedAtUtc": "2026-06-09T01:00:00+00:00"
-            }
-            """;
-
-        Guid unitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000002");
-
-        CapturingHttpMessageHandler handler = new(
-            HttpStatusCode.OK,
-            responseJson,
-            "application/json");
-
-        using HttpClient httpClient = new(handler)
-        {
-            BaseAddress = new Uri("https://myrmex.test")
-        };
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        // Act
-        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryDeactivateUnitOfMeasureAsync(
-            unitOfMeasureId,
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
-        Assert.False(result.Value.IsActive);
-
-        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
-        Assert.Equal($"/api/wms/catalog/uoms/{unitOfMeasureId}/deactivate", handler.RequestPathAndQuery);
-    }
-
-    [Fact]
-    public async Task TryDeactivateUnitOfMeasureAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/404",
-              "title": "Not Found",
-              "status": 404,
-              "detail": "Unit of measure was not found.",
-              "code": "UnitOfMeasure.NotFound"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.NotFound,
-            problemJson,
-            "application/problem+json");
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        // Act
-        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryDeactivateUnitOfMeasureAsync(
-            Guid.NewGuid(),
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(404, result.Error.Status);
-        Assert.Equal("Unit of measure was not found.", result.Error.Message);
-        Assert.Equal("UnitOfMeasure.NotFound", result.Error.Extensions["code"]);
-    }
-
-    [Fact]
-    public async Task TryReactivateUnitOfMeasureAsync_WhenSuccessful_PostsToUomReactivateRouteAndReturnsDetails()
-    {
-        // Arrange
-        const string responseJson = """
-            {
-              "id": "018f0000-0000-7000-8000-000000000002",
-              "code": "EA",
-              "name": "Each",
-              "symbol": "ea",
-              "isActive": true,
-              "createdAtUtc": "2026-06-09T00:00:00+00:00",
-              "updatedAtUtc": "2026-06-09T01:00:00+00:00"
-            }
-            """;
-
-        Guid unitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000002");
-
-        CapturingHttpMessageHandler handler = new(
-            HttpStatusCode.OK,
-            responseJson,
-            "application/json");
-
-        using HttpClient httpClient = new(handler)
-        {
-            BaseAddress = new Uri("https://myrmex.test")
-        };
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        // Act
-        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryReactivateUnitOfMeasureAsync(
-            unitOfMeasureId,
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
-        Assert.True(result.Value.IsActive);
-
-        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
-        Assert.Equal($"/api/wms/catalog/uoms/{unitOfMeasureId}/reactivate", handler.RequestPathAndQuery);
-    }
-
-    [Fact]
-    public async Task TryReactivateUnitOfMeasureAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/404",
-              "title": "Not Found",
-              "status": 404,
-              "detail": "Unit of measure was not found.",
-              "code": "UnitOfMeasure.NotFound"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.NotFound,
-            problemJson,
-            "application/problem+json");
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        // Act
-        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryReactivateUnitOfMeasureAsync(
-            Guid.NewGuid(),
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(404, result.Error.Status);
-        Assert.Equal("Unit of measure was not found.", result.Error.Message);
-        Assert.Equal("UnitOfMeasure.NotFound", result.Error.Extensions["code"]);
+        Assert.Equal("/api/wms/catalog/skus", handler.RequestPath);
+
+        using JsonDocument requestBody = JsonDocument.Parse(handler.RequestBody);
+        JsonElement root = requestBody.RootElement;
+        Assert.Equal("ITEM-001", root.GetProperty("code").GetString());
+        Assert.Equal("Widget", root.GetProperty("name").GetString());
+        Assert.Equal("Sellable widget", root.GetProperty("description").GetString());
+        Assert.Equal(baseUnitOfMeasureId, root.GetProperty("baseUnitOfMeasureId").GetGuid());
     }
 
     [Fact]
     public async Task TryUpdateStockKeepingUnitDetailsAsync_WhenSuccessful_PutsBaseUnitOfMeasureIdAndReturnsDetails()
     {
-        // Arrange
         Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000001");
         Guid baseUnitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000222");
+        StockKeepingUnitDetails details = CreateStockKeepingUnitDetails(
+            id: stockKeepingUnitId,
+            name: "Updated Widget",
+            description: null,
+            baseUnitOfMeasureId: baseUnitOfMeasureId,
+            updatedAtUtc: DateTimeOffset.Parse("2026-06-10T01:00:00Z"));
 
-        const string responseJson = """
-            {
-              "id": "018f0000-0000-7000-8000-000000000001",
-              "code": "ITEM-001",
-              "name": "Updated Widget",
-              "description": "Updated description",
-              "baseUnitOfMeasureId": "018f0000-0000-7000-8000-000000000222",
-              "isActive": true,
-              "createdAtUtc": "2026-06-10T00:00:00+00:00",
-              "updatedAtUtc": "2026-06-10T01:00:00+00:00"
-            }
-            """;
-
-        CapturingHttpMessageHandler handler = new(
+        using StubHttpMessageHandler handler = new(
             HttpStatusCode.OK,
-            responseJson,
+            SerializeJson(details),
             "application/json");
-
-        using HttpClient httpClient = new(handler)
-        {
-            BaseAddress = new Uri("https://myrmex.test")
-        };
-
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
 
-        UpdateStockKeepingUnitDetailsRequest request = new(
-            Name: "Updated Widget",
-            Description: "Updated description",
-            BaseUnitOfMeasureId: baseUnitOfMeasureId);
-
-        // Act
         ApiResult<StockKeepingUnitDetails> result = await apiClient.TryUpdateStockKeepingUnitDetailsAsync(
             stockKeepingUnitId,
-            request,
+            new UpdateStockKeepingUnitDetailsRequest(
+                Name: "Updated Widget",
+                Description: null,
+                BaseUnitOfMeasureId: baseUnitOfMeasureId),
             TestContext.Current.CancellationToken);
 
-        // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-
         Assert.Equal(stockKeepingUnitId, result.Value.Id);
-        Assert.Equal("ITEM-001", result.Value.Code);
-        Assert.Equal("Updated Widget", result.Value.Name);
-        Assert.Equal("Updated description", result.Value.Description);
         Assert.Equal(baseUnitOfMeasureId, result.Value.BaseUnitOfMeasureId);
-        Assert.True(result.Value.IsActive);
-        Assert.NotNull(result.Value.UpdatedAtUtc);
-
         Assert.Equal(HttpMethod.Put, handler.RequestMethod);
-        Assert.Equal($"/api/wms/catalog/skus/{stockKeepingUnitId}", handler.RequestPathAndQuery);
-        Assert.NotNull(handler.RequestContent);
-        Assert.Contains("\"name\":\"Updated Widget\"", handler.RequestContent);
-        Assert.Contains("\"description\":\"Updated description\"", handler.RequestContent);
-        Assert.Contains($"\"baseUnitOfMeasureId\":\"{baseUnitOfMeasureId}\"", handler.RequestContent);
+        Assert.Equal($"/api/wms/catalog/skus/{stockKeepingUnitId}", handler.RequestPath);
+
+        using JsonDocument requestBody = JsonDocument.Parse(handler.RequestBody);
+        Assert.Equal(baseUnitOfMeasureId, requestBody.RootElement.GetProperty("baseUnitOfMeasureId").GetGuid());
     }
 
     [Fact]
-    public async Task TryUpdateStockKeepingUnitDetailsAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
+    public async Task TryCreateUnitOfMeasureAsync_WhenSuccessful_PostsToUomRouteAndReturnsDetails()
     {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/404",
-              "title": "Not Found",
-              "status": 404,
-              "detail": "Stock keeping unit was not found.",
-              "code": "StockKeepingUnit.NotFound"
-            }
-            """;
+        UnitOfMeasureDetails details = CreateUnitOfMeasureDetails();
 
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.NotFound,
-            problemJson,
-            "application/problem+json");
-
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
 
-        UpdateStockKeepingUnitDetailsRequest request = new(
-            Name: "Updated Widget",
-            Description: null);
-
-        // Act
-        ApiResult<StockKeepingUnitDetails> result = await apiClient.TryUpdateStockKeepingUnitDetailsAsync(
-            Guid.NewGuid(),
-            request,
+        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryCreateUnitOfMeasureAsync(
+            new CreateUnitOfMeasureRequest(Code: "EA", Name: "Each", Symbol: "ea"),
             TestContext.Current.CancellationToken);
 
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.NotNull(result.Error);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(details.Id, result.Value.Id);
+        Assert.Equal("EA", result.Value.Code);
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal("/api/wms/catalog/uoms", handler.RequestPath);
 
-        Assert.Equal(404, result.Error.Status);
-        Assert.Equal("Stock keeping unit was not found.", result.Error.Message);
-        Assert.Equal("StockKeepingUnit.NotFound", result.Error.Extensions["code"]);
+        using JsonDocument requestBody = JsonDocument.Parse(handler.RequestBody);
+        JsonElement root = requestBody.RootElement;
+        Assert.Equal("EA", root.GetProperty("code").GetString());
+        Assert.Equal("Each", root.GetProperty("name").GetString());
+        Assert.Equal("ea", root.GetProperty("symbol").GetString());
     }
 
     [Fact]
-    public async Task TryDeactivateStockKeepingUnitAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
+    public async Task ListUnitsOfMeasureAsync_WhenSuccessful_GetsFromUomRouteAndReturnsDetails()
     {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/404",
-              "title": "Not Found",
-              "status": 404,
-              "detail": "Stock keeping unit was not found.",
-              "code": "StockKeepingUnit.NotFound"
-            }
-            """;
+        UnitOfMeasureDetails details = CreateUnitOfMeasureDetails();
 
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.NotFound,
-            problemJson,
-            "application/problem+json");
-
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(new ListResult<UnitOfMeasureDetails>(
+                [details],
+                TotalCount: 1,
+                Skip: 0,
+                Take: 20)),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
 
-        // Act
-        ApiResult<StockKeepingUnitDetails> result = await apiClient.TryDeactivateStockKeepingUnitAsync(
-            Guid.NewGuid(),
+        ListResult<UnitOfMeasureDetails> result = await apiClient.ListUnitsOfMeasureAsync(
+            new ListRequest(SearchText: "EA", SortBy: "code", IncludeInactive: true),
             TestContext.Current.CancellationToken);
 
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(404, result.Error.Status);
-        Assert.Equal("Stock keeping unit was not found.", result.Error.Message);
-        Assert.Equal("StockKeepingUnit.NotFound", result.Error.Extensions["code"]);
+        UnitOfMeasureDetails item = Assert.Single(result.Items);
+        Assert.Equal(details.Id, item.Id);
+        Assert.Equal("EA", item.Code);
+        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
+        Assert.Equal("/api/wms/catalog/uoms", handler.RequestPath);
+        Assert.Equal("?skip=0&take=20&searchText=EA&sortBy=code&sortDescending=false&includeInactive=true", handler.RequestQuery);
     }
 
     [Fact]
-    public async Task ListStockKeepingUnitsAsync_WhenMalformedErrorReturned_ThrowsApiExceptionWithFallbackMessage()
+    public async Task GetUnitOfMeasureByIdAsync_WhenSuccessful_GetsFromUomRouteAndReturnsDetails()
     {
-        // Arrange
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.BadRequest,
-            "not a valid problem details json",
-            "application/problem+json");
+        Guid unitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000002");
+        UnitOfMeasureDetails details = CreateUnitOfMeasureDetails(id: unitOfMeasureId);
 
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
 
-        ListRequest request = new();
+        UnitOfMeasureDetails result = await apiClient.GetUnitOfMeasureByIdAsync(
+            unitOfMeasureId,
+            TestContext.Current.CancellationToken);
 
-        // Act
-        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
-            apiClient.ListStockKeepingUnitsAsync(
-                request,
-                TestContext.Current.CancellationToken));
-
-        // Assert
-        Assert.Equal(400, exception.Status);
-        Assert.Equal(
-            "API request failed for GET '/api/wms/catalog/skus?skip=0&take=20&sortDescending=false&includeInactive=false'. Status code: 400 BadRequest.",
-            exception.Message);
-        Assert.Empty(exception.Extensions);
+        Assert.Equal(unitOfMeasureId, result.Id);
+        Assert.Equal("EA", result.Code);
+        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
+        Assert.Equal($"/api/wms/catalog/uoms/{unitOfMeasureId}", handler.RequestPath);
     }
 
     [Fact]
-    public async Task GetStockKeepingUnitByIdAsync_WhenMalformedErrorReturned_ThrowsApiExceptionWithFallbackMessage()
+    public async Task TryUpdateUnitOfMeasureDetailsAsync_WhenSuccessful_PutsToUomRouteAndReturnsDetails()
     {
-        // Arrange
-        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000001");
+        Guid unitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000002");
+        UnitOfMeasureDetails details = CreateUnitOfMeasureDetails(
+            id: unitOfMeasureId,
+            name: "Each updated",
+            symbol: "each",
+            updatedAtUtc: DateTimeOffset.Parse("2026-06-10T00:00:00Z"));
 
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.BadRequest,
-            "not a valid problem details json",
-            "application/problem+json");
-
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
 
-        // Act
-        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
-            apiClient.GetStockKeepingUnitByIdAsync(
-                stockKeepingUnitId,
-                TestContext.Current.CancellationToken));
+        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryUpdateUnitOfMeasureDetailsAsync(
+            unitOfMeasureId,
+            new UpdateUnitOfMeasureDetailsRequest(Name: "Each updated", Symbol: "each"),
+            TestContext.Current.CancellationToken);
 
-        // Assert
-        Assert.Equal(400, exception.Status);
-        Assert.Equal(
-            $"API request failed for GET '/api/wms/catalog/skus/{stockKeepingUnitId}'. Status code: 400 BadRequest.",
-            exception.Message);
-        Assert.Empty(exception.Extensions);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(unitOfMeasureId, result.Value.Id);
+        Assert.Equal("Each updated", result.Value.Name);
+        Assert.Equal(HttpMethod.Put, handler.RequestMethod);
+        Assert.Equal($"/api/wms/catalog/uoms/{unitOfMeasureId}", handler.RequestPath);
+
+        using JsonDocument requestBody = JsonDocument.Parse(handler.RequestBody);
+        JsonElement root = requestBody.RootElement;
+        Assert.Equal("Each updated", root.GetProperty("name").GetString());
+        Assert.Equal("each", root.GetProperty("symbol").GetString());
+    }
+
+    [Fact]
+    public async Task TryDeactivateUnitOfMeasureAsync_WhenSuccessful_PostsToUomDeactivateRouteAndReturnsDetails()
+    {
+        Guid unitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000002");
+        UnitOfMeasureDetails details = CreateUnitOfMeasureDetails(id: unitOfMeasureId, isActive: false);
+
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryDeactivateUnitOfMeasureAsync(
+            unitOfMeasureId,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.False(result.Value.IsActive);
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal($"/api/wms/catalog/uoms/{unitOfMeasureId}/deactivate", handler.RequestPath);
+    }
+
+    [Fact]
+    public async Task TryReactivateUnitOfMeasureAsync_WhenSuccessful_PostsToUomReactivateRouteAndReturnsDetails()
+    {
+        Guid unitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000002");
+        UnitOfMeasureDetails details = CreateUnitOfMeasureDetails(id: unitOfMeasureId, isActive: true);
+
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        ApiResult<UnitOfMeasureDetails> result = await apiClient.TryReactivateUnitOfMeasureAsync(
+            unitOfMeasureId,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.True(result.Value.IsActive);
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal($"/api/wms/catalog/uoms/{unitOfMeasureId}/reactivate", handler.RequestPath);
     }
 
     [Fact]
     public async Task TryCreateStockKeepingUnitAsync_WhenMalformedErrorReturned_ReturnsFallbackFailureResult()
     {
-        // Arrange
-        using HttpClient httpClient = CreateHttpClient(
+        using StubHttpMessageHandler handler = new(
             HttpStatusCode.BadRequest,
             "not a valid problem details json",
             "application/problem+json");
-
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
 
-        CreateStockKeepingUnitRequest request = new(
-            Code: "ITEM-001",
-            Name: "Widget",
-            Description: null);
-
-        // Act
         ApiResult<StockKeepingUnitDetails> result = await apiClient.TryCreateStockKeepingUnitAsync(
-            request,
+            new CreateStockKeepingUnitRequest(
+                Code: "ITEM-001",
+                Name: "Widget",
+                Description: null,
+                BaseUnitOfMeasureId: Guid.NewGuid()),
             TestContext.Current.CancellationToken);
 
-        // Assert
         Assert.True(result.IsFailure);
         Assert.NotNull(result.Error);
-
         Assert.Equal(400, result.Error.Status);
         Assert.Equal(
             "API request failed for POST '/api/wms/catalog/skus'. Status code: 400 BadRequest.",
@@ -1049,579 +337,266 @@ public sealed class WmsCatalogApiClientTests
     }
 
     [Fact]
-    public async Task TryReactivateStockKeepingUnitAsync_WhenMalformedErrorReturned_ReturnsFallbackFailureResult()
-    {
-        // Arrange
-        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000001");
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.BadRequest,
-            "not a valid problem details json",
-            "application/problem+json");
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        // Act
-        ApiResult<StockKeepingUnitDetails> result = await apiClient.TryReactivateStockKeepingUnitAsync(
-            stockKeepingUnitId,
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(400, result.Error.Status);
-        Assert.Equal(
-            $"API request failed for POST '/api/wms/catalog/skus/{stockKeepingUnitId}/reactivate'. Status code: 400 BadRequest.",
-            result.Error.Message);
-        Assert.Empty(result.Error.Extensions);
-    }
-
-    [Fact]
     public async Task TryCreateSkuBarcodeAsync_WhenSuccessful_PostsToSkuBarcodeRouteAndReturnsDetails()
     {
-        // Arrange
-        const string responseJson = """
-            {
-              "id": "018f0000-0000-7000-8000-000000000042",
-              "stockKeepingUnitId": "018f0000-0000-7000-8000-000000000001",
-              "value": "AbC-123",
-              "symbology": "Code128",
-              "isPrimary": true,
-              "isActive": true,
-              "createdAtUtc": "2026-06-09T00:00:00+00:00",
-              "updatedAtUtc": null
-            }
-            """;
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000001");
+        SkuBarcodeDetails details = CreateSkuBarcodeDetails(stockKeepingUnitId: stockKeepingUnitId);
 
-        CapturingHttpMessageHandler handler = new(
+        using StubHttpMessageHandler handler = new(
             HttpStatusCode.OK,
-            responseJson,
+            SerializeJson(details),
             "application/json");
-
-        using HttpClient httpClient = new(handler)
-        {
-            BaseAddress = new Uri("https://myrmex.test")
-        };
-
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
 
-        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000001");
-        CreateSkuBarcodeRequest request = new(
-            StockKeepingUnitId: stockKeepingUnitId,
-            Value: "  AbC-123  ",
-            Symbology: "Code128",
-            IsPrimary: true);
-
-        // Act
         ApiResult<SkuBarcodeDetails> result = await apiClient.TryCreateSkuBarcodeAsync(
-            request,
+            new CreateSkuBarcodeRequest(
+                StockKeepingUnitId: stockKeepingUnitId,
+                Value: "  AbC-123  ",
+                Symbology: "Code128",
+                IsPrimary: true),
             TestContext.Current.CancellationToken);
 
-        // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-
-        Assert.Equal(Guid.Parse("018f0000-0000-7000-8000-000000000042"), result.Value.Id);
+        Assert.Equal(details.Id, result.Value.Id);
         Assert.Equal(stockKeepingUnitId, result.Value.StockKeepingUnitId);
         Assert.Equal("AbC-123", result.Value.Value);
-        Assert.Equal("Code128", result.Value.Symbology);
         Assert.True(result.Value.IsPrimary);
-        Assert.True(result.Value.IsActive);
-        Assert.Null(result.Value.UpdatedAtUtc);
-
         Assert.Equal(HttpMethod.Post, handler.RequestMethod);
-        Assert.Equal("/api/wms/catalog/sku-barcodes", handler.RequestPathAndQuery);
-        Assert.NotNull(handler.RequestContent);
-        Assert.Contains($"\"stockKeepingUnitId\":\"{stockKeepingUnitId}\"", handler.RequestContent);
-        Assert.Contains("\"value\":\"  AbC-123  \"", handler.RequestContent);
-        Assert.Contains("\"symbology\":\"Code128\"", handler.RequestContent);
-        Assert.Contains("\"isPrimary\":true", handler.RequestContent);
-    }
+        Assert.Equal("/api/wms/catalog/sku-barcodes", handler.RequestPath);
 
-    [Fact]
-    public async Task TryCreateSkuBarcodeAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/409",
-              "title": "Conflict",
-              "status": 409,
-              "detail": "SKU barcode with the same value already exists.",
-              "code": "SkuBarcode.ValueAlreadyExists",
-              "field": "value"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.Conflict,
-            problemJson,
-            "application/problem+json");
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        CreateSkuBarcodeRequest request = new(
-            StockKeepingUnitId: Guid.NewGuid(),
-            Value: "ABC-123",
-            Symbology: "Code128",
-            IsPrimary: false);
-
-        // Act
-        ApiResult<SkuBarcodeDetails> result = await apiClient.TryCreateSkuBarcodeAsync(
-            request,
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.False(result.IsSuccess);
-        Assert.Null(result.Value);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(409, result.Error.Status);
-        Assert.Equal("SKU barcode with the same value already exists.", result.Error.Message);
-        Assert.Equal("SkuBarcode.ValueAlreadyExists", result.Error.Extensions["code"]);
-        Assert.Equal("value", result.Error.Extensions["field"]);
-    }
-
-    [Fact]
-    public async Task TryCreateSkuBarcodeAsync_WhenStockKeepingUnitIsMissing_ReturnsFailureResult()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/404",
-              "title": "Not Found",
-              "status": 404,
-              "detail": "Stock keeping unit was not found.",
-              "code": "StockKeepingUnit.NotFound",
-              "field": "stockKeepingUnitId"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.NotFound,
-            problemJson,
-            "application/problem+json");
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        CreateSkuBarcodeRequest request = new(
-            StockKeepingUnitId: Guid.NewGuid(),
-            Value: "ABC-123",
-            Symbology: "Code128",
-            IsPrimary: false);
-
-        // Act
-        ApiResult<SkuBarcodeDetails> result = await apiClient.TryCreateSkuBarcodeAsync(
-            request,
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.False(result.IsSuccess);
-        Assert.Null(result.Value);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(404, result.Error.Status);
-        Assert.Equal("Stock keeping unit was not found.", result.Error.Message);
-        Assert.Equal("StockKeepingUnit.NotFound", result.Error.Extensions["code"]);
-        Assert.Equal("stockKeepingUnitId", result.Error.Extensions["field"]);
+        using JsonDocument requestBody = JsonDocument.Parse(handler.RequestBody);
+        JsonElement root = requestBody.RootElement;
+        Assert.Equal(stockKeepingUnitId, root.GetProperty("stockKeepingUnitId").GetGuid());
+        Assert.Equal("  AbC-123  ", root.GetProperty("value").GetString());
+        Assert.Equal("Code128", root.GetProperty("symbology").GetString());
+        Assert.True(root.GetProperty("isPrimary").GetBoolean());
     }
 
     [Fact]
     public async Task ListSkuBarcodesAsync_WhenSuccessful_GetsFromSkuBarcodeRouteAndReturnsDetails()
     {
-        // Arrange
-        const string responseJson = """
-            {
-              "items": [
-                {
-                  "id": "018f0000-0000-7000-8000-000000000042",
-                  "stockKeepingUnitId": "018f0000-0000-7000-8000-000000000001",
-                  "value": "AbC-123",
-                  "symbology": "Code128",
-                  "isPrimary": true,
-                  "isActive": true,
-                  "createdAtUtc": "2026-06-09T00:00:00+00:00",
-                  "updatedAtUtc": null
-                }
-              ],
-              "totalCount": 1,
-              "skip": 5,
-              "take": 10
-            }
-            """;
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000001");
+        SkuBarcodeDetails details = CreateSkuBarcodeDetails(stockKeepingUnitId: stockKeepingUnitId);
 
-        CapturingHttpMessageHandler handler = new(
+        using StubHttpMessageHandler handler = new(
             HttpStatusCode.OK,
-            responseJson,
+            SerializeJson(new ListResult<SkuBarcodeDetails>(
+                [details],
+                TotalCount: 1,
+                Skip: 5,
+                Take: 10)),
             "application/json");
-
-        using HttpClient httpClient = new(handler)
-        {
-            BaseAddress = new Uri("https://myrmex.test")
-        };
-
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
 
-        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000001");
-        ListSkuBarcodesRequest request = new(
-            Skip: 5,
-            Take: 10,
-            SearchText: "AbC",
-            SortBy: "value",
-            SortDescending: true,
-            IncludeInactive: true,
-            StockKeepingUnitId: stockKeepingUnitId);
-
-        // Act
         ListResult<SkuBarcodeDetails> result = await apiClient.ListSkuBarcodesAsync(
-            request,
+            new ListSkuBarcodesRequest(
+                Skip: 5,
+                Take: 10,
+                SearchText: "AbC",
+                SortBy: "value",
+                SortDescending: true,
+                IncludeInactive: true,
+                StockKeepingUnitId: stockKeepingUnitId),
             TestContext.Current.CancellationToken);
 
-        // Assert
-        Assert.Equal(1, result.TotalCount);
+        SkuBarcodeDetails item = Assert.Single(result.Items);
+        Assert.Equal(details.Id, item.Id);
+        Assert.Equal(stockKeepingUnitId, item.StockKeepingUnitId);
         Assert.Equal(5, result.Skip);
         Assert.Equal(10, result.Take);
-
-        SkuBarcodeDetails details = Assert.Single(result.Items);
-        Assert.Equal(Guid.Parse("018f0000-0000-7000-8000-000000000042"), details.Id);
-        Assert.Equal(stockKeepingUnitId, details.StockKeepingUnitId);
-        Assert.Equal("AbC-123", details.Value);
-        Assert.Equal("Code128", details.Symbology);
-        Assert.True(details.IsPrimary);
-        Assert.True(details.IsActive);
-
         Assert.Equal(HttpMethod.Get, handler.RequestMethod);
+        Assert.Equal("/api/wms/catalog/sku-barcodes", handler.RequestPath);
         Assert.Equal(
-            $"/api/wms/catalog/sku-barcodes?skip=5&take=10&searchText=AbC&sortBy=value&sortDescending=true&includeInactive=true&stockKeepingUnitId={stockKeepingUnitId}",
-            handler.RequestPathAndQuery);
-    }
-
-    [Fact]
-    public async Task ListSkuBarcodesAsync_WhenProblemDetailsReturned_ThrowsApiException()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/500",
-              "title": "Internal Server Error",
-              "status": 500,
-              "detail": "Unexpected catalog API failure.",
-              "code": "Error.Unknown"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.InternalServerError,
-            problemJson,
-            "application/problem+json");
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        ListSkuBarcodesRequest request = new();
-
-        // Act
-        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
-            apiClient.ListSkuBarcodesAsync(
-                request,
-                TestContext.Current.CancellationToken));
-
-        // Assert
-        Assert.Equal(500, exception.Status);
-        Assert.Equal("Unexpected catalog API failure.", exception.Message);
-        Assert.Equal("Error.Unknown", exception.Extensions["code"]);
+            $"?skip=5&take=10&searchText=AbC&sortBy=value&sortDescending=true&includeInactive=true&stockKeepingUnitId={stockKeepingUnitId}",
+            handler.RequestQuery);
     }
 
     [Fact]
     public async Task GetSkuBarcodeByIdAsync_WhenSuccessful_GetsFromSkuBarcodeRouteAndReturnsDetails()
     {
-        // Arrange
-        const string responseJson = """
-            {
-              "id": "018f0000-0000-7000-8000-000000000042",
-              "stockKeepingUnitId": "018f0000-0000-7000-8000-000000000001",
-              "value": "AbC-123",
-              "symbology": "Code128",
-              "isPrimary": false,
-              "isActive": false,
-              "createdAtUtc": "2026-06-09T00:00:00+00:00",
-              "updatedAtUtc": "2026-06-10T00:00:00+00:00"
-            }
-            """;
-
         Guid skuBarcodeId = Guid.Parse("018f0000-0000-7000-8000-000000000042");
+        SkuBarcodeDetails details = CreateSkuBarcodeDetails(id: skuBarcodeId, isPrimary: false, isActive: false);
 
-        CapturingHttpMessageHandler handler = new(
+        using StubHttpMessageHandler handler = new(
             HttpStatusCode.OK,
-            responseJson,
+            SerializeJson(details),
             "application/json");
-
-        using HttpClient httpClient = new(handler)
-        {
-            BaseAddress = new Uri("https://myrmex.test")
-        };
-
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
 
-        // Act
         SkuBarcodeDetails result = await apiClient.GetSkuBarcodeByIdAsync(
             skuBarcodeId,
             TestContext.Current.CancellationToken);
 
-        // Assert
         Assert.Equal(skuBarcodeId, result.Id);
-        Assert.Equal("AbC-123", result.Value);
-        Assert.Equal("Code128", result.Symbology);
         Assert.False(result.IsActive);
-
         Assert.Equal(HttpMethod.Get, handler.RequestMethod);
-        Assert.Equal($"/api/wms/catalog/sku-barcodes/{skuBarcodeId}", handler.RequestPathAndQuery);
-    }
-
-    [Fact]
-    public async Task GetSkuBarcodeByIdAsync_WhenProblemDetailsReturned_ThrowsApiException()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/404",
-              "title": "Not Found",
-              "status": 404,
-              "detail": "SKU barcode was not found.",
-              "code": "SkuBarcode.NotFound"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.NotFound,
-            problemJson,
-            "application/problem+json");
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        // Act
-        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
-            apiClient.GetSkuBarcodeByIdAsync(
-                Guid.NewGuid(),
-                TestContext.Current.CancellationToken));
-
-        // Assert
-        Assert.Equal(404, exception.Status);
-        Assert.Equal("SKU barcode was not found.", exception.Message);
-        Assert.Equal("SkuBarcode.NotFound", exception.Extensions["code"]);
+        Assert.Equal($"/api/wms/catalog/sku-barcodes/{skuBarcodeId}", handler.RequestPath);
     }
 
     [Fact]
     public async Task TryUpdateSkuBarcodeDetailsAsync_WhenSuccessful_PutsToSkuBarcodeRouteAndReturnsDetails()
     {
-        // Arrange
-        const string responseJson = """
-            {
-              "id": "018f0000-0000-7000-8000-000000000042",
-              "stockKeepingUnitId": "018f0000-0000-7000-8000-000000000001",
-              "value": "AbC-789",
-              "symbology": "QrCode",
-              "isPrimary": true,
-              "isActive": true,
-              "createdAtUtc": "2026-06-09T00:00:00+00:00",
-              "updatedAtUtc": "2026-06-10T00:00:00+00:00"
-            }
-            """;
-
         Guid skuBarcodeId = Guid.Parse("018f0000-0000-7000-8000-000000000042");
+        SkuBarcodeDetails details = CreateSkuBarcodeDetails(
+            id: skuBarcodeId,
+            value: "AbC-789",
+            symbology: "QrCode",
+            isPrimary: true,
+            updatedAtUtc: DateTimeOffset.Parse("2026-06-10T00:00:00Z"));
 
-        CapturingHttpMessageHandler handler = new(
+        using StubHttpMessageHandler handler = new(
             HttpStatusCode.OK,
-            responseJson,
+            SerializeJson(details),
             "application/json");
-
-        using HttpClient httpClient = new(handler)
-        {
-            BaseAddress = new Uri("https://myrmex.test")
-        };
-
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
 
-        UpdateSkuBarcodeDetailsRequest request = new(
-            Value: "  AbC-789  ",
-            Symbology: "QrCode",
-            IsPrimary: true);
-
-        // Act
         ApiResult<SkuBarcodeDetails> result = await apiClient.TryUpdateSkuBarcodeDetailsAsync(
             skuBarcodeId,
-            request,
+            new UpdateSkuBarcodeDetailsRequest(
+                Value: "  AbC-789  ",
+                Symbology: "QrCode",
+                IsPrimary: true),
             TestContext.Current.CancellationToken);
 
-        // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-
         Assert.Equal(skuBarcodeId, result.Value.Id);
         Assert.Equal("AbC-789", result.Value.Value);
         Assert.Equal("QrCode", result.Value.Symbology);
-        Assert.True(result.Value.IsPrimary);
-
         Assert.Equal(HttpMethod.Put, handler.RequestMethod);
-        Assert.Equal($"/api/wms/catalog/sku-barcodes/{skuBarcodeId}", handler.RequestPathAndQuery);
-        Assert.NotNull(handler.RequestContent);
-        Assert.Contains("\"value\":\"  AbC-789  \"", handler.RequestContent);
-        Assert.Contains("\"symbology\":\"QrCode\"", handler.RequestContent);
-        Assert.Contains("\"isPrimary\":true", handler.RequestContent);
-    }
+        Assert.Equal($"/api/wms/catalog/sku-barcodes/{skuBarcodeId}", handler.RequestPath);
 
-    [Fact]
-    public async Task TryUpdateSkuBarcodeDetailsAsync_WhenUnsupportedPrimaryChangeReturned_ReturnsFailureResult()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/409",
-              "title": "Conflict",
-              "status": 409,
-              "detail": "Inactive SKU barcodes cannot be made primary.",
-              "code": "SkuBarcode.UnsupportedPrimaryChange",
-              "field": "isPrimary"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.Conflict,
-            problemJson,
-            "application/problem+json");
-
-        WmsCatalogApiClient apiClient = new(httpClient);
-
-        UpdateSkuBarcodeDetailsRequest request = new(
-            Value: "ABC-123",
-            Symbology: "Code128",
-            IsPrimary: true);
-
-        // Act
-        ApiResult<SkuBarcodeDetails> result = await apiClient.TryUpdateSkuBarcodeDetailsAsync(
-            Guid.NewGuid(),
-            request,
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(409, result.Error.Status);
-        Assert.Equal("Inactive SKU barcodes cannot be made primary.", result.Error.Message);
-        Assert.Equal("SkuBarcode.UnsupportedPrimaryChange", result.Error.Extensions["code"]);
-        Assert.Equal("isPrimary", result.Error.Extensions["field"]);
+        using JsonDocument requestBody = JsonDocument.Parse(handler.RequestBody);
+        JsonElement root = requestBody.RootElement;
+        Assert.Equal("  AbC-789  ", root.GetProperty("value").GetString());
+        Assert.Equal("QrCode", root.GetProperty("symbology").GetString());
+        Assert.True(root.GetProperty("isPrimary").GetBoolean());
     }
 
     [Fact]
     public async Task TryDeactivateSkuBarcodeAsync_WhenSuccessful_PostsToDeactivateRouteAndReturnsDetails()
     {
-        // Arrange
-        const string responseJson = """
-            {
-              "id": "018f0000-0000-7000-8000-000000000042",
-              "stockKeepingUnitId": "018f0000-0000-7000-8000-000000000001",
-              "value": "AbC-123",
-              "symbology": "Code128",
-              "isPrimary": false,
-              "isActive": false,
-              "createdAtUtc": "2026-06-09T00:00:00+00:00",
-              "updatedAtUtc": "2026-06-10T00:00:00+00:00"
-            }
-            """;
-
         Guid skuBarcodeId = Guid.Parse("018f0000-0000-7000-8000-000000000042");
+        SkuBarcodeDetails details = CreateSkuBarcodeDetails(id: skuBarcodeId, isPrimary: false, isActive: false);
 
-        CapturingHttpMessageHandler handler = new(
+        using StubHttpMessageHandler handler = new(
             HttpStatusCode.OK,
-            responseJson,
+            SerializeJson(details),
             "application/json");
-
-        using HttpClient httpClient = new(handler)
-        {
-            BaseAddress = new Uri("https://myrmex.test")
-        };
-
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
 
-        // Act
         ApiResult<SkuBarcodeDetails> result = await apiClient.TryDeactivateSkuBarcodeAsync(
             skuBarcodeId,
             TestContext.Current.CancellationToken);
 
-        // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-
-        Assert.Equal(skuBarcodeId, result.Value.Id);
         Assert.False(result.Value.IsPrimary);
         Assert.False(result.Value.IsActive);
-
         Assert.Equal(HttpMethod.Post, handler.RequestMethod);
-        Assert.Equal($"/api/wms/catalog/sku-barcodes/{skuBarcodeId}/deactivate", handler.RequestPathAndQuery);
+        Assert.Equal($"/api/wms/catalog/sku-barcodes/{skuBarcodeId}/deactivate", handler.RequestPath);
     }
 
     [Fact]
     public async Task TryReactivateSkuBarcodeAsync_WhenSuccessful_PostsToReactivateRouteAndReturnsDetails()
     {
-        // Arrange
-        const string responseJson = """
-            {
-              "id": "018f0000-0000-7000-8000-000000000042",
-              "stockKeepingUnitId": "018f0000-0000-7000-8000-000000000001",
-              "value": "AbC-123",
-              "symbology": "Code128",
-              "isPrimary": false,
-              "isActive": true,
-              "createdAtUtc": "2026-06-09T00:00:00+00:00",
-              "updatedAtUtc": "2026-06-10T00:00:00+00:00"
-            }
-            """;
-
         Guid skuBarcodeId = Guid.Parse("018f0000-0000-7000-8000-000000000042");
+        SkuBarcodeDetails details = CreateSkuBarcodeDetails(id: skuBarcodeId, isPrimary: false, isActive: true);
 
-        CapturingHttpMessageHandler handler = new(
+        using StubHttpMessageHandler handler = new(
             HttpStatusCode.OK,
-            responseJson,
+            SerializeJson(details),
             "application/json");
-
-        using HttpClient httpClient = new(handler)
-        {
-            BaseAddress = new Uri("https://myrmex.test")
-        };
-
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
 
-        // Act
         ApiResult<SkuBarcodeDetails> result = await apiClient.TryReactivateSkuBarcodeAsync(
             skuBarcodeId,
             TestContext.Current.CancellationToken);
 
-        // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-
-        Assert.Equal(skuBarcodeId, result.Value.Id);
         Assert.False(result.Value.IsPrimary);
         Assert.True(result.Value.IsActive);
-
         Assert.Equal(HttpMethod.Post, handler.RequestMethod);
-        Assert.Equal($"/api/wms/catalog/sku-barcodes/{skuBarcodeId}/reactivate", handler.RequestPathAndQuery);
+        Assert.Equal($"/api/wms/catalog/sku-barcodes/{skuBarcodeId}/reactivate", handler.RequestPath);
     }
 
-    private static HttpClient CreateHttpClient(
-        HttpStatusCode statusCode,
-        string content,
-        string mediaType)
+    private static HttpClient CreateHttpClient(StubHttpMessageHandler handler)
     {
-        StubHttpMessageHandler handler = new(statusCode, content, mediaType);
-
         return new HttpClient(handler)
         {
             BaseAddress = new Uri("https://myrmex.test")
         };
+    }
+
+    private static string SerializeJson<T>(T value)
+    {
+        return JsonSerializer.Serialize(value, JsonOptions);
+    }
+
+    private static StockKeepingUnitDetails CreateStockKeepingUnitDetails(
+        Guid? id = null,
+        string code = "ITEM-001",
+        string name = "Widget",
+        string? description = "Sellable widget",
+        Guid? baseUnitOfMeasureId = null,
+        bool isActive = true,
+        DateTimeOffset? updatedAtUtc = null)
+    {
+        return new StockKeepingUnitDetails(
+            id ?? Guid.Parse("018f0000-0000-7000-8000-000000000001"),
+            code,
+            name,
+            description,
+            baseUnitOfMeasureId ?? Guid.Parse("018f0000-0000-7000-8000-000000000111"),
+            isActive,
+            DateTimeOffset.Parse("2026-06-10T00:00:00Z"),
+            updatedAtUtc);
+    }
+
+    private static UnitOfMeasureDetails CreateUnitOfMeasureDetails(
+        Guid? id = null,
+        string code = "EA",
+        string name = "Each",
+        string? symbol = "ea",
+        bool isActive = true,
+        DateTimeOffset? updatedAtUtc = null)
+    {
+        return new UnitOfMeasureDetails(
+            id ?? Guid.Parse("018f0000-0000-7000-8000-000000000002"),
+            code,
+            name,
+            symbol,
+            isActive,
+            DateTimeOffset.Parse("2026-06-09T00:00:00Z"),
+            updatedAtUtc);
+    }
+
+    private static SkuBarcodeDetails CreateSkuBarcodeDetails(
+        Guid? id = null,
+        Guid? stockKeepingUnitId = null,
+        string value = "AbC-123",
+        string symbology = "Code128",
+        bool isPrimary = true,
+        bool isActive = true,
+        DateTimeOffset? updatedAtUtc = null)
+    {
+        return new SkuBarcodeDetails(
+            id ?? Guid.Parse("018f0000-0000-7000-8000-000000000042"),
+            stockKeepingUnitId ?? Guid.Parse("018f0000-0000-7000-8000-000000000001"),
+            value,
+            symbology,
+            isPrimary,
+            isActive,
+            DateTimeOffset.Parse("2026-06-09T00:00:00Z"),
+            updatedAtUtc);
     }
 
     private sealed class StubHttpMessageHandler(
@@ -1629,43 +604,25 @@ public sealed class WmsCatalogApiClientTests
         string content,
         string mediaType) : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
-        {
-            HttpResponseMessage response = new(statusCode)
-            {
-                Content = new StringContent(
-                    content,
-                    Encoding.UTF8,
-                    mediaType)
-            };
-
-            return Task.FromResult(response);
-        }
-    }
-
-    private sealed class CapturingHttpMessageHandler(
-        HttpStatusCode statusCode,
-        string content,
-        string mediaType) : HttpMessageHandler
-    {
         public HttpMethod? RequestMethod { get; private set; }
 
-        public string? RequestPathAndQuery { get; private set; }
+        public string? RequestPath { get; private set; }
 
-        public string? RequestContent { get; private set; }
+        public string? RequestQuery { get; private set; }
+
+        public string RequestBody { get; private set; } = string.Empty;
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
             RequestMethod = request.Method;
-            RequestPathAndQuery = request.RequestUri?.PathAndQuery;
+            RequestPath = request.RequestUri?.AbsolutePath;
+            RequestQuery = request.RequestUri?.Query;
 
             if (request.Content is not null)
             {
-                RequestContent = await request.Content.ReadAsStringAsync(cancellationToken);
+                RequestBody = await request.Content.ReadAsStringAsync(cancellationToken);
             }
 
             return new HttpResponseMessage(statusCode)

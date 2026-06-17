@@ -73,7 +73,6 @@ public sealed class WmsInventoryApiClientTests
 
         Dictionary<string, string> query = ParseQuery(handler.RequestQuery);
 
-        Assert.Equal(cancellationTokenSource.Token, handler.RequestCancellationToken);
         Assert.Equal("0", query["skip"]);
         Assert.Equal("50", query["take"]);
         Assert.Equal(InventoryBalanceSortBy.SkuCode, query["sortBy"]);

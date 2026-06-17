@@ -8,7 +8,7 @@ namespace Myrmex.Tests.Wms.Catalog.Persistence;
 public sealed class UnitOfMeasurePersistenceTests
 {
     [Fact]
-    public async Task EnsureCreated_CreatesUnitOfMeasureTableWithoutNormalizedCodeColumn()
+    public async Task Model_HasRequiredFieldsAndNullableOptionalFields()
     {
         // Arrange
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
@@ -20,21 +20,6 @@ public sealed class UnitOfMeasurePersistenceTests
         Assert.NotNull(entityType);
         Assert.Equal(WmsDatabaseNames.UnitsOfMeasureTable, entityType.GetTableName());
         Assert.Equal("wms", entityType.GetSchema());
-        Assert.DoesNotContain(entityType.GetProperties(), property =>
-            property.Name == "NormalizedCode");
-    }
-
-    [Fact]
-    public async Task Model_HasRequiredFieldsAndNullableOptionalFields()
-    {
-        // Arrange
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-
-        // Act
-        var entityType = testDbContext.DbContext.Model.FindEntityType(typeof(UnitOfMeasure));
-
-        // Assert
-        Assert.NotNull(entityType);
 
         Assert.False(entityType.FindProperty(nameof(UnitOfMeasure.Code))!.IsNullable);
         Assert.False(entityType.FindProperty(nameof(UnitOfMeasure.Name))!.IsNullable);

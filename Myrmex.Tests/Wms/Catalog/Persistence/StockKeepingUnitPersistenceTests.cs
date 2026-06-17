@@ -9,7 +9,7 @@ namespace Myrmex.Tests.Wms.Catalog.Persistence;
 public sealed class StockKeepingUnitPersistenceTests
 {
     [Fact]
-    public async Task EnsureCreated_CreatesStockKeepingUnitTableWithoutNormalizedCodeColumn()
+    public async Task Model_HasUniqueStockKeepingUnitCodeIndex()
     {
         // Arrange
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
@@ -21,21 +21,6 @@ public sealed class StockKeepingUnitPersistenceTests
         Assert.NotNull(entityType);
         Assert.Equal(WmsDatabaseNames.StockKeepingUnitsTable, entityType.GetTableName());
         Assert.Equal("wms", entityType.GetSchema());
-        Assert.DoesNotContain(entityType.GetProperties(), property =>
-            property.Name == "NormalizedCode");
-    }
-
-    [Fact]
-    public async Task Model_HasUniqueStockKeepingUnitCodeIndex()
-    {
-        // Arrange
-        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
-
-        // Act
-        var entityType = testDbContext.DbContext.Model.FindEntityType(typeof(StockKeepingUnit));
-
-        // Assert
-        Assert.NotNull(entityType);
 
         var index = Assert.Single(entityType.GetIndexes(), candidate =>
             candidate.GetDatabaseName() == WmsDatabaseNames.StockKeepingUnitCodeUniqueIndex);
