@@ -1,4 +1,3 @@
-using Myrmex.Core.Domain;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
 
 namespace Myrmex.Tests.Wms.Inventory.Domain;
@@ -35,13 +34,23 @@ public sealed class InventoryBalanceTests
         Assert.Equal(0, createdEvent.Quantity);
     }
 
-    [Fact]
-    public void InventoryBalance_DoesNotExposeActivationLifecycle()
+    [Theory]
+    [InlineData(-0.01)]
+    [InlineData(-1)]
+    public void Create_WhenQuantityIsNegative_ReturnsValidationFailure(decimal quantity)
     {
-        Assert.False(typeof(IActivatable).IsAssignableFrom(typeof(InventoryBalance)));
-        Assert.Null(typeof(InventoryBalance).GetProperty("IsActive"));
-        Assert.DoesNotContain(typeof(InventoryBalance).GetMethods(), method =>
-            method.Name is "Deactivate" or "Reactivate");
+        var result = InventoryBalance.Create(
+            StockKeepingUnitId,
+            StorageLocationId,
+            quantity,
+            out InventoryBalance? inventoryBalance);
+
+        Assert.False(result.IsValid);
+        Assert.Null(inventoryBalance);
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(nameof(InventoryBalance.Quantity), error.Property);
+        Assert.Equal("MustBeNonNegative-InventoryBalance-Quantity", error.Code);
     }
 
     [Fact]
@@ -66,6 +75,27 @@ public sealed class InventoryBalanceTests
 
         Assert.Equal(inventoryBalance.Id, updatedEvent.InventoryBalanceId);
         Assert.Equal(5, updatedEvent.Quantity);
+    }
+
+    [Theory]
+    [InlineData(-0.01)]
+    [InlineData(-1)]
+    public void UpdateQuantity_WhenQuantityIsNegative_ReturnsValidationFailureAndLeavesQuantityUnchanged(decimal quantity)
+    {
+        InventoryBalance inventoryBalance = CreateInventoryBalance(quantity: 10);
+        DateTimeOffset? updatedAtUtc = inventoryBalance.UpdatedAtUtc;
+        inventoryBalance.ClearDomainEvents();
+
+        var result = inventoryBalance.UpdateQuantity(quantity);
+
+        Assert.False(result.IsValid);
+        Assert.Equal(10, inventoryBalance.Quantity);
+        Assert.Equal(updatedAtUtc, inventoryBalance.UpdatedAtUtc);
+        Assert.Empty(inventoryBalance.DomainEvents);
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(nameof(InventoryBalance.Quantity), error.Property);
+        Assert.Equal("MustBeNonNegative-InventoryBalance-Quantity", error.Code);
     }
 
     private static InventoryBalance CreateInventoryBalance(decimal quantity)
