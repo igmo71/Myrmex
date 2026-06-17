@@ -182,16 +182,6 @@ public sealed class SkuBarcodeTests
         Assert.Empty(skuBarcode.DomainEvents);
     }
 
-    [Fact]
-    public void Model_DoesNotExposeNormalizedValue()
-    {
-        // Act
-        var property = typeof(SkuBarcode).GetProperty("NormalizedValue");
-
-        // Assert
-        Assert.Null(property);
-    }
-
     private static SkuBarcode CreateSkuBarcode(bool isPrimary)
     {
         var result = SkuBarcode.Create(

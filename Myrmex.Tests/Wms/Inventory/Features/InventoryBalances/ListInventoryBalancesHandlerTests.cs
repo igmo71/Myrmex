@@ -16,81 +16,46 @@ namespace Myrmex.Tests.Wms.Inventory.Features.InventoryBalances;
 
 public sealed class ListInventoryBalancesHandlerTests
 {
-    [Fact]
-    public async Task HandleAsync_WhenFiltersAreProvided_AppliesSupportedFiltersAndReturnsNestedDetails()
+    [Theory]
+    [InlineData(FilterScenario.StockKeepingUnit)]
+    [InlineData(FilterScenario.Warehouse)]
+    [InlineData(FilterScenario.StorageLocation)]
+    [InlineData(FilterScenario.Combined)]
+    [InlineData(FilterScenario.NoMatch)]
+    public async Task HandleAsync_WhenFilterIsProvided_AppliesSupportedFilter(FilterScenario scenario)
     {
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
         SeededInventoryBalances seeded = await SeedInventoryBalancesAsync(testDbContext.DbContext);
         ListInventoryBalances.Handler handler = new(testDbContext.DbContext);
 
-        ServiceResult<ListResult<InventoryBalanceDetails>> skuResult = await handler.HandleAsync(
-            new ListInventoryBalances.Query
-            {
-                StockKeepingUnitId = seeded.ItemOne.Id,
-                SortBy = InventoryBalanceSortBy.StorageLocationCode
-            },
+        (ListInventoryBalances.Query Query, Guid[] ExpectedIds) = CreateFilterCase(seeded, scenario);
+
+        ServiceResult<ListResult<InventoryBalanceDetails>> result = await handler.HandleAsync(
+            Query,
             TestContext.Current.CancellationToken);
-        ServiceResult<ListResult<InventoryBalanceDetails>> warehouseResult = await handler.HandleAsync(
-            new ListInventoryBalances.Query
-            {
-                WarehouseId = seeded.WarehouseOne.Id,
-                SortBy = InventoryBalanceSortBy.SkuCode
-            },
-            TestContext.Current.CancellationToken);
-        ServiceResult<ListResult<InventoryBalanceDetails>> locationResult = await handler.HandleAsync(
-            new ListInventoryBalances.Query
-            {
-                StorageLocationId = seeded.WarehouseOnePickLocation.Id,
-                SortBy = InventoryBalanceSortBy.Quantity
-            },
-            TestContext.Current.CancellationToken);
-        ServiceResult<ListResult<InventoryBalanceDetails>> combinedResult = await handler.HandleAsync(
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(ExpectedIds.Length, result.Value.TotalCount);
+        AssertIdsEqual(ExpectedIds, result.Value.Items.Select(x => x.Id), scenario.ToString());
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenProjectionReturned_IncludesNestedSkuUomLocationAndWarehouseDetails()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        SeededInventoryBalances seeded = await SeedInventoryBalancesAsync(testDbContext.DbContext);
+        ListInventoryBalances.Handler handler = new(testDbContext.DbContext);
+
+        ServiceResult<ListResult<InventoryBalanceDetails>> result = await handler.HandleAsync(
             new ListInventoryBalances.Query
             {
                 StockKeepingUnitId = seeded.ItemOne.Id,
                 WarehouseId = seeded.WarehouseOne.Id
             },
             TestContext.Current.CancellationToken);
-        ServiceResult<ListResult<InventoryBalanceDetails>> emptyResult = await handler.HandleAsync(
-            new ListInventoryBalances.Query
-            {
-                StockKeepingUnitId = Guid.NewGuid()
-            },
-            TestContext.Current.CancellationToken);
 
-        Assert.True(skuResult.IsSuccess);
-        Assert.Equal(2, skuResult.Value.TotalCount);
-        AssertIdsEqual(
-            [
-                seeded.ItemOneWarehouseOneBalance.Balance.Id,
-                seeded.ItemOneWarehouseTwoBalance.Balance.Id
-            ],
-            skuResult.Value.Items.Select(x => x.Id),
-            "SKU filter");
-
-        Assert.True(warehouseResult.IsSuccess);
-        Assert.Equal(3, warehouseResult.Value.TotalCount);
-        AssertIdsEqual(
-            [
-                seeded.ItemTwoWarehouseOneBalance.Balance.Id,
-                seeded.ItemOneWarehouseOneBalance.Balance.Id,
-                seeded.ItemThreeWarehouseOneBalance.Balance.Id
-            ],
-            warehouseResult.Value.Items.Select(x => x.Id),
-            "warehouse filter");
-
-        Assert.True(locationResult.IsSuccess);
-        Assert.Equal(2, locationResult.Value.TotalCount);
-        AssertIdsEqual(
-            [
-                seeded.ItemOneWarehouseOneBalance.Balance.Id,
-                seeded.ItemThreeWarehouseOneBalance.Balance.Id
-            ],
-            locationResult.Value.Items.Select(x => x.Id),
-            "storage-location filter");
-
-        Assert.True(combinedResult.IsSuccess);
-        InventoryBalanceDetails combinedItem = Assert.Single(combinedResult.Value.Items);
+        Assert.True(result.IsSuccess);
+        InventoryBalanceDetails combinedItem = Assert.Single(result.Value.Items);
         Assert.Equal(seeded.ItemOneWarehouseOneBalance.Balance.Id, combinedItem.Id);
         Assert.Equal(seeded.ItemOne.Id, combinedItem.Sku.Id);
         Assert.Equal(seeded.ItemOne.Code, combinedItem.Sku.Code);
@@ -103,10 +68,6 @@ public sealed class ListInventoryBalancesHandlerTests
         Assert.Equal(seeded.WarehouseOne.Id, combinedItem.StorageLocation.Warehouse.Id);
         Assert.Equal(seeded.WarehouseOne.Code, combinedItem.StorageLocation.Warehouse.Code);
         Assert.Equal(seeded.WarehouseOne.Name, combinedItem.StorageLocation.Warehouse.Name);
-
-        Assert.True(emptyResult.IsSuccess);
-        Assert.Equal(0, emptyResult.Value.TotalCount);
-        Assert.Empty(emptyResult.Value.Items);
     }
 
     [Fact]
@@ -138,49 +99,108 @@ public sealed class ListInventoryBalancesHandlerTests
             "paged SKU-code sort");
     }
 
-    [Fact]
-    public async Task HandleAsync_WhenSortBySupportedKeys_OrdersByRequestedKeyThenId()
+    [Theory]
+    [MemberData(nameof(SortCases))]
+    public async Task HandleAsync_WhenSortBySupportedKey_OrdersByRequestedKeyThenId(
+        string? sortBy,
+        bool sortDescending)
     {
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
         SeededInventoryBalances seeded = await SeedInventoryBalancesAsync(testDbContext.DbContext);
         ListInventoryBalances.Handler handler = new(testDbContext.DbContext);
 
-        (string? SortBy, bool SortDescending)[] sortCases =
-        [
-            (null, false),
-            (null, true),
-            (InventoryBalanceSortBy.Quantity, false),
-            (InventoryBalanceSortBy.Quantity, true),
-            (InventoryBalanceSortBy.SkuCode, false),
-            (InventoryBalanceSortBy.SkuCode, true),
-            (InventoryBalanceSortBy.SkuName, false),
-            (InventoryBalanceSortBy.SkuName, true),
-            (InventoryBalanceSortBy.SkuBaseUomSymbol, false),
-            (InventoryBalanceSortBy.SkuBaseUomSymbol, true),
-            (InventoryBalanceSortBy.StorageLocationCode, false),
-            (InventoryBalanceSortBy.StorageLocationCode, true),
-            (InventoryBalanceSortBy.WarehouseCode, false),
-            (InventoryBalanceSortBy.WarehouseCode, true),
-            (InventoryBalanceSortBy.WarehouseName, false),
-            (InventoryBalanceSortBy.WarehouseName, true)
-        ];
+        ServiceResult<ListResult<InventoryBalanceDetails>> result = await handler.HandleAsync(
+            new ListInventoryBalances.Query
+            {
+                SortBy = sortBy,
+                SortDescending = sortDescending
+            },
+            TestContext.Current.CancellationToken);
 
-        foreach ((string? sortBy, bool sortDescending) in sortCases)
+        Assert.True(result.IsSuccess);
+        AssertIdsEqual(
+            ExpectedOrder(seeded, sortBy, sortDescending),
+            result.Value.Items.Select(x => x.Id),
+            $"{sortBy ?? "default"} descending={sortDescending}");
+    }
+
+    public static IEnumerable<object?[]> SortCases()
+    {
+        yield return [null, false];
+        yield return [null, true];
+        yield return [InventoryBalanceSortBy.Quantity, false];
+        yield return [InventoryBalanceSortBy.Quantity, true];
+        yield return [InventoryBalanceSortBy.SkuCode, false];
+        yield return [InventoryBalanceSortBy.SkuCode, true];
+        yield return [InventoryBalanceSortBy.SkuName, false];
+        yield return [InventoryBalanceSortBy.SkuName, true];
+        yield return [InventoryBalanceSortBy.SkuBaseUomSymbol, false];
+        yield return [InventoryBalanceSortBy.SkuBaseUomSymbol, true];
+        yield return [InventoryBalanceSortBy.StorageLocationCode, false];
+        yield return [InventoryBalanceSortBy.StorageLocationCode, true];
+        yield return [InventoryBalanceSortBy.WarehouseCode, false];
+        yield return [InventoryBalanceSortBy.WarehouseCode, true];
+        yield return [InventoryBalanceSortBy.WarehouseName, false];
+        yield return [InventoryBalanceSortBy.WarehouseName, true];
+    }
+
+    private static (ListInventoryBalances.Query Query, Guid[] ExpectedIds) CreateFilterCase(
+        SeededInventoryBalances seeded,
+        FilterScenario scenario)
+    {
+        return scenario switch
         {
-            ServiceResult<ListResult<InventoryBalanceDetails>> result = await handler.HandleAsync(
+            FilterScenario.StockKeepingUnit => (
                 new ListInventoryBalances.Query
                 {
-                    SortBy = sortBy,
-                    SortDescending = sortDescending
+                    StockKeepingUnitId = seeded.ItemOne.Id,
+                    SortBy = InventoryBalanceSortBy.StorageLocationCode
                 },
-                TestContext.Current.CancellationToken);
+                [
+                    seeded.ItemOneWarehouseOneBalance.Balance.Id,
+                    seeded.ItemOneWarehouseTwoBalance.Balance.Id
+                ]),
 
-            Assert.True(result.IsSuccess);
-            AssertIdsEqual(
-                ExpectedOrder(seeded, sortBy, sortDescending),
-                result.Value.Items.Select(x => x.Id),
-                $"{sortBy ?? "default"} descending={sortDescending}");
-        }
+            FilterScenario.Warehouse => (
+                new ListInventoryBalances.Query
+                {
+                    WarehouseId = seeded.WarehouseOne.Id,
+                    SortBy = InventoryBalanceSortBy.SkuCode
+                },
+                [
+                    seeded.ItemTwoWarehouseOneBalance.Balance.Id,
+                    seeded.ItemOneWarehouseOneBalance.Balance.Id,
+                    seeded.ItemThreeWarehouseOneBalance.Balance.Id
+                ]),
+
+            FilterScenario.StorageLocation => (
+                new ListInventoryBalances.Query
+                {
+                    StorageLocationId = seeded.WarehouseOnePickLocation.Id,
+                    SortBy = InventoryBalanceSortBy.Quantity
+                },
+                [
+                    seeded.ItemOneWarehouseOneBalance.Balance.Id,
+                    seeded.ItemThreeWarehouseOneBalance.Balance.Id
+                ]),
+
+            FilterScenario.Combined => (
+                new ListInventoryBalances.Query
+                {
+                    StockKeepingUnitId = seeded.ItemOne.Id,
+                    WarehouseId = seeded.WarehouseOne.Id
+                },
+                [seeded.ItemOneWarehouseOneBalance.Balance.Id]),
+
+            FilterScenario.NoMatch => (
+                new ListInventoryBalances.Query
+                {
+                    StockKeepingUnitId = Guid.NewGuid()
+                },
+                []),
+
+            _ => throw new ArgumentOutOfRangeException(nameof(scenario), scenario, null)
+        };
     }
 
     private static IEnumerable<Guid> ExpectedOrder(
@@ -528,5 +548,14 @@ public sealed class ListInventoryBalancesHandlerTests
             ItemTwoWarehouseOneBalance,
             ItemThreeWarehouseOneBalance
         ];
+    }
+
+    public enum FilterScenario
+    {
+        StockKeepingUnit,
+        Warehouse,
+        StorageLocation,
+        Combined,
+        NoMatch
     }
 }

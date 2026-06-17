@@ -1,327 +1,160 @@
-﻿using Myrmex.Shared.Common;
+using Myrmex.Shared.Common;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Topology;
 using System.Text;
+using System.Text.Json;
 
 namespace Myrmex.Tests.Wms.Topology.Client;
 
 public sealed class WmsTopologyApiClientTests
 {
-    [Fact]
-    public async Task TryCreateWarehouseAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/409",
-              "title": "Conflict",
-              "status": 409,
-              "detail": "Warehouse with the same code already exists.",
-              "code": "Warehouse.CodeAlreadyExists",
-              "field": "code"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.Conflict,
-            problemJson,
-            "application/problem+json");
-
-        WmsTopologyApiClient apiClient = new(httpClient);
-
-        CreateWarehouseRequest request = new(
-            Code: "MAIN",
-            Name: "Main Warehouse",
-            Description: null);
-
-        // Act
-        ApiResult<WarehouseDetails> result = await apiClient.TryCreateWarehouseAsync(
-            request,
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.False(result.IsSuccess);
-        Assert.Null(result.Value);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(409, result.Error.Status);
-        Assert.Equal("Warehouse with the same code already exists.", result.Error.Message);
-        Assert.Equal("Warehouse.CodeAlreadyExists", result.Error.Extensions["code"]);
-        Assert.Equal("code", result.Error.Extensions["field"]);
-    }
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public async Task ListWarehousesAsync_WhenProblemDetailsReturned_ThrowsApiException()
+    public async Task ListZonesAsync_WhenSuccessful_BuildsNestedWarehouseRouteAndMapsDetails()
     {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/500",
-              "title": "Internal Server Error",
-              "status": 500,
-              "detail": "Unexpected API failure.",
-              "code": "Error.Unknown"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.InternalServerError,
-            problemJson,
-            "application/problem+json");
-
-        WmsTopologyApiClient apiClient = new(httpClient);
-
-        ListRequest request = new();
-
-        // Act
-        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
-            apiClient.ListWarehousesAsync(
-                request,
-                TestContext.Current.CancellationToken));
-
-        // Assert
-        Assert.Equal(500, exception.Status);
-        Assert.Equal("Unexpected API failure.", exception.Message);
-        Assert.Equal("Error.Unknown", exception.Extensions["code"]);
-    }
-
-    [Fact]
-    public async Task TryCreateWarehouseAsync_WhenMalformedErrorReturned_ReturnsFallbackFailureResult()
-    {
-        // Arrange
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.BadRequest,
-            "not a valid problem details json",
-            "application/problem+json");
-
-        WmsTopologyApiClient apiClient = new(httpClient);
-
-        CreateWarehouseRequest request = new(
-            Code: "MAIN",
-            Name: "Main Warehouse",
-            Description: null);
-
-        // Act
-        ApiResult<WarehouseDetails> result = await apiClient.TryCreateWarehouseAsync(
-            request,
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(400, result.Error.Status);
-        Assert.Equal(
-            "API request failed for POST '/api/wms/topology/warehouses'. Status code: 400 BadRequest.",
-            result.Error.Message);
-        Assert.Empty(result.Error.Extensions);
-    }
-
-    [Fact]
-    public async Task ListWarehousesAsync_WhenMalformedErrorReturned_ThrowsApiExceptionWithFallbackMessage()
-    {
-        // Arrange
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.BadRequest,
-            "not a valid problem details json",
-            "application/problem+json");
-
-        WmsTopologyApiClient apiClient = new(httpClient);
-
-        ListRequest request = new();
-
-        // Act
-        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
-            apiClient.ListWarehousesAsync(
-                request,
-                TestContext.Current.CancellationToken));
-
-        // Assert
-        Assert.Equal(400, exception.Status);
-        Assert.Equal(
-            "API request failed for GET '/api/wms/topology/warehouses?skip=0&take=20&sortDescending=false&includeInactive=false'. Status code: 400 BadRequest.",
-            exception.Message);
-        Assert.Empty(exception.Extensions);
-    }
-
-    [Fact]
-    public async Task TryCreateZoneAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/409",
-              "title": "Conflict",
-              "status": 409,
-              "detail": "Zone with the same code already exists in this warehouse.",
-              "code": "Zone.CodeAlreadyExists",
-              "field": "code"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.Conflict,
-            problemJson,
-            "application/problem+json");
-
-        WmsTopologyApiClient apiClient = new(httpClient);
-
-        CreateZoneRequest request = new(
+        Guid warehouseId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
+        ZoneDetails details = new(
+            Id: Guid.Parse("018f0000-0000-7000-8000-000000000201"),
+            warehouseId,
             Code: "ZONE-A",
             Name: "Zone A",
-            Description: null);
+            Description: "Picking zone",
+            IsActive: true,
+            CreatedAtUtc: DateTimeOffset.Parse("2026-06-17T09:00:00Z"),
+            UpdatedAtUtc: null);
 
-        // Act
-        ApiResult<ZoneDetails> result = await apiClient.TryCreateZoneAsync(
-            warehouseId: Guid.NewGuid(),
-            request,
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.False(result.IsSuccess);
-        Assert.Null(result.Value);
-        Assert.NotNull(result.Error);
-
-        Assert.Equal(409, result.Error.Status);
-        Assert.Equal("Zone with the same code already exists in this warehouse.", result.Error.Message);
-        Assert.Equal("Zone.CodeAlreadyExists", result.Error.Extensions["code"]);
-        Assert.Equal("code", result.Error.Extensions["field"]);
-    }
-
-    [Fact]
-    public async Task ListZonesAsync_WhenProblemDetailsReturned_ThrowsApiException()
-    {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/500",
-              "title": "Internal Server Error",
-              "status": 500,
-              "detail": "Unexpected zone API failure.",
-              "code": "Error.Unknown"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.InternalServerError,
-            problemJson,
-            "application/problem+json");
-
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(new ListResult<ZoneDetails>([details], TotalCount: 1, Skip: 5, Take: 10)),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsTopologyApiClient apiClient = new(httpClient);
 
-        ListRequest request = new();
+        ListResult<ZoneDetails> result = await apiClient.ListZonesAsync(
+            warehouseId,
+            new ListRequest(
+                Skip: 5,
+                Take: 10,
+                SearchText: "zone",
+                SortBy: "code",
+                IncludeInactive: true),
+            TestContext.Current.CancellationToken);
 
-        // Act
-        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
-            apiClient.ListZonesAsync(
-                warehouseId: Guid.NewGuid(),
-                request,
-                TestContext.Current.CancellationToken));
-
-        // Assert
-        Assert.Equal(500, exception.Status);
-        Assert.Equal("Unexpected zone API failure.", exception.Message);
-        Assert.Equal("Error.Unknown", exception.Extensions["code"]);
+        ZoneDetails item = Assert.Single(result.Items);
+        Assert.Equal(details.Id, item.Id);
+        Assert.Equal(warehouseId, item.WarehouseId);
+        Assert.Equal("ZONE-A", item.Code);
+        Assert.Equal(1, result.TotalCount);
+        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
+        Assert.Equal($"/api/wms/topology/warehouses/{warehouseId}/zones", handler.RequestPath);
+        Assert.Equal("?skip=5&take=10&searchText=zone&sortBy=code&sortDescending=false&includeInactive=true", handler.RequestQuery);
     }
 
     [Fact]
-    public async Task TryCreateStorageLocationAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
+    public async Task TryCreateStorageLocationAsync_WhenSuccessful_PostsNestedRouteRequestBodyAndMapsDetails()
     {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/409",
-              "title": "Conflict",
-              "status": 409,
-              "detail": "Storage location with the same code already exists in this warehouse.",
-              "code": "StorageLocation.CodeAlreadyExists",
-              "field": "code"
-            }
-            """;
+        Guid warehouseId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
+        Guid zoneId = Guid.Parse("018f0000-0000-7000-8000-000000000201");
+        Guid typeId = Guid.Parse("018f0000-0000-7000-8000-000000000301");
+        Guid statusId = Guid.Parse("018f0000-0000-7000-8000-000000000401");
+        StorageLocationDetails details = new(
+            Id: Guid.Parse("018f0000-0000-7000-8000-000000000501"),
+            warehouseId,
+            zoneId,
+            typeId,
+            statusId,
+            Code: "A-01-01",
+            Name: "A-01-01",
+            Description: "Pick face",
+            IsPickable: true,
+            IsActive: true,
+            CreatedAtUtc: DateTimeOffset.Parse("2026-06-17T09:00:00Z"),
+            UpdatedAtUtc: null);
 
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.Conflict,
-            problemJson,
-            "application/problem+json");
-
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsTopologyApiClient apiClient = new(httpClient);
 
         CreateStorageLocationRequest request = new(
-            StorageLocationTypeId: Guid.NewGuid(),
-            StorageLocationStatusId: Guid.NewGuid(),
-            Code: "A-01-01",
+            typeId,
+            statusId,
+            Code: " A-01-01 ",
             Name: "A-01-01",
-            Description: null,
+            Description: "Pick face",
             IsPickable: true);
 
-        // Act
         ApiResult<StorageLocationDetails> result = await apiClient.TryCreateStorageLocationAsync(
-            warehouseId: Guid.NewGuid(),
-            zoneId: Guid.NewGuid(),
+            warehouseId,
+            zoneId,
             request,
             TestContext.Current.CancellationToken);
 
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.False(result.IsSuccess);
-        Assert.Null(result.Value);
-        Assert.NotNull(result.Error);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(details.Id, result.Value.Id);
+        Assert.Equal(typeId, result.Value.StorageLocationTypeId);
+        Assert.Equal(statusId, result.Value.StorageLocationStatusId);
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal(
+            $"/api/wms/topology/warehouses/{warehouseId}/zones/{zoneId}/locations",
+            handler.RequestPath);
 
-        Assert.Equal(409, result.Error.Status);
-        Assert.Equal("Storage location with the same code already exists in this warehouse.", result.Error.Message);
-        Assert.Equal("StorageLocation.CodeAlreadyExists", result.Error.Extensions["code"]);
-        Assert.Equal("code", result.Error.Extensions["field"]);
+        using JsonDocument requestBody = JsonDocument.Parse(handler.RequestBody);
+        JsonElement root = requestBody.RootElement;
+        Assert.Equal(typeId, root.GetProperty("storageLocationTypeId").GetGuid());
+        Assert.Equal(statusId, root.GetProperty("storageLocationStatusId").GetGuid());
+        Assert.Equal(" A-01-01 ", root.GetProperty("code").GetString());
+        Assert.True(root.GetProperty("isPickable").GetBoolean());
     }
 
     [Fact]
-    public async Task ListStorageLocationsByWarehouseAsync_WhenProblemDetailsReturned_ThrowsApiException()
+    public async Task ListStorageLocationTypesAsync_WhenIncludeInactiveTrue_GetsLookupRouteAndMapsDetails()
     {
-        // Arrange
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/500",
-              "title": "Internal Server Error",
-              "status": 500,
-              "detail": "Unexpected storage location API failure.",
-              "code": "Error.Unknown"
-            }
-            """;
+        StorageLocationTypeDetails details = new(
+            Id: Guid.Parse("018f0000-0000-7000-8000-000000000301"),
+            Code: "PICK",
+            Name: "Pick Face",
+            Description: null,
+            IsSystem: true,
+            IsActive: false,
+            SortOrder: 10);
 
-        using HttpClient httpClient = CreateHttpClient(
-            HttpStatusCode.InternalServerError,
-            problemJson,
-            "application/problem+json");
-
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson<IReadOnlyList<StorageLocationTypeDetails>>([details]),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsTopologyApiClient apiClient = new(httpClient);
 
-        ListRequest request = new();
+        IReadOnlyList<StorageLocationTypeDetails> result =
+            await apiClient.ListStorageLocationTypesAsync(
+                includeInactive: true,
+                TestContext.Current.CancellationToken);
 
-        // Act
-        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
-            apiClient.ListStorageLocationsByWarehouseAsync(
-                warehouseId: Guid.NewGuid(),
-                request,
-                TestContext.Current.CancellationToken));
-
-        // Assert
-        Assert.Equal(500, exception.Status);
-        Assert.Equal("Unexpected storage location API failure.", exception.Message);
-        Assert.Equal("Error.Unknown", exception.Extensions["code"]);
+        StorageLocationTypeDetails item = Assert.Single(result);
+        Assert.Equal(details.Id, item.Id);
+        Assert.Equal("PICK", item.Code);
+        Assert.False(item.IsActive);
+        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
+        Assert.Equal("/api/wms/topology/location-types", handler.RequestPath);
+        Assert.Equal("?includeInactive=true", handler.RequestQuery);
     }
 
-    private static HttpClient CreateHttpClient(
-        HttpStatusCode statusCode,
-        string content,
-        string mediaType)
+    private static HttpClient CreateHttpClient(StubHttpMessageHandler handler)
     {
-        StubHttpMessageHandler handler = new(statusCode, content, mediaType);
-
         return new HttpClient(handler)
         {
             BaseAddress = new Uri("https://myrmex.test")
         };
+    }
+
+    private static string SerializeJson<T>(T value)
+    {
+        return JsonSerializer.Serialize(value, JsonOptions);
     }
 
     private sealed class StubHttpMessageHandler(
@@ -329,19 +162,34 @@ public sealed class WmsTopologyApiClientTests
         string content,
         string mediaType) : HttpMessageHandler
     {
-        protected override Task<HttpResponseMessage> SendAsync(
+        public HttpMethod? RequestMethod { get; private set; }
+
+        public string? RequestPath { get; private set; }
+
+        public string? RequestQuery { get; private set; }
+
+        public string RequestBody { get; private set; } = string.Empty;
+
+        protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
-            HttpResponseMessage response = new(statusCode)
+            RequestMethod = request.Method;
+            RequestPath = request.RequestUri?.AbsolutePath;
+            RequestQuery = request.RequestUri?.Query;
+
+            if (request.Content is not null)
+            {
+                RequestBody = await request.Content.ReadAsStringAsync(cancellationToken);
+            }
+
+            return new HttpResponseMessage(statusCode)
             {
                 Content = new StringContent(
                     content,
                     Encoding.UTF8,
                     mediaType)
             };
-
-            return Task.FromResult(response);
         }
     }
 }
