@@ -50,6 +50,8 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
 
     private static string BuildInventoryBalanceListUrl(ListInventoryBalancesRequest request)
     {
+        string path = "/api/wms/inventory/balances";
+
         List<string> query = [];
 
         if (request.Skip.HasValue)
@@ -87,6 +89,8 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
             query.Add($"warehouseId={request.WarehouseId.Value}");
         }
 
-        return $"/api/wms/inventory/balances?{string.Join("&", query)}";
+        return query.Count == 0
+            ? path
+            : $"{path}?{string.Join("&", query)}";
     }
 }
