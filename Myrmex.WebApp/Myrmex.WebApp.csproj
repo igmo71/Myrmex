@@ -16,5 +16,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Myrmex.ServiceDefaults\Myrmex.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Myrmex.Shared\Myrmex.Shared.csproj" />
   </ItemGroup>
 </Project>

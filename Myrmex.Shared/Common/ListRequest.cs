@@ -1,4 +1,4 @@
-namespace Myrmex.WebApp.Wms.Api;
+﻿namespace Myrmex.Shared.Common;
 
 public sealed record ListRequest(
     int Skip = 0,
@@ -7,9 +7,3 @@ public sealed record ListRequest(
     string? SortBy = null,
     bool SortDescending = false,
     bool IncludeInactive = false);
-
-public sealed record ListResult<T>(
-    IReadOnlyList<T> Items,
-    int TotalCount,
-    int Skip,
-    int Take);

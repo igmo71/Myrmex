@@ -7,6 +7,7 @@ using Myrmex.AspNetCore.Results;
 using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Features.UnitsOfMeasure;
+using Myrmex.Shared.Common;
 
 namespace Myrmex.Modules.Wms.Catalog.Endpoints;
 

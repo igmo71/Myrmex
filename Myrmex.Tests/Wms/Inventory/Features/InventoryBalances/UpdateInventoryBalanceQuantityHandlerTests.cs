@@ -1,5 +1,6 @@
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Inventory.Features.InventoryBalances;
+using Myrmex.Shared.Wms.Inventory;
 using Myrmex.Tests.Wms.Inventory.Testing;
 using Myrmex.Tests.Wms.Topology.Testing;
 

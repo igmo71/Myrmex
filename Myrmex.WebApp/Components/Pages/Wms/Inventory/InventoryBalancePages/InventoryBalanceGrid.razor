@@ -1,3 +1,5 @@
+@using Myrmex.Shared.Wms.Inventory
+
 <MudDataGrid T="InventoryBalanceDetails"
              @ref="_dataGrid"
              ServerData="LoadServerDataAsync"
@@ -13,7 +15,9 @@
                         SortBy="@(balance => balance.Sku.Code)"
                         Sortable="true">
             <CellTemplate>
-                <MudText Typo="Typo.body2">@context.Item.Sku.Code</MudText>
+                <MudText Typo="Typo.body2">
+                    @context.Item.Sku.Code
+                </MudText>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
                     @context.Item.Sku.Name
                 </MudText>
@@ -21,25 +25,29 @@
         </TemplateColumn>
 
         <TemplateColumn Title="Warehouse"
-                        Tag="@InventoryBalanceSortBy.WarehouseName"
-                        SortBy="@(balance => balance.Location.Warehouse.Name)"
+                        Tag="@InventoryBalanceSortBy.WarehouseCode"
+                        SortBy="@(balance => balance.StorageLocation.Warehouse.Code)"
                         Sortable="true">
             <CellTemplate>
-                <MudText Typo="Typo.body2">@context.Item.Location.Warehouse.Code</MudText>
+                <MudText Typo="Typo.body2">
+                    @context.Item.StorageLocation.Warehouse.Code
+                </MudText>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    @context.Item.Location.Warehouse.Name
+                    @context.Item.StorageLocation.Warehouse.Name
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
 
         <TemplateColumn Title="Storage location"
-                        Tag="@InventoryBalanceSortBy.LocationCode"
-                        SortBy="@(balance => balance.Location.Code)"
+                        Tag="@InventoryBalanceSortBy.StorageLocationCode"
+                        SortBy="@(balance => balance.StorageLocation.Code)"
                         Sortable="true">
             <CellTemplate>
-                <MudText Typo="Typo.body2">@context.Item.Location.Code</MudText>
+                <MudText Typo="Typo.body2">
+                    @context.Item.StorageLocation.Code
+                </MudText>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    @context.Item.Location.Name
+                    @context.Item.StorageLocation.Name
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
@@ -80,17 +88,19 @@
 </MudDataGrid>
 
 @code {
-    private static readonly int[] PageSizeOptions = [10, 25, 50, 100];
-
-    private MudDataGrid<InventoryBalanceDetails>? _dataGrid;
-
     [Parameter, EditorRequired]
     public Func<InventoryBalanceGridRequest, CancellationToken, Task<GridData<InventoryBalanceDetails>>> LoadData { get; set; } = default!;
 
     [Parameter]
     public EventCallback<InventoryBalanceDetails> UpdateQuantityRequested { get; set; }
 
-    private Task<GridData<InventoryBalanceDetails>> LoadServerDataAsync(GridState<InventoryBalanceDetails> state, CancellationToken cancellationToken)
+    private MudDataGrid<InventoryBalanceDetails>? _dataGrid;
+
+    private static readonly int[] PageSizeOptions = [10, 25, 50, 100];
+
+    private Task<GridData<InventoryBalanceDetails>> LoadServerDataAsync(
+        GridState<InventoryBalanceDetails> state,
+        CancellationToken cancellationToken)
     {
         SortDefinition<InventoryBalanceDetails>? sortDefinition =
             state.SortDefinitions.FirstOrDefault();
@@ -118,10 +128,14 @@
             ?? InventoryBalanceSortBy.SkuCode;
     }
 
-    public Task ReloadServerDataAsync()
+    public async Task ReloadServerDataAsync()
     {
-        return _dataGrid?.ReloadServerData()
-            ?? Task.CompletedTask;
+        if (_dataGrid is null)
+        {
+            return;
+        }
+
+        await _dataGrid.ReloadServerData();
     }
 
     public async Task ResetAndReloadServerDataAsync()

@@ -1,4 +1,6 @@
 @using System.Globalization
+@using Myrmex.Shared.Wms.Inventory
+
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">Update inventory balance quantity</MudText>
@@ -99,10 +101,10 @@
         $"{InventoryBalance.Sku.Code} - {InventoryBalance.Sku.Name}";
 
     private string WarehouseDisplay =>
-        $"{InventoryBalance.Location.Warehouse.Code} - {InventoryBalance.Location.Warehouse.Name}";
+        $"{InventoryBalance.StorageLocation.Warehouse.Code} - {InventoryBalance.StorageLocation.Warehouse.Name}";
 
     private string StorageLocationDisplay =>
-        $"{InventoryBalance.Location.Code} - {InventoryBalance.Location.Name}";
+        $"{InventoryBalance.StorageLocation.Code} - {InventoryBalance.StorageLocation.Name}";
 
     private string BaseUnitOfMeasureDisplay =>
         string.IsNullOrWhiteSpace(InventoryBalance.Sku.BaseUom.Symbol)

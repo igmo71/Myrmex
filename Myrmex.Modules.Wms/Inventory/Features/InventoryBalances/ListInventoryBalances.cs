@@ -4,6 +4,8 @@ using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
+using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Inventory;
 
 namespace Myrmex.Modules.Wms.Inventory.Features.InventoryBalances;
 
@@ -14,17 +16,6 @@ internal static class ListInventoryBalances
         public Guid? StockKeepingUnitId { get; init; }
         public Guid? StorageLocationId { get; init; }
         public Guid? WarehouseId { get; init; }
-    }
-
-    internal static class SortBy
-    {
-        public const string Quantity = "Quantity";
-        public const string SkuCode = "SkuCode";
-        public const string SkuName = "SkuName";
-        public const string SkuBaseUomSymbol = "SkuBaseUomSymbol";
-        public const string LocationCode = "LocationCode";
-        public const string WarehouseCode = "WarehouseCode";
-        public const string WarehouseName = "WarehouseName";
     }
 
     internal sealed class Handler(WmsDbContext dbContext) : IQueryHandler<Query, ServiceResult<ListResult<InventoryBalanceDetails>>>
@@ -47,7 +38,7 @@ internal static class ListInventoryBalances
                 .ApplySorting(query.SortBy, query.SortDescending)
                 .Skip(skip)
                 .Take(take)
-                .Select(InventoryBalanceDetails.Project)
+                .ProjectDetails()
                 .ToListAsync(cancellationToken);
 
             return ServiceResult<ListResult<InventoryBalanceDetails>>
