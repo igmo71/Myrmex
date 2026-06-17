@@ -44,15 +44,18 @@
   invariants, commands, queries, and events affected by this feature?
 - **Modular Monolith Boundaries**: Does the design keep code within existing
   module boundaries and use explicit commands, queries, events, module
-  registration, or API contracts for cross-boundary behavior?
+  registration, or API contracts for cross-boundary behavior? If public
+  contracts are needed, are they limited to `Myrmex.Shared` transport types
+  without domain, EF Core, infrastructure, or UI dependencies?
 - **Vertical Slice Delivery**: Is each user-facing change delivered through an
   endpoint, request/response contract, handler, domain logic, persistence mapping,
-  and UI/client integration where applicable?
-- **Testing Discipline**: Are required domain, handler, persistence, API client,
-  and suitable endpoint/UI tests identified for changed behaviors? If endpoint
-  or UI automation is deferred, does the plan document the Principle IV
-  exception, lower-level automated coverage, manual validation, and follow-up
-  decision?
+  and UI/client integration where applicable? Are public transport contracts
+  separated from internal commands/queries, and are backend-owned projections
+  kept in the owning module?
+- **Testing Discipline**: Does the plan identify the concrete regression risks,
+  the lowest owning layer for each risk, any focused architectural-boundary
+  tests, and intentionally omitted duplicate tests? Endpoint, API-client, and UI
+  tests should be included only when the boundary risk justifies them.
 - **Simplicity and Observability**: Does the plan reuse existing local patterns,
   avoid unnecessary frameworks or service splits, and provide meaningful errors,
   health checks, logging, or diagnostics for operationally important behavior?
@@ -117,6 +120,23 @@ ios/ or android/
 
 **Structure Decision**: [Document the selected structure and reference the real
 directories captured above]
+
+## Architectural Design Notes
+
+<!--
+  ACTION REQUIRED: Fill this section for features that expose API, client, UI,
+  or list behavior. Delete non-applicable bullets instead of carrying placeholders.
+-->
+
+- **Domain concepts first**: [WMS/fulfillment concepts and business rules that drive the design]
+- **Shared contract boundary**: [Public request/response contracts in Myrmex.Shared, if any, and why each crosses the backend/client boundary]
+- **Internal request boundary**: [Internal commands/queries and handlers that must not become public transport contracts]
+- **Backend-owned projection**: [DTO projection approach and owning module, if applicable]
+- **Server-driven list behavior**: [Filters, count-before-paging, supported sort keys, deterministic secondary sort, Skip/Take, and ListResult<T>, if applicable]
+- **Client/grid behavior**: [API-client query construction, MudDataGrid ServerData mapping, page reset/reload semantics, if applicable]
+- **Cancellation and errors**: [Cancellation propagation path and expected ProblemDetails/ApiResult behavior]
+- **Risk-based testing**: [Concrete regression risks, lowest owning layer for each planned test, focused boundary tests, and duplicate tests intentionally omitted]
+- **Existing pattern precedence**: [Existing local slice, client, endpoint, or UI pattern this plan follows]
 
 ## Complexity Tracking
 

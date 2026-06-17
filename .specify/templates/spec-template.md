@@ -12,15 +12,19 @@
 
 <!--
   IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
-  you should still have a viable MVP (Minimum Viable Product) that delivers value.
+  Each user story/journey must be INDEPENDENTLY TESTABLE at the behavior level -
+  meaning if you implement just ONE of them, you should still have a viable MVP
+  (Minimum Viable Product) that delivers value.
 
   Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
   Think of each story as a standalone slice of functionality that can be:
   - Developed independently
-  - Tested independently
+  - Validated independently through critical outcomes and observable contracts
   - Deployed independently
   - Demonstrated to users independently
+
+  Keep specification testing language behavior-oriented. Do not prescribe
+  low-level test classes, methods, layers, or line-coverage targets here.
 -->
 
 ### User Story 1 - [Brief Title] (Priority: P1)
@@ -83,7 +87,8 @@
 <!--
   ACTION REQUIRED: The content in this section represents placeholders.
   Fill them out with the right functional requirements.
-  Use WMS/fulfillment domain language and identify business invariants explicitly.
+  Start with explicit WMS/fulfillment domain concepts before technical
+  implementation details. Identify business invariants explicitly.
 -->
 
 ### Functional Requirements
@@ -103,6 +108,13 @@
 
 - **DR-001**: [Domain invariant or state transition rule, e.g., "Inactive storage locations cannot be selected for new stock placement"]
 - **DR-002**: [Uniqueness, identity, lifecycle, or reference-data rule]
+
+### Contract and Boundary Requirements *(mandatory when feature exposes API, client, or UI behavior)*
+
+- **CB-001**: [Public request/response contracts that cross backend/client boundaries]
+- **CB-002**: [Internal commands/queries that must remain separate from public transport contracts]
+- **CB-003**: [Backend-owned projections or DTO boundaries, if data is listed or loaded]
+- **CB-004**: [Server-driven list behavior: filters, paging, supported sort keys, deterministic ordering, cancellation, and error behavior, if applicable]
 
 ### Observability & Error Handling *(mandatory when feature exposes runtime behavior)*
 
