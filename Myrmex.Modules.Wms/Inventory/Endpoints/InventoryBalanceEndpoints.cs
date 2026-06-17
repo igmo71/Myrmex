@@ -7,6 +7,7 @@ using Myrmex.AspNetCore.Results;
 using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Inventory.Features.InventoryBalances;
+using Myrmex.Shared.Common;
 using Myrmex.Shared.Wms.Inventory;
 
 namespace Myrmex.Modules.Wms.Inventory.Endpoints;
@@ -50,25 +51,19 @@ internal static class InventoryBalanceEndpoints
     }
 
     private static async Task<IResult> ListInventoryBalancesAsync(
-        int? skip,
-        int? take,
-        string? sortBy,
-        bool? sortDescending,
-        Guid? stockKeepingUnitId,
-        Guid? storageLocationId,
-        Guid? warehouseId,
+        [AsParameters] ListInventoryBalancesRequest request,
         IQueryDispatcher queryDispatcher,
         CancellationToken cancellationToken = default)
     {
         var query = new ListInventoryBalances.Query
         {
-            Skip = skip ?? 0,
-            Take = take ?? ListQuery.DefaultTake,
-            SortBy = sortBy,
-            SortDescending = sortDescending ?? false,
-            StockKeepingUnitId = stockKeepingUnitId,
-            StorageLocationId = storageLocationId,
-            WarehouseId = warehouseId
+            Skip = request.Skip ?? 0,
+            Take = request.Take ?? ListQuery.DefaultTake,
+            SortBy = request.SortBy,
+            SortDescending = request.SortDescending ?? false,
+            StockKeepingUnitId = request.StockKeepingUnitId,
+            StorageLocationId = request.StorageLocationId,
+            WarehouseId = request.WarehouseId
         };
 
         var result = await queryDispatcher

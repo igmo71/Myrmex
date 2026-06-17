@@ -1,3 +1,4 @@
+using Myrmex.Shared.Common;
 using System.Web;
 
 namespace Myrmex.WebApp.Wms.Api;

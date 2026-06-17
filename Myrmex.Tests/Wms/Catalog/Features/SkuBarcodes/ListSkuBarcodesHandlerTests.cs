@@ -4,6 +4,7 @@ using Myrmex.Modules.Wms.Catalog.Domain.SkuBarcodes;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Catalog.Features.SkuBarcodes;
+using Myrmex.Shared.Common;
 using Myrmex.Tests.Wms.Topology.Testing;
 
 namespace Myrmex.Tests.Wms.Catalog.Features.SkuBarcodes;

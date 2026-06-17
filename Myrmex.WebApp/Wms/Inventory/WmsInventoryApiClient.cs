@@ -1,3 +1,4 @@
+using Myrmex.Shared.Common;
 using Myrmex.Shared.Wms.Inventory;
 using Myrmex.WebApp.Wms.Api;
 using System.Web;
@@ -49,18 +50,27 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
 
     private static string BuildInventoryBalanceListUrl(ListInventoryBalancesRequest request)
     {
-        List<string> query =
-        [
-            $"skip={request.Skip}",
-            $"take={request.Take}"
-        ];
+        List<string> query = [];
+
+        if (request.Skip.HasValue)
+        {
+            query.Add($"skip={request.Skip.Value}");
+        }
+
+        if (request.Take.HasValue)
+        {
+            query.Add($"take={request.Take.Value}");
+        }
 
         if (!string.IsNullOrWhiteSpace(request.SortBy))
         {
             query.Add($"sortBy={HttpUtility.UrlEncode(request.SortBy)}");
         }
 
-        query.Add($"sortDescending={request.SortDescending.ToString().ToLowerInvariant()}");
+        if (request.SortDescending.HasValue)
+        {
+            query.Add($"sortDescending={request.SortDescending.Value.ToString().ToLowerInvariant()}");
+        }
 
         if (request.StockKeepingUnitId.HasValue)
         {
@@ -80,12 +90,3 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
         return $"/api/wms/inventory/balances?{string.Join("&", query)}";
     }
 }
-
-public sealed record ListInventoryBalancesRequest(
-    int Skip = 0,
-    int Take = 20,
-    string? SortBy = null,
-    bool SortDescending = false,
-    Guid? StockKeepingUnitId = null,
-    Guid? StorageLocationId = null,
-    Guid? WarehouseId = null);

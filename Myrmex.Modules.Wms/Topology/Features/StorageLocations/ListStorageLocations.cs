@@ -4,6 +4,7 @@ using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
+using Myrmex.Shared.Common;
 
 namespace Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 

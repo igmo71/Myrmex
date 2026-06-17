@@ -25,8 +25,8 @@
         </TemplateColumn>
 
         <TemplateColumn Title="Warehouse"
-                        Tag="@InventoryBalanceSortBy.WarehouseName"
-                        SortBy="@(balance => balance.StorageLocation.Warehouse.Name)"
+                        Tag="@InventoryBalanceSortBy.WarehouseCode"
+                        SortBy="@(balance => balance.StorageLocation.Warehouse.Code)"
                         Sortable="true">
             <CellTemplate>
                 <MudText Typo="Typo.body2">
@@ -131,7 +131,9 @@
     public async Task ReloadServerDataAsync()
     {
         if (_dataGrid is null)
+        {
             return;
+        }
 
         await _dataGrid.ReloadServerData();
     }
@@ -139,9 +141,15 @@
     public async Task ResetAndReloadServerDataAsync()
     {
         if (_dataGrid is null)
+        {
             return;
+        }
 
-        await _dataGrid.ReloadServerData();
+        if (_dataGrid.CurrentPage == 0)
+        {
+            await _dataGrid.ReloadServerData();
+            return;
+        }
 
         _dataGrid.NavigateTo(Page.First);
     }

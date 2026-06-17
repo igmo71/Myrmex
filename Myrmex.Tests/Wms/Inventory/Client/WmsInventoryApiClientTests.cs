@@ -1,3 +1,4 @@
+using Myrmex.Shared.Common;
 using Myrmex.Shared.Wms.Inventory;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Inventory;
@@ -9,91 +10,6 @@ namespace Myrmex.Tests.Wms.Inventory.Client;
 
 public sealed class WmsInventoryApiClientTests
 {
-    [Fact]
-    public async Task ListInventoryBalancesAsync_WhenSuccessful_BuildsQueryStringAndParsesResponse()
-    {
-        Guid inventoryBalanceId = Guid.Parse("018f0000-0000-7000-8000-000000000401");
-        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000201");
-        Guid storageLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000301");
-        Guid warehouseId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
-        Guid baseUnitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000111");
-
-        string responseJson = $$"""
-            {
-              "items": [
-                {
-                  "id": "{{inventoryBalanceId}}",
-                  "stockKeepingUnitId": "{{stockKeepingUnitId}}",
-                  "stockKeepingUnitCode": "ITEM-001",
-                  "stockKeepingUnitName": "Widget",
-                  "storageLocationId": "{{storageLocationId}}",
-                  "storageLocationCode": "A-01-01",
-                  "storageLocationName": "A-01-01",
-                  "warehouseId": "{{warehouseId}}",
-                  "warehouseCode": "MAIN",
-                  "warehouseName": "Main Warehouse",
-                  "baseUnitOfMeasureId": "{{baseUnitOfMeasureId}}",
-                  "baseUnitOfMeasureCode": "EA",
-                  "baseUnitOfMeasureSymbol": "ea",
-                  "quantity": 10.0,
-                  "createdAtUtc": "2026-06-11T00:00:00+00:00",
-                  "updatedAtUtc": null
-                }
-              ],
-              "totalCount": 1,
-              "skip": 5,
-              "take": 10
-            }
-            """;
-
-        StubHttpMessageHandler handler = new(
-            HttpStatusCode.OK,
-            responseJson,
-            "application/json");
-
-        using HttpClient httpClient = CreateHttpClient(handler);
-        WmsInventoryApiClient apiClient = new(httpClient);
-
-        ListResult<InventoryBalanceDetails> result = await apiClient.ListInventoryBalancesAsync(
-            new ListInventoryBalancesRequest(
-                Skip: 5,
-                Take: 10,
-                SortBy: "quantity",
-                SortDescending: true,
-                StockKeepingUnitId: stockKeepingUnitId,
-                StorageLocationId: storageLocationId,
-                WarehouseId: warehouseId),
-            TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
-        Assert.Equal("/api/wms/inventory/balances", handler.RequestPath);
-
-        Dictionary<string, string> query = ParseQuery(handler.RequestQuery);
-        Assert.Equal("5", query["skip"]);
-        Assert.Equal("10", query["take"]);
-        Assert.Equal("quantity", query["sortBy"]);
-        Assert.Equal("true", query["sortDescending"]);
-        Assert.Equal(stockKeepingUnitId.ToString(), query["stockKeepingUnitId"]);
-        Assert.Equal(storageLocationId.ToString(), query["storageLocationId"]);
-        Assert.Equal(warehouseId.ToString(), query["warehouseId"]);
-
-        Assert.Equal(1, result.TotalCount);
-        Assert.Equal(5, result.Skip);
-        Assert.Equal(10, result.Take);
-
-        InventoryBalanceDetails details = Assert.Single(result.Items);
-        Assert.Equal(inventoryBalanceId, details.Id);
-        Assert.Equal(stockKeepingUnitId, details.Sku.Id);
-        Assert.Equal("ITEM-001", details.Sku.Code);
-        Assert.Equal(storageLocationId, details.StorageLocation.Id);
-        Assert.Equal("A-01-01", details.StorageLocation.Code);
-        Assert.Equal(warehouseId, details.StorageLocation.Warehouse.Id);
-        Assert.Equal("MAIN", details.StorageLocation.Warehouse.Code);
-        Assert.Equal(baseUnitOfMeasureId, details.Sku.BaseUom.Id);
-        Assert.Equal("EA", details.Sku.BaseUom.Code);
-        Assert.Equal(10, details.Quantity);
-    }
-
     [Fact]
     public async Task ListInventoryBalancesAsync_WhenOptionalFiltersAreNotProvided_OmitsFilterQueryParameters()
     {

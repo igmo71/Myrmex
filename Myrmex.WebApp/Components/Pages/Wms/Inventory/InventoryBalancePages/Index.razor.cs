@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using Myrmex.Shared.Common;
 using Myrmex.Shared.Wms.Inventory;
-using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Catalog;
 using Myrmex.WebApp.Wms.Inventory;
 using Myrmex.WebApp.Wms.Topology;
@@ -88,14 +88,16 @@ public partial class Index
 
         try
         {
-            ListInventoryBalancesRequest request = new(
-            Skip: gridRequest.Skip,
-            Take: gridRequest.Take,
-            SortBy: gridRequest.SortBy,
-            SortDescending: gridRequest.SortDescending,
-            StockKeepingUnitId: _selectedStockKeepingUnitId,
-            StorageLocationId: _selectedStorageLocationId,
-            WarehouseId: _selectedWarehouseId);
+            ListInventoryBalancesRequest request = new()
+            {
+                Skip = gridRequest.Skip,
+                Take = gridRequest.Take,
+                SortBy = gridRequest.SortBy,
+                SortDescending = gridRequest.SortDescending,
+                StockKeepingUnitId = _selectedStockKeepingUnitId,
+                StorageLocationId = _selectedStorageLocationId,
+                WarehouseId = _selectedWarehouseId
+            };
 
             ListResult<InventoryBalanceDetails> result =
                 await WmsInventoryApiClient.ListInventoryBalancesAsync(request, cancellationToken);
@@ -106,7 +108,8 @@ public partial class Index
                 TotalItems = result.TotalCount
             };
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        catch (Exception exception)
+            when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             _errorMessage = exception.Message;
 

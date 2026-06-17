@@ -8,6 +8,7 @@ using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.SkuBarcodes;
 using Myrmex.Modules.Wms.Catalog.Features.SkuBarcodes;
+using Myrmex.Shared.Common;
 
 namespace Myrmex.Modules.Wms.Catalog.Endpoints;
 
