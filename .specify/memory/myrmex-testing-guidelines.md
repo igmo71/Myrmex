@@ -11,6 +11,30 @@ When changed or introduced, the following need automated tests:
 - persistence mappings, indexes, uniqueness, and provider-sensitive behavior;
 - API clients, result envelopes, ProblemDetails mapping, and error handling.
 
+## Contract and List Testing
+
+Tests must protect current behavior, not obsolete representations.
+
+Successful response fixtures should be constructed from current shared DTO types
+when those DTOs are the contract being exercised. API-client tests should
+serialize shared DTO fixtures using web JSON conventions instead of manually
+maintaining duplicate successful JSON contract shapes.
+
+API-client tests should focus on URL construction, query parameters, request
+bodies for write actions, cancellation propagation, success/error mapping, and
+Problem Details behavior. Different business error scenarios should not be
+duplicated at the API-client level when they exercise the same generic Problem
+Details mapping.
+
+Endpoint integration tests should verify real Minimal API binding and real JSON
+serialization when endpoint behavior or binding is part of the change.
+
+Handler and persistence tests for server-driven list slices should verify
+filtering, count-before-paging, paging, supported sorting, deterministic
+ordering, backend-owned projection, and domain/application behavior. Prefer
+fewer strong behavioral tests over many weak tests that only reproduce framework
+behavior.
+
 ## Reference-Data Slice Coverage
 
 Catalog/SKU is the representative reference-data vertical slice. Future CRUD-style reference-data slices SHOULD reuse that pattern instead of copying the full SKU-level test matrix by default.

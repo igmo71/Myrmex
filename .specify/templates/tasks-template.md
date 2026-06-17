@@ -17,6 +17,14 @@ the plan documents a Principle IV endpoint/UI exception, include the lower-level
 automated tests and required manual validation tasks instead. Additional tests
 remain optional when they do not protect a changed behavior.
 
+For server-driven list behavior, include tests at the correct architectural
+boundaries: API-client URL/query/cancellation/success/error mapping tests,
+endpoint binding and serialization tests when binding changes, and
+handler/persistence tests for filtering, count-before-paging, paging, supported
+sorting, deterministic ordering, projection, and domain/application behavior.
+Use current shared DTO types for successful response fixtures and serialize them
+with web JSON conventions where API-client tests need JSON.
+
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
 ## Format: `[ID] [P?] [Story] Description`
@@ -75,6 +83,8 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T007 Create base models/entities that all stories depend on
 - [ ] T008 Configure error handling and logging infrastructure
 - [ ] T009 Setup environment configuration management
+- [ ] TXXX [P] Define public transport contracts in Myrmex.Shared only when they cross the backend/client boundary
+- [ ] TXXX [P] Identify internal commands/queries and backend-owned projections that remain in the owning module
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -92,6 +102,7 @@ Examples of foundational tasks (adjust based on your project):
 
 - [ ] T010 [P] [US1] Domain or handler test for [rule/command/query] in tests/[path]
 - [ ] T011 [P] [US1] API client, endpoint, or UI test required by Principle IV in tests/[path]
+- [ ] TXXX [P] [US1] Server-driven list behavior test for [filter/count/paging/sorting/projection] in tests/[path] (if applicable)
 
 ### Implementation for User Story 1
 
@@ -101,6 +112,8 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
 - [ ] T016 [US1] Add validation and error handling
 - [ ] T017 [US1] Add logging for user story 1 operations
+- [ ] TXXX [US1] Implement server-driven list flow from shared request to ListResult<T> (if applicable)
+- [ ] TXXX [US1] Implement client/grid mapping from UI grid state to shared API request (if applicable)
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -188,6 +201,9 @@ Examples of foundational tasks (adjust based on your project):
 - Constitutionally required tests MUST be written and fail before implementation
 - Endpoint/UI automation exceptions MUST match the plan and include required
   lower-level automated coverage plus manual validation tasks
+- Shared contracts MUST stay separate from internal commands/queries
+- Server-driven list implementations MUST apply filters, count, deterministic
+  sorting, Skip/Take, projection, and ListResult<T> in that order
 - Models before services
 - Services before endpoints
 - Core implementation before integration

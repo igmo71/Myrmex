@@ -83,7 +83,8 @@
 <!--
   ACTION REQUIRED: The content in this section represents placeholders.
   Fill them out with the right functional requirements.
-  Use WMS/fulfillment domain language and identify business invariants explicitly.
+  Start with explicit WMS/fulfillment domain concepts before technical
+  implementation details. Identify business invariants explicitly.
 -->
 
 ### Functional Requirements
@@ -103,6 +104,13 @@
 
 - **DR-001**: [Domain invariant or state transition rule, e.g., "Inactive storage locations cannot be selected for new stock placement"]
 - **DR-002**: [Uniqueness, identity, lifecycle, or reference-data rule]
+
+### Contract and Boundary Requirements *(mandatory when feature exposes API, client, or UI behavior)*
+
+- **CB-001**: [Public request/response contracts that cross backend/client boundaries]
+- **CB-002**: [Internal commands/queries that must remain separate from public transport contracts]
+- **CB-003**: [Backend-owned projections or DTO boundaries, if data is listed or loaded]
+- **CB-004**: [Server-driven list behavior: filters, paging, supported sort keys, deterministic ordering, cancellation, and error behavior, if applicable]
 
 ### Observability & Error Handling *(mandatory when feature exposes runtime behavior)*
 
