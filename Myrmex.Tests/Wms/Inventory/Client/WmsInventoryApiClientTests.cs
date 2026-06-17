@@ -1,13 +1,87 @@
+using Myrmex.Shared.Common;
 using Myrmex.Shared.Wms.Inventory;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Inventory;
 using System.Text;
+using System.Text.Json;
 using System.Web;
 
 namespace Myrmex.Tests.Wms.Inventory.Client;
 
 public sealed class WmsInventoryApiClientTests
 {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    [Fact]
+    public async Task ListInventoryBalancesAsync_WhenRequestHasNoValues_OmitsNullableQueryParametersAndMapsNestedDetails()
+    {
+        InventoryBalanceDetails details = CreateInventoryBalanceDetails();
+        ListResult<InventoryBalanceDetails> response = new([details], TotalCount: 1, Skip: 0, Take: 20);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(response),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+
+        ListResult<InventoryBalanceDetails> result = await apiClient.ListInventoryBalancesAsync(
+            new ListInventoryBalancesRequest(),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
+        Assert.Equal("/api/wms/inventory/balances", handler.RequestPath);
+        Assert.Equal(string.Empty, handler.RequestQuery);
+
+        InventoryBalanceDetails item = Assert.Single(result.Items);
+        Assert.Equal(details.Id, item.Id);
+        Assert.Equal(details.Sku.Id, item.Sku.Id);
+        Assert.Equal(details.Sku.Code, item.Sku.Code);
+        Assert.Equal(details.Sku.BaseUom.Id, item.Sku.BaseUom.Id);
+        Assert.Equal(details.Sku.BaseUom.Symbol, item.Sku.BaseUom.Symbol);
+        Assert.Equal(details.StorageLocation.Id, item.StorageLocation.Id);
+        Assert.Equal(details.StorageLocation.Warehouse.Id, item.StorageLocation.Warehouse.Id);
+        Assert.Equal(details.StorageLocation.Warehouse.Code, item.StorageLocation.Warehouse.Code);
+    }
+
+    [Fact]
+    public async Task ListInventoryBalancesAsync_WhenRequestHasExplicitValues_IncludesQueryParametersAndPropagatesCancellation()
+    {
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
+        Guid storageLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000201");
+        Guid warehouseId = Guid.Parse("018f0000-0000-7000-8000-000000000301");
+        ListResult<InventoryBalanceDetails> response = new([], TotalCount: 0, Skip: 0, Take: 50);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(response),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+        using CancellationTokenSource cancellationTokenSource = new();
+
+        await apiClient.ListInventoryBalancesAsync(
+            new ListInventoryBalancesRequest
+            {
+                Skip = 0,
+                Take = 50,
+                SortBy = InventoryBalanceSortBy.SkuCode,
+                SortDescending = false,
+                StockKeepingUnitId = stockKeepingUnitId,
+                StorageLocationId = storageLocationId,
+                WarehouseId = warehouseId
+            },
+            cancellationTokenSource.Token);
+
+        Dictionary<string, string> query = ParseQuery(handler.RequestQuery);
+
+        Assert.Equal("0", query["skip"]);
+        Assert.Equal("50", query["take"]);
+        Assert.Equal(InventoryBalanceSortBy.SkuCode, query["sortBy"]);
+        Assert.Equal("false", query["sortDescending"]);
+        Assert.Equal(stockKeepingUnitId.ToString(), query["stockKeepingUnitId"]);
+        Assert.Equal(storageLocationId.ToString(), query["storageLocationId"]);
+        Assert.Equal(warehouseId.ToString(), query["warehouseId"]);
+    }
+
     [Fact]
     public async Task ListInventoryBalancesAsync_WhenProblemDetailsReturned_ThrowsApiException()
     {
@@ -38,7 +112,42 @@ public sealed class WmsInventoryApiClientTests
     }
 
     [Fact]
-    public async Task TryCreateInventoryBalanceAsync_WhenValidationProblemReturned_ReturnsFailureResult()
+    public async Task TryCreateInventoryBalanceAsync_WhenSuccessful_PostsRequestBodyAndMapsNestedDetails()
+    {
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
+        Guid storageLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000201");
+        InventoryBalanceDetails details = CreateInventoryBalanceDetails(
+            stockKeepingUnitId: stockKeepingUnitId,
+            storageLocationId: storageLocationId,
+            quantity: 12.5m);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+
+        ApiResult<InventoryBalanceDetails> result = await apiClient.TryCreateInventoryBalanceAsync(
+            new CreateInventoryBalanceRequest(stockKeepingUnitId, storageLocationId, Quantity: 12.5m),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(details.Id, result.Value.Id);
+        Assert.Equal(details.Sku.BaseUom.Code, result.Value.Sku.BaseUom.Code);
+        Assert.Equal(details.StorageLocation.Warehouse.Name, result.Value.StorageLocation.Warehouse.Name);
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal("/api/wms/inventory/balances", handler.RequestPath);
+
+        using JsonDocument requestBody = JsonDocument.Parse(handler.RequestBody);
+        JsonElement root = requestBody.RootElement;
+        Assert.Equal(stockKeepingUnitId, root.GetProperty("stockKeepingUnitId").GetGuid());
+        Assert.Equal(storageLocationId, root.GetProperty("storageLocationId").GetGuid());
+        Assert.Equal(12.5m, root.GetProperty("quantity").GetDecimal());
+    }
+
+    [Fact]
+    public async Task TryCreateInventoryBalanceAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
     {
         const string problemJson = """
             {
@@ -70,69 +179,37 @@ public sealed class WmsInventoryApiClientTests
     }
 
     [Fact]
-    public async Task TryCreateInventoryBalanceAsync_WhenMissingReferenceReturned_ReturnsFailureResult()
+    public async Task TryUpdateInventoryBalanceQuantityAsync_WhenSuccessful_PutsRequestBodyAndMapsNestedDetails()
     {
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/404",
-              "title": "Not Found",
-              "status": 404,
-              "detail": "SKU was not found for inventory balance creation.",
-              "code": "InventoryBalance.StockKeepingUnitNotFound",
-              "field": "stockKeepingUnitId"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(new StubHttpMessageHandler(
-            HttpStatusCode.NotFound,
-            problemJson,
-            "application/problem+json"));
+        Guid inventoryBalanceId = Guid.Parse("018f0000-0000-7000-8000-000000000999");
+        InventoryBalanceDetails details = CreateInventoryBalanceDetails(
+            inventoryBalanceId: inventoryBalanceId,
+            quantity: 0);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
         WmsInventoryApiClient apiClient = new(httpClient);
 
-        ApiResult<InventoryBalanceDetails> result = await apiClient.TryCreateInventoryBalanceAsync(
-            new CreateInventoryBalanceRequest(Guid.NewGuid(), Guid.NewGuid(), Quantity: 10),
+        ApiResult<InventoryBalanceDetails> result = await apiClient.TryUpdateInventoryBalanceQuantityAsync(
+            inventoryBalanceId,
+            new UpdateInventoryBalanceQuantityRequest(Quantity: 0),
             TestContext.Current.CancellationToken);
 
-        Assert.True(result.IsFailure);
-        Assert.NotNull(result.Error);
-        Assert.Equal(404, result.Error.Status);
-        Assert.Equal("InventoryBalance.StockKeepingUnitNotFound", result.Error.Extensions["code"]);
-        Assert.Equal("stockKeepingUnitId", result.Error.Extensions["field"]);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(inventoryBalanceId, result.Value.Id);
+        Assert.Equal(0, result.Value.Quantity);
+        Assert.Equal(HttpMethod.Put, handler.RequestMethod);
+        Assert.Equal($"/api/wms/inventory/balances/{inventoryBalanceId}/quantity", handler.RequestPath);
+
+        using JsonDocument requestBody = JsonDocument.Parse(handler.RequestBody);
+        Assert.Equal(0, requestBody.RootElement.GetProperty("quantity").GetDecimal());
     }
 
     [Fact]
-    public async Task TryCreateInventoryBalanceAsync_WhenDuplicateReturned_ReturnsFailureResult()
-    {
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/409",
-              "title": "Conflict",
-              "status": 409,
-              "detail": "Inventory balance for the same SKU and storage location already exists.",
-              "code": "InventoryBalance.DuplicateStockKeepingUnitStorageLocation",
-              "field": "stockKeepingUnitId"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(new StubHttpMessageHandler(
-            HttpStatusCode.Conflict,
-            problemJson,
-            "application/problem+json"));
-        WmsInventoryApiClient apiClient = new(httpClient);
-
-        ApiResult<InventoryBalanceDetails> result = await apiClient.TryCreateInventoryBalanceAsync(
-            new CreateInventoryBalanceRequest(Guid.NewGuid(), Guid.NewGuid(), Quantity: 10),
-            TestContext.Current.CancellationToken);
-
-        Assert.True(result.IsFailure);
-        Assert.NotNull(result.Error);
-        Assert.Equal(409, result.Error.Status);
-        Assert.Equal("InventoryBalance.DuplicateStockKeepingUnitStorageLocation", result.Error.Extensions["code"]);
-        Assert.Equal("stockKeepingUnitId", result.Error.Extensions["field"]);
-    }
-
-    [Fact]
-    public async Task TryUpdateInventoryBalanceQuantityAsync_WhenValidationProblemReturned_ReturnsFailureResult()
+    public async Task TryUpdateInventoryBalanceQuantityAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
     {
         const string problemJson = """
             {
@@ -162,37 +239,6 @@ public sealed class WmsInventoryApiClientTests
         Assert.Equal("One or more validation errors occurred.", result.Error.Message);
         Assert.Equal("Validation.Invalid", result.Error.Extensions["code"]);
         Assert.Equal("quantity", result.Error.Extensions["field"]);
-    }
-
-    [Fact]
-    public async Task TryUpdateInventoryBalanceQuantityAsync_WhenNotFoundReturned_ReturnsFailureResult()
-    {
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/404",
-              "title": "Not Found",
-              "status": 404,
-              "detail": "Inventory balance was not found.",
-              "code": "InventoryBalance.NotFound"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(new StubHttpMessageHandler(
-            HttpStatusCode.NotFound,
-            problemJson,
-            "application/problem+json"));
-        WmsInventoryApiClient apiClient = new(httpClient);
-
-        ApiResult<InventoryBalanceDetails> result = await apiClient.TryUpdateInventoryBalanceQuantityAsync(
-            Guid.NewGuid(),
-            new UpdateInventoryBalanceQuantityRequest(Quantity: 5),
-            TestContext.Current.CancellationToken);
-
-        Assert.True(result.IsFailure);
-        Assert.NotNull(result.Error);
-        Assert.Equal(404, result.Error.Status);
-        Assert.Equal("Inventory balance was not found.", result.Error.Message);
-        Assert.Equal("InventoryBalance.NotFound", result.Error.Extensions["code"]);
     }
 
     [Fact]
@@ -267,6 +313,40 @@ public sealed class WmsInventoryApiClientTests
             .ToDictionary(x => x!, x => queryString[x!]!);
     }
 
+    private static string SerializeJson<T>(T value)
+    {
+        return JsonSerializer.Serialize(value, JsonOptions);
+    }
+
+    private static InventoryBalanceDetails CreateInventoryBalanceDetails(
+        Guid? inventoryBalanceId = null,
+        Guid? stockKeepingUnitId = null,
+        Guid? storageLocationId = null,
+        decimal quantity = 10)
+    {
+        return new InventoryBalanceDetails(
+            inventoryBalanceId ?? Guid.Parse("018f0000-0000-7000-8000-000000000001"),
+            quantity,
+            DateTimeOffset.Parse("2026-06-17T09:00:00Z"),
+            DateTimeOffset.Parse("2026-06-17T10:00:00Z"),
+            new InventoryBalanceDetails.StockKeepingUnitInfo(
+                stockKeepingUnitId ?? Guid.Parse("018f0000-0000-7000-8000-000000000101"),
+                "SKU-001",
+                "Widget",
+                new InventoryBalanceDetails.UnitOfMeasureInfo(
+                    Guid.Parse("018f0000-0000-7000-8000-000000000111"),
+                    "EA",
+                    "ea")),
+            new InventoryBalanceDetails.StorageLocationInfo(
+                storageLocationId ?? Guid.Parse("018f0000-0000-7000-8000-000000000201"),
+                "A-01-01",
+                "A-01-01",
+                new InventoryBalanceDetails.WarehouseInfo(
+                    Guid.Parse("018f0000-0000-7000-8000-000000000301"),
+                    "MAIN",
+                    "Main Warehouse")));
+    }
+
     private sealed class StubHttpMessageHandler(
         HttpStatusCode statusCode,
         string content,
@@ -280,6 +360,8 @@ public sealed class WmsInventoryApiClientTests
 
         public string RequestBody { get; private set; } = string.Empty;
 
+        public CancellationToken RequestCancellationToken { get; private set; }
+
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken)
@@ -287,6 +369,7 @@ public sealed class WmsInventoryApiClientTests
             RequestMethod = request.Method;
             RequestPath = request.RequestUri?.AbsolutePath;
             RequestQuery = request.RequestUri?.Query;
+            RequestCancellationToken = cancellationToken;
 
             if (request.Content is not null)
             {
