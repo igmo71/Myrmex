@@ -9,20 +9,18 @@ description: "Task list template for feature implementation"
 
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: Include tests required by the constitution for changed domain rules,
-command/query handlers, persistence mappings, and API clients. Include endpoint
-integration tests and UI/component tests when suitable project infrastructure
-already exists and lower-level tests cannot adequately protect the behavior. If
-the plan documents a Principle IV endpoint/UI exception, include the lower-level
-automated tests and required manual validation tasks instead. Additional tests
-remain optional when they do not protect a changed behavior.
+**Tests**: Generate test tasks only for changed behavior with an identified
+regression risk. For each planned test, name the protected regression risk and
+select the lowest architectural layer that fully owns that behavior. Add focused
+boundary tests only when lower-layer tests cannot protect the boundary.
 
-For server-driven list behavior, include tests at the correct architectural
-boundaries: API-client URL/query/cancellation/success/error mapping tests,
-endpoint binding and serialization tests when binding changes, and
-handler/persistence tests for filtering, count-before-paging, paging, supported
-sorting, deterministic ordering, projection, and domain/application behavior.
-Use current shared DTO types for successful response fixtures and serialize them
+For server-driven list behavior, create conditional tests at the correct
+architectural boundary: handler/persistence tests when query behavior changes;
+endpoint integration tests when binding, routing, serialization, or the public
+HTTP contract changes; API-client tests when client-owned URL, body,
+cancellation, or error-mapping behavior changes. Do not reproduce the same
+sorting/filtering matrix through handler, endpoint, and API-client tests. Use
+current shared DTO types for successful response fixtures and serialize them
 with web JSON conventions where API-client tests need JSON.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
@@ -96,13 +94,15 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 1 (include when constitutionally required) ⚠️
+### Tests for User Story 1 (include only for identified risks) ⚠️
 
-> **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
+> **NOTE: For automated tests, write them first and ensure they fail before implementation**
 
-- [ ] T010 [P] [US1] Domain or handler test for [rule/command/query] in tests/[path]
-- [ ] T011 [P] [US1] API client, endpoint, or UI test required by Principle IV in tests/[path]
-- [ ] TXXX [P] [US1] Server-driven list behavior test for [filter/count/paging/sorting/projection] in tests/[path] (if applicable)
+- [ ] T010 [P] [US1] Domain test for [protected invariant risk] in tests/[path] (if domain rules change)
+- [ ] T011 [P] [US1] Handler/persistence test for [protected application/query/persistence risk] in tests/[path] (if that layer owns the changed behavior)
+- [ ] TXXX [P] [US1] Endpoint integration test for [protected binding/routing/serialization risk] in tests/[path] (if the HTTP boundary changes)
+- [ ] TXXX [P] [US1] API-client test for [protected URL/body/cancellation/error-mapping risk] in tests/[path] (if client-owned behavior changes)
+- [ ] TXXX [P] [US1] Manual UI smoke validation for [protected user workflow risk] in quickstart.md (if the UI follows an existing repeated pattern)
 
 ### Implementation for User Story 1
 
@@ -125,10 +125,10 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 2 (include when constitutionally required) ⚠️
+### Tests for User Story 2 (include only for identified risks) ⚠️
 
-- [ ] T018 [P] [US2] Domain or handler test for [rule/command/query] in tests/[path]
-- [ ] T019 [P] [US2] API client, endpoint, or UI test required by Principle IV in tests/[path]
+- [ ] T018 [P] [US2] Lowest-owning-layer test for [protected regression risk] in tests/[path]
+- [ ] T019 [P] [US2] Focused boundary test for [protected boundary risk] in tests/[path] (if lower-layer tests cannot protect it)
 
 ### Implementation for User Story 2
 
@@ -147,10 +147,10 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 3 (include when constitutionally required) ⚠️
+### Tests for User Story 3 (include only for identified risks) ⚠️
 
-- [ ] T024 [P] [US3] Domain or handler test for [rule/command/query] in tests/[path]
-- [ ] T025 [P] [US3] API client, endpoint, or UI test required by Principle IV in tests/[path]
+- [ ] T024 [P] [US3] Lowest-owning-layer test for [protected regression risk] in tests/[path]
+- [ ] T025 [P] [US3] Focused boundary test for [protected boundary risk] in tests/[path] (if lower-layer tests cannot protect it)
 
 ### Implementation for User Story 3
 
@@ -198,9 +198,11 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Within Each User Story
 
-- Constitutionally required tests MUST be written and fail before implementation
-- Endpoint/UI automation exceptions MUST match the plan and include required
-  lower-level automated coverage plus manual validation tasks
+- Planned automated tests SHOULD be written before the implementation they protect
+- Every planned test MUST name a concrete regression risk and the lowest owning
+  layer selected for that risk
+- Endpoint/API-client/UI tests MUST be included only when they protect a
+  distinct boundary risk not already protected at a lower layer
 - Shared contracts MUST stay separate from internal commands/queries
 - Server-driven list implementations MUST apply filters, count, deterministic
   sorting, Skip/Take, projection, and ListResult<T> in that order
@@ -214,7 +216,7 @@ Examples of foundational tasks (adjust based on your project):
 - All Setup tasks marked [P] can run in parallel
 - All Foundational tasks marked [P] can run in parallel (within Phase 2)
 - Once Foundational phase completes, all user stories can start in parallel (if team capacity allows)
-- All tests for a user story marked [P] can run in parallel
+- All planned tests for a user story marked [P] can run in parallel
 - Models within a story marked [P] can run in parallel
 - Different user stories can be worked on in parallel by different team members
 
@@ -223,9 +225,9 @@ Examples of foundational tasks (adjust based on your project):
 ## Parallel Example: User Story 1
 
 ```bash
-# Launch all tests for User Story 1 together (if tests requested):
-Task: "Contract test for [endpoint] in tests/contract/test_[name].py"
-Task: "Integration test for [user journey] in tests/integration/test_[name].py"
+# Launch only the tests justified by identified risks:
+Task: "Handler/persistence test for [query behavior risk] in tests/[path]"
+Task: "Endpoint integration test for [binding/serialization boundary risk] in tests/[path]"
 
 # Launch all models for User Story 1 together:
 Task: "Create [Entity1] model in src/models/[entity1].py"
@@ -270,7 +272,7 @@ With multiple developers:
 - [P] tasks = different files, no dependencies
 - [Story] label maps task to specific user story for traceability
 - Each user story should be independently completable and testable
-- Verify tests fail before implementing
+- Verify planned tests fail before implementing the behavior they protect
 - Commit after each task or logical group
 - Stop at any checkpoint to validate story independently
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence

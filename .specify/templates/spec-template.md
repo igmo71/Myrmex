@@ -12,15 +12,19 @@
 
 <!--
   IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
-  you should still have a viable MVP (Minimum Viable Product) that delivers value.
+  Each user story/journey must be INDEPENDENTLY TESTABLE at the behavior level -
+  meaning if you implement just ONE of them, you should still have a viable MVP
+  (Minimum Viable Product) that delivers value.
 
   Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
   Think of each story as a standalone slice of functionality that can be:
   - Developed independently
-  - Tested independently
+  - Validated independently through critical outcomes and observable contracts
   - Deployed independently
   - Demonstrated to users independently
+
+  Keep specification testing language behavior-oriented. Do not prescribe
+  low-level test classes, methods, layers, or line-coverage targets here.
 -->
 
 ### User Story 1 - [Brief Title] (Priority: P1)

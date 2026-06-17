@@ -19,7 +19,7 @@ Required architectural rules are labeled **Required**. Local practices that matc
 
 ```text
 Shared request contract
-    -> [AsParameters] endpoint binding
+    -> endpoint binding (typically [AsParameters] for simple GET lists)
     -> internal explicit query
     -> filters
     -> CountAsync
@@ -84,7 +84,11 @@ Public contract types do not require the rest of the WMS module to become public
 
 ## 4. Minimal API endpoint binding with `[AsParameters]`
 
-**Required**: Public list requests are bound directly by Minimal API from query parameters.
+**Recommended default**: Bind simple GET list request contracts from query
+parameters through `[AsParameters]`.
+
+A feature plan may choose another public transport shape when query complexity,
+request size, security, or operational constraints justify it.
 
 ```csharp
 private static async Task<IResult> ListInventoryBalancesAsync(
@@ -239,7 +243,10 @@ if (!string.IsNullOrWhiteSpace(request.SortBy))
 
 **Recommended**: Omit nullable query parameters that have no value. This keeps URLs aligned with Minimal API default binding and allows endpoint mapping to apply current defaults.
 
-**Required**: API-client tests should cover URL construction, query parameters, request body for write actions, cancellation propagation, success/error mapping, and Problem Details handling.
+**Required**: API-client tests should cover client-owned URL construction,
+query parameters, request body for write actions, cancellation propagation,
+success/error mapping, and Problem Details handling only when that behavior
+changes or is otherwise at risk.
 
 ## 13. Blazor `MudDataGrid.ServerData`
 
@@ -327,7 +334,13 @@ catch (Exception exception)
 
 ## 17. Testing expectations
 
-**Required**: Tests protect current behavior, not obsolete representations.
+**Required**: Myrmex uses a risk-based minimal testing approach. Tests protect
+significant current behavior and architectural boundaries, not classes, methods,
+implementation details, or line-coverage targets.
+
+**Required**: Each automated test should identify the concrete regression risk
+it protects and normally target the lowest architectural layer that fully owns
+that behavior.
 
 **Required**: Successful response fixtures should be constructed from current shared DTO types and serialized with web JSON conventions when testing API clients:
 
@@ -338,9 +351,13 @@ private static readonly JsonSerializerOptions JsonOptions =
 
 **Required**: Avoid manually maintaining duplicate successful JSON contract shapes when shared DTO serialization can produce the fixture.
 
-**Required**: Endpoint integration tests should verify real Minimal API binding and real JSON serialization.
+**Required**: Endpoint integration tests should verify real Minimal API binding,
+routing, and JSON serialization only when binding, serialization, routing, or
+the public HTTP contract changes and lower-level tests cannot protect that
+boundary.
 
-**Required**: Handler/persistence tests should verify:
+**Required**: Handler/persistence tests should verify these server-driven list
+behaviors when they are introduced or changed:
 
 - filtering;
 - count before paging;
@@ -350,7 +367,16 @@ private static readonly JsonSerializerOptions JsonOptions =
 - backend-owned projection;
 - domain/application behavior.
 
-**Required**: API-client tests should focus on URL construction, query parameters, request bodies for write actions, cancellation propagation, success/error mapping, and Problem Details.
+**Required**: API-client tests should focus on client-owned URL construction,
+query parameters, request bodies for write actions, cancellation propagation,
+success/error mapping, and Problem Details when those behaviors change.
+
+**Required**: Do not reproduce the same sorting/filtering matrix through
+handler, endpoint, and API-client tests. Duplicate a business scenario across
+layers only when each test protects a distinct risk.
+
+**Recommended**: Combine equivalent sorting, filtering, and paging cases with
+theories where appropriate.
 
 **Recommended**: Prefer fewer strong behavioral tests over many weak tests that only reproduce framework behavior.
 
@@ -360,7 +386,7 @@ Use this checklist for a new server-driven list slice:
 
 - Define public request, response DTO, and sort-key contracts in `Myrmex.Shared`.
 - Keep internal command/query types in the owning backend slice.
-- Bind the shared request in the Minimal API endpoint with `[AsParameters]`.
+- Bind simple GET list requests with `[AsParameters]` unless the feature plan justifies another public transport shape.
 - Map public request values to an explicit internal query.
 - Apply filters before count, sort, paging, and projection.
 - Calculate `TotalCount` after filtering and before paging.
@@ -373,7 +399,7 @@ Use this checklist for a new server-driven list slice:
 - Reset page on filter changes.
 - Reload current grid state after refresh and successful mutations unless the workflow requires a reset.
 - Propagate cancellation tokens through UI, client, endpoint, dispatcher, and EF Core.
-- Test behavior at the correct boundary.
+- Test behavior at the lowest layer that owns the risk, adding focused boundary tests only when lower layers cannot protect that boundary.
 
 ## 19. Known limitations and future extensions
 
