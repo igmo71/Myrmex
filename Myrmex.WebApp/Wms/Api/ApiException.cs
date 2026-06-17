@@ -1,18 +1,11 @@
 namespace Myrmex.WebApp.Wms.Api;
 
-public sealed class ApiException : Exception
+public sealed class ApiException(
+    int? status,
+    string message,
+    IReadOnlyDictionary<string, string>? extensions = null) : Exception(message)
 {
-    public ApiException(
-        int? status,
-        string message,
-        IReadOnlyDictionary<string, string>? extensions = null)
-        : base(message)
-    {
-        Status = status;
-        Extensions = extensions ?? new Dictionary<string, string>();
-    }
+    public int? Status { get; } = status;
 
-    public int? Status { get; }
-
-    public IReadOnlyDictionary<string, string> Extensions { get; }
+    public IReadOnlyDictionary<string, string> Extensions { get; } = extensions ?? new Dictionary<string, string>();
 }

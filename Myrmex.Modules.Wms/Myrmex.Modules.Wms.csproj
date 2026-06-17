@@ -27,6 +27,7 @@
 	  <ProjectReference Include="..\Myrmex.AppDispatching\Myrmex.AppDispatching.csproj" />
 	  <ProjectReference Include="..\Myrmex.AspNetCore\Myrmex.AspNetCore.csproj" />
 	  <ProjectReference Include="..\Myrmex.Core\Myrmex.Core.csproj" />
+	  <ProjectReference Include="..\Myrmex.Shared\Myrmex.Shared.csproj" />
 	</ItemGroup>
 
 </Project>

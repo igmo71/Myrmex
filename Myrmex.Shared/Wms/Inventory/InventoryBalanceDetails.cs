@@ -1,4 +1,4 @@
-﻿namespace Myrmex.WebApp.Wms.Inventory;
+﻿namespace Myrmex.Shared.Wms.Inventory;
 
 public sealed record InventoryBalanceDetails(
     Guid Id,
@@ -6,7 +6,7 @@ public sealed record InventoryBalanceDetails(
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? UpdatedAtUtc,
     InventoryBalanceDetails.StockKeepingUnitInfo Sku,
-    InventoryBalanceDetails.StorageLocationInfo Location)
+    InventoryBalanceDetails.StorageLocationInfo StorageLocation)
 {
     public sealed record StockKeepingUnitInfo(
         Guid Id,

@@ -77,7 +77,7 @@ public static class ServiceResultHttpExtensions
 
         if (!string.IsNullOrWhiteSpace(error.Property))
         {
-            validationProblemDetails.Extensions["field"] = error.Property;
+            validationProblemDetails.Extensions["property"] = error.Property;
         }
 
         return TypedResults.Json(

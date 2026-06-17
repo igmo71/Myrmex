@@ -5,6 +5,7 @@ using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
+using Myrmex.Shared.Wms.Inventory;
 
 namespace Myrmex.Modules.Wms.Inventory.Features.InventoryBalances;
 
@@ -48,7 +49,7 @@ internal static class UpdateInventoryBalanceQuantity
 
             InventoryBalanceDetails? details = await dbContext.InventoryBalances
                 .Where(x => x.Id == inventoryBalance.Id)
-                .Select(InventoryBalanceDetails.Project)
+                .ProjectDetails()
                 .SingleOrDefaultAsync(cancellationToken);
 
             return details is null

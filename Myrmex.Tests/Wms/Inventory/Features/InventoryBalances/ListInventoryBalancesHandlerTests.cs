@@ -8,6 +8,7 @@ using Myrmex.Modules.Wms.Inventory.Features.InventoryBalances;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 using Myrmex.Modules.Wms.Topology.Domain.Zones;
+using Myrmex.Shared.Wms.Inventory;
 using Myrmex.Tests.Wms.Topology.Testing;
 
 namespace Myrmex.Tests.Wms.Inventory.Features.InventoryBalances;

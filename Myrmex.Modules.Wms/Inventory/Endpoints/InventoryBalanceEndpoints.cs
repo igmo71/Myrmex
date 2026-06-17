@@ -7,6 +7,7 @@ using Myrmex.AspNetCore.Results;
 using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Inventory.Features.InventoryBalances;
+using Myrmex.Shared.Wms.Inventory;
 
 namespace Myrmex.Modules.Wms.Inventory.Endpoints;
 
@@ -32,13 +33,6 @@ internal static class InventoryBalanceEndpoints
 
         return group;
     }
-
-    private sealed record CreateInventoryBalanceRequest(
-        Guid? StockKeepingUnitId,
-        Guid? StorageLocationId,
-        decimal Quantity);
-
-    private sealed record UpdateInventoryBalanceQuantityRequest(decimal Quantity);
 
     private static async Task<IResult> CreateInventoryBalanceAsync(
         CreateInventoryBalanceRequest request,

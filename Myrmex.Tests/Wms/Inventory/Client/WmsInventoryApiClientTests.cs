@@ -1,3 +1,4 @@
+using Myrmex.Shared.Wms.Inventory;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Inventory;
 using System.Text;
@@ -84,10 +85,10 @@ public sealed class WmsInventoryApiClientTests
         Assert.Equal(inventoryBalanceId, details.Id);
         Assert.Equal(stockKeepingUnitId, details.Sku.Id);
         Assert.Equal("ITEM-001", details.Sku.Code);
-        Assert.Equal(storageLocationId, details.Location.Id);
-        Assert.Equal("A-01-01", details.Location.Code);
-        Assert.Equal(warehouseId, details.Location.Warehouse.Id);
-        Assert.Equal("MAIN", details.Location.Warehouse.Code);
+        Assert.Equal(storageLocationId, details.StorageLocation.Id);
+        Assert.Equal("A-01-01", details.StorageLocation.Code);
+        Assert.Equal(warehouseId, details.StorageLocation.Warehouse.Id);
+        Assert.Equal("MAIN", details.StorageLocation.Warehouse.Code);
         Assert.Equal(baseUnitOfMeasureId, details.Sku.BaseUom.Id);
         Assert.Equal("EA", details.Sku.BaseUom.Code);
         Assert.Equal(10, details.Quantity);
@@ -241,10 +242,10 @@ public sealed class WmsInventoryApiClientTests
         Assert.Equal(inventoryBalanceId, details.Id);
         Assert.Equal(stockKeepingUnitId, details.Sku.Id);
         Assert.Equal("ITEM-001", details.Sku.Code);
-        Assert.Equal(storageLocationId, details.Location.Id);
-        Assert.Equal("A-01-01", details.Location.Code);
-        Assert.Equal(warehouseId, details.Location.Warehouse.Id);
-        Assert.Equal("MAIN", details.Location.Warehouse.Code);
+        Assert.Equal(storageLocationId, details.StorageLocation.Id);
+        Assert.Equal("A-01-01", details.StorageLocation.Code);
+        Assert.Equal(warehouseId, details.StorageLocation.Warehouse.Id);
+        Assert.Equal("MAIN", details.StorageLocation.Warehouse.Code);
         Assert.Equal(baseUnitOfMeasureId, details.Sku.BaseUom.Id);
         Assert.Equal("EA", details.Sku.BaseUom.Code);
         Assert.Equal(10, details.Quantity);
@@ -401,8 +402,8 @@ public sealed class WmsInventoryApiClientTests
         InventoryBalanceDetails details = result.Value;
         Assert.Equal(inventoryBalanceId, details.Id);
         Assert.Equal(stockKeepingUnitId, details.Sku.Id);
-        Assert.Equal(storageLocationId, details.Location.Id);
-        Assert.Equal(warehouseId, details.Location.Warehouse.Id);
+        Assert.Equal(storageLocationId, details.StorageLocation.Id);
+        Assert.Equal(warehouseId, details.StorageLocation.Warehouse.Id);
         Assert.Equal(baseUnitOfMeasureId, details.Sku.BaseUom.Id);
         Assert.Equal(5, details.Quantity);
         Assert.NotNull(details.UpdatedAtUtc);
@@ -519,9 +520,9 @@ public sealed class WmsInventoryApiClientTests
         Assert.Equal(inventoryBalanceId, details.Id);
         Assert.Equal(stockKeepingUnitId, details.Sku.Id);
         Assert.Equal("ITEM-001", details.Sku.Code);
-        Assert.Equal(storageLocationId, details.Location.Id);
-        Assert.Equal("A-01-01", details.Location.Code);
-        Assert.Equal(warehouseId, details.Location.Warehouse.Id);
+        Assert.Equal(storageLocationId, details.StorageLocation.Id);
+        Assert.Equal("A-01-01", details.StorageLocation.Code);
+        Assert.Equal(warehouseId, details.StorageLocation.Warehouse.Id);
         Assert.Equal(baseUnitOfMeasureId, details.Sku.BaseUom.Id);
         Assert.Equal(0, details.Quantity);
         Assert.NotNull(details.UpdatedAtUtc);

@@ -3,6 +3,7 @@ using Myrmex.Core.Application;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
+using Myrmex.Shared.Wms.Inventory;
 
 namespace Myrmex.Modules.Wms.Inventory.Features.InventoryBalances;
 
@@ -18,8 +19,9 @@ internal static class GetInventoryBalanceById
             CancellationToken cancellationToken = default)
         {
             InventoryBalanceDetails? details = await dbContext.InventoryBalances
-                .Select(InventoryBalanceDetails.Project)
+                .AsNoTracking()
                 .Where(x => x.Id == query.InventoryBalanceId)
+                .ProjectDetails()
                 .SingleOrDefaultAsync(cancellationToken);
 
             if (details is null)

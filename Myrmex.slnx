@@ -6,6 +6,7 @@
   <Project Path="Myrmex.Core/Myrmex.Core.csproj" Id="9bae897d-b243-4460-bce3-126a3e84824c" />
   <Project Path="Myrmex.Modules.Wms/Myrmex.Modules.Wms.csproj" Id="782eef3d-1ff0-4401-9abb-48e7648a9196" />
   <Project Path="Myrmex.ServiceDefaults/Myrmex.ServiceDefaults.csproj" />
+  <Project Path="Myrmex.Shared/Myrmex.Shared.csproj" Id="403c5628-fb30-41f5-a46d-669fd38160e7" />
   <Project Path="Myrmex.Tests/Myrmex.Tests.csproj" />
   <Project Path="Myrmex.WebApp/Myrmex.WebApp.csproj" />
 </Solution>

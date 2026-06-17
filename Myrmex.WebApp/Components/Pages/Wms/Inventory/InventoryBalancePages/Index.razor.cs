@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using Myrmex.Shared.Wms.Inventory;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Catalog;
 using Myrmex.WebApp.Wms.Inventory;
@@ -294,13 +295,13 @@ public partial class Index
     private bool MatchesActiveFilters(InventoryBalanceDetails inventoryBalance)
     {
         if (_selectedWarehouseId is not null &&
-            inventoryBalance.Location.Warehouse.Id != _selectedWarehouseId.Value)
+            inventoryBalance.StorageLocation.Warehouse.Id != _selectedWarehouseId.Value)
         {
             return false;
         }
 
         if (_selectedStorageLocationId is not null &&
-            inventoryBalance.Location.Id != _selectedStorageLocationId.Value)
+            inventoryBalance.StorageLocation.Id != _selectedStorageLocationId.Value)
         {
             return false;
         }

@@ -1,5 +1,5 @@
 <MudPaper Class="pa-4">
-    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+    <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
         <MudSelect T="Guid?"
                    Label="Warehouse"
                    Variant="Variant.Outlined"
@@ -8,6 +8,7 @@
                    Value="SelectedWarehouseId"
                    ValueChanged="OnWarehouseChanged"
                    Disabled="IsLoadingWarehouses"
+                   HelperText="&#160;"
                    Class="min-width-300">
             @foreach (WarehouseDetails warehouse in Warehouses)
             {
@@ -43,6 +44,7 @@
                    Value="SelectedStockKeepingUnitId"
                    ValueChanged="OnStockKeepingUnitChanged"
                    Disabled="IsLoadingSkus"
+                   HelperText="&#160;"
                    Class="min-width-300">
             @foreach (StockKeepingUnitDetails sku in Skus)
             {
