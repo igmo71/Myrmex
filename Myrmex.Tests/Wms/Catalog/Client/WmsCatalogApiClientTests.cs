@@ -1,4 +1,5 @@
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Catalog;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Catalog;
 using System.Text;
@@ -69,6 +70,45 @@ public sealed class WmsCatalogApiClientTests
         Assert.Equal(details.BaseUnitOfMeasureId, result.BaseUnitOfMeasureId);
         Assert.Equal(HttpMethod.Get, handler.RequestMethod);
         Assert.Equal($"/api/wms/catalog/skus/{stockKeepingUnitId}", handler.RequestPath);
+    }
+
+    [Fact]
+    public async Task LookupStockKeepingUnitsAsync_WhenSuccessful_BuildsLookupRoute()
+    {
+        StockKeepingUnitLookupItem details = new(
+            Id: Guid.Parse("018f0000-0000-7000-8000-000000000001"),
+            Code: "ITEM-001",
+            Name: "Widget",
+            BaseUnitOfMeasureId: Guid.Parse("018f0000-0000-7000-8000-000000000111"),
+            BaseUnitOfMeasureCode: "EA",
+            BaseUnitOfMeasureSymbol: "ea",
+            IsActive: false,
+            IsBaseUnitOfMeasureActive: false);
+
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson<IReadOnlyList<StockKeepingUnitLookupItem>>([details]),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsCatalogApiClient apiClient = new(httpClient);
+        using CancellationTokenSource cancellationTokenSource = new();
+
+        IReadOnlyList<StockKeepingUnitLookupItem> result = await apiClient.LookupStockKeepingUnitsAsync(
+            new LookupStockKeepingUnitsRequest
+            {
+                SearchText = "Widget",
+                Take = 20,
+                SelectableOnly = false
+            },
+            cancellationTokenSource.Token);
+
+        StockKeepingUnitLookupItem item = Assert.Single(result);
+        Assert.Equal(details.Id, item.Id);
+        Assert.False(item.IsActive);
+        Assert.False(item.IsBaseUnitOfMeasureActive);
+        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
+        Assert.Equal("/api/wms/catalog/skus/lookup", handler.RequestPath);
+        Assert.Equal("?searchText=Widget&take=20&selectableOnly=false", handler.RequestQuery);
     }
 
     [Fact]
@@ -612,6 +652,8 @@ public sealed class WmsCatalogApiClientTests
 
         public string RequestBody { get; private set; } = string.Empty;
 
+        public CancellationToken RequestCancellationToken { get; private set; }
+
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken)
@@ -619,6 +661,7 @@ public sealed class WmsCatalogApiClientTests
             RequestMethod = request.Method;
             RequestPath = request.RequestUri?.AbsolutePath;
             RequestQuery = request.RequestUri?.Query;
+            RequestCancellationToken = cancellationToken;
 
             if (request.Content is not null)
             {

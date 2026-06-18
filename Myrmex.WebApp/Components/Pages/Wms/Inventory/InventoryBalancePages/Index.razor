@@ -19,7 +19,7 @@
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="CreateInventoryBalanceAsync"
-                           Disabled="_isLoadingWarehouses || _isLoadingSkus">
+                           Disabled="_isLoadingWarehouses">
                     Create
                 </MudButton>
 
@@ -40,17 +40,15 @@
         }
 
         <InventoryBalanceFilters Warehouses="@_warehouses"
-                                 StorageLocations="@_storageLocations"
-                                 Skus="@_skus"
                                  SelectedWarehouseId="@_selectedWarehouseId"
                                  SelectedWarehouseIdChanged="OnWarehouseChanged"
-                                 SelectedStorageLocationId="@_selectedStorageLocationId"
-                                 SelectedStorageLocationIdChanged="OnStorageLocationChanged"
-                                 SelectedStockKeepingUnitId="@_selectedStockKeepingUnitId"
-                                 SelectedStockKeepingUnitIdChanged="OnStockKeepingUnitChanged"
+                                 SelectedStorageLocation="@_selectedStorageLocation"
+                                 SelectedStorageLocationChanged="OnStorageLocationChanged"
+                                 SelectedStockKeepingUnit="@_selectedStockKeepingUnit"
+                                 SelectedStockKeepingUnitChanged="OnStockKeepingUnitChanged"
                                  IsLoadingWarehouses="@_isLoadingWarehouses"
-                                 IsLoadingStorageLocations="@_isLoadingStorageLocations"
-                                 IsLoadingSkus="@_isLoadingSkus" />
+                                 SearchStockKeepingUnits="SearchStockKeepingUnitsAsync"
+                                 SearchStorageLocations="SearchStorageLocationsAsync" />
 
         <InventoryBalanceGrid @ref="_inventoryBalanceGrid"
                               LoadData="LoadInventoryBalancesAsync"

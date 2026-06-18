@@ -1,3 +1,6 @@
+@using Myrmex.Shared.Wms.Catalog
+@using Myrmex.Shared.Wms.Topology
+
 <MudPaper Class="pa-4">
     <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
         <MudSelect T="Guid?"
@@ -18,41 +21,70 @@
             }
         </MudSelect>
 
-        <MudSelect T="Guid?"
-                   Label="Storage location"
-                   Variant="Variant.Outlined"
-                   Margin="Margin.Dense"
-                   Clearable="true"
-                   Value="SelectedStorageLocationId"
-                   ValueChanged="OnStorageLocationChanged"
-                   Disabled="SelectedWarehouseId is null || IsLoadingStorageLocations"
-                   HelperText="@StorageLocationHelperText"
-                   Class="min-width-300">
-            @foreach (StorageLocationDetails storageLocation in StorageLocations)
-            {
-                <MudSelectItem T="Guid?" Value="@((Guid?)storageLocation.Id)">
-                    @storageLocation.Code - @storageLocation.Name
-                </MudSelectItem>
-            }
-        </MudSelect>
+        <MudAutocomplete T="StorageLocationLookupItem"
+                         Label="Storage location"
+                         Variant="Variant.Outlined"
+                         Margin="Margin.Dense"
+                         Clearable="true"
+                         ShowProgressIndicator="true"
+                         MinCharacters="0"
+                         DebounceInterval="300"
+                         MaxItems="20"
+                         ResetValueOnEmptyText="true"
+                         CoerceText="false"
+                         CoerceValue="false"
+                         Value="SelectedStorageLocation"
+                         ValueChanged="OnStorageLocationChanged"
+                         SearchFunc="SearchStorageLocations"
+                         ToStringFunc="FormatStorageLocation"
+                         Disabled="SelectedWarehouseId is null"
+                         HelperText="@StorageLocationHelperText"
+                         Class="min-width-300">
+            <ItemTemplate>
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                    @if (!context.IsActive)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Warning">Inactive</MudText>
+                    }
+                </MudStack>
+            </ItemTemplate>
+            <NoItemsTemplate>
+                <MudText>No storage locations found.</MudText>
+            </NoItemsTemplate>
+        </MudAutocomplete>
 
-        <MudSelect T="Guid?"
-                   Label="SKU"
-                   Variant="Variant.Outlined"
-                   Margin="Margin.Dense"
-                   Clearable="true"
-                   Value="SelectedStockKeepingUnitId"
-                   ValueChanged="OnStockKeepingUnitChanged"
-                   Disabled="IsLoadingSkus"
-                   HelperText="&#160;"
-                   Class="min-width-300">
-            @foreach (StockKeepingUnitDetails sku in Skus)
-            {
-                <MudSelectItem T="Guid?" Value="@((Guid?)sku.Id)">
-                    @sku.Code - @sku.Name
-                </MudSelectItem>
-            }
-        </MudSelect>
+        <MudAutocomplete T="StockKeepingUnitLookupItem"
+                         Label="SKU"
+                         Variant="Variant.Outlined"
+                         Margin="Margin.Dense"
+                         Clearable="true"
+                         ShowProgressIndicator="true"
+                         MinCharacters="0"
+                         DebounceInterval="300"
+                         MaxItems="20"
+                         ResetValueOnEmptyText="true"
+                         CoerceText="false"
+                         CoerceValue="false"
+                         Value="SelectedStockKeepingUnit"
+                         ValueChanged="OnStockKeepingUnitChanged"
+                         SearchFunc="SearchStockKeepingUnits"
+                         ToStringFunc="FormatStockKeepingUnit"
+                         HelperText="&#160;"
+                         Class="min-width-300">
+            <ItemTemplate>
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                    @if (!context.IsActive || !context.IsBaseUnitOfMeasureActive)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Warning">Inactive</MudText>
+                    }
+                </MudStack>
+            </ItemTemplate>
+            <NoItemsTemplate>
+                <MudText>No SKUs found.</MudText>
+            </NoItemsTemplate>
+        </MudAutocomplete>
     </MudStack>
 </MudPaper>
 
@@ -61,37 +93,33 @@
     public IReadOnlyList<WarehouseDetails> Warehouses { get; set; } = [];
 
     [Parameter]
-    public IReadOnlyList<StorageLocationDetails> StorageLocations { get; set; } = [];
-
-    [Parameter]
-    public IReadOnlyList<StockKeepingUnitDetails> Skus { get; set; } = [];
-
-    [Parameter]
     public Guid? SelectedWarehouseId { get; set; }
 
     [Parameter]
     public EventCallback<Guid?> SelectedWarehouseIdChanged { get; set; }
 
     [Parameter]
-    public Guid? SelectedStorageLocationId { get; set; }
+    public StorageLocationLookupItem? SelectedStorageLocation { get; set; }
 
     [Parameter]
-    public EventCallback<Guid?> SelectedStorageLocationIdChanged { get; set; }
+    public EventCallback<StorageLocationLookupItem?> SelectedStorageLocationChanged { get; set; }
 
     [Parameter]
-    public Guid? SelectedStockKeepingUnitId { get; set; }
+    public StockKeepingUnitLookupItem? SelectedStockKeepingUnit { get; set; }
 
     [Parameter]
-    public EventCallback<Guid?> SelectedStockKeepingUnitIdChanged { get; set; }
+    public EventCallback<StockKeepingUnitLookupItem?> SelectedStockKeepingUnitChanged { get; set; }
 
     [Parameter]
     public bool IsLoadingWarehouses { get; set; }
 
     [Parameter]
-    public bool IsLoadingStorageLocations { get; set; }
+    public Func<string, CancellationToken, Task<IEnumerable<StockKeepingUnitLookupItem>>> SearchStockKeepingUnits { get; set; } =
+        (_, _) => Task.FromResult(Enumerable.Empty<StockKeepingUnitLookupItem>());
 
     [Parameter]
-    public bool IsLoadingSkus { get; set; }
+    public Func<string, CancellationToken, Task<IEnumerable<StorageLocationLookupItem>>> SearchStorageLocations { get; set; } =
+        (_, _) => Task.FromResult(Enumerable.Empty<StorageLocationLookupItem>());
 
     private string? StorageLocationHelperText =>
         SelectedWarehouseId is null ? "Select a warehouse first." : null;
@@ -101,13 +129,19 @@
         await SelectedWarehouseIdChanged.InvokeAsync(value);
     }
 
-    private async Task OnStorageLocationChanged(Guid? value)
+    private async Task OnStorageLocationChanged(StorageLocationLookupItem? value)
     {
-        await SelectedStorageLocationIdChanged.InvokeAsync(value);
+        await SelectedStorageLocationChanged.InvokeAsync(value);
     }
 
-    private async Task OnStockKeepingUnitChanged(Guid? value)
+    private async Task OnStockKeepingUnitChanged(StockKeepingUnitLookupItem? value)
     {
-        await SelectedStockKeepingUnitIdChanged.InvokeAsync(value);
+        await SelectedStockKeepingUnitChanged.InvokeAsync(value);
     }
+
+    private static string FormatStorageLocation(StorageLocationLookupItem? storageLocation) =>
+        storageLocation is null ? string.Empty : $"{storageLocation.Code} - {storageLocation.Name}";
+
+    private static string FormatStockKeepingUnit(StockKeepingUnitLookupItem? stockKeepingUnit) =>
+        stockKeepingUnit is null ? string.Empty : $"{stockKeepingUnit.Code} - {stockKeepingUnit.Name}";
 }
