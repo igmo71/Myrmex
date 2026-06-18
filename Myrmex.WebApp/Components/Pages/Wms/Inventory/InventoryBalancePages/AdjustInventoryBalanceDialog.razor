@@ -3,7 +3,7 @@
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">Update inventory balance quantity</MudText>
+        <MudText Typo="Typo.h6">Adjust inventory balance</MudText>
     </TitleContent>
 
     <DialogContent>
@@ -38,16 +38,33 @@
                               Disabled="true" />
 
                 <MudNumericField T="decimal"
-                                 Label="Quantity"
+                                 Label="Current quantity"
+                                 Value="InventoryBalance.Quantity"
+                                 Disabled="true"
+                                 Culture="@QuantityCulture"
+                                 Format="0.####" />
+
+                <MudNumericField T="decimal"
+                                 Label="Counted quantity"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="0"
                                  Required="true"
-                                 RequiredError="Quantity is required."
+                                 RequiredError="Counted quantity is required."
                                  Culture="@QuantityCulture"
                                  Format="0.####"
                                  InputMode="@(InputMode.@decimal)"
-                                 @bind-Value="_quantity" />
+                                 @bind-Value="_countedQuantity" />
+
+                <MudTextField T="string"
+                              Label="Reason"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Required="true"
+                              RequiredError="Reason is required."
+                              MaxLength="500"
+                              Lines="3"
+                              @bind-Value="_reason" />
 
                 @if (!string.IsNullOrWhiteSpace(_errorMessage))
                 {
@@ -68,7 +85,7 @@
         <MudButton Color="Color.Primary"
                    Variant="Variant.Filled"
                    OnClick="SaveAsync"
-                   Disabled="_isSaving">
+                   Disabled="_isSaving || _hasConcurrencyConflict">
             @if (_isSaving)
             {
                 <MudProgressCircular Size="Size.Small"
@@ -81,6 +98,8 @@
 </MudDialog>
 
 @code {
+    private const string ConcurrencyConflictCode = "InventoryBalance.ConcurrencyConflict";
+
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
@@ -91,10 +110,12 @@
     private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = null!;
 
     private MudForm? _form;
-    private decimal _quantity;
+    private decimal _countedQuantity;
+    private string? _reason;
     private bool _isSaving;
+    private bool _hasConcurrencyConflict;
     private string? _errorMessage;
-    
+
     private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
 
     private string StockKeepingUnitDisplay =>
@@ -113,7 +134,7 @@
 
     protected override void OnInitialized()
     {
-        _quantity = InventoryBalance.Quantity;
+        _countedQuantity = InventoryBalance.Quantity;
     }
 
     private async Task SaveAsync()
@@ -130,9 +151,15 @@
             return;
         }
 
-        if (_quantity < 0)
+        if (_countedQuantity < 0)
         {
-            _errorMessage = "Quantity must be greater than or equal to zero.";
+            _errorMessage = "Counted quantity must be greater than or equal to zero.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_reason))
+        {
+            _errorMessage = "Reason is required.";
             return;
         }
 
@@ -141,14 +168,26 @@
 
         try
         {
-            UpdateInventoryBalanceQuantityRequest request = new(_quantity);
+            AdjustInventoryBalanceRequest request = new(
+                InventoryBalance.Sku.Id,
+                InventoryBalance.StorageLocation.Id,
+                _countedQuantity,
+                _reason,
+                InventoryBalance.BalanceVersion);
 
             ApiResult<InventoryBalanceDetails> result = await WmsInventoryApiClient
-                .TryUpdateInventoryBalanceQuantityAsync(InventoryBalance.Id, request);
+                .TryAdjustInventoryBalanceAsync(request);
 
             if (result.IsFailure)
             {
-                _errorMessage = result.Error?.Message ?? "Inventory balance quantity update failed.";
+                if (IsConcurrencyConflict(result.Error))
+                {
+                    _hasConcurrencyConflict = true;
+                    _errorMessage = "Inventory balance changed. Close this dialog, review the refreshed balances, and adjust again if needed.";
+                    return;
+                }
+
+                _errorMessage = result.Error?.Message ?? "Inventory balance adjustment failed.";
                 return;
             }
 
@@ -172,6 +211,20 @@
 
     private void Cancel()
     {
+        if (_hasConcurrencyConflict)
+        {
+            MudDialog.Close(DialogResult.Ok(InventoryBalanceDialogOutcome.ConcurrencyConflict));
+            return;
+        }
+
         MudDialog.Cancel();
+    }
+
+    private static bool IsConcurrencyConflict(ApiError? error)
+    {
+        return error is not null &&
+               error.Status == 409 &&
+               error.Extensions.TryGetValue("code", out string? code) &&
+               code == ConcurrencyConflictCode;
     }
 }

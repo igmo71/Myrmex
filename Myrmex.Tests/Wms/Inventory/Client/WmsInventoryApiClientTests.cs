@@ -112,14 +112,15 @@ public sealed class WmsInventoryApiClientTests
     }
 
     [Fact]
-    public async Task TryCreateInventoryBalanceAsync_WhenSuccessful_PostsRequestBodyAndMapsNestedDetails()
+    public async Task TryAdjustInventoryBalanceAsync_WhenSuccessful_PostsRequestBodyAndMapsVersion()
     {
         Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
         Guid storageLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000201");
         InventoryBalanceDetails details = CreateInventoryBalanceDetails(
             stockKeepingUnitId: stockKeepingUnitId,
             storageLocationId: storageLocationId,
-            quantity: 12.5m);
+            quantity: 14,
+            balanceVersion: "AAAAAAAAB9I=");
         using StubHttpMessageHandler handler = new(
             HttpStatusCode.OK,
             SerializeJson(details),
@@ -127,85 +128,29 @@ public sealed class WmsInventoryApiClientTests
         using HttpClient httpClient = CreateHttpClient(handler);
         WmsInventoryApiClient apiClient = new(httpClient);
 
-        ApiResult<InventoryBalanceDetails> result = await apiClient.TryCreateInventoryBalanceAsync(
-            new CreateInventoryBalanceRequest(stockKeepingUnitId, storageLocationId, Quantity: 12.5m),
+        ApiResult<InventoryBalanceDetails> result = await apiClient.TryAdjustInventoryBalanceAsync(
+            new AdjustInventoryBalanceRequest(
+                stockKeepingUnitId,
+                storageLocationId,
+                CountedQuantity: 14,
+                Reason: "Cycle count correction",
+                ExpectedBalanceVersion: "AAAAAAAAB9E="),
             TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-        Assert.Equal(details.Id, result.Value.Id);
-        Assert.Equal(details.Sku.BaseUom.Code, result.Value.Sku.BaseUom.Code);
-        Assert.Equal(details.StorageLocation.Warehouse.Name, result.Value.StorageLocation.Warehouse.Name);
+        Assert.Equal(14, result.Value.Quantity);
+        Assert.Equal("AAAAAAAAB9I=", result.Value.BalanceVersion);
         Assert.Equal(HttpMethod.Post, handler.RequestMethod);
-        Assert.Equal("/api/wms/inventory/balances", handler.RequestPath);
+        Assert.Equal("/api/wms/inventory/adjustments", handler.RequestPath);
 
         using JsonDocument requestBody = JsonDocument.Parse(handler.RequestBody);
         JsonElement root = requestBody.RootElement;
         Assert.Equal(stockKeepingUnitId, root.GetProperty("stockKeepingUnitId").GetGuid());
         Assert.Equal(storageLocationId, root.GetProperty("storageLocationId").GetGuid());
-        Assert.Equal(12.5m, root.GetProperty("quantity").GetDecimal());
-    }
-
-    [Fact]
-    public async Task TryCreateInventoryBalanceAsync_WhenProblemDetailsReturned_ReturnsFailureResult()
-    {
-        const string problemJson = """
-            {
-              "type": "https://httpstatuses.com/400",
-              "title": "Bad Request",
-              "status": 400,
-              "detail": "One or more validation errors occurred.",
-              "code": "Validation.Invalid",
-              "field": "quantity"
-            }
-            """;
-
-        using HttpClient httpClient = CreateHttpClient(new StubHttpMessageHandler(
-            HttpStatusCode.BadRequest,
-            problemJson,
-            "application/problem+json"));
-        WmsInventoryApiClient apiClient = new(httpClient);
-
-        ApiResult<InventoryBalanceDetails> result = await apiClient.TryCreateInventoryBalanceAsync(
-            new CreateInventoryBalanceRequest(Guid.NewGuid(), Guid.NewGuid(), Quantity: -1),
-            TestContext.Current.CancellationToken);
-
-        Assert.True(result.IsFailure);
-        Assert.NotNull(result.Error);
-        Assert.Equal(400, result.Error.Status);
-        Assert.Equal("One or more validation errors occurred.", result.Error.Message);
-        Assert.Equal("Validation.Invalid", result.Error.Extensions["code"]);
-        Assert.Equal("quantity", result.Error.Extensions["field"]);
-    }
-
-    [Fact]
-    public async Task TryUpdateInventoryBalanceQuantityAsync_WhenSuccessful_PutsRequestBodyAndMapsNestedDetails()
-    {
-        Guid inventoryBalanceId = Guid.Parse("018f0000-0000-7000-8000-000000000999");
-        InventoryBalanceDetails details = CreateInventoryBalanceDetails(
-            inventoryBalanceId: inventoryBalanceId,
-            quantity: 0);
-        using StubHttpMessageHandler handler = new(
-            HttpStatusCode.OK,
-            SerializeJson(details),
-            "application/json");
-        using HttpClient httpClient = CreateHttpClient(handler);
-        WmsInventoryApiClient apiClient = new(httpClient);
-
-        ApiResult<InventoryBalanceDetails> result = await apiClient.TryUpdateInventoryBalanceQuantityAsync(
-            inventoryBalanceId,
-            new UpdateInventoryBalanceQuantityRequest(Quantity: 0),
-            TestContext.Current.CancellationToken);
-
-        Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value);
-        Assert.Equal(inventoryBalanceId, result.Value.Id);
-        Assert.Equal(0, result.Value.Quantity);
-        Assert.Equal(HttpMethod.Put, handler.RequestMethod);
-        Assert.Equal($"/api/wms/inventory/balances/{inventoryBalanceId}/quantity", handler.RequestPath);
-
-        using JsonDocument requestBody = JsonDocument.Parse(handler.RequestBody);
-        Assert.Equal(0, requestBody.RootElement.GetProperty("quantity").GetDecimal());
+        Assert.Equal(14, root.GetProperty("countedQuantity").GetDecimal());
+        Assert.Equal("Cycle count correction", root.GetProperty("reason").GetString());
+        Assert.Equal("AAAAAAAAB9E=", root.GetProperty("expectedBalanceVersion").GetString());
     }
 
     [Fact]
@@ -258,13 +203,15 @@ public sealed class WmsInventoryApiClientTests
         Guid? inventoryBalanceId = null,
         Guid? stockKeepingUnitId = null,
         Guid? storageLocationId = null,
-        decimal quantity = 10)
+        decimal quantity = 10,
+        string balanceVersion = "AAAAAAAAB9E=")
     {
         return new InventoryBalanceDetails(
             inventoryBalanceId ?? Guid.Parse("018f0000-0000-7000-8000-000000000001"),
             quantity,
             DateTimeOffset.Parse("2026-06-17T09:00:00Z"),
             DateTimeOffset.Parse("2026-06-17T10:00:00Z"),
+            balanceVersion,
             new InventoryBalanceDetails.StockKeepingUnitInfo(
                 stockKeepingUnitId ?? Guid.Parse("018f0000-0000-7000-8000-000000000101"),
                 "SKU-001",

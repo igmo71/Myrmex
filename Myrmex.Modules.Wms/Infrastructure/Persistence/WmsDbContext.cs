@@ -3,6 +3,7 @@ using Myrmex.Modules.Wms.Catalog.Domain.SkuBarcodes;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
+using Myrmex.Modules.Wms.Inventory.Domain.InventoryTransactions;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 using Myrmex.Modules.Wms.Topology.Domain.Zones;
@@ -21,6 +22,8 @@ internal sealed class WmsDbContext(DbContextOptions<WmsDbContext> options)
     public DbSet<UnitOfMeasure> UnitsOfMeasure => Set<UnitOfMeasure>();
     public DbSet<SkuBarcode> SkuBarcodes => Set<SkuBarcode>();
     public DbSet<InventoryBalance> InventoryBalances => Set<InventoryBalance>();
+    public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
+    public DbSet<InventoryLedgerEntry> InventoryLedgerEntries => Set<InventoryLedgerEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

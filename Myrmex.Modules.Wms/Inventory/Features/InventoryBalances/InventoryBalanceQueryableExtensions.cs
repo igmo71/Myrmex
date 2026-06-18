@@ -6,31 +6,58 @@ namespace Myrmex.Modules.Wms.Inventory.Features.InventoryBalances;
 
 internal static class InventoryBalanceQueryableExtensions
 {
-    public static IQueryable<InventoryBalanceDetails> ProjectDetails(this IQueryable<InventoryBalance> queryable)
+    public static IQueryable<InventoryBalanceDetailsData> ProjectDetailsData(this IQueryable<InventoryBalance> queryable)
     {
-        return queryable.Select(balance => new InventoryBalanceDetails(
+        return queryable.Select(balance => new InventoryBalanceDetailsData(
         balance.Id,
         balance.Quantity,
         balance.CreatedAtUtc,
         balance.UpdatedAtUtc,
+        balance.RowVersion,
 
-        new StockKeepingUnitInfo(
+        new InventoryBalanceDetailsData.StockKeepingUnitInfo(
             balance.StockKeepingUnitId,
             balance.StockKeepingUnit.Code,
             balance.StockKeepingUnit.Name,
-            new UnitOfMeasureInfo(
+            new InventoryBalanceDetailsData.UnitOfMeasureInfo(
                 balance.StockKeepingUnit.BaseUnitOfMeasureId,
                 balance.StockKeepingUnit.BaseUnitOfMeasure.Code,
                 balance.StockKeepingUnit.BaseUnitOfMeasure.Symbol)),
 
-        new StorageLocationInfo(
+        new InventoryBalanceDetailsData.StorageLocationInfo(
             balance.StorageLocationId,
             balance.StorageLocation.Code,
             balance.StorageLocation.Name,
-            new WarehouseInfo(
+            new InventoryBalanceDetailsData.WarehouseInfo(
                 balance.StorageLocation.WarehouseId,
                 balance.StorageLocation.Warehouse.Code,
                 balance.StorageLocation.Warehouse.Name))));
+    }
+
+    public static InventoryBalanceDetails ToDetails(this InventoryBalanceDetailsData data)
+    {
+        return new InventoryBalanceDetails(
+            data.Id,
+            data.Quantity,
+            data.CreatedAtUtc,
+            data.UpdatedAtUtc,
+            Convert.ToBase64String(data.RowVersion),
+            new StockKeepingUnitInfo(
+                data.Sku.Id,
+                data.Sku.Code,
+                data.Sku.Name,
+                new UnitOfMeasureInfo(
+                    data.Sku.BaseUom.Id,
+                    data.Sku.BaseUom.Code,
+                    data.Sku.BaseUom.Symbol)),
+            new StorageLocationInfo(
+                data.StorageLocation.Id,
+                data.StorageLocation.Code,
+                data.StorageLocation.Name,
+                new WarehouseInfo(
+                    data.StorageLocation.Warehouse.Id,
+                    data.StorageLocation.Warehouse.Code,
+                    data.StorageLocation.Warehouse.Name)));
     }
 
     public static IQueryable<InventoryBalance> ApplyFilters(this IQueryable<InventoryBalance> queryable, ListInventoryBalances.Query query)
@@ -97,4 +124,36 @@ internal static class InventoryBalanceQueryableExtensions
             ? queryable.OrderByDescending(x => x.Id)
             : queryable.OrderBy(x => x.Id);
     }
+}
+
+internal sealed record InventoryBalanceDetailsData(
+    Guid Id,
+    decimal Quantity,
+    DateTimeOffset CreatedAtUtc,
+    DateTimeOffset? UpdatedAtUtc,
+    byte[] RowVersion,
+    InventoryBalanceDetailsData.StockKeepingUnitInfo Sku,
+    InventoryBalanceDetailsData.StorageLocationInfo StorageLocation)
+{
+    public sealed record StockKeepingUnitInfo(
+        Guid Id,
+        string Code,
+        string Name,
+        UnitOfMeasureInfo BaseUom);
+
+    public sealed record UnitOfMeasureInfo(
+        Guid Id,
+        string Code,
+        string? Symbol);
+
+    public sealed record StorageLocationInfo(
+        Guid Id,
+        string Code,
+        string Name,
+        WarehouseInfo Warehouse);
+
+    public sealed record WarehouseInfo(
+        Guid Id,
+        string Code,
+        string Name);
 }

@@ -6,7 +6,7 @@
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">Create inventory balance</MudText>
+        <MudText Typo="Typo.h6">Initial count</MudText>
     </TitleContent>
 
     <DialogContent>
@@ -91,16 +91,26 @@
                 </MudAutocomplete>
 
                 <MudNumericField T="decimal"
-                                 Label="Quantity"
+                                 Label="Counted quantity"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="0"
                                  Required="true"
-                                 RequiredError="Quantity is required."
+                                 RequiredError="Counted quantity is required."
                                  Culture="@QuantityCulture"
                                  Format="0.####"
                                  InputMode="@(InputMode.@decimal)"
-                                 @bind-Value="_model.Quantity" />
+                                 @bind-Value="_model.CountedQuantity" />
+
+                <MudTextField T="string"
+                              Label="Reason"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Required="true"
+                              RequiredError="Reason is required."
+                              MaxLength="500"
+                              Lines="3"
+                              @bind-Value="_model.Reason" />
 
                 @if (!string.IsNullOrWhiteSpace(_errorMessage))
                 {
@@ -121,7 +131,7 @@
         <MudButton Color="Color.Primary"
                    Variant="Variant.Filled"
                    OnClick="SaveAsync"
-                   Disabled="_isSaving || _isLoadingWarehouses">
+                   Disabled="_isSaving || _isLoadingWarehouses || _hasConcurrencyConflict">
             @if (_isSaving)
             {
                 <MudProgressCircular Size="Size.Small"
@@ -134,6 +144,7 @@
 </MudDialog>
 
 @code {
+    private const string ConcurrencyConflictCode = "InventoryBalance.ConcurrencyConflict";
     private const int LookupTake = 100;
     private const int AutocompleteTake = 20;
 
@@ -150,7 +161,7 @@
     private WmsTopologyApiClient WmsTopologyApiClient { get; set; } = null!;
 
     private MudForm? _form;
-    private readonly CreateInventoryBalanceModel _model = new();
+    private readonly InitialCountInventoryBalanceModel _model = new();
     private List<WarehouseDetails> _warehouses = [];
     private StockKeepingUnitLookupItem? _selectedStockKeepingUnit;
     private StorageLocationLookupItem? _selectedStorageLocation;
@@ -158,6 +169,7 @@
 
     private bool _isLoadingWarehouses;
     private bool _isSaving;
+    private bool _hasConcurrencyConflict;
     private string? _errorMessage;
     private int _storageLocationSearchVersion;
 
@@ -347,9 +359,15 @@
             return;
         }
 
-        if (_model.Quantity < 0)
+        if (_model.CountedQuantity < 0)
         {
-            _errorMessage = "Quantity must be greater than or equal to zero.";
+            _errorMessage = "Counted quantity must be greater than or equal to zero.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_model.Reason))
+        {
+            _errorMessage = "Reason is required.";
             return;
         }
 
@@ -358,17 +376,26 @@
 
         try
         {
-            CreateInventoryBalanceRequest request = new(
+            AdjustInventoryBalanceRequest request = new(
                 _model.StockKeepingUnitId,
                 _model.StorageLocationId,
-                _model.Quantity);
+                _model.CountedQuantity,
+                _model.Reason,
+                ExpectedBalanceVersion: null);
 
             ApiResult<InventoryBalanceDetails> result = await WmsInventoryApiClient
-                .TryCreateInventoryBalanceAsync(request);
+                .TryAdjustInventoryBalanceAsync(request);
 
             if (result.IsFailure)
             {
-                _errorMessage = result.Error?.Message ?? "Inventory balance creation failed.";
+                if (IsConcurrencyConflict(result.Error))
+                {
+                    _hasConcurrencyConflict = true;
+                    _errorMessage = "Inventory balance changed. Close this dialog, review the refreshed balances, and start the initial count again if needed.";
+                    return;
+                }
+
+                _errorMessage = result.Error?.Message ?? "Initial count failed.";
                 return;
             }
 
@@ -392,7 +419,21 @@
 
     private void Cancel()
     {
+        if (_hasConcurrencyConflict)
+        {
+            MudDialog.Close(DialogResult.Ok(InventoryBalanceDialogOutcome.ConcurrencyConflict));
+            return;
+        }
+
         MudDialog.Cancel();
+    }
+
+    private static bool IsConcurrencyConflict(ApiError? error)
+    {
+        return error is not null &&
+               error.Status == 409 &&
+               error.Extensions.TryGetValue("code", out string? code) &&
+               code == ConcurrencyConflictCode;
     }
 
     private static string FormatStorageLocation(StorageLocationLookupItem? storageLocation) =>
@@ -401,7 +442,7 @@
     private static string FormatStockKeepingUnit(StockKeepingUnitLookupItem? stockKeepingUnit) =>
         stockKeepingUnit is null ? string.Empty : $"{stockKeepingUnit.Code} - {stockKeepingUnit.Name}";
 
-    private sealed class CreateInventoryBalanceModel
+    private sealed class InitialCountInventoryBalanceModel
     {
         public Guid? StockKeepingUnitId { get; set; }
 
@@ -409,6 +450,8 @@
 
         public Guid? StorageLocationId { get; set; }
 
-        public decimal Quantity { get; set; }
+        public decimal CountedQuantity { get; set; }
+
+        public string? Reason { get; set; }
     }
 }

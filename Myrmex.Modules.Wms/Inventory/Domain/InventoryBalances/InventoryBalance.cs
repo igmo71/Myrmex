@@ -27,6 +27,8 @@ internal sealed class InventoryBalance : AggregateRoot
 
     public decimal Quantity { get; private set; }
 
+    public byte[] RowVersion { get; private set; } = [];
+
     public static DomainValidationResult Create(
         Guid? stockKeepingUnitId,
         Guid? storageLocationId,
@@ -71,6 +73,21 @@ internal sealed class InventoryBalance : AggregateRoot
         Quantity = quantity;
         Touch();
         AddDomainEvent(new InventoryBalanceQuantityUpdatedDomainEvent(Id, Quantity));
+
+        return DomainValidationResult.Valid;
+    }
+
+    public DomainValidationResult ApplyCountedQuantityAdjustment(decimal countedQuantity)
+    {
+        DomainValidationResult validationResult = ValidateQuantity(countedQuantity);
+
+        if (!validationResult.IsValid)
+        {
+            return validationResult;
+        }
+
+        Quantity = countedQuantity;
+        Touch();
 
         return DomainValidationResult.Valid;
     }

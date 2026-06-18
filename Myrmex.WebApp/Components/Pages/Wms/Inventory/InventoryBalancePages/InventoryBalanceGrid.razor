@@ -70,8 +70,8 @@
                          AnchorOrigin="Origin.BottomRight"
                          TransformOrigin="Origin.TopRight">
                     <MudMenuItem Icon="@Icons.Material.Filled.Edit"
-                                 OnClick="@(() => UpdateQuantityRequested.InvokeAsync(context.Item))">
-                        Update quantity
+                                 OnClick="@(() => AdjustRequested.InvokeAsync(context.Item))">
+                        Adjust
                     </MudMenuItem>
                 </MudMenu>
             </CellTemplate>
@@ -92,7 +92,7 @@
     public Func<InventoryBalanceGridRequest, CancellationToken, Task<GridData<InventoryBalanceDetails>>> LoadData { get; set; } = default!;
 
     [Parameter]
-    public EventCallback<InventoryBalanceDetails> UpdateQuantityRequested { get; set; }
+    public EventCallback<InventoryBalanceDetails> AdjustRequested { get; set; }
 
     private MudDataGrid<InventoryBalanceDetails>? _dataGrid;
 

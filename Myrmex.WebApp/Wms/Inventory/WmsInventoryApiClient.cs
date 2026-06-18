@@ -27,23 +27,12 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
-    public async Task<ApiResult<InventoryBalanceDetails>> TryCreateInventoryBalanceAsync(
-        CreateInventoryBalanceRequest request,
+    public async Task<ApiResult<InventoryBalanceDetails>> TryAdjustInventoryBalanceAsync(
+        AdjustInventoryBalanceRequest request,
         CancellationToken cancellationToken = default)
     {
         return await httpClient.PostAsApiResultAsync<InventoryBalanceDetails>(
-            "/api/wms/inventory/balances",
-            request,
-            cancellationToken);
-    }
-
-    public async Task<ApiResult<InventoryBalanceDetails>> TryUpdateInventoryBalanceQuantityAsync(
-        Guid inventoryBalanceId,
-        UpdateInventoryBalanceQuantityRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        return await httpClient.PutAsApiResultAsync<InventoryBalanceDetails>(
-            $"/api/wms/inventory/balances/{inventoryBalanceId}/quantity",
+            "/api/wms/inventory/adjustments",
             request,
             cancellationToken);
     }

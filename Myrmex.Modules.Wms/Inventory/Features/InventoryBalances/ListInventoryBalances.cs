@@ -34,12 +34,16 @@ internal static class ListInventoryBalances
             int totalCount = await inventoryBalances
                 .CountAsync(cancellationToken);
 
-            List<InventoryBalanceDetails> items = await inventoryBalances
+            List<InventoryBalanceDetailsData> itemData = await inventoryBalances
                 .ApplySorting(query.SortBy, query.SortDescending)
                 .Skip(skip)
                 .Take(take)
-                .ProjectDetails()
+                .ProjectDetailsData()
                 .ToListAsync(cancellationToken);
+
+            List<InventoryBalanceDetails> items = itemData
+                .Select(x => x.ToDetails())
+                .ToList();
 
             return ServiceResult<ListResult<InventoryBalanceDetails>>
                 .Success(new ListResult<InventoryBalanceDetails>(items, totalCount, skip, take));

@@ -162,22 +162,29 @@ public partial class Index
         }
     }
 
-    private async Task CreateInventoryBalanceAsync()
+    private async Task OpenInitialCountAsync()
     {
         DialogOptions options = new()
         {
-            CloseButton = true,
+            CloseButton = false,
             MaxWidth = MaxWidth.Small,
             FullWidth = true
         };
 
         IDialogReference dialog = await DialogService
-            .ShowAsync<CreateInventoryBalanceDialog>("Create inventory balance", options);
+            .ShowAsync<InitialCountInventoryBalanceDialog>("Initial count", options);
 
         DialogResult? result = await dialog.Result;
 
         if (result is null || result.Canceled)
         {
+            return;
+        }
+
+        if (result.Data is InventoryBalanceDialogOutcome initialCountOutcome &&
+            initialCountOutcome == InventoryBalanceDialogOutcome.ConcurrencyConflict)
+        {
+            await ReloadInventoryBalancesAsync();
             return;
         }
 
@@ -191,22 +198,22 @@ public partial class Index
         await ReloadInventoryBalancesAsync();
     }
 
-    private async Task UpdateInventoryBalanceQuantityAsync(InventoryBalanceDetails inventoryBalance)
+    private async Task AdjustInventoryBalanceAsync(InventoryBalanceDetails inventoryBalance)
     {
         DialogParameters parameters = new()
         {
-            [nameof(UpdateInventoryBalanceQuantityDialog.InventoryBalance)] = inventoryBalance
+            [nameof(AdjustInventoryBalanceDialog.InventoryBalance)] = inventoryBalance
         };
 
         DialogOptions options = new()
         {
-            CloseButton = true,
+            CloseButton = false,
             MaxWidth = MaxWidth.Small,
             FullWidth = true
         };
 
-        IDialogReference dialog = await DialogService.ShowAsync<UpdateInventoryBalanceQuantityDialog>(
-            "Update inventory balance quantity",
+        IDialogReference dialog = await DialogService.ShowAsync<AdjustInventoryBalanceDialog>(
+            "Adjust inventory balance",
             parameters,
             options);
 
@@ -217,7 +224,14 @@ public partial class Index
             return;
         }
 
-        Snackbar.Add("Inventory balance quantity updated.", Severity.Success);
+        if (result.Data is InventoryBalanceDialogOutcome adjustmentOutcome &&
+            adjustmentOutcome == InventoryBalanceDialogOutcome.ConcurrencyConflict)
+        {
+            await ReloadInventoryBalancesAsync();
+            return;
+        }
+
+        Snackbar.Add("Inventory balance adjusted.", Severity.Success);
 
         await ReloadInventoryBalancesAsync();
     }
