@@ -33,6 +33,7 @@
 - Repository-specific finding: Current conflict error conventions produce generic conflict codes for duplicate balance creation, while this feature requires the public code `InventoryBalance.ConcurrencyConflict` for stale-state adjustment conflicts.
 - Repository-specific finding: Current quantity update behavior does not revalidate unchanged SKU and storage-location eligibility, while current create behavior does. This feature resolves that difference: existing-balance adjustment allows inactive referenced records but still requires those references to exist; missing-balance adjustment uses the full current create eligibility rules.
 - Repository-specific finding: Current quantity update can update an existing balance directly, including zero quantity, and does not define no-op preservation of timestamp or version. This feature replaces that behavior with adjustment semantics.
+- Q: What maximum length should the required adjustment reason allow? → A: Reason is required after trimming and must be 500 characters or fewer.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -95,7 +96,7 @@ A warehouse operator or administrator receives clear validation feedback when an
 
 **Acceptance Scenarios**:
 
-1. **Given** a user omits the reason or provides only whitespace, **When** the adjustment is submitted, **Then** the system rejects the adjustment and no balance or ledger record is changed.
+1. **Given** a user omits the reason, provides only whitespace, or provides more than 500 characters after trimming, **When** the adjustment is submitted, **Then** the system rejects the adjustment and no balance or ledger record is changed.
 2. **Given** a user submits a negative counted quantity, **When** the adjustment is submitted, **Then** the system rejects the adjustment and no balance or ledger record is changed.
 3. **Given** no balance exists and the requested SKU, base unit of measure, storage location, storage-location type, or storage-location status fails the full current create eligibility rules, **When** the adjustment is submitted with `ExpectedBalanceVersion = null`, **Then** the system rejects the adjustment using the existing Myrmex error style and no balance or ledger record is changed.
 4. **Given** an existing balance references records that still exist but later became inactive, **When** the adjustment is submitted with a matching expected version, non-negative counted quantity, and required reason, **Then** the system does not reject the correction solely because those existing references are inactive.
@@ -124,7 +125,7 @@ A warehouse operator or administrator is prevented from applying an absolute phy
 
 - `CountedQuantity = 0` is valid and must preserve persisted zero-balance rows.
 - `CountedQuantity < 0` is invalid.
-- `Reason` must be required after trimming; whitespace-only reasons are invalid.
+- `Reason` must be required after trimming, and the trimmed value must be 500 characters or fewer.
 - `ExpectedBalanceVersion = null` means expected absence only.
 - `ExpectedBalanceVersion != null` means expected existing balance with exactly that version only.
 - Existing-balance adjustments use the current Base64 rowversion as `ExpectedBalanceVersion`.
@@ -150,7 +151,7 @@ A warehouse operator or administrator is prevented from applying an absolute phy
 - **FR-007**: A successful material adjustment MUST record the quantity before adjustment, calculated delta, quantity after adjustment, required reason, and adjustment time.
 - **FR-008**: A successful material adjustment MUST update or create the current balance and record the corresponding ledger transaction and ledger entry as one atomic outcome.
 - **FR-009**: System MUST reject negative counted quantities.
-- **FR-010**: System MUST require a non-empty trimmed adjustment reason.
+- **FR-010**: System MUST require a non-empty trimmed adjustment reason with a maximum length of 500 characters.
 - **FR-011**: System MUST preserve the existing SKU/location uniqueness rule for balances.
 - **FR-012**: System MUST allow adjustment of an existing balance when the submitted expected version exactly matches the current balance version.
 - **FR-013**: System MUST allow creation of a missing balance from expected zero only when no balance exists and `ExpectedBalanceVersion` is null.
@@ -213,7 +214,7 @@ A warehouse operator or administrator is prevented from applying an absolute phy
 
 ### Observability & Error Handling *(mandatory when feature exposes runtime behavior)*
 
-- **OE-001**: System MUST show clear validation feedback for missing reason, negative counted quantity, invalid expected-version format, and invalid or ineligible SKU or storage-location references.
+- **OE-001**: System MUST show clear validation feedback for missing or too-long reason, negative counted quantity, invalid expected-version format, and invalid or ineligible SKU or storage-location references.
 - **OE-002**: System MUST show clear concurrency feedback for `InventoryBalance.ConcurrencyConflict` and instruct the user to refresh and review the counted quantity before retrying.
 - **OE-003**: System MUST distinguish validation, not-found, concurrency conflict, and unexpected persistence failures using existing Myrmex error conventions.
 - **OE-004**: Operationally important concurrency conflicts and unexpected persistence failures MUST be diagnosable without logging sensitive or excessive payload data.
@@ -249,7 +250,7 @@ A warehouse operator or administrator is prevented from applying an absolute phy
 - **SC-006**: 100% of positive missing-balance adjustments with expected absence create a current balance and ledger from zero.
 - **SC-007**: 100% of zero-count missing-balance initializations with expected absence create a persisted zero balance and no ledger records.
 - **SC-008**: 100% of stale-state mismatch cases return `409 InventoryBalance.ConcurrencyConflict`.
-- **SC-009**: 100% of invalid reason, negative counted quantity, and invalid expected-version format attempts are rejected without changing balance or ledger state.
+- **SC-009**: 100% of missing, whitespace-only, over-500-character reason, negative counted quantity, and invalid expected-version format attempts are rejected without changing balance or ledger state.
 - **SC-010**: Users can see a clear refresh-and-review message whenever a concurrency conflict occurs.
 - **SC-011**: The delivered MVP exposes one adjustment stock-mutation API for existing-balance adjustment and missing-balance initialization, with no direct create or direct quantity-update parallel mutation path.
 - **SC-012**: The delivered MVP exposes no ledger-history page, transfer workflow, inventory-account workflow, LPN behavior, or zero-balance deletion behavior.
