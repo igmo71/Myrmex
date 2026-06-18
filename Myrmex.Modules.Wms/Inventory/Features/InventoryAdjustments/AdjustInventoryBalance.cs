@@ -27,6 +27,8 @@ internal static class AdjustInventoryBalance
         IDomainEventDispatcher domainEventDispatcher)
         : ICommandHandler<Command, ServiceResult<InventoryBalanceDetails>>
     {
+        private const int SqlServerRowVersionLength = 8;
+
         public async Task<ServiceResult<InventoryBalanceDetails>> HandleAsync(
             Command command,
             CancellationToken cancellationToken = default)
@@ -96,7 +98,10 @@ internal static class AdjustInventoryBalance
                 return ServiceResult<InventoryBalanceDetails>.Invalid(transactionValidationResult.Errors);
             }
 
-            dbContext.InventoryTransactions.Add(inventoryTransaction!);
+            InventoryTransaction createdInventoryTransaction = inventoryTransaction
+                ?? throw new InvalidOperationException("InventoryTransaction.CreateAdjustment returned a valid result without a transaction.");
+
+            dbContext.InventoryTransactions.Add(createdInventoryTransaction);
 
             ServiceResult saveResult = await SaveAdjustmentChangesAsync(cancellationToken);
 
@@ -123,9 +128,12 @@ internal static class AdjustInventoryBalance
                 return ServiceResult<InventoryBalanceDetails>.Invalid(balanceValidationResult.Errors);
             }
 
+            InventoryBalance createdBalance = inventoryBalance
+                ?? throw new InvalidOperationException("InventoryBalance.Create returned a valid result without an entity.");
+
             ServiceError? eligibilityError = await InventoryBalanceCreateEligibility.ValidateAsync(
                 dbContext,
-                inventoryBalance!,
+                createdBalance,
                 cancellationToken);
 
             if (eligibilityError is not null)
@@ -133,26 +141,19 @@ internal static class AdjustInventoryBalance
                 return ServiceResult<InventoryBalanceDetails>.Fail(eligibilityError);
             }
 
-            dbContext.InventoryBalances.Add(inventoryBalance!);
+            DomainValidationResult transactionValidationResult =
+                CreateInitialCountTransaction(createdBalance, command.Reason, out InventoryTransaction? inventoryTransaction);
 
-            if (command.CountedQuantity > 0)
+            if (!transactionValidationResult.IsValid)
             {
-                DomainValidationResult transactionValidationResult =
-                    InventoryTransaction.CreateAdjustment(
-                        inventoryBalance.StockKeepingUnitId,
-                        inventoryBalance.StorageLocationId,
-                        balanceBefore: 0,
-                        balanceAfter: inventoryBalance.Quantity,
-                        command.Reason,
-                        DateTimeOffset.UtcNow,
-                        out InventoryTransaction? inventoryTransaction);
+                return ServiceResult<InventoryBalanceDetails>.Invalid(transactionValidationResult.Errors);
+            }
 
-                if (!transactionValidationResult.IsValid)
-                {
-                    return ServiceResult<InventoryBalanceDetails>.Invalid(transactionValidationResult.Errors);
-                }
+            dbContext.InventoryBalances.Add(createdBalance);
 
-                dbContext.InventoryTransactions.Add(inventoryTransaction!);
+            if (inventoryTransaction is not null)
+            {
+                dbContext.InventoryTransactions.Add(inventoryTransaction);
             }
 
             ServiceResult saveResult = await SaveAdjustmentChangesAsync(cancellationToken);
@@ -162,7 +163,29 @@ internal static class AdjustInventoryBalance
                 return ServiceResult<InventoryBalanceDetails>.Fail(saveResult.Error);
             }
 
-            return await GetDetailsAsync(inventoryBalance.Id, cancellationToken);
+            return await GetDetailsAsync(createdBalance.Id, cancellationToken);
+        }
+
+        private static DomainValidationResult CreateInitialCountTransaction(
+            InventoryBalance balance,
+            string? reason,
+            out InventoryTransaction? transaction)
+        {
+            transaction = null;
+
+            if (balance.Quantity == 0)
+            {
+                return DomainValidationResult.Valid;
+            }
+
+            return InventoryTransaction.CreateAdjustment(
+                balance.StockKeepingUnitId,
+                balance.StorageLocationId,
+                balanceBefore: 0,
+                balanceAfter: balance.Quantity,
+                reason,
+                DateTimeOffset.UtcNow,
+                out transaction);
         }
 
         private async Task<ServiceResult> SaveAdjustmentChangesAsync(CancellationToken cancellationToken)
@@ -251,7 +274,7 @@ internal static class AdjustInventoryBalance
                 {
                     byte[] parsedVersion = Convert.FromBase64String(command.ExpectedBalanceVersion);
 
-                    if (parsedVersion.Length != 8)
+                    if (parsedVersion.Length != SqlServerRowVersionLength)
                     {
                         errors.Add(DomainValidationFailure.IncorrectState<InventoryBalance>(nameof(Command.ExpectedBalanceVersion)));
                     }
@@ -280,7 +303,7 @@ internal static class AdjustInventoryBalance
                 .SingleOrDefaultAsync(cancellationToken);
 
             return detailsData is null
-                ? ServiceResult<InventoryBalanceDetails>.Fail(ServiceError.Failure<InventoryBalance>("Failed to adjust InventoryBalance"))
+                ? ServiceResult<InventoryBalanceDetails>.Fail(ServiceError.Failure<InventoryBalance>("InventoryBalance was saved but could not be loaded"))
                 : ServiceResult<InventoryBalanceDetails>.Success(detailsData.ToDetails());
         }
     }
