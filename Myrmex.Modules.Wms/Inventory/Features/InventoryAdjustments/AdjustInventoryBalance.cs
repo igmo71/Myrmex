@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Myrmex.AppDispatching.EventDispatching;
 using Myrmex.Core.Application;
+using Myrmex.Core.Domain;
 using Myrmex.Core.Domain.Validation;
+using Myrmex.Core.Events;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
@@ -29,7 +31,9 @@ internal static class AdjustInventoryBalance
             Command command,
             CancellationToken cancellationToken = default)
         {
-            List<DomainValidationFailure> validationErrors = ValidateCommand(command);
+            List<DomainValidationFailure> validationErrors = ValidateCommand(
+                command,
+                out byte[]? expectedVersion);
 
             if (validationErrors.Count > 0)
             {
@@ -42,7 +46,7 @@ internal static class AdjustInventoryBalance
                          x.StorageLocationId == command.StorageLocationId!.Value,
                     cancellationToken);
 
-            if (command.ExpectedBalanceVersion is null)
+            if (expectedVersion is null)
             {
                 if (inventoryBalance is not null)
                 {
@@ -51,8 +55,6 @@ internal static class AdjustInventoryBalance
 
                 return await InitializeMissingBalanceAsync(command, cancellationToken);
             }
-
-            byte[] expectedVersion = Convert.FromBase64String(command.ExpectedBalanceVersion);
 
             if (inventoryBalance is null)
             {
@@ -96,17 +98,7 @@ internal static class AdjustInventoryBalance
 
             dbContext.InventoryTransactions.Add(inventoryTransaction!);
 
-            ServiceResult saveResult;
-
-            try
-            {
-                saveResult = await dbContext
-                    .SaveChangesAsServiceResultAsync(domainEventDispatcher, cancellationToken);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                return ConcurrencyConflict();
-            }
+            ServiceResult saveResult = await SaveAdjustmentChangesAsync(cancellationToken);
 
             if (!saveResult.IsSuccess)
             {
@@ -163,8 +155,7 @@ internal static class AdjustInventoryBalance
                 dbContext.InventoryTransactions.Add(inventoryTransaction!);
             }
 
-            ServiceResult saveResult = await dbContext
-                .SaveChangesAsServiceResultAsync(domainEventDispatcher, cancellationToken);
+            ServiceResult saveResult = await SaveAdjustmentChangesAsync(cancellationToken);
 
             if (!saveResult.IsSuccess)
             {
@@ -174,9 +165,59 @@ internal static class AdjustInventoryBalance
             return await GetDetailsAsync(inventoryBalance.Id, cancellationToken);
         }
 
-        private static List<DomainValidationFailure> ValidateCommand(Command command)
+        private async Task<ServiceResult> SaveAdjustmentChangesAsync(CancellationToken cancellationToken)
+        {
+            List<AggregateRoot> aggregateRoots = dbContext.ChangeTracker
+                .Entries<AggregateRoot>()
+                .Select(x => x.Entity)
+                .Where(x => x.DomainEvents.Count > 0)
+                .ToList();
+
+            List<IDomainEvent> domainEvents = aggregateRoots
+                .SelectMany(x => x.DomainEvents)
+                .ToList();
+
+            try
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+
+                await domainEventDispatcher.DispatchAsync(domainEvents, cancellationToken);
+
+                foreach (AggregateRoot aggregateRoot in aggregateRoots)
+                {
+                    aggregateRoot.ClearDomainEvents();
+                }
+
+                return ServiceResult.Success();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return ServiceResult.Fail(ConcurrencyConflictError());
+            }
+            catch (DbUpdateException exception)
+                when (WmsPersistenceExceptionMapper.IsInventoryBalanceSkuLocationDuplicate(exception))
+            {
+                return ServiceResult.Fail(ConcurrencyConflictError());
+            }
+            catch (DbUpdateException exception)
+            {
+                ServiceError? error = WmsPersistenceExceptionMapper.TryMap(exception);
+
+                if (error is not null)
+                {
+                    return ServiceResult.Fail(error);
+                }
+
+                throw;
+            }
+        }
+
+        private static List<DomainValidationFailure> ValidateCommand(
+            Command command,
+            out byte[]? expectedVersion)
         {
             List<DomainValidationFailure> errors = [];
+            expectedVersion = null;
 
             if (!command.StockKeepingUnitId.HasValue || command.StockKeepingUnitId.Value == Guid.Empty)
             {
@@ -208,7 +249,16 @@ internal static class AdjustInventoryBalance
             {
                 try
                 {
-                    Convert.FromBase64String(command.ExpectedBalanceVersion);
+                    byte[] parsedVersion = Convert.FromBase64String(command.ExpectedBalanceVersion);
+
+                    if (parsedVersion.Length != 8)
+                    {
+                        errors.Add(DomainValidationFailure.IncorrectState<InventoryBalance>(nameof(Command.ExpectedBalanceVersion)));
+                    }
+                    else
+                    {
+                        expectedVersion = parsedVersion;
+                    }
                 }
                 catch (FormatException)
                 {
@@ -237,10 +287,15 @@ internal static class AdjustInventoryBalance
 
     internal static ServiceResult<InventoryBalanceDetails> ConcurrencyConflict()
     {
-        return ServiceResult<InventoryBalanceDetails>.Fail(new ServiceError(
+        return ServiceResult<InventoryBalanceDetails>.Fail(ConcurrencyConflictError());
+    }
+
+    internal static ServiceError ConcurrencyConflictError()
+    {
+        return new ServiceError(
             ServiceErrorType.Conflict,
             "InventoryBalance.ConcurrencyConflict",
             "Inventory balance was changed by another operation. Refresh and review the current balance before adjusting again.",
-            nameof(Command.ExpectedBalanceVersion)));
+            nameof(Command.ExpectedBalanceVersion));
     }
 }

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Myrmex.Tests.Wms.Inventory.Testing;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
@@ -103,5 +104,29 @@ public sealed class InventoryBalancePersistenceTests
         Assert.True(updatedAtUtc.IsNullable);
         Assert.True(rowVersion.IsConcurrencyToken);
         Assert.Equal("row_version", rowVersion.GetColumnName());
+    }
+
+    [Fact]
+    public async Task SaveChangesAsync_WhenTrackedBalanceRowVersionIsStale_ThrowsConcurrencyException()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        SeededInventoryBalance seeded = await InventoryBalanceTestData.SeedInventoryBalanceAsync(
+            testDbContext.DbContext,
+            quantity: 10);
+
+        await using WmsDbContext firstContext = testDbContext.CreateDbContext();
+        await using WmsDbContext secondContext = testDbContext.CreateDbContext();
+
+        InventoryBalance firstBalance = await firstContext.InventoryBalances
+            .SingleAsync(x => x.Id == seeded.InventoryBalance.Id, TestContext.Current.CancellationToken);
+        InventoryBalance secondBalance = await secondContext.InventoryBalances
+            .SingleAsync(x => x.Id == seeded.InventoryBalance.Id, TestContext.Current.CancellationToken);
+
+        Assert.True(firstBalance.ApplyCountedQuantityAdjustment(11).IsValid);
+        await firstContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(secondBalance.ApplyCountedQuantityAdjustment(12).IsValid);
+        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() =>
+            secondContext.SaveChangesAsync(TestContext.Current.CancellationToken));
     }
 }

@@ -33,7 +33,7 @@ No other stock-mutation endpoint remains for direct inventory balance create or 
 | `storageLocationId` | Yes | Non-empty GUID |
 | `countedQuantity` | Yes | Decimal, greater than or equal to zero |
 | `reason` | Yes | Trimmed, non-empty, maximum 500 characters |
-| `expectedBalanceVersion` | No | Base64 rowversion when existing balance is expected; null when no balance is expected |
+| `expectedBalanceVersion` | No | Base64 SQL Server rowversion when existing balance is expected; null when no balance is expected. Non-null values must decode to exactly 8 bytes. |
 
 ## Existing-Balance Adjustment
 
@@ -121,6 +121,7 @@ Used for:
 - Negative counted quantity.
 - Missing, whitespace-only, or over-500-character reason.
 - Invalid Base64 expected version.
+- Valid Base64 expected version values that do not decode to exactly 8 bytes.
 
 ProblemDetails follows existing Myrmex validation conventions.
 

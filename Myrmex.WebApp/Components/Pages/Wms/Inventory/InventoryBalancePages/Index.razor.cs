@@ -166,7 +166,7 @@ public partial class Index
     {
         DialogOptions options = new()
         {
-            CloseButton = true,
+            CloseButton = false,
             MaxWidth = MaxWidth.Small,
             FullWidth = true
         };
@@ -178,6 +178,13 @@ public partial class Index
 
         if (result is null || result.Canceled)
         {
+            return;
+        }
+
+        if (result.Data is InventoryBalanceDialogOutcome initialCountOutcome &&
+            initialCountOutcome == InventoryBalanceDialogOutcome.ConcurrencyConflict)
+        {
+            await ReloadInventoryBalancesAsync();
             return;
         }
 
@@ -200,7 +207,7 @@ public partial class Index
 
         DialogOptions options = new()
         {
-            CloseButton = true,
+            CloseButton = false,
             MaxWidth = MaxWidth.Small,
             FullWidth = true
         };
@@ -214,6 +221,13 @@ public partial class Index
 
         if (result is null || result.Canceled)
         {
+            return;
+        }
+
+        if (result.Data is InventoryBalanceDialogOutcome adjustmentOutcome &&
+            adjustmentOutcome == InventoryBalanceDialogOutcome.ConcurrencyConflict)
+        {
+            await ReloadInventoryBalancesAsync();
             return;
         }
 

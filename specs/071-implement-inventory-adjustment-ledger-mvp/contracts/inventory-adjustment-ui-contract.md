@@ -38,7 +38,11 @@ Concurrency conflict:
 
 - Show a refresh-and-review message.
 - Do not retry automatically.
-- Keep the user in a recoverable state.
+- Keep the entered counted quantity and reason where practical.
+- Disable resubmission from the stale dialog.
+- Require the user to close or cancel the stale dialog.
+- Reload current grid data after the stale dialog closes.
+- The user reopens adjustment from the refreshed row.
 
 ## Missing Balance Initial Count
 
@@ -88,5 +92,6 @@ Success:
 - Not-found responses use the existing Myrmex message style for missing SKU, storage location, or required related records.
 - Missing-balance eligibility failures use the current create-handler validation/conflict convention.
 - `InventoryBalance.ConcurrencyConflict` tells the user to refresh and review counted quantity.
+- For initial count, a concurrent duplicate insert shows the same stale-state concept and reloads the grid after the stale dialog is closed.
 - Unexpected request failures use existing WebApp alert/dialog error patterns.
 - Expected cancellation is not shown as a user-facing error.

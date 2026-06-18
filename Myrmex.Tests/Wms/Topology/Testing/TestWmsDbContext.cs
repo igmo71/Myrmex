@@ -26,6 +26,19 @@ internal sealed class TestWmsDbContext : IAsyncDisposable
 
     public WmsDbContext DbContext { get; }
 
+    public WmsDbContext CreateDbContext()
+    {
+        DbContextOptions<WmsDbContext> options =
+            new DbContextOptionsBuilder<WmsDbContext>()
+                .UseSqlServer(DbContext.Database.GetDbConnection())
+                .Options;
+
+        WmsDbContext dbContext = new(options);
+        dbContext.Database.UseTransaction(_transaction.GetDbTransaction());
+
+        return dbContext;
+    }
+
     public static async Task<TestWmsDbContext> CreateAsync()
     {
         await DatabaseGate.WaitAsync(TestContext.Current.CancellationToken);

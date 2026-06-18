@@ -8,6 +8,7 @@ using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Inventory.Endpoints;
 using Myrmex.Modules.Wms.Inventory.Features.InventoryAdjustments;
 using Myrmex.Shared.Wms.Inventory;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -56,6 +57,41 @@ public sealed class InventoryAdjustmentEndpointTests
             JsonElement root = json.RootElement;
             Assert.Equal(details.Id, root.GetProperty("id").GetGuid());
             Assert.Equal("AAAAAAAAB9I=", root.GetProperty("balanceVersion").GetString());
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
+    [Fact]
+    public async Task AdjustInventoryBalanceAsync_WhenConcurrencyConflict_Returns409WithConflictCode()
+    {
+        RecordingCommandDispatcher commandDispatcher = new(
+            ServiceResult<InventoryBalanceDetails>.Fail(AdjustInventoryBalance.ConcurrencyConflictError()));
+        await using WebApplication app = CreateInventoryEndpointApp(commandDispatcher);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient httpClient = CreateHttpClient(app);
+            AdjustInventoryBalanceRequest request = new(
+                Guid.Parse("018f0000-0000-7000-8000-000000000101"),
+                Guid.Parse("018f0000-0000-7000-8000-000000000201"),
+                CountedQuantity: 14,
+                Reason: "Cycle count correction",
+                ExpectedBalanceVersion: "AAAAAAAAB9E=");
+
+            using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
+                "/api/wms/inventory/adjustments",
+                request,
+                cancellationToken);
+
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+            using JsonDocument json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+            Assert.Equal("InventoryBalance.ConcurrencyConflict", json.RootElement.GetProperty("code").GetString());
         }
         finally
         {
@@ -119,8 +155,20 @@ public sealed class InventoryAdjustmentEndpointTests
                     "Main Warehouse")));
     }
 
-    private sealed class RecordingCommandDispatcher(InventoryBalanceDetails details) : ICommandDispatcher
+    private sealed class RecordingCommandDispatcher : ICommandDispatcher
     {
+        private readonly ServiceResult<InventoryBalanceDetails> _result;
+
+        public RecordingCommandDispatcher(InventoryBalanceDetails details)
+            : this(ServiceResult<InventoryBalanceDetails>.Success(details))
+        {
+        }
+
+        public RecordingCommandDispatcher(ServiceResult<InventoryBalanceDetails> result)
+        {
+            _result = result;
+        }
+
         public AdjustInventoryBalance.Command? CapturedCommand { get; private set; }
 
         public Task<TResult> DispatchAsync<TCommand, TResult>(
@@ -134,7 +182,7 @@ public sealed class InventoryAdjustmentEndpointTests
             {
                 CapturedCommand = adjustCommand;
 
-                return Task.FromResult((TResult)(object)ServiceResult<InventoryBalanceDetails>.Success(details));
+                return Task.FromResult((TResult)(object)_result);
             }
 
             throw new NotSupportedException($"Unexpected command type {typeof(TCommand).FullName}.");

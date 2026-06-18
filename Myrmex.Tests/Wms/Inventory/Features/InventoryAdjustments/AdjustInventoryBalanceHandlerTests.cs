@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
+using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryTransactions;
 using Myrmex.Modules.Wms.Inventory.Features.InventoryAdjustments;
 using Myrmex.Shared.Wms.Inventory;
@@ -150,7 +152,7 @@ public sealed class AdjustInventoryBalanceHandlerTests
 
     [Theory]
     [MemberData(nameof(ValidationCases))]
-    internal async Task HandleAsync_WhenRequestIsInvalid_ReturnsValidationFailure(AdjustInventoryBalance.Command command)
+    public async Task HandleAsync_WhenRequestIsInvalid_ReturnsValidationFailure(AdjustInventoryBalance.Command command)
     {
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
         AdjustInventoryBalance.Handler handler = new(
@@ -267,6 +269,88 @@ public sealed class AdjustInventoryBalanceHandlerTests
         Assert.Equal(12, result.Value.Quantity);
     }
 
+    [Theory]
+    [InlineData(ConcurrencyScenario.ExistingBalanceStaleVersion)]
+    [InlineData(ConcurrencyScenario.ExistingBalanceExpectedAbsence)]
+    [InlineData(ConcurrencyScenario.MissingBalanceExpectedExistence)]
+    public async Task HandleAsync_WhenExpectedStateIsStale_ReturnsConcurrencyConflict(
+        ConcurrencyScenario scenario)
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        RecordingDomainEventDispatcher domainEventDispatcher = new();
+        Guid stockKeepingUnitId;
+        Guid storageLocationId;
+        string? expectedBalanceVersion;
+
+        if (scenario is ConcurrencyScenario.MissingBalanceExpectedExistence)
+        {
+            SeededInventoryReferences references = await InventoryBalanceTestData.SeedInventoryReferencesAsync(
+                testDbContext.DbContext);
+            stockKeepingUnitId = references.StockKeepingUnit.Id;
+            storageLocationId = references.StorageLocation.Id;
+            expectedBalanceVersion = Convert.ToBase64String([1, 2, 3, 4, 5, 6, 7, 8]);
+        }
+        else
+        {
+            SeededInventoryBalance seeded = await InventoryBalanceTestData.SeedInventoryBalanceAsync(
+                testDbContext.DbContext,
+                quantity: 10);
+            stockKeepingUnitId = seeded.StockKeepingUnit.Id;
+            storageLocationId = seeded.StorageLocation.Id;
+            expectedBalanceVersion = scenario is ConcurrencyScenario.ExistingBalanceExpectedAbsence
+                ? null
+                : Convert.ToBase64String([1, 2, 3, 4, 5, 6, 7, 8]);
+        }
+
+        AdjustInventoryBalance.Handler handler = new(
+            testDbContext.DbContext,
+            domainEventDispatcher);
+
+        ServiceResult<InventoryBalanceDetails> result = await handler.HandleAsync(
+            new AdjustInventoryBalance.Command(
+                stockKeepingUnitId,
+                storageLocationId,
+                CountedQuantity: 12,
+                Reason: "Cycle count correction",
+                ExpectedBalanceVersion: expectedBalanceVersion),
+            TestContext.Current.CancellationToken);
+
+        AssertConcurrencyConflict(result);
+        Assert.Equal(0, await testDbContext.DbContext.InventoryTransactions.CountAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(0, await testDbContext.DbContext.InventoryLedgerEntries.CountAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenDuplicateBalanceInsertOccursDuringMissingInitialization_ReturnsConcurrencyConflict()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        SeededInventoryReferences seeded = await InventoryBalanceTestData.SeedInventoryReferencesAsync(
+            testDbContext.DbContext);
+        DomainValidationResult duplicateValidation = InventoryBalance.Create(
+            seeded.StockKeepingUnit.Id,
+            seeded.StorageLocation.Id,
+            quantity: 1,
+            out InventoryBalance? duplicateBalance);
+        Assert.True(duplicateValidation.IsValid);
+        Assert.NotNull(duplicateBalance);
+        duplicateBalance.ClearDomainEvents();
+        testDbContext.DbContext.InventoryBalances.Add(duplicateBalance);
+        AdjustInventoryBalance.Handler handler = new(
+            testDbContext.DbContext,
+            new RecordingDomainEventDispatcher());
+
+        ServiceResult<InventoryBalanceDetails> result = await handler.HandleAsync(
+            new AdjustInventoryBalance.Command(
+                seeded.StockKeepingUnit.Id,
+                seeded.StorageLocation.Id,
+                CountedQuantity: 5,
+                Reason: "Initial physical count",
+                ExpectedBalanceVersion: null),
+            TestContext.Current.CancellationToken);
+
+        AssertConcurrencyConflict(result);
+    }
+
     public static IEnumerable<object[]> ValidationCases()
     {
         yield return
@@ -332,6 +416,41 @@ public sealed class AdjustInventoryBalanceHandlerTests
                 Reason: "Cycle count correction",
                 ExpectedBalanceVersion: "not-base64")
         ];
+        yield return
+        [
+            new AdjustInventoryBalance.Command(
+                Guid.Parse("018f0000-0000-7000-8000-000000000101"),
+                Guid.Parse("018f0000-0000-7000-8000-000000000201"),
+                CountedQuantity: 1,
+                Reason: "Cycle count correction",
+                ExpectedBalanceVersion: string.Empty)
+        ];
+        yield return
+        [
+            new AdjustInventoryBalance.Command(
+                Guid.Parse("018f0000-0000-7000-8000-000000000101"),
+                Guid.Parse("018f0000-0000-7000-8000-000000000201"),
+                CountedQuantity: 1,
+                Reason: "Cycle count correction",
+                ExpectedBalanceVersion: "AQ==")
+        ];
+        yield return
+        [
+            new AdjustInventoryBalance.Command(
+                Guid.Parse("018f0000-0000-7000-8000-000000000101"),
+                Guid.Parse("018f0000-0000-7000-8000-000000000201"),
+                CountedQuantity: 1,
+                Reason: "Cycle count correction",
+                ExpectedBalanceVersion: "AQIDBA==")
+        ];
+    }
+
+    private static void AssertConcurrencyConflict(ServiceResult<InventoryBalanceDetails> result)
+    {
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.Error);
+        Assert.Equal(ServiceErrorType.Conflict, result.Error.Type);
+        Assert.Equal("InventoryBalance.ConcurrencyConflict", result.Error.Code);
     }
 
     private static void Deactivate(
@@ -367,5 +486,12 @@ public sealed class AdjustInventoryBalanceHandlerTests
         StorageLocation,
         StorageLocationType,
         StorageLocationStatus
+    }
+
+    public enum ConcurrencyScenario
+    {
+        ExistingBalanceStaleVersion,
+        ExistingBalanceExpectedAbsence,
+        MissingBalanceExpectedExistence
     }
 }
