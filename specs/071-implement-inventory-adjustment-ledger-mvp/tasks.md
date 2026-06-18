@@ -19,12 +19,12 @@
 
 **Purpose**: Confirm the approved scope and actual repository paths before source changes begin.
 
-- [ ] T001 Review the approved specification in `specs/071-implement-inventory-adjustment-ledger-mvp/spec.md` for one-command adjustment API, strict nullable `ExpectedBalanceVersion`, concurrency code, and non-goals.
-- [ ] T002 Review the implementation plan in `specs/071-implement-inventory-adjustment-ledger-mvp/plan.md` for rowversion projection, eligibility semantics, duplicate-insert classification, timestamp model, and testing guidance.
-- [ ] T003 Review the stakeholder source in `StakeholderDocs/Wms/Implement Inventory Adjustment Ledger MVP.md` before making source edits.
-- [ ] T004 [P] Review current Inventory Balance domain behavior in `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances/InventoryBalance.cs`.
-- [ ] T005 [P] Review current Inventory Balance endpoint mappings in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs` and `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryEndpoints.cs`.
-- [ ] T006 [P] Review current WebApp Inventory Balance files in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/Index.razor.cs` and `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/InventoryBalanceGrid.razor`.
+- [X] T001 Review the approved specification in `specs/071-implement-inventory-adjustment-ledger-mvp/spec.md` for one-command adjustment API, strict nullable `ExpectedBalanceVersion`, concurrency code, and non-goals.
+- [X] T002 Review the implementation plan in `specs/071-implement-inventory-adjustment-ledger-mvp/plan.md` for rowversion projection, eligibility semantics, duplicate-insert classification, timestamp model, and testing guidance.
+- [X] T003 Review the stakeholder source in `StakeholderDocs/Wms/Implement Inventory Adjustment Ledger MVP.md` before making source edits.
+- [X] T004 [P] Review current Inventory Balance domain behavior in `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances/InventoryBalance.cs`.
+- [X] T005 [P] Review current Inventory Balance endpoint mappings in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs` and `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryEndpoints.cs`.
+- [X] T006 [P] Review current WebApp Inventory Balance files in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/Index.razor.cs` and `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/InventoryBalanceGrid.razor`.
 
 ---
 
@@ -34,24 +34,24 @@
 
 **CRITICAL**: No user story can be complete until this phase is done.
 
-- [ ] T007 Create adjustment request contract in `Myrmex.Shared/Wms/Inventory/AdjustInventoryBalanceRequest.cs` with SKU, storage location, counted quantity, nullable Base64 `ExpectedBalanceVersion`, and reason.
-- [ ] T008 Modify `Myrmex.Shared/Wms/Inventory/InventoryBalanceDetails.cs` to expose current balance version as Base64 transport data.
+- [X] T007 Create adjustment request contract in `Myrmex.Shared/Wms/Inventory/AdjustInventoryBalanceRequest.cs` with SKU, storage location, counted quantity, nullable Base64 `ExpectedBalanceVersion`, and reason.
+- [X] T008 Modify `Myrmex.Shared/Wms/Inventory/InventoryBalanceDetails.cs` to expose current balance version as Base64 transport data.
 - [ ] T009 Remove obsolete direct create request contract from `Myrmex.Shared/Wms/Inventory/CreateInventoryBalanceRequest.cs`.
-- [ ] T010 Remove obsolete direct quantity-update request contract from `Myrmex.Shared/Wms/Inventory/UpdateInventoryBalanceQuantityRequest.cs`.
-- [ ] T011 Modify `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances/InventoryBalance.cs` to add `RowVersion` as a `byte[]` concurrency token without adding transport encoding to the domain model.
-- [ ] T012 Create transaction type enum in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryTransactionType.cs`.
-- [ ] T013 Create `InventoryTransaction` aggregate root in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryTransaction.cs` with factory-based construction, `OccurredAtUtc`, `CreatedAtUtc`, no normal `UpdatedAtUtc` lifecycle, and immutable correction semantics.
-- [ ] T014 Create immutable child entity in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryLedgerEntry.cs` with factory-based construction and no independent business occurrence timestamp.
-- [ ] T015 Update table, column, length, and index constants in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs`.
-- [ ] T016 Modify EF mapping in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryBalanceConfiguration.cs` to map `InventoryBalance.RowVersion` as SQL Server rowversion and preserve the SKU/location uniqueness constraint.
-- [ ] T017 Create transaction EF mapping in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryTransactionConfiguration.cs` for transaction table, transaction type, reason max length 500, `OccurredAtUtc`, creation timestamp behavior, and index on `OccurredAtUtc`.
-- [ ] T018 Create ledger entry EF mapping in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryLedgerEntryConfiguration.cs` for `InventoryTransactionId`, `StockKeepingUnitId`, `StorageLocationId`, decimal quantity fields, transaction relationship, SKU index, storage-location index, and EF convention-generated FK index without a duplicate explicit FK index.
-- [ ] T019 Modify `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs` to include `InventoryTransaction` and `InventoryLedgerEntry` sets and configurations.
-- [ ] T020 Inspect timestamp behavior in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContextSaveExtensions.cs`; modify it only if current automatic behavior would set or update timestamps on immutable ledger entities, and keep future `EntityBase` timestamp extraction out of scope.
-- [ ] T021 Modify `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsPersistenceExceptionMapper.cs` to expose only a low-level predicate for SQL Server duplicate errors 2601 or 2627 and the named SKU/location unique index, without globally classifying all duplicate balance inserts as concurrency.
-- [ ] T022 Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/InventoryBalanceQueryableExtensions.cs` to split database projection from transport mapping: preserve server-side filtering, sorting, paging, bounded column projection, and no full entity graph loading while projecting `RowVersion` as `byte[]`.
-- [ ] T023 Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/InventoryBalanceQueryableExtensions.cs` to perform in-memory mapping from the materialized internal projection to `InventoryBalanceDetails` with Base64 `BalanceVersion`, never inside the EF SQL projection.
-- [ ] T024 Complete EF model and mapping changes for expected migration shape in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryTransactionConfiguration.cs`, `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryLedgerEntryConfiguration.cs`, and `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryBalanceConfiguration.cs`; do not hand-author generated migration or snapshot files.
+- [X] T010 Remove obsolete direct quantity-update request contract from `Myrmex.Shared/Wms/Inventory/UpdateInventoryBalanceQuantityRequest.cs`.
+- [X] T011 Modify `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances/InventoryBalance.cs` to add `RowVersion` as a `byte[]` concurrency token without adding transport encoding to the domain model.
+- [X] T012 Create transaction type enum in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryTransactionType.cs`.
+- [X] T013 Create `InventoryTransaction` aggregate root in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryTransaction.cs` with factory-based construction, `OccurredAtUtc`, `CreatedAtUtc`, no normal `UpdatedAtUtc` lifecycle, and immutable correction semantics.
+- [X] T014 Create immutable child entity in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryLedgerEntry.cs` with factory-based construction and no independent business occurrence timestamp.
+- [X] T015 Update table, column, length, and index constants in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs`.
+- [X] T016 Modify EF mapping in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryBalanceConfiguration.cs` to map `InventoryBalance.RowVersion` as SQL Server rowversion and preserve the SKU/location uniqueness constraint.
+- [X] T017 Create transaction EF mapping in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryTransactionConfiguration.cs` for transaction table, transaction type, reason max length 500, `OccurredAtUtc`, creation timestamp behavior, and index on `OccurredAtUtc`.
+- [X] T018 Create ledger entry EF mapping in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryLedgerEntryConfiguration.cs` for `InventoryTransactionId`, `StockKeepingUnitId`, `StorageLocationId`, decimal quantity fields, transaction relationship, SKU index, storage-location index, and EF convention-generated FK index without a duplicate explicit FK index.
+- [X] T019 Modify `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs` to include `InventoryTransaction` and `InventoryLedgerEntry` sets and configurations.
+- [X] T020 Inspect timestamp behavior in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContextSaveExtensions.cs`; modify it only if current automatic behavior would set or update timestamps on immutable ledger entities, and keep future `EntityBase` timestamp extraction out of scope.
+- [X] T021 Modify `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsPersistenceExceptionMapper.cs` to expose only a low-level predicate for SQL Server duplicate errors 2601 or 2627 and the named SKU/location unique index, without globally classifying all duplicate balance inserts as concurrency.
+- [X] T022 Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/InventoryBalanceQueryableExtensions.cs` to split database projection from transport mapping: preserve server-side filtering, sorting, paging, bounded column projection, and no full entity graph loading while projecting `RowVersion` as `byte[]`.
+- [X] T023 Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/InventoryBalanceQueryableExtensions.cs` to perform in-memory mapping from the materialized internal projection to `InventoryBalanceDetails` with Base64 `BalanceVersion`, never inside the EF SQL projection.
+- [X] T024 Complete EF model and mapping changes for expected migration shape in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryTransactionConfiguration.cs`, `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryLedgerEntryConfiguration.cs`, and `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryBalanceConfiguration.cs`; do not hand-author generated migration or snapshot files.
 - [ ] T025 BLOCKED until explicit developer approval: generate and review migration artifacts in `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/<timestamp>_AddInventoryAdjustmentLedger.cs` and `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/WmsDbContextModelSnapshot.cs` using repository-approved EF commands only after approval.
 
 **Checkpoint**: Contracts, domain model, persistence mapping, rowversion projection policy, and migration shape are ready for story implementation. Migration generation remains blocked until explicit approval.
@@ -64,22 +64,22 @@
 
 **Independent Test**: Existing balance quantity changes from 10 to 14 with matching Base64 version; one transaction and one ledger entry are created with delta +4, and the response includes the updated balance with a new Base64 version.
 
-- [ ] T026 [P] [US1] Create one domain test group for transaction and ledger entry factories, invariants, reason normalization, and observable lifecycle behavior in `Myrmex.Tests/Wms/Inventory/Domain/InventoryTransactionTests.cs`; do not add reflection tests, member-absence tests, setter-visibility tests, or architecture-shape tests for immutability.
-- [ ] T027 [P] [US1] Create one existing-balance material adjustment handler test in `Myrmex.Tests/Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalanceHandlerTests.cs`.
-- [ ] T028 [US1] Implement adjustment transaction factory behavior in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryTransaction.cs`.
-- [ ] T029 [US1] Implement ledger entry factory behavior in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryLedgerEntry.cs`.
-- [ ] T030 [US1] Modify `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances/InventoryBalance.cs` to apply material counted-quantity adjustments to existing balances through domain behavior.
-- [ ] T031 [US1] Create adjustment handler in `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` for existing-balance successful adjustment with explicit expected-version comparison before mutation.
-- [ ] T032 [US1] Create public adjustment endpoint mapping in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryAdjustmentEndpoints.cs` for `POST /api/wms/inventory/adjustments`.
-- [ ] T033 [US1] Modify `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryEndpoints.cs` to map `InventoryAdjustmentEndpoints`.
-- [ ] T034 [US1] Modify `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs` to add the adjustment API client method and response mapping.
-- [ ] T035 [US1] Modify `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs` to remove the obsolete direct quantity-update route mapping.
-- [ ] T036 [US1] Remove obsolete direct quantity-update handler from `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/UpdateInventoryBalanceQuantity.cs`.
-- [ ] T037 [US1] Modify `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/InventoryBalanceGrid.razor` to replace the direct quantity-edit action with an adjustment action for existing rows.
-- [ ] T038 [US1] Create existing-balance adjustment dialog in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/AdjustInventoryBalanceDialog.razor`.
-- [ ] T039 [US1] Modify `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/Index.razor.cs` to call the adjustment client method with the row Base64 balance version and refresh the grid after success.
-- [ ] T040 [US1] Remove obsolete direct quantity-update dialog from `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/UpdateInventoryBalanceQuantityDialog.razor`.
-- [ ] T041 [US1] Add one focused adjustment endpoint/API-client contract test covering request, response, Base64 version transport, and success mapping in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryAdjustmentEndpointTests.cs` and `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`.
+- [X] T026 [P] [US1] Create one domain test group for transaction and ledger entry factories, invariants, reason normalization, and observable lifecycle behavior in `Myrmex.Tests/Wms/Inventory/Domain/InventoryTransactionTests.cs`; do not add reflection tests, member-absence tests, setter-visibility tests, or architecture-shape tests for immutability.
+- [X] T027 [P] [US1] Create one existing-balance material adjustment handler test in `Myrmex.Tests/Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalanceHandlerTests.cs`.
+- [X] T028 [US1] Implement adjustment transaction factory behavior in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryTransaction.cs`.
+- [X] T029 [US1] Implement ledger entry factory behavior in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryLedgerEntry.cs`.
+- [X] T030 [US1] Modify `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances/InventoryBalance.cs` to apply material counted-quantity adjustments to existing balances through domain behavior.
+- [X] T031 [US1] Create adjustment handler in `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` for existing-balance successful adjustment with explicit expected-version comparison before mutation.
+- [X] T032 [US1] Create public adjustment endpoint mapping in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryAdjustmentEndpoints.cs` for `POST /api/wms/inventory/adjustments`.
+- [X] T033 [US1] Modify `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryEndpoints.cs` to map `InventoryAdjustmentEndpoints`.
+- [X] T034 [US1] Modify `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs` to add the adjustment API client method and response mapping.
+- [X] T035 [US1] Modify `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs` to remove the obsolete direct quantity-update route mapping.
+- [X] T036 [US1] Remove obsolete direct quantity-update handler from `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/UpdateInventoryBalanceQuantity.cs`.
+- [X] T037 [US1] Modify `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/InventoryBalanceGrid.razor` to replace the direct quantity-edit action with an adjustment action for existing rows.
+- [X] T038 [US1] Create existing-balance adjustment dialog in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/AdjustInventoryBalanceDialog.razor`.
+- [X] T039 [US1] Modify `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/Index.razor.cs` to call the adjustment client method with the row Base64 balance version and refresh the grid after success.
+- [X] T040 [US1] Remove obsolete direct quantity-update dialog from `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/UpdateInventoryBalanceQuantityDialog.razor`.
+- [X] T041 [US1] Add one focused adjustment endpoint/API-client contract test covering request, response, Base64 version transport, and success mapping in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryAdjustmentEndpointTests.cs` and `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`.
 
 **Checkpoint**: Existing balances can be adjusted through the new adjustment endpoint, and the old direct quantity-update path is removed.
 
@@ -280,4 +280,3 @@ infrastructure commands
 Migration generation, build, tests, and runtime validation remain developer-controlled and require explicit approval.
 
 For developer-approved verification, use `specs/071-implement-inventory-adjustment-ledger-mvp/quickstart.md`. Do not assume VSTest-style `--filter FullyQualifiedName...` reliably selects targeted tests under the repository's Microsoft.Testing.Platform configuration.
-

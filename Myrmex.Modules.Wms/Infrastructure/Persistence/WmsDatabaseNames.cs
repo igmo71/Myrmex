@@ -56,4 +56,19 @@ internal static class WmsDatabaseNames
     public const string InventoryBalanceStorageLocationForeignKey = "FK_wms_inventory_balances_storage_locations_storage_location_id";
     public const string InventoryBalanceStockKeepingUnitIdStorageLocationIdUniqueIndex = "UX_wms_inventory_balances_stock_keeping_unit_id_storage_location_id";
     public const string InventoryBalanceStorageLocationIdIndex = "IX_wms_inventory_balances_storage_location_id";
+
+    public const int InventoryTransactionReasonMaxLength = 500;
+    public const int InventoryTransactionTypeMaxLength = 32;
+
+    public const string InventoryTransactionsTable = "inventory_transactions";
+    public const string InventoryTransactionPrimaryKey = "PK_wms_inventory_transactions";
+    public const string InventoryTransactionOccurredAtUtcIndex = "IX_wms_inventory_transactions_occurred_at_utc";
+
+    public const string InventoryLedgerEntriesTable = "inventory_ledger_entries";
+    public const string InventoryLedgerEntryPrimaryKey = "PK_wms_inventory_ledger_entries";
+    public const string InventoryLedgerEntryInventoryTransactionForeignKey = "FK_wms_inventory_ledger_entries_inventory_transactions_inventory_transaction_id";
+    public const string InventoryLedgerEntryStockKeepingUnitForeignKey = "FK_wms_inventory_ledger_entries_stock_keeping_units_stock_keeping_unit_id";
+    public const string InventoryLedgerEntryStorageLocationForeignKey = "FK_wms_inventory_ledger_entries_storage_locations_storage_location_id";
+    public const string InventoryLedgerEntryStockKeepingUnitIdIndex = "IX_wms_inventory_ledger_entries_stock_keeping_unit_id";
+    public const string InventoryLedgerEntryStorageLocationIdIndex = "IX_wms_inventory_ledger_entries_storage_location_id";
 }

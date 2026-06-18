@@ -3,7 +3,7 @@
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">Update inventory balance quantity</MudText>
+        <MudText Typo="Typo.h6">Adjust inventory balance</MudText>
     </TitleContent>
 
     <DialogContent>
@@ -38,16 +38,26 @@
                               Disabled="true" />
 
                 <MudNumericField T="decimal"
-                                 Label="Quantity"
+                                 Label="Counted quantity"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="0"
                                  Required="true"
-                                 RequiredError="Quantity is required."
+                                 RequiredError="Counted quantity is required."
                                  Culture="@QuantityCulture"
                                  Format="0.####"
                                  InputMode="@(InputMode.@decimal)"
-                                 @bind-Value="_quantity" />
+                                 @bind-Value="_countedQuantity" />
+
+                <MudTextField T="string"
+                              Label="Reason"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Required="true"
+                              RequiredError="Reason is required."
+                              MaxLength="500"
+                              Lines="3"
+                              @bind-Value="_reason" />
 
                 @if (!string.IsNullOrWhiteSpace(_errorMessage))
                 {
@@ -91,10 +101,11 @@
     private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = null!;
 
     private MudForm? _form;
-    private decimal _quantity;
+    private decimal _countedQuantity;
+    private string? _reason;
     private bool _isSaving;
     private string? _errorMessage;
-    
+
     private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
 
     private string StockKeepingUnitDisplay =>
@@ -113,7 +124,7 @@
 
     protected override void OnInitialized()
     {
-        _quantity = InventoryBalance.Quantity;
+        _countedQuantity = InventoryBalance.Quantity;
     }
 
     private async Task SaveAsync()
@@ -130,9 +141,15 @@
             return;
         }
 
-        if (_quantity < 0)
+        if (_countedQuantity < 0)
         {
-            _errorMessage = "Quantity must be greater than or equal to zero.";
+            _errorMessage = "Counted quantity must be greater than or equal to zero.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_reason))
+        {
+            _errorMessage = "Reason is required.";
             return;
         }
 
@@ -141,14 +158,19 @@
 
         try
         {
-            UpdateInventoryBalanceQuantityRequest request = new(_quantity);
+            AdjustInventoryBalanceRequest request = new(
+                InventoryBalance.Sku.Id,
+                InventoryBalance.StorageLocation.Id,
+                _countedQuantity,
+                _reason,
+                InventoryBalance.BalanceVersion);
 
             ApiResult<InventoryBalanceDetails> result = await WmsInventoryApiClient
-                .TryUpdateInventoryBalanceQuantityAsync(InventoryBalance.Id, request);
+                .TryAdjustInventoryBalanceAsync(request);
 
             if (result.IsFailure)
             {
-                _errorMessage = result.Error?.Message ?? "Inventory balance quantity update failed.";
+                _errorMessage = result.Error?.Message ?? "Inventory balance adjustment failed.";
                 return;
             }
 

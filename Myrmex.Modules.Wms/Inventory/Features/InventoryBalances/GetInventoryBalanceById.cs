@@ -18,18 +18,18 @@ internal static class GetInventoryBalanceById
             Query query,
             CancellationToken cancellationToken = default)
         {
-            InventoryBalanceDetails? details = await dbContext.InventoryBalances
+            InventoryBalanceDetailsData? detailsData = await dbContext.InventoryBalances
                 .AsNoTracking()
                 .Where(x => x.Id == query.InventoryBalanceId)
-                .ProjectDetails()
+                .ProjectDetailsData()
                 .SingleOrDefaultAsync(cancellationToken);
 
-            if (details is null)
+            if (detailsData is null)
             {
                 return ServiceResult<InventoryBalanceDetails>.Fail(ServiceError.NotFound<InventoryBalance>());
             }
 
-            return ServiceResult<InventoryBalanceDetails>.Success(details);
+            return ServiceResult<InventoryBalanceDetails>.Success(detailsData.ToDetails());
         }
     }
 }

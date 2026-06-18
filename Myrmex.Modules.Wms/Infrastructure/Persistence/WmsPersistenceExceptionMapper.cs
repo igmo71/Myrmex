@@ -13,6 +13,12 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence;
 
 internal static class WmsPersistenceExceptionMapper
 {
+    public static bool IsInventoryBalanceSkuLocationDuplicate(DbUpdateException exception)
+    {
+        return exception.IsUniqueConstraintViolation(
+            WmsDatabaseNames.InventoryBalanceStockKeepingUnitIdStorageLocationIdUniqueIndex);
+    }
+
     public static ServiceError? TryMap(DbUpdateException exception)
     {
         if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.WarehouseCodeUniqueIndex))
@@ -47,7 +53,7 @@ internal static class WmsPersistenceExceptionMapper
         {
             return ServiceError.Conflict<SkuBarcode>("Value already exists", nameof(SkuBarcode.Value));
         }
-        if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.InventoryBalanceStockKeepingUnitIdStorageLocationIdUniqueIndex))
+        if (IsInventoryBalanceSkuLocationDuplicate(exception))
         {
             return ServiceError.Conflict<InventoryBalance>("StockKeepingUnitId - StorageLocationId already exists",
                 $"{nameof(InventoryBalance.StockKeepingUnitId)}-{nameof(InventoryBalance.StorageLocationId)}");

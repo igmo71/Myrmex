@@ -13,6 +13,7 @@ internal static class InventoryEndpoints
             .WithTags("Wms Inventory");
 
         group.MapInventoryBalanceEndpoints();
+        group.MapInventoryAdjustmentEndpoints();
 
         return endpoints;
     }

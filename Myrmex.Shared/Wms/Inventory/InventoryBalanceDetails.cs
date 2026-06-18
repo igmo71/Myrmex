@@ -5,6 +5,7 @@ public sealed record InventoryBalanceDetails(
     decimal Quantity,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? UpdatedAtUtc,
+    string BalanceVersion,
     InventoryBalanceDetails.StockKeepingUnitInfo Sku,
     InventoryBalanceDetails.StorageLocationInfo StorageLocation)
 {

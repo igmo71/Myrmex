@@ -109,6 +109,7 @@ public sealed class InventoryBalanceEndpointTests
             Quantity: 42.25m,
             DateTimeOffset.Parse("2026-06-17T09:00:00Z"),
             DateTimeOffset.Parse("2026-06-17T10:00:00Z"),
+            "AAAAAAAAB9E=",
             new InventoryBalanceDetails.StockKeepingUnitInfo(
                 stockKeepingUnitId,
                 "SKU-001",

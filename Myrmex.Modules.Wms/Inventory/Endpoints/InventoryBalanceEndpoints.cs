@@ -28,10 +28,6 @@ internal static class InventoryBalanceEndpoints
             .WithName("GetInventoryBalanceById")
             .WithSummary("Get Inventory Balance By Id");
 
-        group.MapPut("/balances/{inventoryBalanceId:guid}/quantity", UpdateInventoryBalanceQuantityAsync)
-            .WithName("UpdateInventoryBalanceQuantity")
-            .WithSummary("Update Inventory Balance Quantity");
-
         return group;
     }
 
@@ -86,21 +82,4 @@ internal static class InventoryBalanceEndpoints
         return result.ToHttpResult();
     }
 
-    private static async Task<IResult> UpdateInventoryBalanceQuantityAsync(
-        Guid inventoryBalanceId,
-        UpdateInventoryBalanceQuantityRequest request,
-        ICommandDispatcher commandDispatcher,
-        CancellationToken cancellationToken = default)
-    {
-        var command = new UpdateInventoryBalanceQuantity.Command(
-            inventoryBalanceId,
-            request.Quantity);
-
-        var result = await commandDispatcher
-            .DispatchAsync<UpdateInventoryBalanceQuantity.Command, ServiceResult<InventoryBalanceDetails>>(
-                command,
-                cancellationToken);
-
-        return result.ToHttpResult();
-    }
 }

@@ -66,14 +66,14 @@ internal static class CreateInventoryBalance
                 return ServiceResult<InventoryBalanceDetails>.Fail(saveResult.Error);
             }
 
-            InventoryBalanceDetails? details = await dbContext.InventoryBalances
+            InventoryBalanceDetailsData? detailsData = await dbContext.InventoryBalances
                 .Where(x => x.Id == inventoryBalance.Id)
-                .ProjectDetails()
+                .ProjectDetailsData()
                 .SingleOrDefaultAsync(cancellationToken);
 
-            return details is null
+            return detailsData is null
                 ? ServiceResult<InventoryBalanceDetails>.Fail(ServiceError.Failure<InventoryBalance>("Failed to create InventoryBalance"))
-                : ServiceResult<InventoryBalanceDetails>.Success(details);
+                : ServiceResult<InventoryBalanceDetails>.Success(detailsData.ToDetails());
         }
 
         private async Task<ServiceError?> ValidateExternalDependenciesAsync(InventoryBalance balance, CancellationToken cancellationToken)

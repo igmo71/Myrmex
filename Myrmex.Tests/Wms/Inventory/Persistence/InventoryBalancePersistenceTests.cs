@@ -79,7 +79,7 @@ public sealed class InventoryBalancePersistenceTests
     }
 
     [Fact]
-    public async Task Model_HasExplicitQuantityAndTimestampMapping()
+    public async Task Model_HasExplicitQuantityTimestampAndRowVersionMapping()
     {
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
 
@@ -93,11 +93,15 @@ public sealed class InventoryBalancePersistenceTests
             property.Name == nameof(InventoryBalance.CreatedAtUtc));
         var updatedAtUtc = Assert.Single(entityType.GetProperties(), property =>
             property.Name == nameof(InventoryBalance.UpdatedAtUtc));
+        var rowVersion = Assert.Single(entityType.GetProperties(), property =>
+            property.Name == nameof(InventoryBalance.RowVersion));
 
         Assert.Equal(18, quantity.GetPrecision());
         Assert.Equal(4, quantity.GetScale());
         Assert.False(quantity.IsNullable);
         Assert.False(createdAtUtc.IsNullable);
         Assert.True(updatedAtUtc.IsNullable);
+        Assert.True(rowVersion.IsConcurrencyToken);
+        Assert.Equal("row_version", rowVersion.GetColumnName());
     }
 }

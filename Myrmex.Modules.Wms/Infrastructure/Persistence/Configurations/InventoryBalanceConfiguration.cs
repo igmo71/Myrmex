@@ -44,6 +44,10 @@ internal sealed class InventoryBalanceConfiguration : IEntityTypeConfiguration<I
             .HasPrecision(18, 4)
             .IsRequired();
 
+        builder.Property(x => x.RowVersion)
+            .HasColumnName("row_version")
+            .IsRowVersion();
+
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 

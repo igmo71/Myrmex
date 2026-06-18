@@ -191,11 +191,11 @@ public partial class Index
         await ReloadInventoryBalancesAsync();
     }
 
-    private async Task UpdateInventoryBalanceQuantityAsync(InventoryBalanceDetails inventoryBalance)
+    private async Task AdjustInventoryBalanceAsync(InventoryBalanceDetails inventoryBalance)
     {
         DialogParameters parameters = new()
         {
-            [nameof(UpdateInventoryBalanceQuantityDialog.InventoryBalance)] = inventoryBalance
+            [nameof(AdjustInventoryBalanceDialog.InventoryBalance)] = inventoryBalance
         };
 
         DialogOptions options = new()
@@ -205,8 +205,8 @@ public partial class Index
             FullWidth = true
         };
 
-        IDialogReference dialog = await DialogService.ShowAsync<UpdateInventoryBalanceQuantityDialog>(
-            "Update inventory balance quantity",
+        IDialogReference dialog = await DialogService.ShowAsync<AdjustInventoryBalanceDialog>(
+            "Adjust inventory balance",
             parameters,
             options);
 
@@ -217,7 +217,7 @@ public partial class Index
             return;
         }
 
-        Snackbar.Add("Inventory balance quantity updated.", Severity.Success);
+        Snackbar.Add("Inventory balance adjusted.", Severity.Success);
 
         await ReloadInventoryBalancesAsync();
     }
