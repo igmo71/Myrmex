@@ -52,7 +52,7 @@
 - [X] T022 Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/InventoryBalanceQueryableExtensions.cs` to split database projection from transport mapping: preserve server-side filtering, sorting, paging, bounded column projection, and no full entity graph loading while projecting `RowVersion` as `byte[]`.
 - [X] T023 Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/InventoryBalanceQueryableExtensions.cs` to perform in-memory mapping from the materialized internal projection to `InventoryBalanceDetails` with Base64 `BalanceVersion`, never inside the EF SQL projection.
 - [X] T024 Complete EF model and mapping changes for expected migration shape in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryTransactionConfiguration.cs`, `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryLedgerEntryConfiguration.cs`, and `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryBalanceConfiguration.cs`; do not hand-author generated migration or snapshot files.
-- [ ] T025 BLOCKED until explicit developer approval: generate and review migration artifacts in `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/<timestamp>_AddInventoryAdjustmentLedger.cs` and `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/WmsDbContextModelSnapshot.cs` using repository-approved EF commands only after approval.
+- [X] T025 BLOCKED until explicit developer approval: generate and review migration artifacts in `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/<timestamp>_AddInventoryAdjustmentLedger.cs` and `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/WmsDbContextModelSnapshot.cs` using repository-approved EF commands only after approval.
 
 **Checkpoint**: Contracts, domain model, persistence mapping, rowversion projection policy, and migration shape are ready for story implementation. Migration generation remains blocked until explicit approval.
 
@@ -180,7 +180,7 @@
 - [X] T086 Review `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryTransaction.cs` and `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryLedgerEntry.cs` to confirm immutability is enforced through factories, private/internal mutation, absence of update/delete flows, and correction through new transactions.
 - [X] T087 Verify `specs/071-implement-inventory-adjustment-ledger-mvp/contracts/inventory-adjustment-api-contract.md` still matches final public request, response, error code, eligibility semantics, and removed-mutation-path behavior.
 - [X] T088 Verify `specs/071-implement-inventory-adjustment-ledger-mvp/contracts/inventory-adjustment-ui-contract.md` still matches final existing-row adjustment, initial-count workflow, no-op messaging, and concurrency-conflict behavior.
-- [ ] T089 Developer-controlled only: run verification from `specs/071-implement-inventory-adjustment-ledger-mvp/quickstart.md` only after explicit approval, using full Microsoft.Testing.Platform-compatible commands or confirmed targeted test syntax.
+- [X] T089 Developer-controlled only: run verification from `specs/071-implement-inventory-adjustment-ledger-mvp/quickstart.md` only after explicit approval, using full Microsoft.Testing.Platform-compatible commands or confirmed targeted test syntax.
 
 ---
 

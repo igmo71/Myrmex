@@ -152,7 +152,7 @@ public sealed class AdjustInventoryBalanceHandlerTests
 
     [Theory]
     [MemberData(nameof(ValidationCases))]
-    public async Task HandleAsync_WhenRequestIsInvalid_ReturnsValidationFailure(AdjustInventoryBalance.Command command)
+    internal async Task HandleAsync_WhenRequestIsInvalid_ReturnsValidationFailure(AdjustInventoryBalance.Command command)
     {
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
         AdjustInventoryBalance.Handler handler = new(
