@@ -38,6 +38,13 @@
                               Disabled="true" />
 
                 <MudNumericField T="decimal"
+                                 Label="Current quantity"
+                                 Value="InventoryBalance.Quantity"
+                                 Disabled="true"
+                                 Culture="@QuantityCulture"
+                                 Format="0.####" />
+
+                <MudNumericField T="decimal"
                                  Label="Counted quantity"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
