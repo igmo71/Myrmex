@@ -121,9 +121,20 @@ Used for:
 - Negative counted quantity.
 - Missing, whitespace-only, or over-500-character reason.
 - Invalid Base64 expected version.
-- Missing-balance create eligibility failure.
 
 ProblemDetails follows existing Myrmex validation conventions.
+
+## Not Found
+
+Response status: `404 Not Found`
+
+Used for missing SKU, missing storage location, or a missing required related record when current Myrmex behavior reports the condition as NotFound.
+
+## Missing-Balance Eligibility Failure
+
+Existing but inactive or otherwise ineligible references during missing-balance initialization reuse the current create-handler validation/conflict convention.
+
+The adjustment API must not collapse every eligibility failure into one generic 400 response.
 
 ## Concurrency Conflict
 
@@ -149,6 +160,18 @@ Client behavior:
 
 - Do not automatically retry.
 - Ask user to refresh and review the counted quantity.
+
+Server behavior after failed save:
+
+- Return conflict immediately after `DbUpdateConcurrencyException` or adjustment duplicate-insert failure.
+- Do not retry `SaveChangesAsync`.
+- Do not reuse the failed tracked graph for automatic retry.
+
+Duplicate-insert classification:
+
+- Low-level persistence code may detect SQL Server error 2601 or 2627 and the named SKU/storage-location unique index.
+- The adjustment slice owns the business decision to map that duplicate insert to `InventoryBalance.ConcurrencyConflict`.
+- Do not globally reclassify all duplicate Inventory Balance insertions as concurrency conflicts.
 
 ## Removed Mutation Contracts
 

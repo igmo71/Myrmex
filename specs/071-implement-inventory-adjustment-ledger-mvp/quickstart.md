@@ -31,10 +31,11 @@ Run these manually after implementation when ready:
 
 ```powershell
 dotnet build Myrmex.slnx -nologo -v:minimal
-dotnet test Myrmex.Tests\Myrmex.Tests.csproj --filter "FullyQualifiedName~InventoryBalance|FullyQualifiedName~InventoryTransaction|FullyQualifiedName~AdjustInventoryBalance|FullyQualifiedName~WmsInventoryApiClient" -nologo -v:minimal
 dotnet test Myrmex.Tests\Myrmex.Tests.csproj -nologo -v:minimal
 dotnet run --project Myrmex.AppHost\Myrmex.AppHost.csproj
 ```
+
+For targeted tests, use Visual Studio Test Explorer or the test-selection syntax confirmed for the installed Microsoft.Testing.Platform/xUnit version. Do not assume VSTest-style `--filter FullyQualifiedName...` reliably runs only the intended subset in this repository configuration.
 
 Migration commands are intentionally omitted from planning. Generate and apply migrations only when explicitly requested during implementation.
 
@@ -84,7 +85,11 @@ Confirm each returns validation failure and no state change:
 - Whitespace-only reason.
 - Reason longer than 500 characters after trimming.
 - Invalid Base64 expected version.
-- Missing-balance initialization with inactive SKU, inactive base UoM, inactive storage location, inactive storage-location type, or inactive storage-location status.
+
+Confirm missing/not-found and eligibility semantics preserve current Myrmex behavior:
+
+- Missing SKU, storage location, or required related record returns the existing NotFound result, normally HTTP 404.
+- Existing but inactive or otherwise ineligible references during missing-balance initialization use the current create-handler validation/conflict convention.
 
 ### Concurrency
 
@@ -95,6 +100,8 @@ Confirm each returns `409 InventoryBalance.ConcurrencyConflict` and no partial s
 - Missing balance with non-null expected version.
 - EF rowversion save conflict.
 - Concurrent duplicate insert for the SKU/location pair during expected-absence initialization.
+
+For save-time conflicts, confirm the handler returns conflict immediately, does not retry `SaveChangesAsync`, and does not reuse the failed tracked graph for automatic retry.
 
 ## WebApp Manual Smoke Scenarios
 

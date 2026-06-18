@@ -17,6 +17,14 @@
 
 - `RowVersion`: required `byte[]` SQL Server rowversion concurrency token.
 
+**Transport mapping**:
+
+- EF queries read `RowVersion` as `byte[]`.
+- Base64 conversion happens only after EF materialization.
+- List queries use a bounded internal projection model or equivalent local mapping; they must not load complete entity graphs just to encode `BalanceVersion`.
+- Adjustment responses may map the tracked/materialized balance entity to `InventoryBalanceDetails` in memory.
+- Transport encoding is not part of the database projection.
+
 **Relationships**:
 
 - Required `StockKeepingUnit` relationship with restrict delete.
@@ -53,7 +61,8 @@ Missing balance + counted quantity = 0 + expected absence -> new zero balance, n
 - `Reason`: required trimmed text, maximum length 500.
 - `OccurredAtUtc`: required UTC timestamp for when the adjustment occurred.
 - `CreatedAtUtc`: required creation timestamp.
-- `UpdatedAtUtc`: nullable inherited timestamp; not used for normal ledger mutation.
+- No normal `UpdatedAtUtc` lifecycle.
+- `UpdatedAtUtc`: only present if forced by the current shared base-class design; it remains null and must never be touched.
 
 **Relationships**:
 
@@ -87,7 +96,9 @@ Incorrect transaction -> corrected by a new transaction
 - `QuantityDelta`: required decimal, precision `18,4`.
 - `BalanceBefore`: required decimal, precision `18,4`.
 - `BalanceAfter`: required decimal, precision `18,4`.
-- `CreatedAtUtc`: required creation timestamp if inherited or modeled on the entity.
+- No independent business occurrence timestamp; the parent transaction's `OccurredAtUtc` owns operation time.
+- `CreatedAtUtc`: included only if unavoidable because of the current shared base-class design.
+- `UpdatedAtUtc`: only present if forced by the current shared base-class design; it remains null and must never be touched.
 
 **Relationships**:
 
@@ -106,6 +117,8 @@ Incorrect transaction -> corrected by a new transaction
 - `BalanceAfter = BalanceBefore + QuantityDelta`.
 - Entry quantity and identity fields cannot change after creation.
 - Zero-delta entries are not created by this MVP.
+- Immutability is enforced through approved factories, private/internal state mutation, no update/delete application flows or endpoints, and correction through a new transaction.
+- Automated tests protect invariants and observable lifecycle behavior, not reflection/member absence or property-setter visibility.
 
 ## AdjustInventoryBalanceRequest
 
@@ -159,15 +172,30 @@ Returned as HTTP 409 ProblemDetails when:
 - EF Core save detects rowversion concurrency conflict.
 - SQL Server duplicate insert occurs for the SKU/location unique index during expected-absence adjustment.
 
+The adjustment slice owns the business classification of a duplicate insert as `InventoryBalance.ConcurrencyConflict`. Low-level persistence code may expose a predicate for SQL Server error 2601/2627 and the named unique index, but duplicate Inventory Balance insertions must not be globally reclassified as concurrency conflicts.
+
+After a concurrency exception or adjustment duplicate-insert failure, the handler returns conflict immediately. It does not retry `SaveChangesAsync`, does not reuse the failed tracked graph for automatic retry, and does not automatically retry the absolute counted-quantity adjustment.
+
 **Validation errors**
 
-Returned as HTTP 400 ProblemDetails for:
+Normally returned as HTTP 400 ProblemDetails for:
 
 - Missing or empty SKU/location identifiers.
 - Negative counted quantity.
 - Missing, whitespace-only, or over-500-character reason.
 - Invalid Base64 expected version.
-- Missing-balance create eligibility failures under current rules.
+
+**Not-found errors**
+
+Normally returned as HTTP 404 ProblemDetails for:
+
+- Missing SKU.
+- Missing storage location.
+- Missing required related record used by the current create eligibility rules.
+
+**Eligibility errors**
+
+Existing but inactive or otherwise ineligible references during missing-balance initialization reuse the current create-handler validation/conflict convention. The adjustment implementation must not invent one generic 400 response for every eligibility failure.
 
 ## Persistence Mapping Summary
 
@@ -175,5 +203,10 @@ Returned as HTTP 400 ProblemDetails for:
 - Add `inventory_transactions`.
 - Add `inventory_ledger_entries`.
 - Add transaction, SKU, storage-location, and occurrence-time indexes listed in `plan.md`.
+- Use the EF convention-generated foreign-key index for `InventoryLedgerEntry.InventoryTransactionId` when present; do not add a duplicate explicit index for the same relationship.
 - Keep zero-quantity balance rows.
 - Do not add `InventoryAccount`, Transfer, LPN, zero-row deletion, event sourcing, or history UI data structures.
+
+## Future Architecture Follow-Up
+
+Move `CreatedAtUtc` and `UpdatedAtUtc` out of `EntityBase` into explicit capability interfaces or entity-specific models. This refactoring is out of scope for feature #71.

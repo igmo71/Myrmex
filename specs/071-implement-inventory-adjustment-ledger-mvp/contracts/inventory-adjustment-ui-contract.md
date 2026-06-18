@@ -85,6 +85,8 @@ Success:
 ## Error Display
 
 - Validation errors remain in the dialog and preserve entered values where practical.
+- Not-found responses use the existing Myrmex message style for missing SKU, storage location, or required related records.
+- Missing-balance eligibility failures use the current create-handler validation/conflict convention.
 - `InventoryBalance.ConcurrencyConflict` tells the user to refresh and review counted quantity.
 - Unexpected request failures use existing WebApp alert/dialog error patterns.
 - Expected cancellation is not shown as a user-facing error.

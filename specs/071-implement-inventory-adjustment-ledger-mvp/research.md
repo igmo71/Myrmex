@@ -44,6 +44,17 @@ Add `InventoryBalance.RowVersion` as `byte[]` and map it as SQL Server rowversio
 - String version stored in domain: rejected because persistence owns rowversion bytes.
 - Timestamp-based versioning: rejected because it is weaker than SQL Server rowversion and conflicts with the stakeholder decision.
 
+## Decision: Convert Rowversion to Base64 After Materialization
+
+EF projections read `RowVersion` as `byte[]`; Base64 conversion happens only after EF materialization through a small internal projection model or equivalent local mapping.
+
+**Rationale**: `Convert.ToBase64String(entity.RowVersion)` inside an EF Core SQL projection is not a portable database expression. The list query still needs bounded server-side projection and must not load complete entity graphs, so the query projects scalar values and maps transport encoding in memory.
+
+**Alternatives considered**:
+
+- Convert to Base64 inside the EF projection: rejected because transport encoding is not part of the database projection.
+- Load full `InventoryBalance` entity graphs and map in memory: rejected because it weakens the server-driven list pattern and can over-fetch data.
+
 ## Decision: Combine Explicit Version Check with EF Concurrency
 
 For existing balances, decode and compare expected rowversion before mutation, then rely on EF Core concurrency during save.
@@ -77,6 +88,17 @@ Translate SQL Server error numbers 2601 and 2627 for `UX_wms_inventory_balances_
 - Globally change the unique-index mapper to `InventoryBalance.ConcurrencyConflict`: rejected because non-adjustment duplicate conflicts may have different semantics.
 - Ignore duplicate insert and let a generic 500 surface: rejected because it violates the conflict contract.
 
+## Decision: Failed SaveChanges Does Not Retry
+
+After `DbUpdateConcurrencyException` or an adjustment duplicate-insert failure, return `InventoryBalance.ConcurrencyConflict` immediately without retrying `SaveChangesAsync` or reusing the failed tracked graph for automatic retry.
+
+**Rationale**: Absolute counted-quantity adjustments are based on a specific observed state. Automatic retry could apply a stale count to a new state.
+
+**Alternatives considered**:
+
+- Automatic retry with reloaded balance: rejected because the user must review the counted quantity against the new state.
+- Reusing the failed tracked graph: rejected because failed EF tracked state is not a safe retry base for this business operation.
+
 ## Decision: Missing vs Existing Eligibility Rules
 
 Apply full current create eligibility rules only when no balance exists. Existing-balance adjustment only requires referenced records to still exist; inactive related records do not block correction.
@@ -109,3 +131,27 @@ Use manual UI smoke validation for Blazor dialog behavior and focus automated te
 
 - Add component-test infrastructure: rejected as disproportionate for this MVP and a cross-cutting decision.
 - No UI validation: rejected because the feature changes user-facing stock mutation flows.
+
+## Decision: Test Immutability Through Observable Lifecycle Behavior
+
+Protect ledger immutability by testing approved factories, invariants, lack of update/delete application flows or endpoints, and correction through a new transaction.
+
+**Rationale**: Behavior-focused tests match Myrmex testing guidance. Reflection/member-absence tests and property-setter visibility checks are brittle and primarily test implementation shape rather than business behavior.
+
+**Alternatives considered**:
+
+- Reflection tests for absent update methods: rejected as brittle shape testing.
+- Primary tests for setter visibility: rejected because observable lifecycle behavior is the real risk.
+
+## Decision: Ledger Timestamp Model
+
+`InventoryTransaction` owns operation time through `OccurredAtUtc` and creation time through `CreatedAtUtc`. `InventoryLedgerEntry` has no independent business occurrence timestamp; it inherits operation time from the transaction. If the shared base class forces timestamps, `CreatedAtUtc` may exist and `UpdatedAtUtc` remains null and untouched for ledger entities.
+
+**Rationale**: Immutable ledger records should not have a normal update lifecycle. The current base-class timestamp design should not force update semantics into immutable ledger entities.
+
+**Alternatives considered**:
+
+- Add independent occurrence timestamp to each ledger entry: rejected for MVP because the parent transaction owns operation time.
+- Refactor `EntityBase` now: rejected as a broader architecture change outside feature #71.
+
+Future architecture follow-up: move `CreatedAtUtc` and `UpdatedAtUtc` out of `EntityBase` into explicit capability interfaces or entity-specific models.

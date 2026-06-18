@@ -92,7 +92,7 @@ Myrmex.Modules.Wms/
     ├── WmsDbContext.cs                               # modify: add DbSet(s)
     ├── WmsDbContextSaveExtensions.cs                 # modify: map DbUpdateConcurrencyException
     ├── WmsDatabaseNames.cs                           # modify: add table/key/index names
-    ├── WmsPersistenceExceptionMapper.cs              # modify: duplicate insert -> concurrency code for adjustment path
+    ├── WmsPersistenceExceptionMapper.cs              # modify only if exposing low-level duplicate-index predicate/helper
     ├── Configurations/
     │   ├── InventoryBalanceConfiguration.cs          # modify: rowversion
     │   ├── InventoryTransactionConfiguration.cs      # create
@@ -130,7 +130,7 @@ Myrmex.Tests/
 - **Aggregate boundaries**: `InventoryTransaction` owns its `InventoryLedgerEntry` collection and enforces ledger-entry invariants. `InventoryBalance` remains a separate current-state aggregate/snapshot. `AdjustInventoryBalance` orchestrates both aggregates in one command and one save.
 - **Shared contract boundary**: Add `AdjustInventoryBalanceRequest` in `Myrmex.Shared.Wms.Inventory`. Update `InventoryBalanceDetails` to include `BalanceVersion` as a Base64 string. Remove `CreateInventoryBalanceRequest` and `UpdateInventoryBalanceQuantityRequest` from public stock-mutation usage.
 - **Internal request boundary**: Add internal `AdjustInventoryBalance.Command` and handler under `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments`. The command accepts nullable IDs, counted quantity, reason, and expected version from the public request, but remains internal to the WMS module.
-- **Backend-owned projection**: Update `InventoryBalanceQueryableExtensions.ProjectDetails()` to convert `InventoryBalance.RowVersion` to Base64 in the backend projection. Shared DTOs do not contain EF expressions or domain types.
+- **Backend-owned projection**: Update `InventoryBalanceQueryableExtensions.ProjectDetails()` or nearby query mapping so EF projects bounded scalar data, including `RowVersion` as `byte[]`, into a small internal projection model. Convert rowversion bytes to Base64 only after EF materialization. Transport encoding is not part of the database projection, and list queries must not load complete entity graphs.
 - **Server-driven list behavior**: Keep existing Inventory Balance list filters, count-before-paging, deterministic sorting, `Skip`/`Take`, and `ListResult<T>` behavior. The only list contract change is adding `BalanceVersion` to each item.
 - **Client/grid behavior**: Keep the existing server-driven MudDataGrid flow. Existing row action becomes "Adjust" and opens an adjustment dialog seeded with the loaded row and `BalanceVersion`. Initial-count workflow uses the same adjustment API with `ExpectedBalanceVersion = null`.
 - **Cancellation and errors**: Preserve cancellation propagation through WebApp client, endpoint, dispatcher, and EF Core. Write/action API client methods continue to return `ApiResult<T>`. `InventoryBalance.ConcurrencyConflict` maps to HTTP 409 ProblemDetails and is shown as a refresh-and-review message.
@@ -145,18 +145,32 @@ Myrmex.Tests/
   - `TransactionType = Adjustment` for MVP.
   - `Reason` trimmed, required, max length 500.
   - `OccurredAtUtc` and existing creation timestamp semantics.
+  - No normal `UpdatedAtUtc` lifecycle.
   - Read-only entries collection.
   - Factory for material adjustments that creates exactly one `InventoryLedgerEntry`.
 - `InventoryLedgerEntry` is immutable after creation:
   - Stores `StockKeepingUnitId`, `StorageLocationId`, `QuantityDelta`, `BalanceBefore`, `BalanceAfter`.
   - Enforces `BalanceAfter = BalanceBefore + QuantityDelta`.
-  - Has no public mutation methods.
+  - Has no independent business occurrence timestamp; the parent transaction's `OccurredAtUtc` owns operation time.
+  - Includes `CreatedAtUtc` only if unavoidable because of the current shared base-class design.
+  - Exposes no update/delete application behavior; state changes happen only through approved creation paths and correction through a new transaction.
 - `InventoryBalance` remains the current snapshot:
   - Identity is still `StockKeepingUnitId + StorageLocationId`.
   - Add `byte[] RowVersion`.
   - Existing material adjustment changes quantity and touches timestamp.
   - Existing no-op returns success without changing quantity, timestamp, rowversion, or ledger.
   - Missing-zero initialization creates the row with quantity `0` but creates no ledger transaction or entry.
+- If ledger entities inherit from the current `EntityBase`, `UpdatedAtUtc` remains null and must never be touched for `InventoryTransaction` or `InventoryLedgerEntry`. No update timestamp behavior or interceptor may mutate immutable ledger records. Extracting timestamps from `EntityBase` is a future architecture refactoring and is out of scope for feature #71.
+- Future architecture follow-up: Move `CreatedAtUtc` and `UpdatedAtUtc` out of `EntityBase` into explicit capability interfaces or entity-specific models.
+
+### Rowversion Projection and Base64 Transport Encoding
+
+- EF queries read `InventoryBalance.RowVersion` as `byte[]`.
+- Base64 conversion occurs only after EF materialization.
+- List queries preserve bounded server-side projection and must not load complete entity graphs.
+- Use a small internal projection model or equivalent local mapping where `InventoryBalanceDetails` needs `BalanceVersion`.
+- Adjustment responses may map the tracked/materialized balance entity to transport details in memory.
+- Transport encoding is not part of the database projection.
 
 ### EF Mappings, Relationships, Indexes, and Migration Shape
 
@@ -170,7 +184,7 @@ Myrmex.Tests/
   - `TransactionType` persisted as bounded string, max length 32, required.
   - `Reason` max length 500, required.
   - `OccurredAtUtc` required.
-  - `CreatedAtUtc` required; `UpdatedAtUtc` nullable if inherited.
+  - `CreatedAtUtc` required if inherited; no normal `UpdatedAtUtc` lifecycle and `UpdatedAtUtc` must remain null for immutable ledger entities.
   - Index on `OccurredAtUtc` for future occurrence-time queries.
 - `InventoryLedgerEntryConfiguration`:
   - Table: `inventory_ledger_entries`.
@@ -179,7 +193,8 @@ Myrmex.Tests/
   - Decimal precision `18,4` for `QuantityDelta`, `BalanceBefore`, `BalanceAfter`.
   - Relationship `InventoryTransaction` 1-to-many `InventoryLedgerEntry`; child rows required.
   - Restrict delete behavior to SKU and storage-location references.
-  - Indexes on `InventoryTransactionId`, `StockKeepingUnitId`, `StorageLocationId`.
+  - Foreign-key index on `InventoryTransactionId`; the EF convention-generated foreign-key index is sufficient and should not be duplicated with a second explicit index when the convention already creates it.
+  - Explicit indexes on `StockKeepingUnitId` and `StorageLocationId`.
 - Migration shape:
   - Add `row_version` rowversion column to `inventory_balances`.
   - Create `inventory_transactions` table.
@@ -199,6 +214,7 @@ Existing balance:
 6. If counted quantity equals current quantity, return current details without changing balance or ledger.
 7. If material change, create transaction/entry and update balance.
 8. Save once. Translate `DbUpdateConcurrencyException` to `409 InventoryBalance.ConcurrencyConflict`.
+9. After `DbUpdateConcurrencyException`, return the conflict result immediately. Do not retry `SaveChangesAsync`, do not reuse the failed tracked graph for an automatic retry, and do not automatically retry an absolute counted-quantity adjustment.
 
 Missing balance:
 1. No balance exists for `StockKeepingUnitId + StorageLocationId`.
@@ -207,12 +223,15 @@ Missing balance:
 4. If counted quantity is `0`, create zero `InventoryBalance`, create no transaction or entry, save once, return details.
 5. If counted quantity is positive, create `InventoryBalance` from zero, create transaction/entry with before `0`, delta equal to counted quantity, save once, return details.
 6. Translate concurrent duplicate insert on the SKU/location unique index to `409 InventoryBalance.ConcurrencyConflict`.
+7. After duplicate-insert failure, return the conflict result immediately. Do not retry `SaveChangesAsync`, do not reuse the failed tracked graph for an automatic retry, and do not automatically retry an absolute counted-quantity adjustment.
 
 ### Duplicate-Insert Exception Translation Strategy for SQL Server
 
 - Keep the existing SQL Server detection pattern using `SqlException.Number is 2601 or 2627` and matching the named unique index.
-- For the adjustment handler, translate `DbUpdateException` caused by `UX_wms_inventory_balances_stock_keeping_unit_id_storage_location_id` into `InventoryBalance.ConcurrencyConflict` because the duplicate insert means another request created the missing balance after expected-absence validation.
-- Do not change generic duplicate handling for other create/reference-data flows. Existing direct duplicate create behavior is removed from stock mutation. If shared mapper changes are needed, add an adjustment-specific helper or overload so non-adjustment duplicate conflicts are not accidentally reclassified.
+- Low-level persistence code may detect SQL Server error 2601 or 2627 and the named SKU/storage-location unique index.
+- The business decision to map that violation to `InventoryBalance.ConcurrencyConflict` belongs to the adjustment slice.
+- A shared mapper may expose a low-level predicate/helper, but the adjustment handler or an adjustment-specific persistence helper owns the final error classification.
+- Do not globally reclassify all duplicate Inventory Balance insertions as concurrency conflicts.
 
 ### Atomicity Strategy
 
@@ -227,7 +246,9 @@ Missing balance:
 - Update `InventoryBalanceDetails` to include `string BalanceVersion`.
 - Endpoint: `POST /api/wms/inventory/adjustments`.
 - Successful response: `InventoryBalanceDetails`.
-- Validation failures: HTTP 400 ProblemDetails through existing conventions.
+- Validation failures for missing or empty identifiers, negative counted quantity, invalid reason, and invalid Base64 expected version: normally HTTP 400 ProblemDetails through existing conventions.
+- Missing SKU, storage location, or required related record: existing NotFound result, normally HTTP 404.
+- Existing but inactive or otherwise ineligible references during missing-balance initialization: reuse current create-handler validation/conflict convention rather than inventing a generic 400.
 - Stale-state conflicts: HTTP 409 ProblemDetails with `code = InventoryBalance.ConcurrencyConflict`.
 - No update/delete endpoints for transactions or ledger entries.
 
@@ -274,7 +295,7 @@ Missing balance:
 - Invalid Base64 expected version returns validation error.
 - `DbUpdateConcurrencyException` returns conflict.
 - Adjustment-specific duplicate insertion returns conflict.
-- Missing-balance eligibility errors reuse current create validation/not-found semantics.
+- Missing-balance eligibility errors reuse current create validation/not-found/conflict semantics.
 - Existing-balance inactive references are allowed; missing references are rejected.
 
 ### Risk-Based Test Strategy
@@ -282,7 +303,7 @@ Missing balance:
 | Regression risk | Lowest owning layer | Planned coverage |
 |-----------------|---------------------|------------------|
 | Ledger entry stores invalid before/delta/after values | Domain | `InventoryTransaction`/`InventoryLedgerEntry` invariant tests |
-| Ledger records become mutable | Domain | Constructor/factory and no public mutation behavior tests |
+| Ledger records become mutable | Domain/application | Tests protect observable lifecycle behavior: construction through approved factories, state changes only through approved creation paths, no update/delete application flows or endpoints, and correction through a new transaction. Do not use reflection/member-absence tests as the primary proof. |
 | Reason normalization/length regresses | Domain or handler | Required/trim/max-500 tests at the layer that owns validation |
 | Existing material adjustment writes balance and ledger together | Handler/persistence | One scenario verifies balance, transaction, entry, before/delta/after |
 | Existing no-op changes timestamp/version or creates ledger | Handler/persistence | No-op scenario verifies no changed state and no ledger |
@@ -297,7 +318,7 @@ Missing balance:
 | Route/body/Base64 contract changes | Endpoint/API client | Focused endpoint/client tests for `POST /api/wms/inventory/adjustments` |
 | UI still calls obsolete mutation methods | API client/UI review/manual | Client tests plus quickstart scope checks |
 
-Do not reproduce the full adjustment matrix at domain, endpoint, API-client, and UI layers. Protect each risk at the lowest layer that owns it.
+Do not reproduce the full adjustment matrix at domain, endpoint, API-client, and UI layers. Protect each risk at the lowest layer that owns it. Do not plan reflection tests that check for missing update methods, property setter visibility, or generic architecture-shape immutability; test domain invariants and observable lifecycle behavior instead.
 
 ## Project Artifact Plan
 
