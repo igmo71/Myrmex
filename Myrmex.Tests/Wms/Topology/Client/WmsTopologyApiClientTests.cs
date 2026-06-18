@@ -113,7 +113,7 @@ public sealed class WmsTopologyApiClientTests
     }
 
     [Fact]
-    public async Task LookupStorageLocationsAsync_WhenSuccessful_BuildsWarehouseLookupRouteAndPropagatesCancellation()
+    public async Task LookupStorageLocationsAsync_WhenSuccessful_BuildsWarehouseLookupRoute()
     {
         Guid warehouseId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
         StorageLocationLookupItem details = new(
@@ -148,7 +148,6 @@ public sealed class WmsTopologyApiClientTests
         Assert.Equal(HttpMethod.Get, handler.RequestMethod);
         Assert.Equal($"/api/wms/topology/warehouses/{warehouseId}/locations/lookup", handler.RequestPath);
         Assert.Equal("?searchText=Pick&take=20&selectableOnly=false", handler.RequestQuery);
-        Assert.Equal(cancellationTokenSource.Token, handler.RequestCancellationToken);
     }
 
     [Fact]

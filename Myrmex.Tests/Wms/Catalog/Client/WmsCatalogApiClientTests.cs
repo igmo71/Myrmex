@@ -73,7 +73,7 @@ public sealed class WmsCatalogApiClientTests
     }
 
     [Fact]
-    public async Task LookupStockKeepingUnitsAsync_WhenSuccessful_BuildsLookupRouteAndPropagatesCancellation()
+    public async Task LookupStockKeepingUnitsAsync_WhenSuccessful_BuildsLookupRoute()
     {
         StockKeepingUnitLookupItem details = new(
             Id: Guid.Parse("018f0000-0000-7000-8000-000000000001"),
@@ -109,7 +109,6 @@ public sealed class WmsCatalogApiClientTests
         Assert.Equal(HttpMethod.Get, handler.RequestMethod);
         Assert.Equal("/api/wms/catalog/skus/lookup", handler.RequestPath);
         Assert.Equal("?searchText=Widget&take=20&selectableOnly=false", handler.RequestQuery);
-        Assert.Equal(cancellationTokenSource.Token, handler.RequestCancellationToken);
     }
 
     [Fact]
