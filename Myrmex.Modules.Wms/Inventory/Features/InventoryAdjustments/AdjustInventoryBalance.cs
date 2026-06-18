@@ -36,13 +36,23 @@ internal static class AdjustInventoryBalance
                 return ServiceResult<InventoryBalanceDetails>.Invalid(validationErrors);
             }
 
-            byte[] expectedVersion = Convert.FromBase64String(command.ExpectedBalanceVersion!);
-
             InventoryBalance? inventoryBalance = await dbContext.InventoryBalances
                 .FirstOrDefaultAsync(
                     x => x.StockKeepingUnitId == command.StockKeepingUnitId!.Value &&
                          x.StorageLocationId == command.StorageLocationId!.Value,
                     cancellationToken);
+
+            if (command.ExpectedBalanceVersion is null)
+            {
+                if (inventoryBalance is not null)
+                {
+                    return ConcurrencyConflict();
+                }
+
+                return await InitializeMissingBalanceAsync(command, cancellationToken);
+            }
+
+            byte[] expectedVersion = Convert.FromBase64String(command.ExpectedBalanceVersion);
 
             if (inventoryBalance is null)
             {
@@ -106,6 +116,64 @@ internal static class AdjustInventoryBalance
             return await GetDetailsAsync(inventoryBalance.Id, cancellationToken);
         }
 
+        private async Task<ServiceResult<InventoryBalanceDetails>> InitializeMissingBalanceAsync(
+            Command command,
+            CancellationToken cancellationToken)
+        {
+            DomainValidationResult balanceValidationResult = InventoryBalance.Create(
+                command.StockKeepingUnitId,
+                command.StorageLocationId,
+                command.CountedQuantity,
+                out InventoryBalance? inventoryBalance);
+
+            if (!balanceValidationResult.IsValid)
+            {
+                return ServiceResult<InventoryBalanceDetails>.Invalid(balanceValidationResult.Errors);
+            }
+
+            ServiceError? eligibilityError = await InventoryBalanceCreateEligibility.ValidateAsync(
+                dbContext,
+                inventoryBalance!,
+                cancellationToken);
+
+            if (eligibilityError is not null)
+            {
+                return ServiceResult<InventoryBalanceDetails>.Fail(eligibilityError);
+            }
+
+            dbContext.InventoryBalances.Add(inventoryBalance!);
+
+            if (command.CountedQuantity > 0)
+            {
+                DomainValidationResult transactionValidationResult =
+                    InventoryTransaction.CreateAdjustment(
+                        inventoryBalance.StockKeepingUnitId,
+                        inventoryBalance.StorageLocationId,
+                        balanceBefore: 0,
+                        balanceAfter: inventoryBalance.Quantity,
+                        command.Reason,
+                        DateTimeOffset.UtcNow,
+                        out InventoryTransaction? inventoryTransaction);
+
+                if (!transactionValidationResult.IsValid)
+                {
+                    return ServiceResult<InventoryBalanceDetails>.Invalid(transactionValidationResult.Errors);
+                }
+
+                dbContext.InventoryTransactions.Add(inventoryTransaction!);
+            }
+
+            ServiceResult saveResult = await dbContext
+                .SaveChangesAsServiceResultAsync(domainEventDispatcher, cancellationToken);
+
+            if (!saveResult.IsSuccess)
+            {
+                return ServiceResult<InventoryBalanceDetails>.Fail(saveResult.Error);
+            }
+
+            return await GetDetailsAsync(inventoryBalance.Id, cancellationToken);
+        }
+
         private static List<DomainValidationFailure> ValidateCommand(Command command)
         {
             List<DomainValidationFailure> errors = [];
@@ -136,11 +204,7 @@ internal static class AdjustInventoryBalance
                 errors.Add(DomainValidationFailure.TooLong<InventoryTransaction>(nameof(Command.Reason), InventoryTransaction.ReasonMaxLength));
             }
 
-            if (command.ExpectedBalanceVersion is null)
-            {
-                errors.Add(DomainValidationFailure.Required<InventoryBalance>(nameof(Command.ExpectedBalanceVersion)));
-            }
-            else
+            if (command.ExpectedBalanceVersion is not null)
             {
                 try
                 {

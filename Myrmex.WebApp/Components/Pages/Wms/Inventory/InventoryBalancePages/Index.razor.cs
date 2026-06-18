@@ -162,7 +162,7 @@ public partial class Index
         }
     }
 
-    private async Task CreateInventoryBalanceAsync()
+    private async Task OpenInitialCountAsync()
     {
         DialogOptions options = new()
         {
@@ -172,7 +172,7 @@ public partial class Index
         };
 
         IDialogReference dialog = await DialogService
-            .ShowAsync<CreateInventoryBalanceDialog>("Create inventory balance", options);
+            .ShowAsync<InitialCountInventoryBalanceDialog>("Initial count", options);
 
         DialogResult? result = await dialog.Result;
 

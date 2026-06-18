@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Myrmex.AppDispatching.CommandDispatching;
 using Myrmex.AppDispatching.QueryDispatching;
 using Myrmex.AspNetCore.Results;
 using Myrmex.Core.Application.Queries;
@@ -16,10 +15,6 @@ internal static class InventoryBalanceEndpoints
 {
     public static RouteGroupBuilder MapInventoryBalanceEndpoints(this RouteGroupBuilder group)
     {
-        group.MapPost("/balances", CreateInventoryBalanceAsync)
-            .WithName("CreateInventoryBalance")
-            .WithSummary("Create Inventory Balance");
-
         group.MapGet("/balances", ListInventoryBalancesAsync)
             .WithName("ListInventoryBalances")
             .WithSummary("List Inventory Balances");
@@ -29,21 +24,6 @@ internal static class InventoryBalanceEndpoints
             .WithSummary("Get Inventory Balance By Id");
 
         return group;
-    }
-
-    private static async Task<IResult> CreateInventoryBalanceAsync(
-        CreateInventoryBalanceRequest request,
-        ICommandDispatcher commandDispatcher,
-        CancellationToken cancellationToken = default)
-    {
-        var command = new CreateInventoryBalance.Command(
-            request.StockKeepingUnitId,
-            request.StorageLocationId,
-            request.Quantity);
-
-        var result = await commandDispatcher
-            .DispatchAsync<CreateInventoryBalance.Command, ServiceResult<InventoryBalanceDetails>>(command, cancellationToken);
-        return result.ToHttpResult();
     }
 
     private static async Task<IResult> ListInventoryBalancesAsync(
@@ -81,5 +61,4 @@ internal static class InventoryBalanceEndpoints
             .DispatchAsync<GetInventoryBalanceById.Query, ServiceResult<InventoryBalanceDetails>>(query, cancellationToken);
         return result.ToHttpResult();
     }
-
 }

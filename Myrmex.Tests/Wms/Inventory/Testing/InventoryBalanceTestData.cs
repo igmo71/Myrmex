@@ -15,6 +15,35 @@ internal static class InventoryBalanceTestData
         WmsDbContext dbContext,
         decimal quantity)
     {
+        SeededInventoryReferences references = await SeedInventoryReferencesAsync(dbContext);
+
+        var balanceResult = InventoryBalance.Create(
+            references.StockKeepingUnit.Id,
+            references.StorageLocation.Id,
+            quantity,
+            out InventoryBalance? inventoryBalance);
+
+        Assert.True(balanceResult.IsValid);
+        Assert.NotNull(inventoryBalance);
+        inventoryBalance.ClearDomainEvents();
+
+        dbContext.InventoryBalances.Add(inventoryBalance);
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return new SeededInventoryBalance(
+            references.BaseUnitOfMeasure,
+            references.StockKeepingUnit,
+            references.Warehouse,
+            references.Zone,
+            references.StorageLocationType,
+            references.StorageLocationStatus,
+            references.StorageLocation,
+            inventoryBalance);
+    }
+
+    internal static async Task<SeededInventoryReferences> SeedInventoryReferencesAsync(
+        WmsDbContext dbContext)
+    {
         UnitOfMeasure baseUnitOfMeasure = CreateUnitOfMeasure();
         StockKeepingUnit stockKeepingUnit = CreateStockKeepingUnit(baseUnitOfMeasure.Id);
         Warehouse warehouse = CreateWarehouse();
@@ -31,33 +60,24 @@ internal static class InventoryBalanceTestData
             storageLocationType.Id,
             storageLocationStatus.Id);
 
-        var balanceResult = InventoryBalance.Create(
-            stockKeepingUnit.Id,
-            storageLocation.Id,
-            quantity,
-            out InventoryBalance? inventoryBalance);
-
-        Assert.True(balanceResult.IsValid);
-        Assert.NotNull(inventoryBalance);
-        inventoryBalance.ClearDomainEvents();
-
         dbContext.UnitsOfMeasure.Add(baseUnitOfMeasure);
         dbContext.StockKeepingUnits.Add(stockKeepingUnit);
         dbContext.Warehouses.Add(warehouse);
         dbContext.Zones.Add(zone);
         dbContext.StorageLocations.Add(storageLocation);
-        dbContext.InventoryBalances.Add(inventoryBalance);
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        return new SeededInventoryBalance(
+        return new SeededInventoryReferences(
             baseUnitOfMeasure,
             stockKeepingUnit,
             warehouse,
-            storageLocation,
-            inventoryBalance);
+            zone,
+            storageLocationType,
+            storageLocationStatus,
+            storageLocation);
     }
 
-    private static UnitOfMeasure CreateUnitOfMeasure()
+    internal static UnitOfMeasure CreateUnitOfMeasure()
     {
         var result = UnitOfMeasure.Create(
             code: "EA",
@@ -72,7 +92,7 @@ internal static class InventoryBalanceTestData
         return unitOfMeasure;
     }
 
-    private static StockKeepingUnit CreateStockKeepingUnit(Guid baseUnitOfMeasureId)
+    internal static StockKeepingUnit CreateStockKeepingUnit(Guid baseUnitOfMeasureId)
     {
         var result = StockKeepingUnit.Create(
             code: "ITEM-001",
@@ -88,7 +108,7 @@ internal static class InventoryBalanceTestData
         return stockKeepingUnit;
     }
 
-    private static Warehouse CreateWarehouse()
+    internal static Warehouse CreateWarehouse()
     {
         var result = Warehouse.Create(
             code: "MAIN",
@@ -103,7 +123,7 @@ internal static class InventoryBalanceTestData
         return warehouse;
     }
 
-    private static Zone CreateZone(Guid warehouseId)
+    internal static Zone CreateZone(Guid warehouseId)
     {
         var result = Zone.Create(
             warehouseId,
@@ -119,7 +139,7 @@ internal static class InventoryBalanceTestData
         return zone;
     }
 
-    private static StorageLocation CreateStorageLocation(
+    internal static StorageLocation CreateStorageLocation(
         Guid warehouseId,
         Guid zoneId,
         Guid storageLocationTypeId,
@@ -148,5 +168,17 @@ internal sealed record SeededInventoryBalance(
     UnitOfMeasure BaseUnitOfMeasure,
     StockKeepingUnit StockKeepingUnit,
     Warehouse Warehouse,
+    Zone Zone,
+    StorageLocationType StorageLocationType,
+    StorageLocationStatus StorageLocationStatus,
     StorageLocation StorageLocation,
     InventoryBalance InventoryBalance);
+
+internal sealed record SeededInventoryReferences(
+    UnitOfMeasure BaseUnitOfMeasure,
+    StockKeepingUnit StockKeepingUnit,
+    Warehouse Warehouse,
+    Zone Zone,
+    StorageLocationType StorageLocationType,
+    StorageLocationStatus StorageLocationStatus,
+    StorageLocation StorageLocation);

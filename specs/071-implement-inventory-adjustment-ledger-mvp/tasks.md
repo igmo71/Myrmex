@@ -36,7 +36,7 @@
 
 - [X] T007 Create adjustment request contract in `Myrmex.Shared/Wms/Inventory/AdjustInventoryBalanceRequest.cs` with SKU, storage location, counted quantity, nullable Base64 `ExpectedBalanceVersion`, and reason.
 - [X] T008 Modify `Myrmex.Shared/Wms/Inventory/InventoryBalanceDetails.cs` to expose current balance version as Base64 transport data.
-- [ ] T009 Remove obsolete direct create request contract from `Myrmex.Shared/Wms/Inventory/CreateInventoryBalanceRequest.cs`.
+- [X] T009 Remove obsolete direct create request contract from `Myrmex.Shared/Wms/Inventory/CreateInventoryBalanceRequest.cs`.
 - [X] T010 Remove obsolete direct quantity-update request contract from `Myrmex.Shared/Wms/Inventory/UpdateInventoryBalanceQuantityRequest.cs`.
 - [X] T011 Modify `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances/InventoryBalance.cs` to add `RowVersion` as a `byte[]` concurrency token without adding transport encoding to the domain model.
 - [X] T012 Create transaction type enum in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryTransactionType.cs`.
@@ -91,18 +91,18 @@
 
 **Independent Test**: Missing eligible SKU/location with `ExpectedBalanceVersion = null` and counted quantity 7 creates balance, transaction, and ledger entry through `POST /api/wms/inventory/adjustments`.
 
-- [ ] T042 [P] [US2] Add one missing-positive initialization handler test in `Myrmex.Tests/Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalanceHandlerTests.cs`.
-- [ ] T043 [P] [US2] Add one missing-zero initialization handler test in `Myrmex.Tests/Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalanceHandlerTests.cs`.
-- [ ] T044 [US2] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` to branch missing-balance requests only when `ExpectedBalanceVersion` is null.
-- [ ] T045 [US2] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` to reuse current create eligibility behavior for SKU, base UoM, storage location, and topology dependencies during missing-balance initialization.
-- [ ] T046 [US2] Modify `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances/InventoryBalance.cs` to support balance creation from an eligible missing-balance adjustment without exposing a separate public direct-create workflow.
-- [ ] T047 [US2] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` so missing positive counted quantity creates the balance, transaction, and ledger entry in one persistence boundary.
-- [ ] T048 [US2] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` so missing zero counted quantity creates a persisted zero balance, returns success, and creates no transaction or ledger entry.
-- [ ] T049 [US2] Modify `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs` to remove the obsolete direct create route mapping.
-- [ ] T050 [US2] Remove obsolete direct create handler from `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/CreateInventoryBalance.cs`.
-- [ ] T051 [US2] Convert or remove `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/CreateInventoryBalanceDialog.razor` so the initial-count workflow submits the same adjustment request with `ExpectedBalanceVersion = null`.
-- [ ] T052 [US2] Modify `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/Index.razor.cs` so the create/initial-count entry point calls the same adjustment API used by existing-row adjustment.
-- [ ] T053 [US2] Modify `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs` to remove obsolete direct create client method usage and route all balance mutation through the adjustment method.
+- [X] T042 [P] [US2] Add one missing-positive initialization handler test in `Myrmex.Tests/Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalanceHandlerTests.cs`.
+- [X] T043 [P] [US2] Add one missing-zero initialization handler test in `Myrmex.Tests/Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalanceHandlerTests.cs`.
+- [X] T044 [US2] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` to branch missing-balance requests only when `ExpectedBalanceVersion` is null.
+- [X] T045 [US2] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` to reuse current create eligibility behavior for SKU, base UoM, storage location, and topology dependencies during missing-balance initialization.
+- [X] T046 [US2] Modify `Myrmex.Modules.Wms/Inventory/Domain/InventoryBalances/InventoryBalance.cs` to support balance creation from an eligible missing-balance adjustment without exposing a separate public direct-create workflow.
+- [X] T047 [US2] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` so missing positive counted quantity creates the balance, transaction, and ledger entry in one persistence boundary.
+- [X] T048 [US2] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` so missing zero counted quantity creates a persisted zero balance, returns success, and creates no transaction or ledger entry.
+- [X] T049 [US2] Modify `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs` to remove the obsolete direct create route mapping.
+- [X] T050 [US2] Remove obsolete direct create handler from `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/CreateInventoryBalance.cs`.
+- [X] T051 [US2] Convert or remove `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/CreateInventoryBalanceDialog.razor` so the initial-count workflow submits the same adjustment request with `ExpectedBalanceVersion = null`.
+- [X] T052 [US2] Modify `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/Index.razor.cs` so the create/initial-count entry point calls the same adjustment API used by existing-row adjustment.
+- [X] T053 [US2] Modify `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs` to remove obsolete direct create client method usage and route all balance mutation through the adjustment method.
 
 **Checkpoint**: Missing balances are initialized only through the adjustment API, including the persisted-zero non-ledger case.
 
@@ -114,10 +114,10 @@
 
 **Independent Test**: Existing no-op returns success with unchanged quantity, timestamp, rowversion, transaction count, and ledger entry count; missing zero creates a persisted zero balance and no ledger.
 
-- [ ] T054 [P] [US3] Add one existing no-op handler test covering unchanged quantity, timestamp, rowversion, transaction count, and ledger entry count in `Myrmex.Tests/Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalanceHandlerTests.cs`.
-- [ ] T055 [US3] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` to detect existing-balance no-op before domain mutation and persistence timestamp changes.
-- [ ] T056 [US3] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` so existing no-op does not call balance mutation, does not add `InventoryTransaction`, and returns current balance details.
-- [ ] T057 [US3] Modify `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/AdjustInventoryBalanceDialog.razor` to show successful completion for both no-op existing adjustment and missing-zero initialization without implying ledger history was created.
+- [X] T054 [P] [US3] Add one existing no-op handler test covering unchanged quantity, timestamp, rowversion, transaction count, and ledger entry count in `Myrmex.Tests/Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalanceHandlerTests.cs`.
+- [X] T055 [US3] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` to detect existing-balance no-op before domain mutation and persistence timestamp changes.
+- [X] T056 [US3] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` so existing no-op does not call balance mutation, does not add `InventoryTransaction`, and returns current balance details.
+- [X] T057 [US3] Modify `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/AdjustInventoryBalanceDialog.razor` to show successful completion for both no-op existing adjustment and missing-zero initialization without implying ledger history was created.
 
 **Checkpoint**: Non-ledger-producing successes are explicit and do not create transaction or ledger records accidentally.
 
@@ -129,16 +129,16 @@
 
 **Independent Test**: Invalid identifiers, quantity, reason, Base64, not-found references, and missing-balance eligibility failures return documented result semantics and mutate nothing.
 
-- [ ] T058 [P] [US4] Add one validation theory for missing identifiers, negative quantity, invalid reason, and invalid Base64 in `Myrmex.Tests/Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalanceHandlerTests.cs`.
-- [ ] T059 [P] [US4] Add one missing-reference/not-found test group for missing SKU, missing storage location, and missing required related records in `Myrmex.Tests/Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalanceHandlerTests.cs`.
-- [ ] T060 [P] [US4] Add one missing-balance eligibility theory or focused grouped test for inactive or otherwise ineligible references during missing-balance initialization in `Myrmex.Tests/Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalanceHandlerTests.cs`.
-- [ ] T061 [P] [US4] Add one existing-inactive-reference correction test showing existing referenced stock remains correctable when related records still exist but later became inactive in `Myrmex.Tests/Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalanceHandlerTests.cs`.
-- [ ] T062 [US4] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` to trim reason, require non-empty reason, enforce max length 500, persist the trimmed value, and return existing validation error conventions.
-- [ ] T063 [US4] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` to preserve existing not-found semantics for missing SKU, storage location, and required related records.
-- [ ] T064 [US4] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` to use current create-handler validation or conflict convention for existing but inactive or otherwise ineligible references during missing-balance initialization.
-- [ ] T065 [US4] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` to allow existing-balance adjustment when referenced SKU, base UoM, storage location, type, or status later became inactive but still exists.
-- [ ] T066 [US4] Modify `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryAdjustmentEndpoints.cs` to map validation, not-found, and eligibility failures to the HTTP conventions in `specs/071-implement-inventory-adjustment-ledger-mvp/contracts/inventory-adjustment-api-contract.md`.
-- [ ] T067 [US4] Modify `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/AdjustInventoryBalanceDialog.razor` to display validation, not-found, and eligibility failures without switching to obsolete direct create or update flows.
+- [X] T058 [P] [US4] Add one validation theory for missing identifiers, negative quantity, invalid reason, and invalid Base64 in `Myrmex.Tests/Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalanceHandlerTests.cs`.
+- [X] T059 [P] [US4] Add one missing-reference/not-found test group for missing SKU, missing storage location, and missing required related records in `Myrmex.Tests/Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalanceHandlerTests.cs`.
+- [X] T060 [P] [US4] Add one missing-balance eligibility theory or focused grouped test for inactive or otherwise ineligible references during missing-balance initialization in `Myrmex.Tests/Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalanceHandlerTests.cs`.
+- [X] T061 [P] [US4] Add one existing-inactive-reference correction test showing existing referenced stock remains correctable when related records still exist but later became inactive in `Myrmex.Tests/Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalanceHandlerTests.cs`.
+- [X] T062 [US4] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` to trim reason, require non-empty reason, enforce max length 500, persist the trimmed value, and return existing validation error conventions.
+- [X] T063 [US4] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` to preserve existing not-found semantics for missing SKU, storage location, and required related records.
+- [X] T064 [US4] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` to use current create-handler validation or conflict convention for existing but inactive or otherwise ineligible references during missing-balance initialization.
+- [X] T065 [US4] Modify `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs` to allow existing-balance adjustment when referenced SKU, base UoM, storage location, type, or status later became inactive but still exists.
+- [X] T066 [US4] Modify `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryAdjustmentEndpoints.cs` to map validation, not-found, and eligibility failures to the HTTP conventions in `specs/071-implement-inventory-adjustment-ledger-mvp/contracts/inventory-adjustment-api-contract.md`.
+- [X] T067 [US4] Modify `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/AdjustInventoryBalanceDialog.razor` to display validation, not-found, and eligibility failures without switching to obsolete direct create or update flows.
 
 **Checkpoint**: Invalid requests are rejected predictably and do not create balances, transactions, or ledger entries.
 
