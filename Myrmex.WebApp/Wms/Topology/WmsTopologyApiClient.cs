@@ -1,5 +1,7 @@
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Topology;
 using Myrmex.WebApp.Wms.Api;
+using System.Web;
 
 namespace Myrmex.WebApp.Wms.Topology;
 
@@ -141,6 +143,18 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         return await httpClient.GetRequiredAsync<ListResult<StorageLocationDetails>>(url, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<StorageLocationLookupItem>> LookupStorageLocationsAsync(
+        Guid warehouseId,
+        LookupStorageLocationsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        string url = BuildStorageLocationLookupUrl(warehouseId, request);
+
+        return await httpClient.GetRequiredAsync<IReadOnlyList<StorageLocationLookupItem>>(
+            url,
+            cancellationToken);
+    }
+
     public async Task<ListResult<StorageLocationDetails>> ListStorageLocationsByZoneAsync(
         Guid zoneId,
         ListRequest request,
@@ -227,6 +241,30 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         return await httpClient.GetRequiredAsync<IReadOnlyList<StorageLocationStatusDetails>>(url, cancellationToken);
     }
 
+    private static string BuildStorageLocationLookupUrl(
+        Guid warehouseId,
+        LookupStorageLocationsRequest request)
+    {
+        string path = $"/api/wms/topology/warehouses/{warehouseId}/locations/lookup";
+
+        List<string> query = [];
+
+        if (!string.IsNullOrWhiteSpace(request.SearchText))
+        {
+            query.Add($"searchText={HttpUtility.UrlEncode(request.SearchText)}");
+        }
+
+        if (request.Take.HasValue)
+        {
+            query.Add($"take={request.Take.Value}");
+        }
+
+        query.Add($"selectableOnly={request.SelectableOnly.ToString().ToLowerInvariant()}");
+
+        return query.Count == 0
+            ? path
+            : $"{path}?{string.Join("&", query)}";
+    }
 }
 
 public sealed record WarehouseDetails(

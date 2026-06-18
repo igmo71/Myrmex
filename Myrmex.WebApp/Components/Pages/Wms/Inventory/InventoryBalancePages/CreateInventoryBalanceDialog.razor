@@ -1,6 +1,8 @@
 @using System.Globalization
 @using Myrmex.Shared.Common
+@using Myrmex.Shared.Wms.Catalog
 @using Myrmex.Shared.Wms.Inventory
+@using Myrmex.Shared.Wms.Topology
 
 <MudDialog>
     <TitleContent>
@@ -10,22 +12,31 @@
     <DialogContent>
         <MudForm @ref="_form">
             <MudStack Spacing="3">
-                <MudSelect T="Guid?"
-                           Label="SKU"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           Required="true"
-                           RequiredError="SKU is required."
-                           Disabled="_isLoadingSkus"
-                           Value="_model.StockKeepingUnitId"
-                           ValueChanged="OnStockKeepingUnitChanged">
-                    @foreach (StockKeepingUnitDetails sku in _skus)
-                    {
-                        <MudSelectItem T="Guid?" Value="@((Guid?)sku.Id)">
-                            @sku.Code - @sku.Name
-                        </MudSelectItem>
-                    }
-                </MudSelect>
+                <MudAutocomplete T="StockKeepingUnitLookupItem"
+                                 Label="SKU"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Required="true"
+                                 RequiredError="SKU is required."
+                                 Clearable="true"
+                                 ShowProgressIndicator="true"
+                                 MinCharacters="1"
+                                 DebounceInterval="300"
+                                 MaxItems="20"
+                                 ResetValueOnEmptyText="true"
+                                 CoerceText="false"
+                                 CoerceValue="false"
+                                 Value="_selectedStockKeepingUnit"
+                                 ValueChanged="OnStockKeepingUnitChanged"
+                                 SearchFunc="SearchStockKeepingUnitsAsync"
+                                 ToStringFunc="FormatStockKeepingUnit">
+                    <ItemTemplate>
+                        <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                    </ItemTemplate>
+                    <NoItemsTemplate>
+                        <MudText>No SKUs found.</MudText>
+                    </NoItemsTemplate>
+                </MudAutocomplete>
 
                 <MudTextField T="string"
                               Label="Base UoM"
@@ -51,22 +62,33 @@
                     }
                 </MudSelect>
 
-                <MudSelect T="Guid?"
-                           Label="Storage location"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           Required="true"
-                           RequiredError="Storage location is required."
-                           Disabled="_model.WarehouseId is null || _isLoadingStorageLocations"
-                           HelperText="@StorageLocationHelperText"
-                           @bind-Value="_model.StorageLocationId">
-                    @foreach (StorageLocationDetails storageLocation in _storageLocations)
-                    {
-                        <MudSelectItem T="Guid?" Value="@((Guid?)storageLocation.Id)">
-                            @storageLocation.Code - @storageLocation.Name
-                        </MudSelectItem>
-                    }
-                </MudSelect>
+                <MudAutocomplete T="StorageLocationLookupItem"
+                                 Label="Storage location"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Required="true"
+                                 RequiredError="Storage location is required."
+                                 Clearable="true"
+                                 ShowProgressIndicator="true"
+                                 MinCharacters="1"
+                                 DebounceInterval="300"
+                                 MaxItems="20"
+                                 ResetValueOnEmptyText="true"
+                                 CoerceText="false"
+                                 CoerceValue="false"
+                                 Disabled="_model.WarehouseId is null"
+                                 HelperText="@StorageLocationHelperText"
+                                 Value="_selectedStorageLocation"
+                                 ValueChanged="OnStorageLocationChanged"
+                                 SearchFunc="SearchStorageLocationsAsync"
+                                 ToStringFunc="FormatStorageLocation">
+                    <ItemTemplate>
+                        <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                    </ItemTemplate>
+                    <NoItemsTemplate>
+                        <MudText>No storage locations found.</MudText>
+                    </NoItemsTemplate>
+                </MudAutocomplete>
 
                 <MudNumericField T="decimal"
                                  Label="Quantity"
@@ -99,7 +121,7 @@
         <MudButton Color="Color.Primary"
                    Variant="Variant.Filled"
                    OnClick="SaveAsync"
-                   Disabled="_isSaving || _isLoadingSkus || _isLoadingWarehouses || _isLoadingStorageLocations">
+                   Disabled="_isSaving || _isLoadingWarehouses">
             @if (_isSaving)
             {
                 <MudProgressCircular Size="Size.Small"
@@ -113,6 +135,7 @@
 
 @code {
     private const int LookupTake = 100;
+    private const int AutocompleteTake = 20;
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
@@ -128,18 +151,15 @@
 
     private MudForm? _form;
     private readonly CreateInventoryBalanceModel _model = new();
-    private List<StockKeepingUnitDetails> _skus = [];
     private List<WarehouseDetails> _warehouses = [];
-    private List<StorageLocationDetails> _storageLocations = [];
-    private IReadOnlyDictionary<Guid, UnitOfMeasureDetails> _unitOfMeasureLookup =
-        new Dictionary<Guid, UnitOfMeasureDetails>();
+    private StockKeepingUnitLookupItem? _selectedStockKeepingUnit;
+    private StorageLocationLookupItem? _selectedStorageLocation;
     private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
 
-    private bool _isLoadingSkus;
     private bool _isLoadingWarehouses;
-    private bool _isLoadingStorageLocations;
     private bool _isSaving;
     private string? _errorMessage;
+    private int _storageLocationSearchVersion;
 
     private string? StorageLocationHelperText =>
         _model.WarehouseId is null ? "Select a warehouse first." : null;
@@ -148,34 +168,26 @@
     {
         get
         {
-            StockKeepingUnitDetails? sku = _skus.FirstOrDefault(x => x.Id == _model.StockKeepingUnitId);
-
-            if (sku is null)
+            if (_selectedStockKeepingUnit is null)
             {
                 return "Select a SKU to view base UoM.";
             }
 
-            if (!_unitOfMeasureLookup.TryGetValue(sku.BaseUnitOfMeasureId, out UnitOfMeasureDetails? unitOfMeasure))
-            {
-                return sku.BaseUnitOfMeasureId.ToString();
-            }
-
-            return string.IsNullOrWhiteSpace(unitOfMeasure.Symbol)
-                ? $"{unitOfMeasure.Code} - {unitOfMeasure.Name}"
-                : $"{unitOfMeasure.Code} ({unitOfMeasure.Symbol}) - {unitOfMeasure.Name}";
+            return string.IsNullOrWhiteSpace(_selectedStockKeepingUnit.BaseUnitOfMeasureSymbol)
+                ? _selectedStockKeepingUnit.BaseUnitOfMeasureCode
+                : $"{_selectedStockKeepingUnit.BaseUnitOfMeasureCode} ({_selectedStockKeepingUnit.BaseUnitOfMeasureSymbol})";
         }
     }
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadSkusAsync();
-        await LoadUnitsOfMeasureAsync();
         await LoadWarehousesAsync();
     }
 
-    private async Task OnStockKeepingUnitChanged(Guid? value)
+    private async Task OnStockKeepingUnitChanged(StockKeepingUnitLookupItem? value)
     {
-        _model.StockKeepingUnitId = value;
+        _selectedStockKeepingUnit = value;
+        _model.StockKeepingUnitId = value?.Id;
         await Task.CompletedTask;
     }
 
@@ -183,65 +195,23 @@
     {
         _model.WarehouseId = value;
         _model.StorageLocationId = null;
-        _storageLocations = [];
-
-        if (_model.WarehouseId is not null)
-        {
-            await LoadStorageLocationsAsync();
-        }
+        _selectedStorageLocation = null;
+        _storageLocationSearchVersion++;
+        await Task.CompletedTask;
     }
 
-    private async Task LoadSkusAsync()
+    private async Task OnStorageLocationChanged(StorageLocationLookupItem? value)
     {
-        _isLoadingSkus = true;
-        _errorMessage = null;
-
-        try
+        if (value is not null &&
+            (_model.WarehouseId is null ||
+             value.WarehouseId != _model.WarehouseId.Value))
         {
-            ListRequest request = new(
-                Skip: 0,
-                Take: LookupTake,
-                SortBy: "code",
-                SortDescending: false,
-                IncludeInactive: false);
-
-            ListResult<StockKeepingUnitDetails> result = await WmsCatalogApiClient
-                .ListStockKeepingUnitsAsync(request);
-
-            _skus = result.Items.ToList();
+            value = null;
         }
-        catch (Exception exception)
-        {
-            _errorMessage = exception.Message;
-            _skus = [];
-        }
-        finally
-        {
-            _isLoadingSkus = false;
-        }
-    }
 
-    private async Task LoadUnitsOfMeasureAsync()
-    {
-        try
-        {
-            ListRequest request = new(
-                Skip: 0,
-                Take: LookupTake,
-                SortBy: "code",
-                SortDescending: false,
-                IncludeInactive: false);
-
-            ListResult<UnitOfMeasureDetails> result = await WmsCatalogApiClient
-                .ListUnitsOfMeasureAsync(request);
-
-            _unitOfMeasureLookup = result.Items.ToDictionary(unitOfMeasure => unitOfMeasure.Id);
-        }
-        catch (Exception exception)
-        {
-            _errorMessage = exception.Message;
-            _unitOfMeasureLookup = new Dictionary<Guid, UnitOfMeasureDetails>();
-        }
+        _selectedStorageLocation = value;
+        _model.StorageLocationId = value?.Id;
+        await Task.CompletedTask;
     }
 
     private async Task LoadWarehousesAsync()
@@ -274,39 +244,74 @@
         }
     }
 
-    private async Task LoadStorageLocationsAsync()
+    private async Task<IEnumerable<StockKeepingUnitLookupItem>> SearchStockKeepingUnitsAsync(
+        string value,
+        CancellationToken cancellationToken)
     {
-        if (_model.WarehouseId is null)
-        {
-            _storageLocations = [];
-            return;
-        }
-
-        _isLoadingStorageLocations = true;
-        _errorMessage = null;
-
         try
         {
-            ListRequest request = new(
-                Skip: 0,
-                Take: LookupTake,
-                SortBy: "code",
-                SortDescending: false,
-                IncludeInactive: false);
+            IReadOnlyList<StockKeepingUnitLookupItem> items = await WmsCatalogApiClient
+                .LookupStockKeepingUnitsAsync(
+                    new LookupStockKeepingUnitsRequest
+                    {
+                        SearchText = value,
+                        Take = AutocompleteTake,
+                        SelectableOnly = true
+                    },
+                    cancellationToken);
 
-            ListResult<StorageLocationDetails> result = await WmsTopologyApiClient
-                .ListStorageLocationsByWarehouseAsync(_model.WarehouseId.Value, request);
-
-            _storageLocations = result.Items.ToList();
+            return items;
+        }
+        catch (Exception exception)
+            when (exception is OperationCanceledException && cancellationToken.IsCancellationRequested)
+        {
+            return [];
         }
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
-            _storageLocations = [];
+            return [];
         }
-        finally
+    }
+
+    private async Task<IEnumerable<StorageLocationLookupItem>> SearchStorageLocationsAsync(
+        string value,
+        CancellationToken cancellationToken)
+    {
+        if (_model.WarehouseId is not Guid warehouseId)
         {
-            _isLoadingStorageLocations = false;
+            return [];
+        }
+
+        int searchVersion = _storageLocationSearchVersion;
+
+        try
+        {
+            IReadOnlyList<StorageLocationLookupItem> items = await WmsTopologyApiClient
+                .LookupStorageLocationsAsync(
+                    warehouseId,
+                    new LookupStorageLocationsRequest
+                    {
+                        SearchText = value,
+                        Take = AutocompleteTake,
+                        SelectableOnly = true
+                    },
+                    cancellationToken);
+
+            return searchVersion == _storageLocationSearchVersion &&
+                   _model.WarehouseId == warehouseId
+                ? items
+                : [];
+        }
+        catch (Exception exception)
+            when (exception is OperationCanceledException && cancellationToken.IsCancellationRequested)
+        {
+            return [];
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            return [];
         }
     }
 
@@ -389,6 +394,12 @@
     {
         MudDialog.Cancel();
     }
+
+    private static string FormatStorageLocation(StorageLocationLookupItem? storageLocation) =>
+        storageLocation is null ? string.Empty : $"{storageLocation.Code} - {storageLocation.Name}";
+
+    private static string FormatStockKeepingUnit(StockKeepingUnitLookupItem? stockKeepingUnit) =>
+        stockKeepingUnit is null ? string.Empty : $"{stockKeepingUnit.Code} - {stockKeepingUnit.Name}";
 
     private sealed class CreateInventoryBalanceModel
     {

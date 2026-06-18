@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Catalog;
 using Myrmex.Shared.Wms.Inventory;
+using Myrmex.Shared.Wms.Topology;
 using Myrmex.WebApp.Wms.Catalog;
 using Myrmex.WebApp.Wms.Inventory;
 using Myrmex.WebApp.Wms.Topology;
@@ -11,6 +13,7 @@ namespace Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryBalancePages;
 public partial class Index
 {
     private const int LookupTake = 100;
+    private const int AutocompleteTake = 20;
 
     [Inject]
     private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = default!;
@@ -30,23 +33,18 @@ public partial class Index
     private InventoryBalanceGrid? _inventoryBalanceGrid;
 
     private List<WarehouseDetails> _warehouses = [];
-    private List<StorageLocationDetails> _storageLocations = [];
-    private List<StockKeepingUnitDetails> _skus = [];
 
     private Guid? _selectedWarehouseId;
-    private Guid? _selectedStorageLocationId;
-    private Guid? _selectedStockKeepingUnitId;
+    private StorageLocationLookupItem? _selectedStorageLocation;
+    private StockKeepingUnitLookupItem? _selectedStockKeepingUnit;
 
     private bool _isLoadingWarehouses;
-    private bool _isLoadingStorageLocations;
-    private bool _isLoadingSkus;
     private string? _errorMessage;
+    private int _storageLocationSearchVersion;
 
     protected override async Task OnInitializedAsync()
     {
-        await Task.WhenAll(
-            LoadWarehousesAsync(),
-            LoadSkusAsync());
+        await LoadWarehousesAsync();
     }
 
     private Task ReloadAsync()
@@ -57,26 +55,28 @@ public partial class Index
     private async Task OnWarehouseChanged(Guid? value)
     {
         _selectedWarehouseId = value;
-        _selectedStorageLocationId = null;
-        _storageLocations = [];
+        _selectedStorageLocation = null;
+        _storageLocationSearchVersion++;
 
-        if (_selectedWarehouseId is not null)
+        await ResetAndReloadInventoryBalancesAsync();
+    }
+
+    private async Task OnStorageLocationChanged(StorageLocationLookupItem? value)
+    {
+        if (value is not null &&
+            (_selectedWarehouseId is null ||
+             value.WarehouseId != _selectedWarehouseId.Value))
         {
-            await LoadStorageLocationsAsync();
+            value = null;
         }
 
+        _selectedStorageLocation = value;
         await ResetAndReloadInventoryBalancesAsync();
     }
 
-    private async Task OnStorageLocationChanged(Guid? value)
+    private async Task OnStockKeepingUnitChanged(StockKeepingUnitLookupItem? value)
     {
-        _selectedStorageLocationId = value;
-        await ResetAndReloadInventoryBalancesAsync();
-    }
-
-    private async Task OnStockKeepingUnitChanged(Guid? value)
-    {
-        _selectedStockKeepingUnitId = value;
+        _selectedStockKeepingUnit = value;
         await ResetAndReloadInventoryBalancesAsync();
     }
 
@@ -94,8 +94,8 @@ public partial class Index
                 Take = gridRequest.Take,
                 SortBy = gridRequest.SortBy,
                 SortDescending = gridRequest.SortDescending,
-                StockKeepingUnitId = _selectedStockKeepingUnitId,
-                StorageLocationId = _selectedStorageLocationId,
+                StockKeepingUnitId = _selectedStockKeepingUnit?.Id,
+                StorageLocationId = _selectedStorageLocation?.Id,
                 WarehouseId = _selectedWarehouseId
             };
 
@@ -159,79 +159,6 @@ public partial class Index
         finally
         {
             _isLoadingWarehouses = false;
-        }
-    }
-
-    private async Task LoadSkusAsync()
-    {
-        _isLoadingSkus = true;
-        _errorMessage = null;
-
-        try
-        {
-            ListRequest request = new(
-                Skip: 0,
-                Take: LookupTake,
-                SortBy: "code",
-                SortDescending: false,
-                IncludeInactive: false);
-
-            ListResult<StockKeepingUnitDetails> result = await WmsCatalogApiClient
-                .ListStockKeepingUnitsAsync(request);
-
-            _skus = result.Items.ToList();
-        }
-        catch (Exception exception)
-        {
-            _errorMessage = exception.Message;
-            _skus = [];
-        }
-        finally
-        {
-            _isLoadingSkus = false;
-        }
-    }
-
-    private async Task LoadStorageLocationsAsync()
-    {
-        if (_selectedWarehouseId is null)
-        {
-            _storageLocations = [];
-            return;
-        }
-
-        _isLoadingStorageLocations = true;
-        _errorMessage = null;
-
-        try
-        {
-            ListRequest request = new(
-                Skip: 0,
-                Take: LookupTake,
-                SortBy: "code",
-                SortDescending: false,
-                IncludeInactive: false);
-
-            ListResult<StorageLocationDetails> result = await WmsTopologyApiClient
-                .ListStorageLocationsByWarehouseAsync(_selectedWarehouseId.Value, request);
-
-            _storageLocations = result.Items.ToList();
-
-            if (_selectedStorageLocationId is not null &&
-                _storageLocations.All(x => x.Id != _selectedStorageLocationId.Value))
-            {
-                _selectedStorageLocationId = null;
-            }
-        }
-        catch (Exception exception)
-        {
-            _errorMessage = exception.Message;
-            _storageLocations = [];
-            _selectedStorageLocationId = null;
-        }
-        finally
-        {
-            _isLoadingStorageLocations = false;
         }
     }
 
@@ -303,18 +230,89 @@ public partial class Index
             return false;
         }
 
-        if (_selectedStorageLocationId is not null &&
-            inventoryBalance.StorageLocation.Id != _selectedStorageLocationId.Value)
+        if (_selectedStorageLocation is not null &&
+            inventoryBalance.StorageLocation.Id != _selectedStorageLocation.Id)
         {
             return false;
         }
 
-        if (_selectedStockKeepingUnitId is not null &&
-            inventoryBalance.Sku.Id != _selectedStockKeepingUnitId.Value)
+        if (_selectedStockKeepingUnit is not null &&
+            inventoryBalance.Sku.Id != _selectedStockKeepingUnit.Id)
         {
             return false;
         }
 
         return true;
+    }
+
+    private async Task<IEnumerable<StockKeepingUnitLookupItem>> SearchStockKeepingUnitsAsync(
+        string value,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            IReadOnlyList<StockKeepingUnitLookupItem> items = await WmsCatalogApiClient
+                .LookupStockKeepingUnitsAsync(
+                    new LookupStockKeepingUnitsRequest
+                    {
+                        SearchText = value,
+                        Take = AutocompleteTake,
+                        SelectableOnly = false
+                    },
+                    cancellationToken);
+
+            return items;
+        }
+        catch (Exception exception)
+            when (exception is OperationCanceledException && cancellationToken.IsCancellationRequested)
+        {
+            return [];
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            return [];
+        }
+    }
+
+    private async Task<IEnumerable<StorageLocationLookupItem>> SearchStorageLocationsAsync(
+        string value,
+        CancellationToken cancellationToken)
+    {
+        if (_selectedWarehouseId is not Guid warehouseId)
+        {
+            return [];
+        }
+
+        int searchVersion = _storageLocationSearchVersion;
+
+        try
+        {
+            IReadOnlyList<StorageLocationLookupItem> items = await WmsTopologyApiClient
+                .LookupStorageLocationsAsync(
+                    warehouseId,
+                    new LookupStorageLocationsRequest
+                    {
+                        SearchText = value,
+                        Take = AutocompleteTake,
+                        SelectableOnly = false
+                    },
+                    cancellationToken);
+
+            return searchVersion == _storageLocationSearchVersion &&
+                   _selectedWarehouseId == warehouseId
+                ? items
+                : [];
+        }
+        catch (Exception exception)
+            when (exception is OperationCanceledException && cancellationToken.IsCancellationRequested)
+        {
+            return [];
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            return [];
+        }
     }
 }

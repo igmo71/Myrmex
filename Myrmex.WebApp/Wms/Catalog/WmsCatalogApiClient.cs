@@ -1,4 +1,5 @@
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Catalog;
 using Myrmex.WebApp.Wms.Api;
 using System.Web;
 
@@ -15,6 +16,17 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
             request);
 
         return await httpClient.GetRequiredAsync<ListResult<StockKeepingUnitDetails>>(url, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<StockKeepingUnitLookupItem>> LookupStockKeepingUnitsAsync(
+        LookupStockKeepingUnitsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        string url = BuildStockKeepingUnitLookupUrl(request);
+
+        return await httpClient.GetRequiredAsync<IReadOnlyList<StockKeepingUnitLookupItem>>(
+            url,
+            cancellationToken);
     }
 
     public async Task<StockKeepingUnitDetails> GetStockKeepingUnitByIdAsync(
@@ -207,6 +219,29 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
         }
 
         return url;
+    }
+
+    private static string BuildStockKeepingUnitLookupUrl(LookupStockKeepingUnitsRequest request)
+    {
+        const string path = "/api/wms/catalog/skus/lookup";
+
+        List<string> query = [];
+
+        if (!string.IsNullOrWhiteSpace(request.SearchText))
+        {
+            query.Add($"searchText={HttpUtility.UrlEncode(request.SearchText)}");
+        }
+
+        if (request.Take.HasValue)
+        {
+            query.Add($"take={request.Take.Value}");
+        }
+
+        query.Add($"selectableOnly={request.SelectableOnly.ToString().ToLowerInvariant()}");
+
+        return query.Count == 0
+            ? path
+            : $"{path}?{string.Join("&", query)}";
     }
 }
 

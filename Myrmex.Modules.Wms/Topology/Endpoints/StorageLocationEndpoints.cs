@@ -8,6 +8,7 @@ using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Topology;
 
 namespace Myrmex.Modules.Wms.Topology.Endpoints;
 
@@ -26,6 +27,10 @@ internal static class StorageLocationEndpoints
         group.MapGet("/warehouses/{warehouseId:guid}/locations", ListStorageLocationsByWarehouseAsync)
             .WithName("ListStorageLocationsByWarehouse")
             .WithSummary("List Storage Locations By Warehouse");
+
+        group.MapGet("/warehouses/{warehouseId:guid}/locations/lookup", LookupStorageLocationsAsync)
+            .WithName("LookupStorageLocations")
+            .WithSummary("Lookup Storage Locations By Warehouse");
 
         group.MapGet("/zones/{zoneId:guid}/locations", ListStorageLocationsByZoneAsync)
             .WithName("ListStorageLocationsByZone")
@@ -120,6 +125,28 @@ internal static class StorageLocationEndpoints
 
         var result = await queryDispatcher
             .DispatchAsync<ListStorageLocations.Query, ServiceResult<ListResult<StorageLocationDetails>>>(query, cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> LookupStorageLocationsAsync(
+        Guid warehouseId,
+        [AsParameters] LookupStorageLocationsRequest request,
+        IQueryDispatcher queryDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var query = new LookupStorageLocations.Query
+        {
+            WarehouseId = warehouseId,
+            SearchText = request.SearchText,
+            Take = request.Take,
+            SelectableOnly = request.SelectableOnly
+        };
+
+        var result = await queryDispatcher
+            .DispatchAsync<LookupStorageLocations.Query, ServiceResult<IReadOnlyList<StorageLocationLookupItem>>>(
+                query,
+                cancellationToken);
+
         return result.ToHttpResult();
     }
 

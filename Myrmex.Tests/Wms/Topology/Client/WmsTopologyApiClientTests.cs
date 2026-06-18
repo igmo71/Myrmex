@@ -1,4 +1,5 @@
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Topology;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Topology;
 using System.Text;
@@ -112,6 +113,45 @@ public sealed class WmsTopologyApiClientTests
     }
 
     [Fact]
+    public async Task LookupStorageLocationsAsync_WhenSuccessful_BuildsWarehouseLookupRouteAndPropagatesCancellation()
+    {
+        Guid warehouseId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
+        StorageLocationLookupItem details = new(
+            Id: Guid.Parse("018f0000-0000-7000-8000-000000000501"),
+            warehouseId,
+            Code: "A-01-01",
+            Name: "Pick Face",
+            IsActive: false);
+
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson<IReadOnlyList<StorageLocationLookupItem>>([details]),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsTopologyApiClient apiClient = new(httpClient);
+        using CancellationTokenSource cancellationTokenSource = new();
+
+        IReadOnlyList<StorageLocationLookupItem> result = await apiClient.LookupStorageLocationsAsync(
+            warehouseId,
+            new LookupStorageLocationsRequest
+            {
+                SearchText = "Pick",
+                Take = 20,
+                SelectableOnly = false
+            },
+            cancellationTokenSource.Token);
+
+        StorageLocationLookupItem item = Assert.Single(result);
+        Assert.Equal(details.Id, item.Id);
+        Assert.Equal(warehouseId, item.WarehouseId);
+        Assert.False(item.IsActive);
+        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
+        Assert.Equal($"/api/wms/topology/warehouses/{warehouseId}/locations/lookup", handler.RequestPath);
+        Assert.Equal("?searchText=Pick&take=20&selectableOnly=false", handler.RequestQuery);
+        Assert.Equal(cancellationTokenSource.Token, handler.RequestCancellationToken);
+    }
+
+    [Fact]
     public async Task ListStorageLocationTypesAsync_WhenIncludeInactiveTrue_GetsLookupRouteAndMapsDetails()
     {
         StorageLocationTypeDetails details = new(
@@ -170,6 +210,8 @@ public sealed class WmsTopologyApiClientTests
 
         public string RequestBody { get; private set; } = string.Empty;
 
+        public CancellationToken RequestCancellationToken { get; private set; }
+
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken)
@@ -177,6 +219,7 @@ public sealed class WmsTopologyApiClientTests
             RequestMethod = request.Method;
             RequestPath = request.RequestUri?.AbsolutePath;
             RequestQuery = request.RequestUri?.Query;
+            RequestCancellationToken = cancellationToken;
 
             if (request.Content is not null)
             {

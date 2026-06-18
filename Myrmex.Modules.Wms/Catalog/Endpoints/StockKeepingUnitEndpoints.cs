@@ -8,6 +8,7 @@ using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Features.StockKeepingUnits;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Catalog;
 
 namespace Myrmex.Modules.Wms.Catalog.Endpoints;
 
@@ -26,6 +27,10 @@ internal static class StockKeepingUnitEndpoints
         group.MapGet("/skus", ListStockKeepingUnitsAsync)
             .WithName("ListStockKeepingUnits")
             .WithSummary("List SKUs");
+
+        group.MapGet("/skus/lookup", LookupStockKeepingUnitsAsync)
+            .WithName("LookupStockKeepingUnits")
+            .WithSummary("Lookup SKUs");
 
         group.MapPut("/skus/{stockKeepingUnitId:guid}", UpdateStockKeepingUnitDetailsAsync)
             .WithName("UpdateStockKeepingUnitDetails")
@@ -100,6 +105,26 @@ internal static class StockKeepingUnitEndpoints
 
         var result = await queryDispatcher
             .DispatchAsync<ListStockKeepingUnits.Query, ServiceResult<ListResult<StockKeepingUnitDetails>>>(query, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> LookupStockKeepingUnitsAsync(
+        [AsParameters] LookupStockKeepingUnitsRequest request,
+        IQueryDispatcher queryDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var query = new LookupStockKeepingUnits.Query
+        {
+            SearchText = request.SearchText,
+            Take = request.Take,
+            SelectableOnly = request.SelectableOnly
+        };
+
+        var result = await queryDispatcher
+            .DispatchAsync<LookupStockKeepingUnits.Query, ServiceResult<IReadOnlyList<StockKeepingUnitLookupItem>>>(
+                query,
+                cancellationToken);
 
         return result.ToHttpResult();
     }
