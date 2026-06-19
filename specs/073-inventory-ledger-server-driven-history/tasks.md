@@ -8,9 +8,9 @@
 
 **Batches**:
 
-- **Batch 1**: Shared contracts and backend list slice for browse/filter/sort.
-- **Batch 2**: Transaction details endpoint, client, and dialog.
-- **Batch 3**: Ledger page, routed hydration, and Inventory Balance navigation.
+- **Batch 1**: Shared contracts plus backend list/filter/sort.
+- **Batch 2**: Transaction details backend/client.
+- **Batch 3**: Ledger page orchestration plus filters/grid/dialog and routed navigation.
 
 ## Phase 1: Setup and Shared Contracts
 
@@ -31,10 +31,9 @@
 **Purpose**: Add the Inventory Ledger endpoint surface and reusable test data without changing domain entities, EF mappings, migrations, or indexes.
 
 - [ ] T006 [P] Create focused ledger test-data helpers for transactions, entries, inactive references, and multi-entry fixtures in `Myrmex.Tests/Wms/Inventory/Testing/InventoryLedgerTestData.cs`
-- [ ] T007 Create inventory ledger endpoint group with GET `/ledger` and GET `/transactions/{transactionId:guid}` dispatch stubs in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryLedgerEndpoints.cs`
-- [ ] T008 Register ledger endpoints from the existing inventory route group in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryEndpoints.cs`
+- [ ] T007 Create the `InventoryLedgerEndpoints` endpoint-group shell, route constants, and repository-consistent structure without query-type references in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryLedgerEndpoints.cs`
 
-**Checkpoint**: User-story work can add handler/client/UI behavior against stable routes and shared fixtures.
+**Checkpoint**: The endpoint file exists without references to not-yet-created queries; user-story work can add real endpoint mappings when their query types exist.
 
 ---
 
@@ -46,15 +45,16 @@
 
 ### Tests for User Story 1
 
-- [ ] T009 [P] [US1] Add grouped handler/persistence tests for default newest-first ordering, count-before-paging, empty result, bounded projection, and independence from current balance rows in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
-- [ ] T010 [P] [US1] Add endpoint test for list query binding and representative nested list JSON serialization in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryLedgerEndpointTests.cs`
-- [ ] T011 [P] [US1] Add API-client test for empty ledger list URL without trailing `?` and nested list deserialization in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [ ] T008 [P] [US1] Add grouped handler/persistence tests for default newest-first ordering, count-before-paging, empty result, bounded projection, and independence from current balance rows in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
+- [ ] T009 [P] [US1] Add endpoint test for list query binding and representative nested list JSON serialization in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryLedgerEndpointTests.cs`
+- [ ] T010 [P] [US1] Add API-client test for empty ledger list URL without trailing `?` and nested list deserialization in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Implement `ListInventoryLedgerEntries.Query` and handler sequence through validation, paging normalization, `AsNoTracking`, count, default deterministic sorting, paging, projection, materialization, and `ListResult<InventoryLedgerEntryDetails>` in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/ListInventoryLedgerEntries.cs`
-- [ ] T013 [US1] Implement projection helpers and default deterministic ordering `OccurredAtUtc desc`, `InventoryTransactionId desc`, `InventoryLedgerEntryId desc` in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/InventoryLedgerQueryableExtensions.cs`
-- [ ] T014 [US1] Map GET `/api/wms/inventory/ledger` request values to `ListInventoryLedgerEntries.Query` in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryLedgerEndpoints.cs`
+- [ ] T011 [US1] Implement `ListInventoryLedgerEntries.Query` and handler sequence through validation, paging normalization, `AsNoTracking`, count, default deterministic sorting, paging, projection, materialization, and `ListResult<InventoryLedgerEntryDetails>` in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/ListInventoryLedgerEntries.cs`
+- [ ] T012 [US1] Implement projection helpers and default deterministic ordering `OccurredAtUtc desc`, `InventoryTransactionId desc`, `InventoryLedgerEntryId desc` in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/InventoryLedgerQueryableExtensions.cs`
+- [ ] T013 [US1] Map GET `/api/wms/inventory/ledger` request values to `ListInventoryLedgerEntries.Query` in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryLedgerEndpoints.cs`
+- [ ] T014 [US1] Register the ledger endpoint group from the existing inventory route group now that the real list endpoint mapping exists in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryEndpoints.cs`
 - [ ] T015 [US1] Add `ListInventoryLedgerEntriesAsync` to build ledger list query strings and deserialize `ListResult<InventoryLedgerEntryDetails>` in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
 
 **Checkpoint**: The backend/API-client list path is independently usable for unfiltered, paged Ledger history.
@@ -71,7 +71,7 @@
 
 - [ ] T016 [P] [US2] Extend grouped handler theories for SKU, warehouse, storage-location, transaction-type, occurrence-range, inactive-reference, and no-match filters in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
 - [ ] T017 [P] [US2] Extend grouped handler sort theory for every supported PascalCase sort key, requested primary direction, `InventoryTransactionId asc`, and `InventoryLedgerEntryId asc` tie-breakers in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
-- [ ] T018 [P] [US2] Add handler validation tests proving unsupported transaction type and `OccurredFromUtc > OccurredToUtc` fail before filtered query construction while equal boundaries are a valid empty interval in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
+- [ ] T018 [P] [US2] Add focused handler validation tests proving unsupported transaction type and `OccurredFromUtc > OccurredToUtc` fail before filtered query construction while equal boundaries are a valid empty interval in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
 - [ ] T019 [P] [US2] Add API-client query construction test covering paging, PascalCase sort values, sort direction, all filters, and occurrence UTC parameters in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation for User Story 2
@@ -96,14 +96,15 @@
 
 - [ ] T025 [P] [US3] Add handler/persistence tests for transaction header, multi-entry detail projection, deterministic entry ordering, and missing transaction NotFound in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
 - [ ] T026 [P] [US3] Add endpoint test for transaction details route, nested detail JSON, and NotFound mapping in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryLedgerEndpointTests.cs`
-- [ ] T027 [P] [US3] Add API-client test for details route construction, nested `InventoryTransactionEntryDetails` deserialization, and cancellation propagation in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [ ] T027 [P] [US3] Add focused API-client tests for details route construction and nested `InventoryTransactionEntryDetails` deserialization in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [ ] T028 [P] [US3] Add one representative Ledger API-client cancellation test using the repository's reliable cancellation helper/pattern, verifying the request receives a cancellable token and caller cancellation cancels or is observed by the request without requiring exact token equality in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] Implement `GetInventoryTransactionById.Query` with transaction header projection and ordered `InventoryTransactionEntryDetails` collection in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/GetInventoryTransactionById.cs`
-- [ ] T029 [US3] Map GET `/api/wms/inventory/transactions/{transactionId:guid}` to the details query in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryLedgerEndpoints.cs`
-- [ ] T030 [US3] Add `GetInventoryTransactionByIdAsync` to `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
-- [ ] T031 [P] [US3] Create read-only transaction details dialog showing header, reason, timestamps, and all detail entries in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/InventoryTransactionDetailsDialog.razor`
+- [ ] T029 [US3] Implement `GetInventoryTransactionById.Query` with transaction header projection and ordered `InventoryTransactionEntryDetails` collection in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/GetInventoryTransactionById.cs`
+- [ ] T030 [US3] Map GET `/api/wms/inventory/transactions/{transactionId:guid}` to the details query in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryLedgerEndpoints.cs`
+- [ ] T031 [US3] Add `GetInventoryTransactionByIdAsync` to `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [ ] T032 [P] [US3] Create read-only transaction details dialog showing header, reason, timestamps, and all detail entries in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/InventoryTransactionDetailsDialog.razor`
 
 **Checkpoint**: Transaction details are transaction-oriented and support multiple entries without repeating header data per entry.
 
@@ -117,20 +118,21 @@
 
 ### Tests for User Story 4
 
-- [ ] T032 [P] [US4] Add manual smoke coverage for SKU-only, warehouse-only, storage-location-only, matching warehouse/location, mismatch, copied-link reload, and no initial unfiltered request before hydration in `specs/073-inventory-ledger-server-driven-history/quickstart.md`
+- [ ] T033 [P] [US4] Review and align manual smoke coverage with the implemented route hydration and orchestration behavior in `specs/073-inventory-ledger-server-driven-history/quickstart.md`
 
 ### Implementation for User Story 4
 
-- [ ] T033 [US4] Create Ledger page route, query parameters, exact-ID hydration state, `_isInitializing` or `_isHydratingFilters` guard, and first-request blocking in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/Index.razor.cs`
-- [ ] T034 [P] [US4] Create Ledger page markup with page-level validation/error feedback and delayed grid activation while routed hydration is active in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/Index.razor`
-- [ ] T035 [P] [US4] Create Ledger filter component with inactive-inclusive SKU lookup, inactive-inclusive warehouse selector, warehouse-scoped storage-location lookup, transaction type, occurrence UTC controls, and clear/reset action in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/InventoryLedgerFilters.razor`
-- [ ] T036 [P] [US4] Create Ledger grid and grid request mapping using PascalCase sort tags and `MudDataGrid.ServerData` in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/InventoryLedgerGrid.razor`
-- [ ] T037 [P] [US4] Create UI-specific grid request record in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/InventoryLedgerGridRequest.cs`
-- [ ] T038 [US4] Implement partial routed-filter semantics in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/Index.razor.cs`: SKU-only, warehouse-only, warehouse/location match, storage-location-only deriving warehouse, and mismatch blocking list requests until corrected
-- [ ] T039 [US4] Use exact get-by-id hydration through `WmsCatalogApiClient.GetStockKeepingUnitByIdAsync`, `WmsTopologyApiClient.GetWarehouseByIdAsync`, and `WmsTopologyApiClient.GetStorageLocationByIdAsync` in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/Index.razor.cs`
-- [ ] T040 [US4] Add Inventory Ledger navigation link beside Inventory Balances in `Myrmex.WebApp/Components/Layout/NavMenu.razor`
-- [ ] T041 [US4] Add History action to balance rows in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/InventoryBalanceGrid.razor`
-- [ ] T042 [US4] Navigate from balance history action to `/wms/inventory/ledger?stockKeepingUnitId={Sku.Id}&warehouseId={StorageLocation.Warehouse.Id}&storageLocationId={StorageLocation.Id}` in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/Index.razor.cs`
+- [ ] T034 [US4] Create UI-specific grid request record carrying skip, take, PascalCase sort key, and sort direction in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/InventoryLedgerGridRequest.cs`
+- [ ] T035 [P] [US4] Create Ledger filter component with inactive-inclusive SKU lookup, inactive-inclusive warehouse selector, warehouse-scoped storage-location lookup, transaction type, occurrence UTC controls, and clear/reset action callbacks in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/InventoryLedgerFilters.razor`
+- [ ] T036 [P] [US4] Create Ledger grid with PascalCase sort tags, `MudDataGrid.ServerData`, details action callback, reset/reload methods, and no activation before the parent page allows loading in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/InventoryLedgerGrid.razor`
+- [ ] T037 [US4] Create Ledger page route, query parameters, exact-ID hydration state, `_isInitializing` or `_isHydratingFilters` guard, and first-request blocking so `MudDataGrid.ServerData` is not activated before hydration completes in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/Index.razor.cs`
+- [ ] T038 [US4] Implement page orchestration that maps filter state and `MudDataGrid` state to `InventoryLedgerGridRequest`, maps it to `ListInventoryLedgerEntriesRequest`, calls `WmsInventoryApiClient.ListInventoryLedgerEntriesAsync`, returns `GridData<InventoryLedgerEntryDetails>`, handles loading state and page-level errors, suppresses expected cancellation errors, resets the grid to page zero when filters change, reloads current grid state when appropriate, loads transaction details through `GetInventoryTransactionByIdAsync`, opens `InventoryTransactionDetailsDialog`, and avoids duplicate or unfiltered requests during routed hydration in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/Index.razor.cs`
+- [ ] T039 [US4] Implement partial routed-filter semantics in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/Index.razor.cs`: SKU-only, warehouse-only, warehouse/location match, storage-location-only deriving warehouse, and mismatch route state blocking all Ledger list requests until corrected
+- [ ] T040 [US4] Use exact get-by-id hydration through `WmsCatalogApiClient.GetStockKeepingUnitByIdAsync`, `WmsTopologyApiClient.GetWarehouseByIdAsync`, and `WmsTopologyApiClient.GetStorageLocationByIdAsync` in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/Index.razor.cs`
+- [ ] T041 [US4] Create Ledger page markup that connects filters, grid, details dialog action flow, page-level validation/error feedback, and delayed grid activation while routed hydration or mismatch feedback is active in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/Index.razor`
+- [ ] T042 [US4] Add Inventory Ledger navigation link beside Inventory Balances in `Myrmex.WebApp/Components/Layout/NavMenu.razor`
+- [ ] T043 [US4] Add History action to balance rows in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/InventoryBalanceGrid.razor`
+- [ ] T044 [US4] Navigate from balance history action to `/wms/inventory/ledger?stockKeepingUnitId={Sku.Id}&warehouseId={StorageLocation.Warehouse.Id}&storageLocationId={StorageLocation.Id}` in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/Index.razor.cs`
 
 **Checkpoint**: The Ledger page is linkable, route-hydrated, protected from contradictory route state, and reachable from Inventory Balance.
 
@@ -140,8 +142,8 @@
 
 **Purpose**: Final consistency checks and validation instructions without running developer-controlled commands automatically.
 
-- [ ] T043 Review `specs/073-inventory-ledger-server-driven-history/quickstart.md` against implemented behavior and keep build, test, app startup, EF, runtime validation, and smoke testing developer-controlled
-- [ ] T044 Verify scope guardrails by inspecting changed paths under `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/`, `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/`, `Myrmex.Modules.Wms/Inventory/Domain/`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/`, and `Myrmex.Tests/Wms/Inventory/`
+- [ ] T045 Review `specs/073-inventory-ledger-server-driven-history/quickstart.md` against implemented behavior and keep build, test, app startup, EF, runtime validation, and smoke testing developer-controlled
+- [ ] T046 Verify scope guardrails by inspecting changed paths under `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/`, `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/`, `Myrmex.Modules.Wms/Inventory/Domain/`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/`, and `Myrmex.Tests/Wms/Inventory/`
 
 ---
 
@@ -150,37 +152,38 @@
 ### Phase Dependencies
 
 - **Phase 1** must complete before backend, endpoint, client, or UI tasks use shared contracts.
-- **Phase 2** must complete before user-story endpoint tasks are wired through inventory routes.
+- **Phase 2** creates only endpoint shell structure and shared fixtures; real endpoint mappings are added in the user-story phases only after their query types exist.
 - **US1** can start after Phases 1 and 2 and is the MVP backend list increment.
 - **US2** depends on US1 list handler/client structure.
-- **US3** depends on shared transaction detail contracts from Phase 1 and endpoint group from Phase 2; it can proceed in parallel with US2 after those prerequisites.
-- **US4** depends on list client behavior from US1/US2 and details dialog from US3 only for the detail action; route hydration work can proceed once shared contracts and API-client methods exist.
+- **US3** depends on shared transaction detail contracts from Phase 1 and endpoint group shell from Phase 2; its endpoint mapping is added with the real details query task.
+- **US4** depends on list client behavior from US1/US2 and details client/dialog behavior from US3. Filters, grid, details dialog, route hydration, and page orchestration must be connected before the page checkpoint is considered complete.
 - **Polish** depends on all selected implementation batches.
 
 ### Proposed Implementation Batches
 
-1. **Batch 1 - Contracts and backend list/filter/sort**: T001-T024.
-2. **Batch 2 - Transaction details**: T025-T031.
-3. **Batch 3 - WebApp page, route hydration, and balance navigation**: T032-T042.
+1. **Batch 1 - Shared contracts plus backend list/filter/sort**: T001-T024.
+2. **Batch 2 - Transaction details backend/client**: T025-T032.
+3. **Batch 3 - Ledger page orchestration plus filters/grid/dialog and routed navigation**: T033-T044.
 
 ### Parallel Opportunities
 
 - T001-T005 can run in parallel because they create separate shared contract files.
 - T006 can run in parallel with T007 once route names are agreed.
-- T009-T011 can run in parallel because they touch handler, endpoint, and client test files.
+- T008-T010 can run in parallel because they touch handler, endpoint, and client test files.
 - T016-T019 can run in parallel because they extend grouped tests at distinct boundaries.
-- T025-T027 can run in parallel because they protect handler, endpoint, and client details risks.
-- T034-T037 can run in parallel after T033 establishes page-level contracts and callback names.
-- T040-T041 can run in parallel with Ledger page work, then T042 wires the balance navigation action.
+- T025-T028 can run in parallel because they protect handler, endpoint, client details, and representative cancellation risks.
+- T035-T036 can run in parallel after T034 establishes the grid request shape.
+- T037, T038, T039, and T040 all touch `Index.razor.cs` and should be sequenced together rather than parallelized.
+- T042-T043 can run in parallel with Ledger page work, then T044 wires the balance navigation action.
 
 ---
 
 ## Risk-Based Test Groups
 
-- **Handler/persistence list group**: filters, count-before-paging, default sort, requested sort tie-breakers, validation-before-query, equal occurrence boundaries, inactive references, bounded projection, empty results, and current-balance independence in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`.
+- **Handler/persistence list group**: filters, count-before-paging, default sort, requested sort tie-breakers, validation-before-query, equal occurrence boundaries, inactive references, required nested fields, empty results, and current-balance independence in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`.
 - **Handler/persistence details group**: multi-entry transaction details, header once, detail entry shape, deterministic entry ordering, and missing transaction NotFound in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`.
 - **Endpoint boundary group**: `[AsParameters]` list binding, representative list JSON, details route JSON, and NotFound mapping in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryLedgerEndpointTests.cs`.
-- **API-client group**: ledger list URL construction, no trailing `?`, all query parameters, details route, cancellation propagation, and nested DTO deserialization in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`.
+- **API-client group**: ledger list URL construction, no trailing `?`, all query parameters, details route, one representative cancellable request behavior test without exact token equality, and nested DTO deserialization in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`.
 - **Manual UI smoke group**: route hydration variants, mismatch blocking, no initial unfiltered request, copied-link reload, inactive references, details dialog, and no mutation controls in `specs/073-inventory-ledger-server-driven-history/quickstart.md`.
 
 ---
@@ -191,4 +194,5 @@
 - Do not add Blazor component-test infrastructure.
 - Do not introduce generic lookup, routing, state-management, grid, reporting, export, analytics, or observability frameworks.
 - Do not add ledger create, update, delete, correction, reversal, rebuild, transfer, or InventoryAccount behavior.
+- Treat bounded projection and absence of `Include`-heavy graph loading as implementation/code-review requirements; do not add LINQ expression-tree, reflection, member-absence, or `Include`-absence structural tests.
 - Keep build, tests, application startup, EF, formatter, linter, runtime validation, and smoke testing developer-controlled.
