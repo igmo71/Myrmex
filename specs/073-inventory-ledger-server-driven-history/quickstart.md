@@ -48,10 +48,12 @@ Verify list filtering by:
 
 Expected:
 
+- Request validation occurs before constructing the filtered EF query.
 - Filters are applied server-side before count and paging.
 - Invalid occurrence range returns validation ProblemDetails.
 - Equal occurrence boundaries return a valid empty interval.
 - Unsupported transaction type returns validation ProblemDetails.
+- Unsupported transaction type values and invalid occurrence ranges do not participate in SQL query construction.
 
 ### 3. Sorting and Paging
 
@@ -69,6 +71,7 @@ Verify supported sort keys:
 
 Expected:
 
+- Public sort values follow the existing PascalCase `InventoryBalanceSortBy` convention, such as `OccurredAtUtc`, `TransactionType`, and `SkuCode`.
 - Every requested sort is deterministic with stable tie-breakers.
 - Requested sorts use the requested primary direction, then transaction ID ascending, then entry ID ascending.
 - Default sort uses occurred UTC descending, then transaction ID descending, then entry ID descending.
@@ -118,15 +121,21 @@ Expected:
 11. Confirm full reason is visible in details when grid text is shortened.
 12. From Inventory Balances, use a row history action.
 13. Confirm Ledger opens with that row's SKU, warehouse, and storage-location filters active.
-14. Copy the resulting Ledger URL.
-15. Reload the page or open the copied URL in a new browser tab.
-16. Confirm SKU, warehouse, and storage-location filters are visibly restored.
-17. Confirm the same filtered history request is issued.
-18. Confirm inactive referenced SKU, warehouse, or storage-location records can still hydrate and display when present.
-19. Clear or change filters and continue normal Ledger browsing.
-20. Confirm rapid filter/search changes do not show cancellation as an error.
-21. Confirm empty results show a clear empty state, not an error.
-22. Confirm no ledger edit, delete, correction, reversal, transfer, export, analytics, or rebuild controls are present.
+14. Open a routed Ledger URL with only `stockKeepingUnitId`; confirm the SKU filter hydrates visibly and only the SKU-filtered first page is requested.
+15. Open a routed Ledger URL with only `warehouseId`; confirm the warehouse filter hydrates visibly and only the warehouse-filtered first page is requested.
+16. Open a routed Ledger URL with only `storageLocationId`; confirm the storage location hydrates, its warehouse is derived and displayed, and the first request includes both warehouse and storage-location filters.
+17. Open a routed Ledger URL with matching `warehouseId` and `storageLocationId`; confirm both filters hydrate visibly and the first request includes both filters.
+18. Open a routed Ledger URL with mismatched `warehouseId` and `storageLocationId`; confirm clear page-level feedback appears and no contradictory filtered ledger request is sent.
+19. For every routed URL above, confirm the page does not make an initial unfiltered ledger request before hydration completes.
+20. Copy a valid routed Ledger URL.
+21. Reload the page or open the copied URL in a new browser tab.
+22. Confirm SKU, warehouse, and storage-location filters that were present in the link are visibly restored.
+23. Confirm the same filtered history request is issued after copied-link hydration.
+24. Confirm inactive referenced SKU, warehouse, or storage-location records can still hydrate and display when present.
+25. Clear or change filters and continue normal Ledger browsing.
+26. Confirm rapid filter/search or routed-hydration cancellation does not show cancellation as an error.
+27. Confirm empty results show a clear empty state, not an error.
+28. Confirm no ledger edit, delete, correction, reversal, transfer, export, analytics, or rebuild controls are present.
 
 ## Scope Review
 

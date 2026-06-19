@@ -211,6 +211,12 @@ Represents one transaction and all of its entries.
 
 Represents one ledger entry inside transaction details. It contains entry-owned values and reference context only; transaction ID, transaction type, reason, occurrence time, and transaction creation time are represented once on the transaction header.
 
+Planned shared contract file:
+
+```text
+Myrmex.Shared/Wms/Inventory/InventoryTransactionEntryDetails.cs
+```
+
 **Fields**:
 
 - `EntryId`
@@ -256,11 +262,29 @@ Represents one ledger entry inside transaction details. It contains entry-owned 
 
 **Validation**:
 
+- Validate the public request before constructing the filtered EF query.
 - Normalize `Skip` and `Take` using existing list normalization.
 - Reject unsupported transaction type values.
 - Reject occurrence range where `OccurredFromUtc > OccurredToUtc`.
 - Treat `OccurredFromUtc == OccurredToUtc` as a valid empty interval.
 - Unsupported sort keys follow current Inventory Balance deterministic fallback behavior.
+
+**Backend list query sequence**:
+
+```text
+validate request
+-> normalize paging
+-> create base AsNoTracking query
+-> apply filters
+-> CountAsync
+-> deterministic sorting
+-> Skip / Take
+-> bounded projection
+-> materialize
+-> ListResult
+```
+
+Unsupported transaction-type values and invalid occurrence ranges must not participate in SQL query construction.
 
 ## Sorting Model
 
@@ -277,6 +301,14 @@ Supported sort keys:
 - `QuantityDelta`
 - `BalanceAfter`
 - `Reason`
+
+`InventoryLedgerSortBy` public constant values preserve the existing `InventoryBalanceSortBy` convention and remain PascalCase:
+
+```csharp
+public const string OccurredAtUtc = "OccurredAtUtc";
+public const string TransactionType = "TransactionType";
+public const string SkuCode = "SkuCode";
+```
 
 Default sort:
 

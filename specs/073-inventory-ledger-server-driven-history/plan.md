@@ -66,7 +66,8 @@ Myrmex.Shared/
     ├── ListInventoryLedgerEntriesRequest.cs          # create
     ├── InventoryLedgerEntryDetails.cs                # create
     ├── InventoryLedgerSortBy.cs                      # create
-    └── InventoryTransactionDetails.cs                # create
+    ├── InventoryTransactionDetails.cs                # create
+    └── InventoryTransactionEntryDetails.cs           # create
 
 Myrmex.Modules.Wms/
 └── Inventory/
@@ -109,8 +110,8 @@ Myrmex.Tests/
 - **Domain concepts first**: `InventoryTransaction` is one completed inventory operation; `InventoryLedgerEntry` is one immutable quantity change. The primary list is one row per ledger entry with parent transaction context. Transaction details group all entries for one transaction. The persisted invariant `BalanceAfter = BalanceBefore + QuantityDelta` is displayed, not recalculated from current balance rows.
 - **Shared contract boundary**: Add feature-specific transport contracts in `Myrmex.Shared.Wms.Inventory`: list request, entry list/detail DTO, transaction details DTO, and sort-key constants. These contracts cross the backend/client boundary and contain no EF expressions, domain entities, handlers, or UI state.
 - **Internal request boundary**: Add internal explicit queries `ListInventoryLedgerEntries.Query` and `GetInventoryTransactionById.Query`. Endpoints map public request values into these queries and dispatch them through the existing query dispatcher.
-- **Backend-owned projection**: Query from `InventoryLedgerEntries` and traverse to `InventoryTransaction`, `StockKeepingUnit`, base UoM, `StorageLocation`, and `Warehouse` through EF projection. Use `AsNoTracking`, apply filters to `IQueryable`, calculate count, sort, skip/take, then project only required scalar/nested DTO fields. Avoid `Include` and avoid loading full transaction or navigation graphs for the list.
-- **Server-driven list behavior**: Reuse Inventory Balance flow: shared request -> `[AsParameters]` endpoint -> internal query -> filters -> `CountAsync` -> deterministic sorting -> `Skip`/`Take` -> backend-owned projection -> `ListResult<T>`. Supported filters are SKU, warehouse, storage location, transaction type, occurrence-from UTC, and occurrence-to UTC. Default sort is `OccurredAtUtc` descending, then transaction ID descending, then entry ID descending. Every requested sort must include stable transaction and entry tie-breakers.
+- **Backend-owned projection**: Validate the request before SQL query construction, normalize paging, create an `InventoryLedgerEntries.AsNoTracking()` base query, apply filters to `IQueryable`, calculate count, sort, skip/take, then project only required scalar/nested DTO fields from `InventoryTransaction`, `StockKeepingUnit`, base UoM, `StorageLocation`, and `Warehouse`. Avoid `Include` and avoid loading full transaction or navigation graphs for the list.
+- **Server-driven list behavior**: Reuse Inventory Balance flow: shared request -> `[AsParameters]` endpoint -> internal query -> validate request -> normalize paging -> create base `AsNoTracking` query -> filters -> `CountAsync` -> deterministic sorting -> `Skip`/`Take` -> backend-owned projection -> `ListResult<T>`. Supported filters are SKU, warehouse, storage location, transaction type, occurrence-from UTC, and occurrence-to UTC. Default sort is `OccurredAtUtc` descending, then transaction ID descending, then entry ID descending. Every requested sort must include stable transaction and entry tie-breakers.
 - **Client/grid behavior**: Extend `WmsInventoryApiClient` with ledger list and transaction details methods. Add a UI-specific `InventoryLedgerGridRequest` between MudBlazor grid state and the shared API request. Filter changes reset to the first page; refresh reloads current grid state. Initial Ledger load has no filters and uses default newest-first paging. Inventory Balance row history action navigates to the Ledger page with SKU, warehouse, and storage-location query parameters.
 - **Inactive lookup behavior**: SKU autocomplete should use existing `LookupStockKeepingUnits` with `SelectableOnly = false`. Storage-location autocomplete should use existing `LookupStorageLocations` with `SelectableOnly = false` and warehouse scoping. Warehouse filter should load warehouses with `IncludeInactive = true`, unlike the current Inventory Balance page that loads only active warehouses. If implementation discovers a gap for inactive historical warehouse lookup, add a small history-appropriate behavior rather than hiding valid history.
 - **Exact UTC date/time mapping**: UI controls collect exact UTC boundaries for `OccurredFromUtc` and `OccurredToUtc`. The API request sends `DateTimeOffset` UTC values. Server filtering is `OccurredAtUtc >= OccurredFromUtc` and `OccurredAtUtc < OccurredToUtc`. A range where from is later than to is a validation failure; equal boundaries are valid and represent an empty interval. Do not silently reinterpret stored UTC as unspecified local time.
@@ -129,6 +130,7 @@ Myrmex.Tests/
   - `TransactionType`
   - `OccurredFromUtc`, `OccurredToUtc`
 - `InventoryLedgerSortBy`
+  - Preserve the existing `InventoryBalanceSortBy` public-value convention: constants and public string values are PascalCase, for example `public const string OccurredAtUtc = "OccurredAtUtc";`.
   - `OccurredAtUtc`
   - `TransactionType`
   - `SkuCode`
@@ -170,15 +172,19 @@ No POST, PUT, PATCH, DELETE, correction, reversal, rebuild, export, or analytics
 List handler sequence:
 
 ```text
-InventoryLedgerEntries.AsNoTracking()
+validate request
+    -> normalize paging
+    -> create base InventoryLedgerEntries.AsNoTracking() query
     -> apply SKU / warehouse / storage-location / transaction-type / occurrence filters
-    -> validate occurrence range and transaction type
     -> CountAsync
-    -> deterministic sort
+    -> deterministic sorting
     -> Skip / Take
     -> bounded scalar/nested projection
+    -> materialize
     -> ListResult<InventoryLedgerEntryDetails>
 ```
+
+Validation happens before query execution and before unsupported transaction-type values or invalid occurrence ranges participate in SQL construction. Reject `OccurredFromUtc > OccurredToUtc`; keep `OccurredFromUtc == OccurredToUtc` valid as an empty interval.
 
 Transaction details handler sequence:
 
@@ -212,16 +218,24 @@ then InventoryLedgerEntryId descending
 - Add Inventory navigation item "Inventory Ledger" beside "Inventory Balances".
 - Ledger page route should support query parameters for `stockKeepingUnitId`, `warehouseId`, and `storageLocationId`.
 - Inventory Balance history navigation uses `/wms/inventory/ledger?stockKeepingUnitId={Sku.Id}&warehouseId={StorageLocation.Warehouse.Id}&storageLocationId={StorageLocation.Id}`.
+- Routed filter parameters are optional and may be provided independently:
+  - `stockKeepingUnitId` only: hydrate and apply the SKU filter.
+  - `warehouseId` only: hydrate and apply the warehouse filter.
+  - `warehouseId` + `storageLocationId`: hydrate both, verify the storage location belongs to the warehouse, and apply both filters.
+  - `storageLocationId` without `warehouseId`: load the exact storage location, derive its warehouse, hydrate both warehouse and storage-location display objects, and apply both filters.
+  - `warehouseId` + `storageLocationId` mismatch: show clear page-level validation/error feedback and do not issue a filtered ledger request with the inconsistent pair.
+- Any valid subset of routed filters must remain visible and usable after copied-link reload. Do not require all three parameters merely to initialize routed filter state.
 - Routed query-state hydration must be exact and must not rely on bounded empty-search autocomplete results:
-  1. Bind `stockKeepingUnitId`, `warehouseId`, and `storageLocationId`.
+  1. Bind any present `stockKeepingUnitId`, `warehouseId`, and `storageLocationId`.
   2. Load inactive-inclusive warehouses.
-  3. Resolve the selected warehouse.
-  4. Resolve the exact SKU by ID using existing `WmsCatalogApiClient.GetStockKeepingUnitByIdAsync`.
-  5. Resolve the exact storage location by ID using existing `WmsTopologyApiClient.GetStorageLocationByIdAsync` and verify it belongs to the selected warehouse.
+  3. Resolve the selected warehouse when `warehouseId` is present, or derive and resolve it from the exact storage location when only `storageLocationId` is present.
+  4. Resolve the exact SKU by ID using existing `WmsCatalogApiClient.GetStockKeepingUnitByIdAsync` when `stockKeepingUnitId` is present.
+  5. Resolve the exact storage location by ID using existing `WmsTopologyApiClient.GetStorageLocationByIdAsync` when `storageLocationId` is present, and verify it belongs to the selected or derived warehouse.
   6. Populate selected filter display objects.
-  7. Apply IDs to the ledger request.
+  7. Apply the hydrated IDs to the ledger request.
   8. Load the first grid page.
 - Reuse existing `WmsTopologyApiClient.GetWarehouseByIdAsync` if the inactive-inclusive warehouse list does not contain the routed warehouse. Existing `GetStockKeepingUnitById`, `GetWarehouseById`, and `GetStorageLocationById` handlers project by ID without `IsActive` filters, so they can restore inactive historical references. If implementation discovers an exact hydration read is missing, add the smallest feature-specific read required; do not create a generic lookup framework.
+- When routed filter parameters are present, the page must complete exact-ID hydration before rendering, activating, or otherwise allowing `MudDataGrid.ServerData` to issue its first request. Use an `_isInitializing`, `_isHydratingFilters`, or equivalent repository-consistent guard; do not introduce a state-management framework. After hydration succeeds, issue exactly the intended first filtered page request and avoid an initial unfiltered request followed by a filtered request. Expected hydration cancellation must not appear as an error. When no routed filters are present, the page may load the initial unfiltered newest-first page normally.
 - Copied or reloaded Ledger URLs must restore visible SKU, warehouse, and storage-location filter state and request the same filtered history.
 - Ledger filters:
   - SKU autocomplete with inactive-inclusive lookup.
@@ -252,7 +266,7 @@ then InventoryLedgerEntryId descending
 | Transaction details assume one entry | Handler/persistence | Details test with multi-entry fixture returns all entries in deterministic order |
 | Public list binding or route drifts | Endpoint | One endpoint test verifies query binding and representative JSON shape |
 | API client query construction drifts | API client | Client tests verify omitted empty query, all filter/sort/date parameters, details route, cancellation |
-| UI history navigation and filters regress | Manual smoke | Quickstart covers navigation, query filters, exact query-state hydration, copied-link restoration, clear/change filters, details dialog, cancellation behavior |
+| UI history navigation and filters regress | Manual smoke | Quickstart covers navigation, partial routed filters, exact query-state hydration, copied-link restoration, initialization guard, clear/change filters, details dialog, cancellation behavior |
 
 Do not duplicate the full filter/sort matrix through endpoint, API-client, and UI tests. Do not add Blazor component-test infrastructure for this feature.
 
@@ -272,6 +286,7 @@ Do not duplicate the full filter/sort matrix through endpoint, API-client, and U
 - `Myrmex.Shared/Wms/Inventory/InventoryLedgerEntryDetails.cs`
 - `Myrmex.Shared/Wms/Inventory/InventoryLedgerSortBy.cs`
 - `Myrmex.Shared/Wms/Inventory/InventoryTransactionDetails.cs`
+- `Myrmex.Shared/Wms/Inventory/InventoryTransactionEntryDetails.cs`
 - `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/ListInventoryLedgerEntries.cs`
 - `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/GetInventoryTransactionById.cs`
 - `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/InventoryLedgerQueryableExtensions.cs`

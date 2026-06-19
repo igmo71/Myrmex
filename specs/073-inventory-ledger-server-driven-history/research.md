@@ -35,17 +35,43 @@
 - Create a new generic historical lookup framework: rejected as out of scope.
 - Create Ledger-specific lookup endpoints immediately: deferred unless implementation discovers the existing inactive-inclusive lookup shape cannot represent a required historical reference.
 
-## Decision: Hydrate Routed Filter State by Exact ID Reads
+## Decision: Hydrate Routed Filter State by Exact ID Reads and Support Partial Routes
 
-**Decision**: Routed Ledger filter state includes `stockKeepingUnitId`, `warehouseId`, and `storageLocationId`. On page initialization, bind those values, load inactive-inclusive warehouses, resolve the selected warehouse, resolve the exact SKU by ID through existing `WmsCatalogApiClient.GetStockKeepingUnitByIdAsync`, resolve the exact storage location by ID through existing `WmsTopologyApiClient.GetStorageLocationByIdAsync`, verify the storage location belongs to the routed warehouse, populate selected display objects, apply the IDs to the ledger request, and then load the first grid page. Use existing `WmsTopologyApiClient.GetWarehouseByIdAsync` if the inactive-inclusive warehouse list does not contain the routed warehouse. Current exact get-by-id handlers for SKU, warehouse, and storage location project by ID without `IsActive` filters, so they can restore inactive historical references.
+**Decision**: Routed Ledger filter state includes optional `stockKeepingUnitId`, `warehouseId`, and `storageLocationId`. Any valid subset hydrates exact display objects and applies only the corresponding filter IDs. `stockKeepingUnitId` alone hydrates and applies SKU. `warehouseId` alone hydrates and applies warehouse. `warehouseId` plus `storageLocationId` hydrates both, verifies the location belongs to the warehouse, and applies both. `storageLocationId` without `warehouseId` loads the exact storage location, derives its warehouse, hydrates both, and applies both filters. A `warehouseId` plus `storageLocationId` mismatch shows clear page-level validation/error feedback and must not issue a filtered ledger request with the inconsistent pair.
 
-**Rationale**: Copied or reloaded URLs must restore the same visible filter state. Bounded empty-search autocomplete results are not reliable for exact-ID restoration because the selected SKU or storage location may not appear in the first page of lookup results, especially when inactive references are included.
+On page initialization, bind any present route values, load inactive-inclusive warehouses, resolve the selected or derived warehouse, resolve the exact SKU by ID through existing `WmsCatalogApiClient.GetStockKeepingUnitByIdAsync` when present, resolve the exact storage location by ID through existing `WmsTopologyApiClient.GetStorageLocationByIdAsync` when present, verify warehouse/location consistency, populate selected display objects, apply IDs to the ledger request, and then load the first grid page. Use existing `WmsTopologyApiClient.GetWarehouseByIdAsync` if the inactive-inclusive warehouse list does not contain the routed or derived warehouse. Current exact get-by-id handlers for SKU, warehouse, and storage location project by ID without `IsActive` filters, so they can restore inactive historical references.
+
+**Rationale**: Copied or reloaded URLs must restore the same visible filter state for any valid subset of routed filters. Bounded empty-search autocomplete results are not reliable for exact-ID restoration because the selected SKU or storage location may not appear in the first page of lookup results, especially when inactive references are included. Deriving warehouse from a storage-location-only route preserves link usability without requiring callers to know redundant route state.
 
 **Alternatives considered**:
 
 - Hydrate by searching the first 20 empty-search autocomplete results: rejected because it is nondeterministic and can silently fail to restore valid routed filters.
 - Add generic lookup-by-ID framework: rejected because the feature only needs exact hydration for known references and existing get-by-id clients already cover SKU, warehouse, and storage location.
 - Add feature-specific exact reads immediately: not needed now; use only if implementation discovers a missing exact read.
+- Require all three routed parameters before hydration: rejected because SKU-only, warehouse-only, and storage-location-only copied links are valid user workflows.
+- Silently apply contradictory warehouse/location IDs: rejected because it can request misleading history and hide a bad link.
+
+## Decision: Guard Initial Grid Load During Routed Hydration
+
+**Decision**: When routed filter parameters are present, complete exact-ID hydration before rendering, activating, or allowing `MudDataGrid.ServerData` to issue the first request. Use an `_isInitializing`, `_isHydratingFilters`, or equivalent local guard that matches repository style. After hydration, issue exactly the intended first filtered page request. Do not perform an initial unfiltered request followed by a filtered request. Expected hydration cancellation must not appear as an error. When no routed filters are present, the page may load the initial unfiltered newest-first page normally.
+
+**Rationale**: Server-driven grids can call `ServerData` as soon as they render. Without a hydration guard, copied routed links risk producing an observable unfiltered request before the intended filtered request, wasting work and briefly presenting the wrong history.
+
+**Alternatives considered**:
+
+- Let the grid load unfiltered and then reload after hydration: rejected because it violates copied-link determinism and may show/request misleading data.
+- Introduce a new state-management framework: rejected because the behavior only needs a page-local initialization guard.
+
+## Decision: Validate Ledger List Requests Before SQL Query Construction
+
+**Decision**: The list handler sequence is validate request, normalize paging, create base `AsNoTracking` query, apply filters, `CountAsync`, deterministic sorting, `Skip`/`Take`, bounded projection, materialize, and return `ListResult`. Validation rejects unsupported transaction type values and `OccurredFromUtc > OccurredToUtc` before those values participate in SQL construction. `OccurredFromUtc == OccurredToUtc` remains valid and returns an empty interval.
+
+**Rationale**: Validation before query construction produces clearer errors and avoids relying on SQL translation or filter branches to handle known invalid request states.
+
+**Alternatives considered**:
+
+- Validate after applying filters: rejected because invalid transaction type and occurrence range values should not participate in query construction.
+- Reject equal occurrence boundaries: rejected because an exact empty interval is valid and already established by the specification.
 
 ## Decision: Exact UTC Occurrence Range Mapping
 
@@ -70,6 +96,16 @@
 - Reuse `InventoryLedgerEntryDetails` for transaction details entries: rejected because it duplicates transaction header data and weakens the contract boundary.
 - Keep unqualified `CreatedAtUtc` on list rows: rejected because it is ambiguous.
 - Rename list field to `TransactionCreatedAtUtc`: rejected because the list does not need creation time; `OccurredAtUtc` is the operational list timestamp.
+
+## Decision: Preserve PascalCase Sort Contract Values
+
+**Decision**: `InventoryLedgerSortBy` follows the existing `InventoryBalanceSortBy` convention: public constant names and public string values are PascalCase, such as `OccurredAtUtc`, `TransactionType`, and `SkuCode`. Do not introduce camelCase sort values for Ledger.
+
+**Rationale**: Inventory Balance grid tags and API requests already use PascalCase public sort values. Keeping Ledger aligned avoids a one-off transport convention and reduces UI/client mapping risk.
+
+**Alternatives considered**:
+
+- Use camelCase JSON-style sort keys: rejected because it conflicts with the current Inventory Balance public sort-key convention.
 
 ## Decision: Bounded EF Projections Without Include-Heavy Graphs
 
