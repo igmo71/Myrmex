@@ -1,0 +1,122 @@
+@using System.Globalization
+@using Myrmex.Shared.Wms.Inventory
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Inventory transaction details</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="6">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Transaction ID</MudText>
+                    <MudText Typo="Typo.body2">@Transaction.Id</MudText>
+                </MudStack>
+
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Transaction type</MudText>
+                    <MudText Typo="Typo.body2">@Transaction.TransactionType</MudText>
+                </MudStack>
+            </MudStack>
+
+            <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="6">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Occurred UTC</MudText>
+                    <MudText Typo="Typo.body2">@FormatTimestamp(Transaction.OccurredAtUtc)</MudText>
+                </MudStack>
+
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Created UTC</MudText>
+                    <MudText Typo="Typo.body2">@FormatTimestamp(Transaction.CreatedAtUtc)</MudText>
+                </MudStack>
+            </MudStack>
+
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Reason</MudText>
+                <MudText Typo="Typo.body2">@Transaction.Reason</MudText>
+            </MudStack>
+
+            <MudTable T="InventoryTransactionEntryDetails"
+                      Items="Transaction.Entries"
+                      Dense="true"
+                      Hover="true"
+                      Bordered="true"
+                      Striped="true">
+                <HeaderContent>
+                    <MudTh>SKU</MudTh>
+                    <MudTh>Warehouse</MudTh>
+                    <MudTh>Storage location</MudTh>
+                    <MudTh>Before</MudTh>
+                    <MudTh>Delta</MudTh>
+                    <MudTh>After</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="SKU">
+                        <MudText Typo="Typo.body2">@context.Sku.Code</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            @context.Sku.Name - @GetBaseUnitOfMeasureDisplay(context)
+                        </MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Warehouse">
+                        <MudText Typo="Typo.body2">@context.StorageLocation.Warehouse.Code</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            @context.StorageLocation.Warehouse.Name
+                        </MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Storage location">
+                        <MudText Typo="Typo.body2">@context.StorageLocation.Code</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            @context.StorageLocation.Name
+                        </MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Before">@FormatQuantity(context.BalanceBefore)</MudTd>
+                    <MudTd DataLabel="Delta">@FormatSignedQuantity(context.QuantityDelta)</MudTd>
+                    <MudTd DataLabel="After">@FormatQuantity(context.BalanceAfter)</MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText>No ledger entries are attached to this transaction.</MudText>
+                </NoRecordsContent>
+            </MudTable>
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="Close">
+            Close
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public InventoryTransactionDetails Transaction { get; set; } = null!;
+
+    private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
+
+    private void Close()
+    {
+        MudDialog.Close();
+    }
+
+    private static string FormatTimestamp(DateTimeOffset value) =>
+        value.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss 'UTC'", CultureInfo.InvariantCulture);
+
+    private static string FormatQuantity(decimal value) =>
+        value.ToString("0.####", QuantityCulture);
+
+    private static string FormatSignedQuantity(decimal value) =>
+        value > 0 ? $"+{FormatQuantity(value)}" : FormatQuantity(value);
+
+    private static string GetBaseUnitOfMeasureDisplay(InventoryTransactionEntryDetails entry)
+    {
+        return string.IsNullOrWhiteSpace(entry.Sku.BaseUom.Symbol)
+            ? entry.Sku.BaseUom.Code
+            : $"{entry.Sku.BaseUom.Code} ({entry.Sku.BaseUom.Symbol})";
+    }
+}

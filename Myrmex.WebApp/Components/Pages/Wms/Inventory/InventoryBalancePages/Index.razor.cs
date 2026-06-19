@@ -28,6 +28,9 @@ public partial class Index
     private IDialogService DialogService { get; set; } = default!;
 
     [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
+
+    [Inject]
     private ISnackbar Snackbar { get; set; } = default!;
 
     private InventoryBalanceGrid? _inventoryBalanceGrid;
@@ -234,6 +237,16 @@ public partial class Index
         Snackbar.Add("Inventory balance adjusted.", Severity.Success);
 
         await ReloadInventoryBalancesAsync();
+    }
+
+    private void OpenInventoryLedgerHistory(InventoryBalanceDetails inventoryBalance)
+    {
+        string url =
+            $"/wms/inventory/ledger?stockKeepingUnitId={inventoryBalance.Sku.Id}" +
+            $"&warehouseId={inventoryBalance.StorageLocation.Warehouse.Id}" +
+            $"&storageLocationId={inventoryBalance.StorageLocation.Id}";
+
+        NavigationManager.NavigateTo(url);
     }
 
     private bool MatchesActiveFilters(InventoryBalanceDetails inventoryBalance)

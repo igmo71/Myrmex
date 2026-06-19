@@ -1,0 +1,210 @@
+@using System.Globalization
+@using Myrmex.Shared.Wms.Inventory
+
+<MudDataGrid T="InventoryLedgerEntryDetails"
+             @ref="_dataGrid"
+             ServerData="LoadServerDataAsync"
+             Dense="true"
+             Hover="true"
+             Bordered="true"
+             Striped="true"
+             SortMode="SortMode.Single"
+             Filterable="false">
+    <Columns>
+        <TemplateColumn Title="Occurred UTC"
+                        Tag="@InventoryLedgerSortBy.OccurredAtUtc"
+                        SortBy="@(entry => entry.OccurredAtUtc)"
+                        Sortable="true">
+            <CellTemplate>
+                @FormatTimestamp(context.Item.OccurredAtUtc)
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Type"
+                        Tag="@InventoryLedgerSortBy.TransactionType"
+                        SortBy="@(entry => entry.TransactionType)"
+                        Sortable="true">
+            <CellTemplate>
+                @context.Item.TransactionType
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="SKU"
+                        Tag="@InventoryLedgerSortBy.SkuCode"
+                        SortBy="@(entry => entry.Sku.Code)"
+                        Sortable="true">
+            <CellTemplate>
+                <MudText Typo="Typo.body2">@context.Item.Sku.Code</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @context.Item.Sku.Name
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Warehouse"
+                        Tag="@InventoryLedgerSortBy.WarehouseCode"
+                        SortBy="@(entry => entry.StorageLocation.Warehouse.Code)"
+                        Sortable="true">
+            <CellTemplate>
+                <MudText Typo="Typo.body2">@context.Item.StorageLocation.Warehouse.Code</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @context.Item.StorageLocation.Warehouse.Name
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Storage location"
+                        Tag="@InventoryLedgerSortBy.StorageLocationCode"
+                        SortBy="@(entry => entry.StorageLocation.Code)"
+                        Sortable="true">
+            <CellTemplate>
+                <MudText Typo="Typo.body2">@context.Item.StorageLocation.Code</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @context.Item.StorageLocation.Name
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Before"
+                        Tag="@InventoryLedgerSortBy.BalanceBefore"
+                        SortBy="@(entry => entry.BalanceBefore)"
+                        Sortable="true">
+            <CellTemplate>
+                @FormatQuantity(context.Item.BalanceBefore) @GetBaseUnitOfMeasureDisplay(context.Item)
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Delta"
+                        Tag="@InventoryLedgerSortBy.QuantityDelta"
+                        SortBy="@(entry => entry.QuantityDelta)"
+                        Sortable="true">
+            <CellTemplate>
+                @FormatSignedQuantity(context.Item.QuantityDelta) @GetBaseUnitOfMeasureDisplay(context.Item)
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="After"
+                        Tag="@InventoryLedgerSortBy.BalanceAfter"
+                        SortBy="@(entry => entry.BalanceAfter)"
+                        Sortable="true">
+            <CellTemplate>
+                @FormatQuantity(context.Item.BalanceAfter) @GetBaseUnitOfMeasureDisplay(context.Item)
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Reason"
+                        Tag="@InventoryLedgerSortBy.Reason"
+                        SortBy="@(entry => entry.Reason)"
+                        Sortable="true">
+            <CellTemplate>
+                <MudText Typo="Typo.body2" Style="max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    @context.Item.Reason
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Actions"
+                        Sortable="false">
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                               Size="Size.Small"
+                               Color="Color.Primary"
+                               Title="View transaction details"
+                               OnClick="@(() => DetailsRequested.InvokeAsync(context.Item))" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <NoRecordsContent>
+        <MudText>No inventory ledger entries match the current filters.</MudText>
+    </NoRecordsContent>
+
+    <PagerContent>
+        <MudDataGridPager T="InventoryLedgerEntryDetails" PageSizeOptions="@PageSizeOptions" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired]
+    public Func<InventoryLedgerGridRequest, CancellationToken, Task<GridData<InventoryLedgerEntryDetails>>> LoadData { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<InventoryLedgerEntryDetails> DetailsRequested { get; set; }
+
+    private MudDataGrid<InventoryLedgerEntryDetails>? _dataGrid;
+
+    private static readonly int[] PageSizeOptions = [10, 25, 50, 100];
+    private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
+
+    private Task<GridData<InventoryLedgerEntryDetails>> LoadServerDataAsync(
+        GridState<InventoryLedgerEntryDetails> state,
+        CancellationToken cancellationToken)
+    {
+        SortDefinition<InventoryLedgerEntryDetails>? sortDefinition =
+            state.SortDefinitions.FirstOrDefault();
+
+        InventoryLedgerGridRequest request = new(
+            Skip: state.Page * state.PageSize,
+            Take: state.PageSize,
+            SortBy: ResolveSortBy(sortDefinition),
+            SortDescending: sortDefinition?.Descending ?? true);
+
+        return LoadData(request, cancellationToken);
+    }
+
+    private string ResolveSortBy(SortDefinition<InventoryLedgerEntryDetails>? sortDefinition)
+    {
+        if (sortDefinition is null)
+        {
+            return string.Empty;
+        }
+
+        Column<InventoryLedgerEntryDetails>? column =
+            _dataGrid?.GetColumnByPropertyName(sortDefinition.SortBy);
+
+        return column?.Tag as string
+            ?? string.Empty;
+    }
+
+    public async Task ReloadServerDataAsync()
+    {
+        if (_dataGrid is null)
+        {
+            return;
+        }
+
+        await _dataGrid.ReloadServerData();
+    }
+
+    public async Task ResetAndReloadServerDataAsync()
+    {
+        if (_dataGrid is null)
+        {
+            return;
+        }
+
+        if (_dataGrid.CurrentPage == 0)
+        {
+            await _dataGrid.ReloadServerData();
+            return;
+        }
+
+        _dataGrid.NavigateTo(Page.First);
+    }
+
+    private static string FormatTimestamp(DateTimeOffset value) =>
+        value.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss 'UTC'", CultureInfo.InvariantCulture);
+
+    private static string FormatQuantity(decimal value) =>
+        value.ToString("0.####", QuantityCulture);
+
+    private static string FormatSignedQuantity(decimal value) =>
+        value > 0 ? $"+{FormatQuantity(value)}" : FormatQuantity(value);
+
+    private static string GetBaseUnitOfMeasureDisplay(InventoryLedgerEntryDetails item)
+    {
+        return string.IsNullOrWhiteSpace(item.Sku.BaseUom.Symbol)
+            ? item.Sku.BaseUom.Code
+            : item.Sku.BaseUom.Symbol;
+    }
+}

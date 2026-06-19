@@ -1,0 +1,219 @@
+@using Myrmex.Shared.Wms.Catalog
+@using Myrmex.Shared.Wms.Topology
+
+<MudPaper Class="pa-4">
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
+            <MudSelect T="Guid?"
+                       Label="Warehouse"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Clearable="true"
+                       Value="SelectedWarehouseId"
+                       ValueChanged="OnWarehouseChanged"
+                       Disabled="IsLoadingWarehouses"
+                       HelperText="Includes inactive warehouses with history."
+                       Class="min-width-300">
+                @foreach (WarehouseDetails warehouse in Warehouses)
+                {
+                    <MudSelectItem T="Guid?" Value="@((Guid?)warehouse.Id)">
+                        @warehouse.Code - @warehouse.Name
+                    </MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudAutocomplete T="StorageLocationLookupItem"
+                             Label="Storage location"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Clearable="true"
+                             ShowProgressIndicator="true"
+                             MinCharacters="0"
+                             DebounceInterval="300"
+                             MaxItems="20"
+                             ResetValueOnEmptyText="true"
+                             CoerceText="false"
+                             CoerceValue="false"
+                             Value="SelectedStorageLocation"
+                             ValueChanged="OnStorageLocationChanged"
+                             SearchFunc="SearchStorageLocations"
+                             ToStringFunc="FormatStorageLocation"
+                             Disabled="SelectedWarehouseId is null"
+                             HelperText="@StorageLocationHelperText"
+                             Class="min-width-300">
+                <ItemTemplate>
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                        @if (!context.IsActive)
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Warning">Inactive</MudText>
+                        }
+                    </MudStack>
+                </ItemTemplate>
+                <NoItemsTemplate>
+                    <MudText>No storage locations found.</MudText>
+                </NoItemsTemplate>
+            </MudAutocomplete>
+
+            <MudAutocomplete T="StockKeepingUnitLookupItem"
+                             Label="SKU"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Clearable="true"
+                             ShowProgressIndicator="true"
+                             MinCharacters="0"
+                             DebounceInterval="300"
+                             MaxItems="20"
+                             ResetValueOnEmptyText="true"
+                             CoerceText="false"
+                             CoerceValue="false"
+                             Value="SelectedStockKeepingUnit"
+                             ValueChanged="OnStockKeepingUnitChanged"
+                             SearchFunc="SearchStockKeepingUnits"
+                             ToStringFunc="FormatStockKeepingUnit"
+                             HelperText="Includes inactive SKUs with history."
+                             Class="min-width-300">
+                <ItemTemplate>
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                        @if (!context.IsActive || !context.IsBaseUnitOfMeasureActive)
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Warning">Inactive</MudText>
+                        }
+                    </MudStack>
+                </ItemTemplate>
+                <NoItemsTemplate>
+                    <MudText>No SKUs found.</MudText>
+                </NoItemsTemplate>
+            </MudAutocomplete>
+        </MudStack>
+
+        <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
+            <MudSelect T="string"
+                       Label="Transaction type"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Value="SelectedTransactionType"
+                       ValueChanged="OnTransactionTypeChanged"
+                       HelperText="MVP ledger type."
+                       Class="min-width-300">
+                <MudSelectItem T="string" Value="@AllTransactionTypesValue">All</MudSelectItem>
+                <MudSelectItem T="string" Value="@AdjustmentTransactionType">Adjustment</MudSelectItem>
+            </MudSelect>
+
+            <MudTextField T="string"
+                          Label="Occurred from UTC"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Value="OccurredFromUtcText"
+                          ValueChanged="OnOccurredFromUtcTextChanged"
+                          HelperText="Example: 2026-06-18T09:00:00Z"
+                          Class="min-width-300" />
+
+            <MudTextField T="string"
+                          Label="Occurred to UTC"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Value="OccurredToUtcText"
+                          ValueChanged="OnOccurredToUtcTextChanged"
+                          HelperText="Exclusive upper bound."
+                          Class="min-width-300" />
+
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Clear"
+                       OnClick="OnClearRequested"
+                       Class="mt-2">
+                Clear
+            </MudButton>
+        </MudStack>
+    </MudStack>
+</MudPaper>
+
+@code {
+    private const string AllTransactionTypesValue = "";
+    private const string AdjustmentTransactionType = "Adjustment";
+
+    [Parameter]
+    public IReadOnlyList<WarehouseDetails> Warehouses { get; set; } = [];
+
+    [Parameter]
+    public Guid? SelectedWarehouseId { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid?> SelectedWarehouseIdChanged { get; set; }
+
+    [Parameter]
+    public StorageLocationLookupItem? SelectedStorageLocation { get; set; }
+
+    [Parameter]
+    public EventCallback<StorageLocationLookupItem?> SelectedStorageLocationChanged { get; set; }
+
+    [Parameter]
+    public StockKeepingUnitLookupItem? SelectedStockKeepingUnit { get; set; }
+
+    [Parameter]
+    public EventCallback<StockKeepingUnitLookupItem?> SelectedStockKeepingUnitChanged { get; set; }
+
+    [Parameter]
+    public string SelectedTransactionType { get; set; } = AllTransactionTypesValue;
+
+    [Parameter]
+    public EventCallback<string> SelectedTransactionTypeChanged { get; set; }
+
+    [Parameter]
+    public string? OccurredFromUtcText { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> OccurredFromUtcTextChanged { get; set; }
+
+    [Parameter]
+    public string? OccurredToUtcText { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> OccurredToUtcTextChanged { get; set; }
+
+    [Parameter]
+    public bool IsLoadingWarehouses { get; set; }
+
+    [Parameter]
+    public Func<string, CancellationToken, Task<IEnumerable<StockKeepingUnitLookupItem>>> SearchStockKeepingUnits { get; set; } =
+        (_, _) => Task.FromResult(Enumerable.Empty<StockKeepingUnitLookupItem>());
+
+    [Parameter]
+    public Func<string, CancellationToken, Task<IEnumerable<StorageLocationLookupItem>>> SearchStorageLocations { get; set; } =
+        (_, _) => Task.FromResult(Enumerable.Empty<StorageLocationLookupItem>());
+
+    [Parameter]
+    public EventCallback ClearRequested { get; set; }
+
+    private string? StorageLocationHelperText =>
+        SelectedWarehouseId is null ? "Select a warehouse first." : "Scoped to the selected warehouse.";
+
+    private Task OnWarehouseChanged(Guid? value) =>
+        SelectedWarehouseIdChanged.InvokeAsync(value);
+
+    private Task OnStorageLocationChanged(StorageLocationLookupItem? value) =>
+        SelectedStorageLocationChanged.InvokeAsync(value);
+
+    private Task OnStockKeepingUnitChanged(StockKeepingUnitLookupItem? value) =>
+        SelectedStockKeepingUnitChanged.InvokeAsync(value);
+
+    private Task OnTransactionTypeChanged(string value) =>
+        SelectedTransactionTypeChanged.InvokeAsync(value);
+
+    private Task OnOccurredFromUtcTextChanged(string? value) =>
+        OccurredFromUtcTextChanged.InvokeAsync(value);
+
+    private Task OnOccurredToUtcTextChanged(string? value) =>
+        OccurredToUtcTextChanged.InvokeAsync(value);
+
+    private Task OnClearRequested() =>
+        ClearRequested.InvokeAsync();
+
+    private static string FormatStorageLocation(StorageLocationLookupItem? storageLocation) =>
+        storageLocation is null ? string.Empty : $"{storageLocation.Code} - {storageLocation.Name}";
+
+    private static string FormatStockKeepingUnit(StockKeepingUnitLookupItem? stockKeepingUnit) =>
+        stockKeepingUnit is null ? string.Empty : $"{stockKeepingUnit.Code} - {stockKeepingUnit.Name}";
+}
