@@ -16,11 +16,11 @@
 
 **Purpose**: Define public transport contracts that all backend, client, and UI work depends on.
 
-- [ ] T001 [P] Create list request contract with paging, sort, SKU, warehouse, storage-location, transaction-type, and occurrence UTC filters in `Myrmex.Shared/Wms/Inventory/ListInventoryLedgerEntriesRequest.cs`
-- [ ] T002 [P] Create PascalCase sort constants `OccurredAtUtc`, `TransactionType`, `SkuCode`, `SkuName`, `WarehouseCode`, `WarehouseName`, `StorageLocationCode`, `BalanceBefore`, `QuantityDelta`, `BalanceAfter`, and `Reason` in `Myrmex.Shared/Wms/Inventory/InventoryLedgerSortBy.cs`
-- [ ] T003 [P] Create entry-oriented list-row DTO without unqualified `CreatedAtUtc` in `Myrmex.Shared/Wms/Inventory/InventoryLedgerEntryDetails.cs`
-- [ ] T004 [P] Create transaction header DTO with `IReadOnlyList<InventoryTransactionEntryDetails>` in `Myrmex.Shared/Wms/Inventory/InventoryTransactionDetails.cs`
-- [ ] T005 [P] Create separate transaction-detail entry DTO containing only entry-owned values and reference context in `Myrmex.Shared/Wms/Inventory/InventoryTransactionEntryDetails.cs`
+- [x] T001 [P] Create list request contract with paging, sort, SKU, warehouse, storage-location, transaction-type, and occurrence UTC filters in `Myrmex.Shared/Wms/Inventory/ListInventoryLedgerEntriesRequest.cs`
+- [x] T002 [P] Create PascalCase sort constants `OccurredAtUtc`, `TransactionType`, `SkuCode`, `SkuName`, `WarehouseCode`, `WarehouseName`, `StorageLocationCode`, `BalanceBefore`, `QuantityDelta`, `BalanceAfter`, and `Reason` in `Myrmex.Shared/Wms/Inventory/InventoryLedgerSortBy.cs`
+- [x] T003 [P] Create entry-oriented list-row DTO without unqualified `CreatedAtUtc` in `Myrmex.Shared/Wms/Inventory/InventoryLedgerEntryDetails.cs`
+- [x] T004 [P] Create transaction header DTO with `IReadOnlyList<InventoryTransactionEntryDetails>` in `Myrmex.Shared/Wms/Inventory/InventoryTransactionDetails.cs`
+- [x] T005 [P] Create separate transaction-detail entry DTO containing only entry-owned values and reference context in `Myrmex.Shared/Wms/Inventory/InventoryTransactionEntryDetails.cs`
 
 **Checkpoint**: Shared contracts compile conceptually and preserve entry-oriented list plus transaction-oriented detail shape.
 
@@ -30,8 +30,8 @@
 
 **Purpose**: Add the Inventory Ledger endpoint surface and reusable test data without changing domain entities, EF mappings, migrations, or indexes.
 
-- [ ] T006 [P] Create focused ledger test-data helpers for transactions, entries, inactive references, and multi-entry fixtures in `Myrmex.Tests/Wms/Inventory/Testing/InventoryLedgerTestData.cs`
-- [ ] T007 Create the `InventoryLedgerEndpoints` endpoint-group shell, route constants, and repository-consistent structure without query-type references in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryLedgerEndpoints.cs`
+- [x] T006 [P] Create focused ledger test-data helpers for transactions, entries, inactive references, and multi-entry fixtures in `Myrmex.Tests/Wms/Inventory/Testing/InventoryLedgerTestData.cs`
+- [x] T007 Create the `InventoryLedgerEndpoints` endpoint-group shell, route constants, and repository-consistent structure without query-type references in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryLedgerEndpoints.cs`
 
 **Checkpoint**: The endpoint file exists without references to not-yet-created queries; user-story work can add real endpoint mappings when their query types exist.
 
@@ -45,17 +45,17 @@
 
 ### Tests for User Story 1
 
-- [ ] T008 [P] [US1] Add grouped handler/persistence tests for default newest-first ordering, count-before-paging, empty result, bounded projection, and independence from current balance rows in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
-- [ ] T009 [P] [US1] Add endpoint test for list query binding and representative nested list JSON serialization in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryLedgerEndpointTests.cs`
-- [ ] T010 [P] [US1] Add API-client test for empty ledger list URL without trailing `?` and nested list deserialization in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [x] T008 [P] [US1] Add grouped handler/persistence tests for default newest-first ordering, count-before-paging, empty result, bounded projection, and independence from current balance rows in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
+- [x] T009 [P] [US1] Add endpoint test for list query binding and representative nested list JSON serialization in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryLedgerEndpointTests.cs`
+- [x] T010 [P] [US1] Add API-client test for empty ledger list URL without trailing `?` and nested list deserialization in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Implement `ListInventoryLedgerEntries.Query` and handler sequence through validation, paging normalization, `AsNoTracking`, count, default deterministic sorting, paging, projection, materialization, and `ListResult<InventoryLedgerEntryDetails>` in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/ListInventoryLedgerEntries.cs`
-- [ ] T012 [US1] Implement projection helpers and default deterministic ordering `OccurredAtUtc desc`, `InventoryTransactionId desc`, `InventoryLedgerEntryId desc` in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/InventoryLedgerQueryableExtensions.cs`
-- [ ] T013 [US1] Map GET `/api/wms/inventory/ledger` request values to `ListInventoryLedgerEntries.Query` in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryLedgerEndpoints.cs`
-- [ ] T014 [US1] Register the ledger endpoint group from the existing inventory route group now that the real list endpoint mapping exists in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryEndpoints.cs`
-- [ ] T015 [US1] Add `ListInventoryLedgerEntriesAsync` to build ledger list query strings and deserialize `ListResult<InventoryLedgerEntryDetails>` in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [x] T011 [US1] Implement `ListInventoryLedgerEntries.Query` and handler sequence through validation, paging normalization, `AsNoTracking`, count, default deterministic sorting, paging, projection, materialization, and `ListResult<InventoryLedgerEntryDetails>` in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/ListInventoryLedgerEntries.cs`
+- [x] T012 [US1] Implement projection helpers and default deterministic ordering `OccurredAtUtc desc`, `InventoryTransactionId desc`, `InventoryLedgerEntryId desc` in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/InventoryLedgerQueryableExtensions.cs`
+- [x] T013 [US1] Map GET `/api/wms/inventory/ledger` request values to `ListInventoryLedgerEntries.Query` in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryLedgerEndpoints.cs`
+- [x] T014 [US1] Register the ledger endpoint group from the existing inventory route group now that the real list endpoint mapping exists in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryEndpoints.cs`
+- [x] T015 [US1] Add `ListInventoryLedgerEntriesAsync` to build ledger list query strings and deserialize `ListResult<InventoryLedgerEntryDetails>` in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
 
 **Checkpoint**: The backend/API-client list path is independently usable for unfiltered, paged Ledger history.
 
@@ -69,18 +69,18 @@
 
 ### Tests for User Story 2
 
-- [ ] T016 [P] [US2] Extend grouped handler theories for SKU, warehouse, storage-location, transaction-type, occurrence-range, inactive-reference, and no-match filters in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
-- [ ] T017 [P] [US2] Extend grouped handler sort theory for every supported PascalCase sort key, requested primary direction, `InventoryTransactionId asc`, and `InventoryLedgerEntryId asc` tie-breakers in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
-- [ ] T018 [P] [US2] Add focused handler validation tests proving unsupported transaction type and `OccurredFromUtc > OccurredToUtc` fail before filtered query construction while equal boundaries are a valid empty interval in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
-- [ ] T019 [P] [US2] Add API-client query construction test covering paging, PascalCase sort values, sort direction, all filters, and occurrence UTC parameters in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [x] T016 [P] [US2] Extend grouped handler theories for SKU, warehouse, storage-location, transaction-type, occurrence-range, inactive-reference, and no-match filters in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
+- [x] T017 [P] [US2] Extend grouped handler sort theory for every supported PascalCase sort key, requested primary direction, `InventoryTransactionId asc`, and `InventoryLedgerEntryId asc` tie-breakers in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
+- [x] T018 [P] [US2] Add focused handler validation tests proving unsupported transaction type and `OccurredFromUtc > OccurredToUtc` fail before filtered query construction while equal boundaries are a valid empty interval in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
+- [x] T019 [P] [US2] Add API-client query construction test covering paging, PascalCase sort values, sort direction, all filters, and occurrence UTC parameters in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation for User Story 2
 
-- [ ] T020 [US2] Add request validation before EF query construction for transaction type and occurrence range in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/ListInventoryLedgerEntries.cs`
-- [ ] T021 [US2] Add SKU, warehouse, storage-location, transaction-type, and inclusive-from/exclusive-to occurrence filters in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/InventoryLedgerQueryableExtensions.cs`
-- [ ] T022 [US2] Add requested-sort mapping for all PascalCase `InventoryLedgerSortBy` values with `InventoryTransactionId asc` then `InventoryLedgerEntryId asc` tie-breakers in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/InventoryLedgerQueryableExtensions.cs`
-- [ ] T023 [US2] Pass all filter, sort, and occurrence range values from the endpoint into the internal query in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryLedgerEndpoints.cs`
-- [ ] T024 [US2] Include all non-empty ledger filter, sort, paging, and occurrence range query parameters in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [x] T020 [US2] Add request validation before EF query construction for transaction type and occurrence range in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/ListInventoryLedgerEntries.cs`
+- [x] T021 [US2] Add SKU, warehouse, storage-location, transaction-type, and inclusive-from/exclusive-to occurrence filters in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/InventoryLedgerQueryableExtensions.cs`
+- [x] T022 [US2] Add requested-sort mapping for all PascalCase `InventoryLedgerSortBy` values with `InventoryTransactionId asc` then `InventoryLedgerEntryId asc` tie-breakers in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/InventoryLedgerQueryableExtensions.cs`
+- [x] T023 [US2] Pass all filter, sort, and occurrence range values from the endpoint into the internal query in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryLedgerEndpoints.cs`
+- [x] T024 [US2] Include all non-empty ledger filter, sort, paging, and occurrence range query parameters in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
 
 **Checkpoint**: Ledger history can be filtered and sorted server-side with deterministic paging and validation-first request handling.
 

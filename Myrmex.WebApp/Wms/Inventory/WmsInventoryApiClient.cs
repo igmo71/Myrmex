@@ -1,6 +1,7 @@
 using Myrmex.Shared.Common;
 using Myrmex.Shared.Wms.Inventory;
 using Myrmex.WebApp.Wms.Api;
+using System.Globalization;
 using System.Web;
 
 namespace Myrmex.WebApp.Wms.Inventory;
@@ -34,6 +35,17 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
         return await httpClient.PostAsApiResultAsync<InventoryBalanceDetails>(
             "/api/wms/inventory/adjustments",
             request,
+            cancellationToken);
+    }
+
+    public async Task<ListResult<InventoryLedgerEntryDetails>> ListInventoryLedgerEntriesAsync(
+        ListInventoryLedgerEntriesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        string url = BuildInventoryLedgerListUrl(request);
+
+        return await httpClient.GetRequiredAsync<ListResult<InventoryLedgerEntryDetails>>(
+            url,
             cancellationToken);
     }
 
@@ -76,6 +88,69 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
         if (request.WarehouseId.HasValue)
         {
             query.Add($"warehouseId={request.WarehouseId.Value}");
+        }
+
+        return query.Count == 0
+            ? path
+            : $"{path}?{string.Join("&", query)}";
+    }
+
+    private static string BuildInventoryLedgerListUrl(ListInventoryLedgerEntriesRequest request)
+    {
+        string path = "/api/wms/inventory/ledger";
+
+        List<string> query = [];
+
+        if (request.Skip.HasValue)
+        {
+            query.Add($"skip={request.Skip.Value}");
+        }
+
+        if (request.Take.HasValue)
+        {
+            query.Add($"take={request.Take.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SortBy))
+        {
+            query.Add($"sortBy={HttpUtility.UrlEncode(request.SortBy)}");
+        }
+
+        if (request.SortDescending.HasValue)
+        {
+            query.Add($"sortDescending={request.SortDescending.Value.ToString().ToLowerInvariant()}");
+        }
+
+        if (request.StockKeepingUnitId.HasValue)
+        {
+            query.Add($"stockKeepingUnitId={request.StockKeepingUnitId.Value}");
+        }
+
+        if (request.WarehouseId.HasValue)
+        {
+            query.Add($"warehouseId={request.WarehouseId.Value}");
+        }
+
+        if (request.StorageLocationId.HasValue)
+        {
+            query.Add($"storageLocationId={request.StorageLocationId.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.TransactionType))
+        {
+            query.Add($"transactionType={HttpUtility.UrlEncode(request.TransactionType)}");
+        }
+
+        if (request.OccurredFromUtc.HasValue)
+        {
+            query.Add(
+                $"occurredFromUtc={HttpUtility.UrlEncode(request.OccurredFromUtc.Value.ToString("O", CultureInfo.InvariantCulture))}");
+        }
+
+        if (request.OccurredToUtc.HasValue)
+        {
+            query.Add(
+                $"occurredToUtc={HttpUtility.UrlEncode(request.OccurredToUtc.Value.ToString("O", CultureInfo.InvariantCulture))}");
         }
 
         return query.Count == 0

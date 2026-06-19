@@ -83,6 +83,83 @@ public sealed class WmsInventoryApiClientTests
     }
 
     [Fact]
+    public async Task ListInventoryLedgerEntriesAsync_WhenRequestHasNoValues_OmitsNullableQueryParametersAndMapsNestedDetails()
+    {
+        InventoryLedgerEntryDetails details = CreateInventoryLedgerEntryDetails();
+        ListResult<InventoryLedgerEntryDetails> response = new([details], TotalCount: 1, Skip: 0, Take: 20);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(response),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+
+        ListResult<InventoryLedgerEntryDetails> result = await apiClient.ListInventoryLedgerEntriesAsync(
+            new ListInventoryLedgerEntriesRequest(),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
+        Assert.Equal("/api/wms/inventory/ledger", handler.RequestPath);
+        Assert.Equal(string.Empty, handler.RequestQuery);
+
+        InventoryLedgerEntryDetails item = Assert.Single(result.Items);
+        Assert.Equal(details.EntryId, item.EntryId);
+        Assert.Equal(details.TransactionId, item.TransactionId);
+        Assert.Equal(details.TransactionType, item.TransactionType);
+        Assert.Equal(details.Sku.Id, item.Sku.Id);
+        Assert.Equal(details.Sku.BaseUom.Symbol, item.Sku.BaseUom.Symbol);
+        Assert.Equal(details.StorageLocation.Id, item.StorageLocation.Id);
+        Assert.Equal(details.StorageLocation.Warehouse.Id, item.StorageLocation.Warehouse.Id);
+        Assert.Equal(details.StorageLocation.Warehouse.Code, item.StorageLocation.Warehouse.Code);
+    }
+
+    [Fact]
+    public async Task ListInventoryLedgerEntriesAsync_WhenRequestHasExplicitValues_IncludesQueryParameters()
+    {
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
+        Guid warehouseId = Guid.Parse("018f0000-0000-7000-8000-000000000301");
+        Guid storageLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000201");
+        DateTimeOffset occurredFromUtc = DateTimeOffset.Parse("2026-06-18T09:00:00+00:00");
+        DateTimeOffset occurredToUtc = DateTimeOffset.Parse("2026-06-19T09:00:00+00:00");
+        ListResult<InventoryLedgerEntryDetails> response = new([], TotalCount: 0, Skip: 7, Take: 13);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(response),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+
+        await apiClient.ListInventoryLedgerEntriesAsync(
+            new ListInventoryLedgerEntriesRequest
+            {
+                Skip = 7,
+                Take = 13,
+                SortBy = InventoryLedgerSortBy.WarehouseCode,
+                SortDescending = true,
+                StockKeepingUnitId = stockKeepingUnitId,
+                WarehouseId = warehouseId,
+                StorageLocationId = storageLocationId,
+                TransactionType = "Adjustment",
+                OccurredFromUtc = occurredFromUtc,
+                OccurredToUtc = occurredToUtc
+            },
+            TestContext.Current.CancellationToken);
+
+        Dictionary<string, string> query = ParseQuery(handler.RequestQuery);
+
+        Assert.Equal("7", query["skip"]);
+        Assert.Equal("13", query["take"]);
+        Assert.Equal(InventoryLedgerSortBy.WarehouseCode, query["sortBy"]);
+        Assert.Equal("true", query["sortDescending"]);
+        Assert.Equal(stockKeepingUnitId.ToString(), query["stockKeepingUnitId"]);
+        Assert.Equal(warehouseId.ToString(), query["warehouseId"]);
+        Assert.Equal(storageLocationId.ToString(), query["storageLocationId"]);
+        Assert.Equal("Adjustment", query["transactionType"]);
+        Assert.Equal(occurredFromUtc.ToString("O"), query["occurredFromUtc"]);
+        Assert.Equal(occurredToUtc.ToString("O"), query["occurredToUtc"]);
+    }
+
+    [Fact]
     public async Task ListInventoryBalancesAsync_WhenProblemDetailsReturned_ThrowsApiException()
     {
         const string problemJson = """
@@ -226,6 +303,40 @@ public sealed class WmsInventoryApiClientTests
                 "A-01-01",
                 new InventoryBalanceDetails.WarehouseInfo(
                     Guid.Parse("018f0000-0000-7000-8000-000000000301"),
+                    "MAIN",
+                    "Main Warehouse")));
+    }
+
+    private static InventoryLedgerEntryDetails CreateInventoryLedgerEntryDetails(
+        Guid? entryId = null,
+        Guid? transactionId = null,
+        Guid? stockKeepingUnitId = null,
+        Guid? warehouseId = null,
+        Guid? storageLocationId = null)
+    {
+        return new InventoryLedgerEntryDetails(
+            entryId ?? Guid.Parse("018f0000-0000-7000-8000-000000000501"),
+            transactionId ?? Guid.Parse("018f0000-0000-7000-8000-000000000401"),
+            "Adjustment",
+            "Cycle count correction",
+            DateTimeOffset.Parse("2026-06-18T09:30:00+00:00"),
+            BalanceBefore: 10,
+            QuantityDelta: -3,
+            BalanceAfter: 7,
+            new InventoryLedgerEntryDetails.StockKeepingUnitInfo(
+                stockKeepingUnitId ?? Guid.Parse("018f0000-0000-7000-8000-000000000101"),
+                "SKU-001",
+                "Widget",
+                new InventoryLedgerEntryDetails.UnitOfMeasureInfo(
+                    Guid.Parse("018f0000-0000-7000-8000-000000000111"),
+                    "EA",
+                    "ea")),
+            new InventoryLedgerEntryDetails.StorageLocationInfo(
+                storageLocationId ?? Guid.Parse("018f0000-0000-7000-8000-000000000201"),
+                "A-01-01",
+                "A-01-01",
+                new InventoryLedgerEntryDetails.WarehouseInfo(
+                    warehouseId ?? Guid.Parse("018f0000-0000-7000-8000-000000000301"),
                     "MAIN",
                     "Main Warehouse")));
     }
