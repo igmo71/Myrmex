@@ -94,16 +94,16 @@
 
 ### Tests for User Story 3
 
-- [ ] T025 [P] [US3] Add handler/persistence tests for transaction header, multi-entry detail projection, deterministic entry ordering, and missing transaction NotFound in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
-- [ ] T026 [P] [US3] Add endpoint test for transaction details route, nested detail JSON, and NotFound mapping in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryLedgerEndpointTests.cs`
-- [ ] T027 [P] [US3] Add focused API-client tests for details route construction and nested `InventoryTransactionEntryDetails` deserialization in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
-- [ ] T028 [P] [US3] Add one representative Ledger API-client cancellation test using the repository's reliable cancellation helper/pattern, verifying the request receives a cancellable token and caller cancellation cancels or is observed by the request without requiring exact token equality in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [x] T025 [P] [US3] Add handler/persistence tests for transaction header, multi-entry detail projection, deterministic entry ordering, and missing transaction NotFound in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`
+- [x] T026 [P] [US3] Add endpoint test for transaction details route, nested detail JSON, and NotFound mapping in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryLedgerEndpointTests.cs`
+- [x] T027 [P] [US3] Add focused API-client tests for details route construction and nested `InventoryTransactionEntryDetails` deserialization in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [x] T028 [P] [US3] Add one representative Ledger API-client cancellation test using the repository's reliable cancellation helper/pattern, verifying the request receives a cancellable token and caller cancellation cancels or is observed by the request without requiring exact token equality in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation for User Story 3
 
-- [ ] T029 [US3] Implement `GetInventoryTransactionById.Query` with transaction header projection and ordered `InventoryTransactionEntryDetails` collection in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/GetInventoryTransactionById.cs`
-- [ ] T030 [US3] Map GET `/api/wms/inventory/transactions/{transactionId:guid}` to the details query in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryLedgerEndpoints.cs`
-- [ ] T031 [US3] Add `GetInventoryTransactionByIdAsync` to `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [x] T029 [US3] Implement `GetInventoryTransactionById.Query` with transaction header projection and ordered `InventoryTransactionEntryDetails` collection in `Myrmex.Modules.Wms/Inventory/Features/InventoryLedger/GetInventoryTransactionById.cs`
+- [x] T030 [US3] Map GET `/api/wms/inventory/transactions/{transactionId:guid}` to the details query in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryLedgerEndpoints.cs`
+- [x] T031 [US3] Add `GetInventoryTransactionByIdAsync` to `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
 - [ ] T032 [P] [US3] Create read-only transaction details dialog showing header, reason, timestamps, and all detail entries in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/InventoryTransactionDetailsDialog.razor`
 
 **Checkpoint**: Transaction details are transaction-oriented and support multiple entries without repeating header data per entry.

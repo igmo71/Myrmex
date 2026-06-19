@@ -49,6 +49,15 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
+    public async Task<InventoryTransactionDetails> GetInventoryTransactionByIdAsync(
+        Guid transactionId,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.GetRequiredAsync<InventoryTransactionDetails>(
+            $"/api/wms/inventory/transactions/{transactionId}",
+            cancellationToken);
+    }
+
     private static string BuildInventoryBalanceListUrl(ListInventoryBalancesRequest request)
     {
         string path = "/api/wms/inventory/balances";

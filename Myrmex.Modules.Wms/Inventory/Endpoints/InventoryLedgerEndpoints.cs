@@ -22,6 +22,10 @@ internal static class InventoryLedgerEndpoints
             .WithName("ListInventoryLedgerEntries")
             .WithSummary("List Inventory Ledger Entries");
 
+        group.MapGet(TransactionsRoute, GetInventoryTransactionByIdAsync)
+            .WithName("GetInventoryTransactionById")
+            .WithSummary("Get Inventory Transaction By Id");
+
         return group;
     }
 
@@ -46,6 +50,21 @@ internal static class InventoryLedgerEndpoints
 
         var result = await queryDispatcher
             .DispatchAsync<ListInventoryLedgerEntries.Query, ServiceResult<ListResult<InventoryLedgerEntryDetails>>>(
+                query,
+                cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> GetInventoryTransactionByIdAsync(
+        Guid transactionId,
+        IQueryDispatcher queryDispatcher,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetInventoryTransactionById.Query(transactionId);
+
+        var result = await queryDispatcher
+            .DispatchAsync<GetInventoryTransactionById.Query, ServiceResult<InventoryTransactionDetails>>(
                 query,
                 cancellationToken);
 

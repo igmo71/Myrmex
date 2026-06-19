@@ -211,6 +211,79 @@ public sealed class InventoryLedgerHandlerTests
         Assert.Equal(ServiceErrorType.Invalid, result.Error.Type);
     }
 
+    [Fact]
+    public async Task HandleAsync_WhenTransactionExists_ReturnsHeaderAndAllEntriesInDeterministicOrder()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        SeededInventoryLedger seeded = await InventoryLedgerTestData.SeedLedgerAsync(testDbContext.DbContext);
+        InventoryTransaction transaction = InventoryLedgerTestData.CreateMultiEntryTransaction(
+            new LedgerEntryInput(
+                seeded.SkuA.Id,
+                seeded.LocationA.Id,
+                BalanceBefore: 10,
+                BalanceAfter: 12),
+            new LedgerEntryInput(
+                seeded.SkuB.Id,
+                seeded.LocationB.Id,
+                BalanceBefore: 4,
+                BalanceAfter: 1),
+            "Multi-entry adjustment",
+            DateTimeOffset.Parse("2026-06-18T11:00:00+00:00"));
+        testDbContext.DbContext.InventoryTransactions.Add(transaction);
+        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        GetInventoryTransactionById.Handler handler = new(testDbContext.DbContext);
+
+        ServiceResult<InventoryTransactionDetails> result = await handler.HandleAsync(
+            new GetInventoryTransactionById.Query(transaction.Id),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        InventoryTransactionDetails details = result.Value;
+        Assert.Equal(transaction.Id, details.Id);
+        Assert.Equal(nameof(InventoryTransactionType.Adjustment), details.TransactionType);
+        Assert.Equal(transaction.Reason, details.Reason);
+        Assert.Equal(transaction.OccurredAtUtc, details.OccurredAtUtc);
+        Assert.Equal(transaction.CreatedAtUtc, details.CreatedAtUtc);
+        AssertIdsEqual(
+            transaction.Entries
+                .OrderBy(x => new SqlGuid(x.Id))
+                .Select(x => x.Id),
+            details.Entries.Select(x => x.EntryId),
+            "transaction detail entry order");
+
+        InventoryTransactionEntryDetails firstEntry = details.Entries.Single(x => x.Sku.Id == seeded.SkuA.Id);
+        Assert.Equal(seeded.SkuA.Code, firstEntry.Sku.Code);
+        Assert.Equal(seeded.Each.Id, firstEntry.Sku.BaseUom.Id);
+        Assert.Equal(seeded.LocationA.Id, firstEntry.StorageLocation.Id);
+        Assert.Equal(seeded.WarehouseA.Id, firstEntry.StorageLocation.Warehouse.Id);
+        Assert.Equal(10, firstEntry.BalanceBefore);
+        Assert.Equal(2, firstEntry.QuantityDelta);
+        Assert.Equal(12, firstEntry.BalanceAfter);
+
+        InventoryTransactionEntryDetails secondEntry = details.Entries.Single(x => x.Sku.Id == seeded.SkuB.Id);
+        Assert.Equal(seeded.SkuB.Code, secondEntry.Sku.Code);
+        Assert.Equal(seeded.CaseUnit.Id, secondEntry.Sku.BaseUom.Id);
+        Assert.Equal(seeded.LocationB.Id, secondEntry.StorageLocation.Id);
+        Assert.Equal(seeded.WarehouseB.Id, secondEntry.StorageLocation.Warehouse.Id);
+        Assert.Equal(4, secondEntry.BalanceBefore);
+        Assert.Equal(-3, secondEntry.QuantityDelta);
+        Assert.Equal(1, secondEntry.BalanceAfter);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenTransactionMissing_ReturnsNotFound()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        GetInventoryTransactionById.Handler handler = new(testDbContext.DbContext);
+
+        ServiceResult<InventoryTransactionDetails> result = await handler.HandleAsync(
+            new GetInventoryTransactionById.Query(Guid.NewGuid()),
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ServiceErrorType.NotFound, result.Error.Type);
+    }
+
     public static IEnumerable<object[]> FilterCases()
     {
         yield return [FilterScenario.StockKeepingUnit];

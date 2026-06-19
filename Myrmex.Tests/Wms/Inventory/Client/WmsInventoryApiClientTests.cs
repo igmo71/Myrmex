@@ -160,6 +160,62 @@ public sealed class WmsInventoryApiClientTests
     }
 
     [Fact]
+    public async Task GetInventoryTransactionByIdAsync_WhenSuccessful_UsesDetailsRouteAndMapsNestedEntries()
+    {
+        Guid transactionId = Guid.Parse("018f0000-0000-7000-8000-000000000401");
+        InventoryTransactionDetails details = CreateInventoryTransactionDetails(transactionId);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+
+        InventoryTransactionDetails result = await apiClient.GetInventoryTransactionByIdAsync(
+            transactionId,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
+        Assert.Equal($"/api/wms/inventory/transactions/{transactionId}", handler.RequestPath);
+        Assert.Equal(string.Empty, handler.RequestQuery);
+        Assert.Equal(details.Id, result.Id);
+        Assert.Equal(details.TransactionType, result.TransactionType);
+        Assert.Equal(details.Reason, result.Reason);
+        Assert.Equal(details.CreatedAtUtc, result.CreatedAtUtc);
+
+        InventoryTransactionEntryDetails entry = Assert.Single(result.Entries);
+        Assert.Equal(details.Entries[0].EntryId, entry.EntryId);
+        Assert.Equal(details.Entries[0].BalanceBefore, entry.BalanceBefore);
+        Assert.Equal(details.Entries[0].QuantityDelta, entry.QuantityDelta);
+        Assert.Equal(details.Entries[0].BalanceAfter, entry.BalanceAfter);
+        Assert.Equal(details.Entries[0].Sku.Id, entry.Sku.Id);
+        Assert.Equal(details.Entries[0].Sku.BaseUom.Symbol, entry.Sku.BaseUom.Symbol);
+        Assert.Equal(details.Entries[0].StorageLocation.Id, entry.StorageLocation.Id);
+        Assert.Equal(details.Entries[0].StorageLocation.Warehouse.Code, entry.StorageLocation.Warehouse.Code);
+    }
+
+    [Fact]
+    public async Task ListInventoryLedgerEntriesAsync_WhenCallerCancels_ObservesCancellableRequest()
+    {
+        using CancellableHttpMessageHandler handler = new();
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+        using CancellationTokenSource cancellationTokenSource = new();
+
+        Task<ListResult<InventoryLedgerEntryDetails>> requestTask = apiClient.ListInventoryLedgerEntriesAsync(
+            new ListInventoryLedgerEntriesRequest(),
+            cancellationTokenSource.Token);
+
+        await handler.RequestStarted.Task.WaitAsync(TestContext.Current.CancellationToken);
+        Assert.True(handler.RequestCancellationToken.CanBeCanceled);
+
+        cancellationTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => requestTask);
+        Assert.True(handler.CancellationObserved);
+    }
+
+    [Fact]
     public async Task ListInventoryBalancesAsync_WhenProblemDetailsReturned_ThrowsApiException()
     {
         const string problemJson = """
@@ -253,7 +309,7 @@ public sealed class WmsInventoryApiClientTests
         Assert.Empty(exception.Extensions);
     }
 
-    private static HttpClient CreateHttpClient(StubHttpMessageHandler handler)
+    private static HttpClient CreateHttpClient(HttpMessageHandler handler)
     {
         return new HttpClient(handler)
         {
@@ -336,9 +392,42 @@ public sealed class WmsInventoryApiClientTests
                 "A-01-01",
                 "A-01-01",
                 new InventoryLedgerEntryDetails.WarehouseInfo(
-                    warehouseId ?? Guid.Parse("018f0000-0000-7000-8000-000000000301"),
-                    "MAIN",
-                    "Main Warehouse")));
+                warehouseId ?? Guid.Parse("018f0000-0000-7000-8000-000000000301"),
+                "MAIN",
+                "Main Warehouse")));
+    }
+
+    private static InventoryTransactionDetails CreateInventoryTransactionDetails(Guid transactionId)
+    {
+        return new InventoryTransactionDetails(
+            transactionId,
+            "Adjustment",
+            "Cycle count correction",
+            DateTimeOffset.Parse("2026-06-18T09:30:00+00:00"),
+            DateTimeOffset.Parse("2026-06-18T09:31:00+00:00"),
+            [
+                new InventoryTransactionEntryDetails(
+                    Guid.Parse("018f0000-0000-7000-8000-000000000501"),
+                    BalanceBefore: 10,
+                    QuantityDelta: -3,
+                    BalanceAfter: 7,
+                    new InventoryTransactionEntryDetails.StockKeepingUnitInfo(
+                        Guid.Parse("018f0000-0000-7000-8000-000000000101"),
+                        "SKU-001",
+                        "Widget",
+                        new InventoryTransactionEntryDetails.UnitOfMeasureInfo(
+                            Guid.Parse("018f0000-0000-7000-8000-000000000111"),
+                            "EA",
+                            "ea")),
+                    new InventoryTransactionEntryDetails.StorageLocationInfo(
+                        Guid.Parse("018f0000-0000-7000-8000-000000000201"),
+                        "A-01-01",
+                        "A-01-01",
+                        new InventoryTransactionEntryDetails.WarehouseInfo(
+                            Guid.Parse("018f0000-0000-7000-8000-000000000301"),
+                            "MAIN",
+                            "Main Warehouse")))
+            ]);
     }
 
     private sealed class StubHttpMessageHandler(
@@ -377,6 +466,35 @@ public sealed class WmsInventoryApiClientTests
                     Encoding.UTF8,
                     mediaType)
             };
+        }
+    }
+
+    private sealed class CancellableHttpMessageHandler : HttpMessageHandler
+    {
+        public TaskCompletionSource RequestStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public CancellationToken RequestCancellationToken { get; private set; }
+
+        public bool CancellationObserved { get; private set; }
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            RequestCancellationToken = cancellationToken;
+            RequestStarted.SetResult();
+
+            try
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                CancellationObserved = true;
+                throw;
+            }
+
+            throw new InvalidOperationException("The cancellable handler should not complete successfully.");
         }
     }
 }

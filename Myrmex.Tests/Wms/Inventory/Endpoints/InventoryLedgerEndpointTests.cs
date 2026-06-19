@@ -7,6 +7,7 @@ using Myrmex.AppDispatching.QueryDispatching;
 using Myrmex.Core.Application;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Inventory.Endpoints;
+using Myrmex.Modules.Wms.Inventory.Domain.InventoryTransactions;
 using Myrmex.Modules.Wms.Inventory.Features.InventoryLedger;
 using Myrmex.Shared.Common;
 using Myrmex.Shared.Wms.Inventory;
@@ -81,6 +82,80 @@ public sealed class InventoryLedgerEndpointTests
         }
     }
 
+    [Fact]
+    public async Task GetInventoryTransactionByIdAsync_WhenTransactionExists_SerializesHeaderAndNestedEntries()
+    {
+        Guid transactionId = Guid.Parse("018f0000-0000-7000-8000-000000000401");
+        InventoryTransactionDetails details = CreateInventoryTransactionDetails(transactionId);
+        RecordingQueryDispatcher queryDispatcher = new(
+            ServiceResult<InventoryTransactionDetails>.Success(details));
+        await using WebApplication app = CreateInventoryEndpointApp(queryDispatcher);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient httpClient = CreateHttpClient(app);
+
+            using HttpResponseMessage response = await httpClient.GetAsync(
+                $"/api/wms/inventory/transactions/{transactionId}",
+                cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+            Assert.NotNull(queryDispatcher.CapturedTransactionQuery);
+            Assert.Equal(transactionId, queryDispatcher.CapturedTransactionQuery.TransactionId);
+
+            using JsonDocument json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+            JsonElement root = json.RootElement;
+            JsonElement entry = root.GetProperty("entries")[0];
+
+            Assert.Equal(details.Id, root.GetProperty("id").GetGuid());
+            Assert.Equal(details.TransactionType, root.GetProperty("transactionType").GetString());
+            Assert.Equal(details.Reason, root.GetProperty("reason").GetString());
+            Assert.Equal(details.CreatedAtUtc, root.GetProperty("createdAtUtc").GetDateTimeOffset());
+            Assert.Equal(details.Entries[0].EntryId, entry.GetProperty("entryId").GetGuid());
+            Assert.Equal(details.Entries[0].QuantityDelta, entry.GetProperty("quantityDelta").GetDecimal());
+            Assert.Equal(details.Entries[0].Sku.Code, entry.GetProperty("sku").GetProperty("code").GetString());
+            Assert.Equal(
+                details.Entries[0].StorageLocation.Warehouse.Code,
+                entry.GetProperty("storageLocation").GetProperty("warehouse").GetProperty("code").GetString());
+            Assert.False(entry.TryGetProperty("transactionId", out _));
+            Assert.False(entry.TryGetProperty("transactionType", out _));
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
+    [Fact]
+    public async Task GetInventoryTransactionByIdAsync_WhenTransactionMissing_ReturnsNotFound()
+    {
+        Guid transactionId = Guid.Parse("018f0000-0000-7000-8000-000000000999");
+        RecordingQueryDispatcher queryDispatcher = new(
+            ServiceResult<InventoryTransactionDetails>.Fail(ServiceError.NotFound<InventoryTransaction>()));
+        await using WebApplication app = CreateInventoryEndpointApp(queryDispatcher);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient httpClient = CreateHttpClient(app);
+
+            using HttpResponseMessage response = await httpClient.GetAsync(
+                $"/api/wms/inventory/transactions/{transactionId}",
+                cancellationToken);
+
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.NotNull(queryDispatcher.CapturedTransactionQuery);
+            Assert.Equal(transactionId, queryDispatcher.CapturedTransactionQuery.TransactionId);
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
     private static WebApplication CreateInventoryEndpointApp(RecordingQueryDispatcher queryDispatcher)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
@@ -138,14 +213,62 @@ public sealed class InventoryLedgerEndpointTests
                 "A-01-01",
                 "A-01-01",
                 new InventoryLedgerEntryDetails.WarehouseInfo(
-                    warehouseId,
-                    "MAIN",
-                    "Main Warehouse")));
+                warehouseId,
+                "MAIN",
+                "Main Warehouse")));
     }
 
-    private sealed class RecordingQueryDispatcher(InventoryLedgerEntryDetails details) : IQueryDispatcher
+    private static InventoryTransactionDetails CreateInventoryTransactionDetails(Guid transactionId)
     {
+        return new InventoryTransactionDetails(
+            transactionId,
+            "Adjustment",
+            "Cycle count correction",
+            DateTimeOffset.Parse("2026-06-18T09:30:00+00:00"),
+            DateTimeOffset.Parse("2026-06-18T09:31:00+00:00"),
+            [
+                new InventoryTransactionEntryDetails(
+                    Guid.Parse("018f0000-0000-7000-8000-000000000501"),
+                    BalanceBefore: 10,
+                    QuantityDelta: -3,
+                    BalanceAfter: 7,
+                    new InventoryTransactionEntryDetails.StockKeepingUnitInfo(
+                        Guid.Parse("018f0000-0000-7000-8000-000000000101"),
+                        "SKU-001",
+                        "Widget",
+                        new InventoryTransactionEntryDetails.UnitOfMeasureInfo(
+                            Guid.Parse("018f0000-0000-7000-8000-000000000111"),
+                            "EA",
+                            "ea")),
+                    new InventoryTransactionEntryDetails.StorageLocationInfo(
+                        Guid.Parse("018f0000-0000-7000-8000-000000000201"),
+                        "A-01-01",
+                        "A-01-01",
+                        new InventoryTransactionEntryDetails.WarehouseInfo(
+                            Guid.Parse("018f0000-0000-7000-8000-000000000301"),
+                            "MAIN",
+                            "Main Warehouse")))
+            ]);
+    }
+
+    private sealed class RecordingQueryDispatcher : IQueryDispatcher
+    {
+        private readonly InventoryLedgerEntryDetails? ledgerEntryDetails;
+        private readonly ServiceResult<InventoryTransactionDetails>? transactionDetailsResult;
+
+        public RecordingQueryDispatcher(InventoryLedgerEntryDetails details)
+        {
+            ledgerEntryDetails = details;
+        }
+
+        public RecordingQueryDispatcher(ServiceResult<InventoryTransactionDetails> result)
+        {
+            transactionDetailsResult = result;
+        }
+
         public ListInventoryLedgerEntries.Query? CapturedListQuery { get; private set; }
+
+        public GetInventoryTransactionById.Query? CapturedTransactionQuery { get; private set; }
 
         public Task<TResult> DispatchAsync<TQuery, TResult>(
             TQuery query,
@@ -161,12 +284,20 @@ public sealed class InventoryLedgerEndpointTests
                 ServiceResult<ListResult<InventoryLedgerEntryDetails>> result =
                     ServiceResult<ListResult<InventoryLedgerEntryDetails>>.Success(
                         new ListResult<InventoryLedgerEntryDetails>(
-                            [details],
+                            [ledgerEntryDetails!],
                             TotalCount: 1,
                             listQuery.Skip,
                             listQuery.Take));
 
                 return Task.FromResult((TResult)(object)result);
+            }
+
+            if (query is GetInventoryTransactionById.Query transactionQuery &&
+                typeof(TResult) == typeof(ServiceResult<InventoryTransactionDetails>))
+            {
+                CapturedTransactionQuery = transactionQuery;
+
+                return Task.FromResult((TResult)(object)transactionDetailsResult!);
             }
 
             throw new NotSupportedException($"Unexpected query type {typeof(TQuery).FullName}.");
