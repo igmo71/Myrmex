@@ -1,5 +1,4 @@
 using Myrmex.Core.Results;
-using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryTransactions;
 using Myrmex.Modules.Wms.Inventory.Features.InventoryLedger;
 using Myrmex.Shared.Common;
@@ -426,9 +425,10 @@ public sealed class InventoryLedgerHandlerTests
         Guid[] expectedIds = expected.ToArray();
         Guid[] actualIds = actual.ToArray();
 
-        Assert.True(
-            expectedIds.SequenceEqual(actualIds),
-            $"{scenario}: expected {string.Join(", ", expectedIds)}, actual {string.Join(", ", actualIds)}.");
+        Assert.Equivalent(
+        expected.ToArray(),
+        actual.ToArray(),
+        strict: true);
     }
 
     public enum FilterScenario
