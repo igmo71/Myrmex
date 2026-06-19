@@ -140,7 +140,7 @@ Expected:
 30. Confirm the same filtered history request is issued after copied-link hydration.
 31. Confirm inactive referenced SKU, warehouse, or storage-location records can still hydrate and display when present.
 32. Clear or change filters and continue normal Ledger browsing.
-33. Confirm rapid filter/search or routed-hydration cancellation does not show cancellation as an error.
+33. Confirm rapid filter/search, CLEAR, or routed-hydration cancellation does not show cancellation as an error.
 34. Confirm empty results show a clear empty state, not an error.
 35. Confirm no ledger edit, delete, correction, reversal, transfer, export, analytics, or rebuild controls are present.
 

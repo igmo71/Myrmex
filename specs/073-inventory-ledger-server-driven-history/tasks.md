@@ -142,8 +142,8 @@
 
 **Purpose**: Final consistency checks and validation instructions without running developer-controlled commands automatically.
 
-- [ ] T045 Review `specs/073-inventory-ledger-server-driven-history/quickstart.md` against implemented behavior and keep build, test, app startup, EF, runtime validation, and smoke testing developer-controlled
-- [ ] T046 Verify scope guardrails by inspecting changed paths under `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/`, `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/`, `Myrmex.Modules.Wms/Inventory/Domain/`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/`, and `Myrmex.Tests/Wms/Inventory/`
+- [x] T045 Review `specs/073-inventory-ledger-server-driven-history/quickstart.md` against implemented behavior and keep build, test, app startup, EF, runtime validation, and smoke testing developer-controlled
+- [x] T046 Verify scope guardrails by inspecting changed paths under `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/`, `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/`, `Myrmex.Modules.Wms/Inventory/Domain/`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/`, and `Myrmex.Tests/Wms/Inventory/`
 
 ---
 
