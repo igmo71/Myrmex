@@ -7,7 +7,6 @@ using Myrmex.Shared.Wms.Topology;
 using Myrmex.WebApp.Wms.Catalog;
 using Myrmex.WebApp.Wms.Inventory;
 using Myrmex.WebApp.Wms.Topology;
-using System.Globalization;
 
 namespace Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryLedgerPages;
 
@@ -52,8 +51,8 @@ public partial class Index
     private StorageLocationLookupItem? _selectedStorageLocation;
     private StockKeepingUnitLookupItem? _selectedStockKeepingUnit;
     private string _selectedTransactionType = string.Empty;
-    private string? _occurredFromUtcText;
-    private string? _occurredToUtcText;
+    private DateTime? _occurredFromDate;
+    private DateTime? _occurredToDate;
 
     private bool _isInitializing = true;
     private bool _isLoadingWarehouses;
@@ -123,7 +122,6 @@ public partial class Index
     private async Task OnStockKeepingUnitChanged(StockKeepingUnitLookupItem? value)
     {
         _selectedStockKeepingUnit = value;
-        //ClearRouteBlockingState();
 
         await ResetAndReloadInventoryLedgerAsync();
     }
@@ -134,15 +132,15 @@ public partial class Index
         await ResetAndReloadInventoryLedgerAsync();
     }
 
-    private async Task OnOccurredFromUtcTextChanged(string? value)
+    private async Task OnOccurredFromDateChanged(DateTime? value)
     {
-        _occurredFromUtcText = value;
+        _occurredFromDate = value;
         await ResetAndReloadInventoryLedgerAsync();
     }
 
-    private async Task OnOccurredToUtcTextChanged(string? value)
+    private async Task OnOccurredToDateChanged(DateTime? value)
     {
-        _occurredToUtcText = value;
+        _occurredToDate = value;
         await ResetAndReloadInventoryLedgerAsync();
     }
 
@@ -152,8 +150,8 @@ public partial class Index
         _selectedStorageLocation = null;
         _selectedStockKeepingUnit = null;
         _selectedTransactionType = string.Empty;
-        _occurredFromUtcText = null;
-        _occurredToUtcText = null;
+        _occurredFromDate = null;
+        _occurredToDate = null;
         _storageLocationSearchVersion++;
         ClearRouteBlockingState();
         NavigationManager.NavigateTo(LedgerRoute, replace: true);
@@ -172,7 +170,7 @@ public partial class Index
 
         _errorMessage = null;
 
-        if (!TryCreateOccurrenceRange(out DateTimeOffset? occurredFromUtc, out DateTimeOffset? occurredToUtc, out string? validationMessage))
+        if (!TryValidateOccurrenceDates(out string? validationMessage))
         {
             _errorMessage = validationMessage;
             return EmptyGridData();
@@ -196,8 +194,8 @@ public partial class Index
                 TransactionType = string.IsNullOrWhiteSpace(_selectedTransactionType)
                     ? null
                     : _selectedTransactionType,
-                OccurredFromUtc = occurredFromUtc,
-                OccurredToUtc = occurredToUtc
+                OccurredFromUtc = ToUtcStartOfDay(_occurredFromDate),
+                OccurredToUtc = ToUtcExclusiveEndOfDay(_occurredToDate)
             };
 
             ListResult<InventoryLedgerEntryDetails> result =
@@ -451,71 +449,44 @@ public partial class Index
         }
     }
 
-    private bool TryCreateOccurrenceRange(
-        out DateTimeOffset? occurredFromUtc,
-        out DateTimeOffset? occurredToUtc,
-        out string? validationMessage)
+    private bool TryValidateOccurrenceDates(out string? validationMessage)
     {
-        occurredFromUtc = null;
-        occurredToUtc = null;
         validationMessage = null;
 
-        if (!TryParseUtcBoundary(
-                _occurredFromUtcText,
-                "Occurred from UTC",
-                out occurredFromUtc,
-                out validationMessage))
+        if (_occurredFromDate.HasValue &&
+            _occurredToDate.HasValue &&
+            _occurredFromDate.Value.Date > _occurredToDate.Value.Date)
         {
+            validationMessage = "Occurred from date must not be later than occurred to date.";
             return false;
         }
 
-        if (!TryParseUtcBoundary(
-                _occurredToUtcText,
-                "Occurred to UTC",
-                out occurredToUtc,
-                out validationMessage))
-        {
-            return false;
-        }
-
-        if (occurredFromUtc.HasValue &&
-            occurredToUtc.HasValue &&
-            occurredFromUtc.Value > occurredToUtc.Value)
-        {
-            validationMessage = "Occurred from UTC must be earlier than or equal to occurred to UTC.";
-            return false;
-        }
-
-        validationMessage = null;
         return true;
     }
 
-    private static bool TryParseUtcBoundary(
-        string? text,
-        string fieldName,
-        out DateTimeOffset? value,
-        out string? validationMessage)
+    private static DateTimeOffset? ToUtcStartOfDay(DateTime? date)
     {
-        value = null;
-        validationMessage = null;
-
-        if (string.IsNullOrWhiteSpace(text))
+        if (!date.HasValue)
         {
-            return true;
+            return null;
         }
 
-        if (DateTimeOffset.TryParse(
-                text,
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
-                out DateTimeOffset parsed))
-        {
-            value = parsed.ToUniversalTime();
-            return true;
-        }
+        DateTime selectedDate = date.Value.Date;
+        DateTime utcStartOfDay = new(
+            selectedDate.Year,
+            selectedDate.Month,
+            selectedDate.Day,
+            0,
+            0,
+            0,
+            DateTimeKind.Utc);
 
-        validationMessage = $"{fieldName} must be an exact UTC date/time, for example 2026-06-18T09:00:00Z.";
-        return false;
+        return new DateTimeOffset(utcStartOfDay);
+    }
+
+    private static DateTimeOffset? ToUtcExclusiveEndOfDay(DateTime? date)
+    {
+        return ToUtcStartOfDay(date)?.AddDays(1);
     }
 
     private void ClearRouteBlockingState()

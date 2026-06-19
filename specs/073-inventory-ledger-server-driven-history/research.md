@@ -73,17 +73,18 @@ On page initialization, bind any present route values, load inactive-inclusive w
 - Validate after applying filters: rejected because invalid transaction type and occurrence range values should not participate in query construction.
 - Reject equal occurrence boundaries: rejected because an exact empty interval is valid and already established by the specification.
 
-## Decision: Exact UTC Occurrence Range Mapping
+## Decision: Calendar-Date UI Occurrence Range Mapped to UTC API Boundaries
 
-**Decision**: Ledger UI uses exact UTC occurrence boundaries mapped directly to `OccurredFromUtc` and `OccurredToUtc`. Server filtering is inclusive lower bound and exclusive upper bound: `OccurredAtUtc >= OccurredFromUtc` and `OccurredAtUtc < OccurredToUtc`. Validation fails only when `OccurredFromUtc > OccurredToUtc`; equal boundaries are valid and return an empty interval.
+**Decision**: Ledger UI uses culture-aware calendar date pickers for occurrence filtering. The selected From date maps to `OccurredFromUtc` at UTC start of that date. The selected To date is inclusive for the user and maps to `OccurredToUtc` at UTC start of the following day. Server filtering remains inclusive lower bound and exclusive upper bound: `OccurredAtUtc >= OccurredFromUtc` and `OccurredAtUtc < OccurredToUtc`. UI validation blocks From date later than To date; equal selected dates are valid and request the complete selected UTC calendar day. Raw API equal UTC boundaries remain valid and return an empty interval.
 
-**Rationale**: Ledger timestamps are stored as UTC `DateTimeOffset`, existing Blazor timestamp columns are UTC-labeled, and the clarified specification selected exact UTC behavior. Exclusive upper bound avoids ambiguity around date/time endpoints and supports precise range testing.
+**Rationale**: Stakeholder UX now prefers calendar-date selection rather than timestamp text entry. Mapping UI dates to UTC day boundaries keeps the backend/API contract stable, preserves exclusive upper-bound query composition, and avoids workstation local-time conversion. Culture-aware pickers match normal regional date entry while the API client continues to send UTC `DateTimeOffset` values.
 
 **Alternatives considered**:
 
-- Local calendar dates converted to UTC day boundaries: rejected because no current product-wide local time convention exists and the spec selected exact UTC.
+- Free-text exact UTC timestamp fields: rejected because they are less usable for the Ledger filter workflow.
 - Inclusive upper bound: rejected because it is ambiguous at sub-second precision and harder to compose for adjacent ranges.
-- Rejecting equal boundaries: rejected because an exact empty interval is valid and testable.
+- Local-time conversion: rejected because picker dates must map to UTC day boundaries without depending on the workstation time zone.
+- Rejecting equal selected UI dates: rejected because users expect one selected calendar day to be included.
 
 ## Decision: Separate List and Transaction Detail Entry DTOs
 

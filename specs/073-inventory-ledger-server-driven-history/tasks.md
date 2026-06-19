@@ -63,7 +63,7 @@
 
 ## Phase 4: User Story 2 - Filter and Sort Ledger History (Priority: P2) - Batch 1
 
-**Goal**: Users can filter by SKU, warehouse, storage location, transaction type, and exact UTC occurrence range while server-side sorting and paging remain deterministic.
+**Goal**: Users can filter by SKU, warehouse, storage location, transaction type, and occurrence calendar dates mapped to UTC API boundaries while server-side sorting and paging remain deterministic.
 
 **Independent Test**: Applying each supported filter and supported sort returns server-filtered totals and stable page contents, with validation feedback for unsupported transaction type and invalid occurrence ranges.
 
@@ -123,10 +123,10 @@
 ### Implementation for User Story 4
 
 - [x] T034 [US4] Create UI-specific grid request record carrying skip, take, PascalCase sort key, and sort direction in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/InventoryLedgerGridRequest.cs`
-- [x] T035 [P] [US4] Create Ledger filter component with inactive-inclusive SKU lookup, inactive-inclusive warehouse selector, warehouse-scoped storage-location lookup, transaction type, occurrence UTC controls, and clear/reset action callbacks in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/InventoryLedgerFilters.razor`
+- [x] T035 [P] [US4] Create Ledger filter component with inactive-inclusive SKU lookup, inactive-inclusive warehouse selector, warehouse-scoped storage-location lookup, transaction type, culture-aware occurrence date pickers, and clear/reset action callbacks in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/InventoryLedgerFilters.razor`
 - [x] T036 [P] [US4] Create Ledger grid with PascalCase sort tags, `MudDataGrid.ServerData`, details action callback, reset/reload methods, and no activation before the parent page allows loading in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/InventoryLedgerGrid.razor`
 - [x] T037 [US4] Create Ledger page route, query parameters, exact-ID hydration state, `_isInitializing` or `_isHydratingFilters` guard, and first-request blocking so `MudDataGrid.ServerData` is not activated before hydration completes in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/Index.razor.cs`
-- [x] T038 [US4] Implement page orchestration that maps filter state and `MudDataGrid` state to `InventoryLedgerGridRequest`, maps it to `ListInventoryLedgerEntriesRequest`, calls `WmsInventoryApiClient.ListInventoryLedgerEntriesAsync`, returns `GridData<InventoryLedgerEntryDetails>`, handles loading state and page-level errors, suppresses expected cancellation errors, resets the grid to page zero when filters change, reloads current grid state when appropriate, loads transaction details through `GetInventoryTransactionByIdAsync`, opens `InventoryTransactionDetailsDialog`, and avoids duplicate or unfiltered requests during routed hydration in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/Index.razor.cs`
+- [x] T038 [US4] Implement page orchestration that maps filter state and `MudDataGrid` state to `InventoryLedgerGridRequest`, maps it to `ListInventoryLedgerEntriesRequest` including occurrence date conversion to UTC boundaries, calls `WmsInventoryApiClient.ListInventoryLedgerEntriesAsync`, returns `GridData<InventoryLedgerEntryDetails>`, handles loading state and page-level errors, suppresses expected cancellation errors, resets the grid to page zero when filters change, reloads current grid state when appropriate, loads transaction details through `GetInventoryTransactionByIdAsync`, opens `InventoryTransactionDetailsDialog`, and avoids duplicate or unfiltered requests during routed hydration in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/Index.razor.cs`
 - [x] T039 [US4] Implement partial routed-filter semantics in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/Index.razor.cs`: SKU-only, warehouse-only, warehouse/location match, storage-location-only deriving warehouse, and mismatch route state blocking all Ledger list requests until corrected
 - [x] T040 [US4] Use exact get-by-id hydration through `WmsCatalogApiClient.GetStockKeepingUnitByIdAsync`, `WmsTopologyApiClient.GetWarehouseByIdAsync`, and `WmsTopologyApiClient.GetStorageLocationByIdAsync` in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/Index.razor.cs`
 - [x] T041 [US4] Create Ledger page markup that connects filters, grid, details dialog action flow, page-level validation/error feedback, and delayed grid activation while routed hydration or mismatch feedback is active in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryLedgerPages/Index.razor`
@@ -184,7 +184,7 @@
 - **Handler/persistence details group**: multi-entry transaction details, header once, detail entry shape, deterministic entry ordering, and missing transaction NotFound in `Myrmex.Tests/Wms/Inventory/Features/InventoryLedger/InventoryLedgerHandlerTests.cs`.
 - **Endpoint boundary group**: `[AsParameters]` list binding, representative list JSON, details route JSON, and NotFound mapping in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryLedgerEndpointTests.cs`.
 - **API-client group**: ledger list URL construction, no trailing `?`, all query parameters, details route, one representative cancellable request behavior test without exact token equality, and nested DTO deserialization in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`.
-- **Manual UI smoke group**: route hydration variants, mismatch blocking, no initial unfiltered request, copied-link reload, inactive references, details dialog, and no mutation controls in `specs/073-inventory-ledger-server-driven-history/quickstart.md`.
+- **Manual UI smoke group**: route hydration variants, mismatch blocking, no initial unfiltered request, culture-aware occurrence date pickers and UTC boundary mapping, copied-link reload, inactive references, details dialog, and no mutation controls in `specs/073-inventory-ledger-server-driven-history/quickstart.md`.
 
 ---
 

@@ -87,8 +87,8 @@ The page provides:
 - Warehouse selector.
 - Storage-location autocomplete.
 - Transaction-type selector.
-- Occurrence-from UTC control.
-- Occurrence-to UTC control.
+- Occurred-from calendar date picker.
+- Occurred-to calendar date picker.
 - Clear/reset action.
 
 Filter behavior:
@@ -104,16 +104,23 @@ Filter behavior:
 
 ### Occurrence Range
 
-UI labels must make UTC behavior clear.
+The UI collects calendar dates only through culture-aware date pickers. The pickers use the current application/UI culture for display and input, for example `ru-RU` displays `19.06.2026`, `en-GB` displays `19/06/2026`, and `en-US` displays `6/19/2026`. Do not use free-text ISO timestamp input or time pickers.
 
 Request mapping:
 
 ```text
-OccurredFromUtc = exact UTC lower bound, inclusive
-OccurredToUtc = exact UTC upper bound, exclusive
+From date = selected calendar date at 00:00:00 UTC
+To date = day after selected calendar date at 00:00:00 UTC
 ```
 
-Invalid range where from is later than to must be shown as validation feedback and must not silently issue an ambiguous request.
+Transport/API semantics remain inclusive-from and exclusive-to:
+
+```text
+OccurredFromUtc = inclusive UTC lower bound at start of selected From date
+OccurredToUtc = exclusive UTC upper bound at start of day after selected To date
+```
+
+The UI To date is inclusive for the user. Selecting From `2026-06-19` maps to `OccurredFromUtc = 2026-06-19T00:00:00Z`; selecting To `2026-06-19` maps to `OccurredToUtc = 2026-06-20T00:00:00Z`. Equal selected From and To dates are valid and request the complete selected UTC calendar day. From date later than To date must show page-level validation feedback and must not issue a Ledger request.
 
 ## Grid
 
@@ -186,6 +193,8 @@ The implementation quickstart owns manual validation. At minimum, verify:
 - Navigation link opens Ledger.
 - Initial load is unfiltered and newest-first.
 - Filters apply and reset paging.
+- Occurrence filters use culture-aware calendar-date pickers; From maps to UTC start of selected day and To maps to UTC start of the following day.
+- Equal selected From and To dates request the complete selected UTC calendar day; From later than To shows validation and sends no Ledger request.
 - Balance row history action opens filtered Ledger.
 - SKU-only, warehouse-only, storage-location-only, and matching warehouse/location routed links hydrate and request the intended filtered history.
 - A mismatched warehouse/location routed link shows clear feedback and does not send a contradictory ledger request.

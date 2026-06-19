@@ -23,7 +23,7 @@
 - Repository-specific decision: Navigation from Inventory Balance should use a dedicated Ledger page with query parameters for SKU and storage location, making filtered history linkable and browser-navigation friendly.
 - Repository-specific decision: Transaction details should open from the Ledger list as a dialog for this MVP, while the details data shape must still support multiple entries.
 - Repository-specific decision: Current Blazor pages display timestamp values as UTC-labeled values, so this feature should display `OccurredAtUtc` and `CreatedAtUtc` as UTC values with clear UTC labels.
-- Repository-specific decision: Occurrence range filters use exact UTC `DateTimeOffset` boundaries with inclusive lower bound and exclusive upper bound.
+- Repository-specific decision: Occurrence range API filters use exact UTC `DateTimeOffset` boundaries with inclusive lower bound and exclusive upper bound; the UI collects calendar dates and maps From to UTC start of day and inclusive To to UTC start of the following day.
 - Repository-specific decision: Existing SKU and storage-location lookup behavior can include inactive records when `SelectableOnly` is false; Inventory Ledger filtering should use that behavior or a small history-specific equivalent if planning discovers a gap.
 - Q: What should the initial Inventory Ledger page load when opened without navigation/query filters? → A: Initial Ledger page loads unfiltered, newest-first, with paging.
 - Repository-specific finding: The current Inventory navigation contains only Inventory Balances and has no Ledger page.

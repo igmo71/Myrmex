@@ -43,8 +43,8 @@ Verify list filtering by:
 - Warehouse.
 - Storage location.
 - Transaction type `Adjustment`.
-- Occurrence-from UTC inclusive boundary.
-- Occurrence-to UTC exclusive boundary.
+- Occurrence From date mapped to the inclusive UTC start of that date.
+- Occurrence To date mapped from the inclusive UI date to the exclusive UTC start of the following day.
 
 Expected:
 
@@ -115,27 +115,34 @@ Expected:
 5. Apply storage-location filter after selecting a warehouse; confirm lookup is warehouse-scoped and inactive-inclusive.
 6. Change warehouse after selecting a storage location; confirm incompatible storage location is cleared.
 7. Apply transaction-type filter `Adjustment`.
-8. Apply occurrence-from and occurrence-to UTC filters; confirm boundary behavior.
-9. Sort each supported visible grid column; confirm no paging instability.
-10. Open transaction details; confirm header, reason, timestamps, and all entries display.
-11. Confirm full reason is visible in details when grid text is shortened.
-12. From Inventory Balances, use a row history action.
-13. Confirm Ledger opens with that row's SKU, warehouse, and storage-location filters active.
-14. Open a routed Ledger URL with only `stockKeepingUnitId`; confirm the SKU filter hydrates visibly and only the SKU-filtered first page is requested.
-15. Open a routed Ledger URL with only `warehouseId`; confirm the warehouse filter hydrates visibly and only the warehouse-filtered first page is requested.
-16. Open a routed Ledger URL with only `storageLocationId`; confirm the storage location hydrates, its warehouse is derived and displayed, and the first request includes both warehouse and storage-location filters.
-17. Open a routed Ledger URL with matching `warehouseId` and `storageLocationId`; confirm both filters hydrate visibly and the first request includes both filters.
-18. Open a routed Ledger URL with mismatched `warehouseId` and `storageLocationId`; confirm clear page-level feedback appears and no contradictory filtered ledger request is sent.
-19. For every routed URL above, confirm the page does not make an initial unfiltered ledger request before hydration completes.
-20. Copy a valid routed Ledger URL.
-21. Reload the page or open the copied URL in a new browser tab.
-22. Confirm SKU, warehouse, and storage-location filters that were present in the link are visibly restored.
-23. Confirm the same filtered history request is issued after copied-link hydration.
-24. Confirm inactive referenced SKU, warehouse, or storage-location records can still hydrate and display when present.
-25. Clear or change filters and continue normal Ledger browsing.
-26. Confirm rapid filter/search or routed-hydration cancellation does not show cancellation as an error.
-27. Confirm empty results show a clear empty state, not an error.
-28. Confirm no ledger edit, delete, correction, reversal, transfer, export, analytics, or rebuild controls are present.
+8. Confirm occurrence filters are clearable date pickers and do not accept free-text ISO timestamp input.
+9. Confirm picker display follows the current regional culture, for example `ru-RU` as `19.06.2026`, `en-GB` as `19/06/2026`, and `en-US` as `6/19/2026`.
+10. Select only a From date; confirm the Ledger request sends `OccurredFromUtc` as `00:00:00Z` at the start of that selected date and sends no To boundary.
+11. Select only a To date; confirm the Ledger request sends `OccurredToUtc` as `00:00:00Z` at the start of the following UTC day and sends no From boundary.
+12. Select the same From and To date; confirm the request covers the complete selected UTC calendar day.
+13. Select a From date later than the To date; confirm page-level validation appears and no Ledger request is sent.
+14. Clear both dates; confirm occurrence filters are removed from the next Ledger request.
+15. Sort each supported visible grid column; confirm no paging instability.
+16. Open transaction details; confirm header, reason, timestamps, and all entries display.
+17. Confirm full reason is visible in details when grid text is shortened.
+18. From Inventory Balances, use a row history action.
+19. Confirm Ledger opens with that row's SKU, warehouse, and storage-location filters active.
+20. Open a routed Ledger URL with only `stockKeepingUnitId`; confirm the SKU filter hydrates visibly and only the SKU-filtered first page is requested.
+21. Open a routed Ledger URL with only `warehouseId`; confirm the warehouse filter hydrates visibly and only the warehouse-filtered first page is requested.
+22. Open a routed Ledger URL with only `storageLocationId`; confirm the storage location hydrates, its warehouse is derived and displayed, and the first request includes both warehouse and storage-location filters.
+23. Open a routed Ledger URL with matching `warehouseId` and `storageLocationId`; confirm both filters hydrate visibly and the first request includes both filters.
+24. Open a routed Ledger URL with mismatched `warehouseId` and `storageLocationId`; confirm clear page-level feedback appears and no contradictory filtered ledger request is sent.
+25. While that mismatch feedback is active, change only SKU; confirm the Ledger list remains blocked until warehouse/location is corrected or filters are fully cleared.
+26. For every routed URL above, confirm the page does not make an initial unfiltered ledger request before hydration completes.
+27. Copy a valid routed Ledger URL.
+28. Reload the page or open the copied URL in a new browser tab.
+29. Confirm SKU, warehouse, and storage-location filters that were present in the link are visibly restored.
+30. Confirm the same filtered history request is issued after copied-link hydration.
+31. Confirm inactive referenced SKU, warehouse, or storage-location records can still hydrate and display when present.
+32. Clear or change filters and continue normal Ledger browsing.
+33. Confirm rapid filter/search or routed-hydration cancellation does not show cancellation as an error.
+34. Confirm empty results show a clear empty state, not an error.
+35. Confirm no ledger edit, delete, correction, reversal, transfer, export, analytics, or rebuild controls are present.
 
 ## Scope Review
 
