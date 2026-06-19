@@ -123,7 +123,7 @@ public partial class Index
     private async Task OnStockKeepingUnitChanged(StockKeepingUnitLookupItem? value)
     {
         _selectedStockKeepingUnit = value;
-        ClearRouteBlockingState();
+        //ClearRouteBlockingState();
 
         await ResetAndReloadInventoryLedgerAsync();
     }
