@@ -14,6 +14,7 @@ internal static class InventoryEndpoints
 
         group.MapInventoryBalanceEndpoints();
         group.MapInventoryAdjustmentEndpoints();
+        group.MapInventoryLedgerEndpoints();
 
         return endpoints;
     }

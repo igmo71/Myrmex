@@ -1,0 +1,85 @@
+@page "/wms/inventory/ledger"
+
+<PageTitle>WMS Inventory Ledger</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
+    <MudStack Spacing="3">
+        <MudStack Row="true"
+                  AlignItems="AlignItems.Center"
+                  Justify="Justify.SpaceBetween">
+            <div>
+                <MudText Typo="Typo.h5">Inventory Ledger</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Read-only inventory history by ledger entry.
+                </MudText>
+            </div>
+
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Refresh"
+                       OnClick="ReloadAsync"
+                       Disabled="@(!CanLoadLedgerGrid)">
+                Refresh
+            </MudButton>
+        </MudStack>
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+                @_errorMessage
+            </MudAlert>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_routeValidationMessage))
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Filled">
+                @_routeValidationMessage
+            </MudAlert>
+        }
+
+        @if (_isInitializing)
+        {
+            <MudPaper Class="pa-4">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                    <MudText>Loading inventory ledger filters.</MudText>
+                </MudStack>
+            </MudPaper>
+        }
+        else
+        {
+            <InventoryLedgerFilters Warehouses="@_warehouses"
+                                    SelectedWarehouseId="@_selectedWarehouseId"
+                                    SelectedWarehouseIdChanged="OnWarehouseChanged"
+                                    SelectedStorageLocation="@_selectedStorageLocation"
+                                    SelectedStorageLocationChanged="OnStorageLocationChanged"
+                                    SelectedStockKeepingUnit="@_selectedStockKeepingUnit"
+                                    SelectedStockKeepingUnitChanged="OnStockKeepingUnitChanged"
+                                    SelectedTransactionType="@_selectedTransactionType"
+                                    SelectedTransactionTypeChanged="OnTransactionTypeChanged"
+                                    OccurredFromDate="@_occurredFromDate"
+                                    OccurredFromDateChanged="OnOccurredFromDateChanged"
+                                    OccurredToDate="@_occurredToDate"
+                                    OccurredToDateChanged="OnOccurredToDateChanged"
+                                    IsLoadingWarehouses="@_isLoadingWarehouses"
+                                    SearchStockKeepingUnits="SearchStockKeepingUnitsAsync"
+                                    SearchStorageLocations="SearchStorageLocationsAsync"
+                                    ClearRequested="ClearFiltersAsync" />
+
+            @if (CanLoadLedgerGrid)
+            {
+                <InventoryLedgerGrid @ref="_inventoryLedgerGrid"
+                                     LoadData="LoadInventoryLedgerEntriesAsync"
+                                     DetailsRequested="OpenTransactionDetailsAsync" />
+            }
+            else
+            {
+                <MudPaper Class="pa-4">
+                    <MudText Color="Color.Secondary">
+                        Correct or clear the routed filter state to load Inventory Ledger history.
+                    </MudText>
+                </MudPaper>
+            }
+        }
+    </MudStack>
+</MudContainer>

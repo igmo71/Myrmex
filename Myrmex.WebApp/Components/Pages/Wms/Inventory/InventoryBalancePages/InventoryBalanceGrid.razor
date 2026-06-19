@@ -69,6 +69,10 @@
                          Dense="true"
                          AnchorOrigin="Origin.BottomRight"
                          TransformOrigin="Origin.TopRight">
+                    <MudMenuItem Icon="@Icons.Material.Filled.History"
+                                 OnClick="@(() => HistoryRequested.InvokeAsync(context.Item))">
+                        History
+                    </MudMenuItem>
                     <MudMenuItem Icon="@Icons.Material.Filled.Edit"
                                  OnClick="@(() => AdjustRequested.InvokeAsync(context.Item))">
                         Adjust
@@ -93,6 +97,9 @@
 
     [Parameter]
     public EventCallback<InventoryBalanceDetails> AdjustRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<InventoryBalanceDetails> HistoryRequested { get; set; }
 
     private MudDataGrid<InventoryBalanceDetails>? _dataGrid;
 

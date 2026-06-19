@@ -28,6 +28,9 @@ public partial class Index
     private IDialogService DialogService { get; set; } = default!;
 
     [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
+
+    [Inject]
     private ISnackbar Snackbar { get; set; } = default!;
 
     private InventoryBalanceGrid? _inventoryBalanceGrid;
@@ -108,16 +111,15 @@ public partial class Index
                 TotalItems = result.TotalCount
             };
         }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            return EmptyGridData();
+        }
         catch (Exception exception)
-            when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             _errorMessage = exception.Message;
-
-            return new GridData<InventoryBalanceDetails>
-            {
-                Items = [],
-                TotalItems = 0
-            };
+            return EmptyGridData();
         }
     }
 
@@ -236,6 +238,16 @@ public partial class Index
         await ReloadInventoryBalancesAsync();
     }
 
+    private void OpenInventoryLedgerHistory(InventoryBalanceDetails inventoryBalance)
+    {
+        string url =
+            $"/wms/inventory/ledger?stockKeepingUnitId={inventoryBalance.Sku.Id}" +
+            $"&warehouseId={inventoryBalance.StorageLocation.Warehouse.Id}" +
+            $"&storageLocationId={inventoryBalance.StorageLocation.Id}";
+
+        NavigationManager.NavigateTo(url);
+    }
+
     private bool MatchesActiveFilters(InventoryBalanceDetails inventoryBalance)
     {
         if (_selectedWarehouseId is not null &&
@@ -328,5 +340,14 @@ public partial class Index
             _errorMessage = exception.Message;
             return [];
         }
+    }
+
+    private static GridData<InventoryBalanceDetails> EmptyGridData()
+    {
+        return new GridData<InventoryBalanceDetails>
+        {
+            Items = [],
+            TotalItems = 0
+        };
     }
 }
