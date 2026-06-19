@@ -111,16 +111,15 @@ public partial class Index
                 TotalItems = result.TotalCount
             };
         }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            return EmptyGridData();
+        }
         catch (Exception exception)
-            when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             _errorMessage = exception.Message;
-
-            return new GridData<InventoryBalanceDetails>
-            {
-                Items = [],
-                TotalItems = 0
-            };
+            return EmptyGridData();
         }
     }
 
@@ -341,5 +340,14 @@ public partial class Index
             _errorMessage = exception.Message;
             return [];
         }
+    }
+
+    private static GridData<InventoryBalanceDetails> EmptyGridData()
+    {
+        return new GridData<InventoryBalanceDetails>
+        {
+            Items = [],
+            TotalItems = 0
+        };
     }
 }

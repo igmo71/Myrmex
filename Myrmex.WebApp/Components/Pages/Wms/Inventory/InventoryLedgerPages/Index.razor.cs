@@ -207,8 +207,12 @@ public partial class Index
                 TotalItems = result.TotalCount
             };
         }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            return EmptyGridData();
+        }
         catch (Exception exception)
-            when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             _errorMessage = exception.Message;
             return EmptyGridData();
