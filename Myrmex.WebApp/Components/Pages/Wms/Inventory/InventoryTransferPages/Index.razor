@@ -30,31 +30,31 @@
             </MudAlert>
         }
 
-        <InventoryTransferFilters Warehouses="_warehouses"
-                                  SelectedWarehouseId="_selectedWarehouseId"
+        <InventoryTransferFilters Warehouses="@_warehouses"
+                                  SelectedWarehouseId="@_selectedWarehouseId"
                                   SelectedWarehouseIdChanged="OnWarehouseChanged"
-                                  SelectedStatus="_selectedStatus"
+                                  SelectedStatus="@_selectedStatus"
                                   SelectedStatusChanged="OnStatusChanged"
-                                  HasTransitLocation="_hasTransitLocation"
+                                  HasTransitLocation="@_hasTransitLocation"
                                   HasTransitLocationChanged="OnHasTransitLocationChanged"
-                                  TransferCode="_transferCode"
+                                  TransferCode="@_transferCode"
                                   TransferCodeChanged="OnTransferCodeChanged"
-                                  CreatedFrom="_createdFrom"
+                                  CreatedFrom="@_createdFrom"
                                   CreatedFromChanged="OnCreatedFromChanged"
-                                  CreatedTo="_createdTo"
+                                  CreatedTo="@_createdTo"
                                   CreatedToChanged="OnCreatedToChanged"
-                                  SelectedStockKeepingUnit="_selectedStockKeepingUnit"
+                                  SelectedStockKeepingUnit="@_selectedStockKeepingUnit"
                                   SelectedStockKeepingUnitChanged="OnStockKeepingUnitChanged"
-                                  SelectedSourceStorageLocation="_selectedSourceStorageLocation"
+                                  SelectedSourceStorageLocation="@_selectedSourceStorageLocation"
                                   SelectedSourceStorageLocationChanged="OnSourceStorageLocationChanged"
-                                  SelectedDestinationStorageLocation="_selectedDestinationStorageLocation"
+                                  SelectedDestinationStorageLocation="@_selectedDestinationStorageLocation"
                                   SelectedDestinationStorageLocationChanged="OnDestinationStorageLocationChanged"
-                                  IsLoadingWarehouses="_isLoadingWarehouses"
+                                  IsLoadingWarehouses="@_isLoadingWarehouses"
                                   SearchStockKeepingUnits="SearchStockKeepingUnitsAsync"
                                   SearchStorageLocations="SearchStorageLocationsAsync"
                                   ReloadRequested="ReloadAsync" />
 
-        <InventoryTransferGrid @ref="_inventoryTransferGrid"
+        <InventoryTransferGrid @ref="@_inventoryTransferGrid"
                                LoadData="LoadInventoryTransfersAsync"
                                DetailsRequested="OpenDetailsAsync" />
     </MudStack>
