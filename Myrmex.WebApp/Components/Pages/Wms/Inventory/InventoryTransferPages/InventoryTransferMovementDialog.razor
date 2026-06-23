@@ -1,0 +1,22 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Transfer movement</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+            No movement actions available.
+        </MudAlert>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private void Close() => MudDialog.Close();
+}

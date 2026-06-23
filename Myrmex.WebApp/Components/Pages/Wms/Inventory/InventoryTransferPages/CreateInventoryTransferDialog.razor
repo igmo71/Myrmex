@@ -1,0 +1,551 @@
+@using System.Globalization
+@using Myrmex.Shared.Common
+@using Myrmex.Shared.Wms.Catalog
+@using Myrmex.Shared.Wms.Inventory
+@using Myrmex.Shared.Wms.Topology
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Create transfer</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudStack Spacing="3">
+                <MudSelect T="Guid?"
+                           Label="Warehouse"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Required="true"
+                           RequiredError="Warehouse is required."
+                           Disabled="_isLoadingWarehouses"
+                           Value="_warehouseId"
+                           ValueChanged="OnWarehouseChanged">
+                    @foreach (WarehouseDetails warehouse in _warehouses)
+                    {
+                        <MudSelectItem T="Guid?" Value="@((Guid?)warehouse.Id)">
+                            @warehouse.Code - @warehouse.Name
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudAutocomplete T="StorageLocationLookupItem"
+                                 Label="Internal transit location"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Clearable="true"
+                                 ShowProgressIndicator="true"
+                                 MinCharacters="0"
+                                 DebounceInterval="300"
+                                 MaxItems="20"
+                                 ResetValueOnEmptyText="true"
+                                 CoerceText="false"
+                                 CoerceValue="false"
+                                 Disabled="_warehouseId is null"
+                                 Value="_transitStorageLocation"
+                                 ValueChanged="OnTransitStorageLocationChanged"
+                                 SearchFunc="SearchStorageLocationsAsync"
+                                 ToStringFunc="FormatStorageLocation"
+                                 HelperText="&#160;">
+                    <ItemTemplate>
+                        <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                    </ItemTemplate>
+                    <NoItemsTemplate>
+                        <MudText>No storage locations found.</MudText>
+                    </NoItemsTemplate>
+                </MudAutocomplete>
+
+                <MudStack Spacing="2">
+                    <MudStack Row="true"
+                              AlignItems="AlignItems.Center"
+                              Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.subtitle2">Lines</MudText>
+                        <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                       Color="Color.Primary"
+                                       Size="Size.Small"
+                                       OnClick="AddLine" />
+                    </MudStack>
+
+                    @foreach (TransferLineModel line in _lines)
+                    {
+                        <MudPaper Class="pa-3" Outlined="true">
+                            <MudStack Spacing="2">
+                                <MudStack Row="true"
+                                          AlignItems="AlignItems.Center"
+                                          Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.body2">Line @(_lines.IndexOf(line) + 1)</MudText>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                   Size="Size.Small"
+                                                   Color="Color.Error"
+                                                   Disabled="_lines.Count == 1"
+                                                   OnClick="@(() => RemoveLine(line))" />
+                                </MudStack>
+
+                                <MudGrid>
+                                    <MudItem xs="12" md="6">
+                                        <MudAutocomplete T="StockKeepingUnitLookupItem"
+                                                         Label="SKU"
+                                                         Variant="Variant.Outlined"
+                                                         Margin="Margin.Dense"
+                                                         Required="true"
+                                                         RequiredError="SKU is required."
+                                                         Clearable="true"
+                                                         ShowProgressIndicator="true"
+                                                         MinCharacters="0"
+                                                         DebounceInterval="300"
+                                                         MaxItems="20"
+                                                         ResetValueOnEmptyText="true"
+                                                         CoerceText="false"
+                                                         CoerceValue="false"
+                                                         Value="line.StockKeepingUnit"
+                                                         ValueChanged="@((StockKeepingUnitLookupItem? value) => OnStockKeepingUnitChanged(line, value))"
+                                                         SearchFunc="SearchStockKeepingUnitsAsync"
+                                                         ToStringFunc="FormatStockKeepingUnit">
+                                            <ItemTemplate>
+                                                <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                                            </ItemTemplate>
+                                        </MudAutocomplete>
+                                    </MudItem>
+
+                                    <MudItem xs="12" md="6">
+                                        <MudNumericField T="decimal"
+                                                         Label="Requested quantity"
+                                                         Variant="Variant.Outlined"
+                                                         Margin="Margin.Dense"
+                                                         Min="@(0.0001m)"
+                                                         Required="true"
+                                                         RequiredError="Requested quantity is required."
+                                                         Culture="@QuantityCulture"
+                                                         Format="0.####"
+                                                         InputMode="@(InputMode.@decimal)"
+                                                         @bind-Value="line.RequestedQuantity" />
+                                    </MudItem>
+
+                                    <MudItem xs="12" md="6">
+                                        <MudAutocomplete T="StorageLocationLookupItem"
+                                                         Label="Source location"
+                                                         Variant="Variant.Outlined"
+                                                         Margin="Margin.Dense"
+                                                         Required="true"
+                                                         RequiredError="Source location is required."
+                                                         Clearable="true"
+                                                         ShowProgressIndicator="true"
+                                                         MinCharacters="0"
+                                                         DebounceInterval="300"
+                                                         MaxItems="20"
+                                                         ResetValueOnEmptyText="true"
+                                                         CoerceText="false"
+                                                         CoerceValue="false"
+                                                         Disabled="_warehouseId is null"
+                                                         Value="line.SourceStorageLocation"
+                                                         ValueChanged="@((StorageLocationLookupItem? value) => OnSourceStorageLocationChanged(line, value))"
+                                                         SearchFunc="SearchStorageLocationsAsync"
+                                                         ToStringFunc="FormatStorageLocation">
+                                            <ItemTemplate>
+                                                <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                                            </ItemTemplate>
+                                        </MudAutocomplete>
+                                    </MudItem>
+
+                                    <MudItem xs="12" md="6">
+                                        <MudAutocomplete T="StorageLocationLookupItem"
+                                                         Label="Destination location"
+                                                         Variant="Variant.Outlined"
+                                                         Margin="Margin.Dense"
+                                                         Required="true"
+                                                         RequiredError="Destination location is required."
+                                                         Clearable="true"
+                                                         ShowProgressIndicator="true"
+                                                         MinCharacters="0"
+                                                         DebounceInterval="300"
+                                                         MaxItems="20"
+                                                         ResetValueOnEmptyText="true"
+                                                         CoerceText="false"
+                                                         CoerceValue="false"
+                                                         Disabled="_warehouseId is null"
+                                                         Value="line.DestinationStorageLocation"
+                                                         ValueChanged="@((StorageLocationLookupItem? value) => OnDestinationStorageLocationChanged(line, value))"
+                                                         SearchFunc="SearchStorageLocationsAsync"
+                                                         ToStringFunc="FormatStorageLocation">
+                                            <ItemTemplate>
+                                                <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                                            </ItemTemplate>
+                                        </MudAutocomplete>
+                                    </MudItem>
+                                </MudGrid>
+                            </MudStack>
+                        </MudPaper>
+                    }
+                </MudStack>
+
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+                        @_errorMessage
+                    </MudAlert>
+                }
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel"
+                   Disabled="_isSaving">
+            Cancel
+        </MudButton>
+
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="SaveAsync"
+                   Disabled="_isSaving || _isLoadingWarehouses">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Size="Size.Small"
+                                     Indeterminate="true"
+                                     Class="me-2" />
+            }
+            Save
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private const int LookupTake = 100;
+    private const int AutocompleteTake = 20;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Inject]
+    private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = null!;
+
+    [Inject]
+    private WmsCatalogApiClient WmsCatalogApiClient { get; set; } = null!;
+
+    [Inject]
+    private WmsTopologyApiClient WmsTopologyApiClient { get; set; } = null!;
+
+    private MudForm? _form;
+    private readonly List<TransferLineModel> _lines = [new()];
+    private readonly Dictionary<string, IReadOnlyList<StorageLocationLookupItem>> _storageLocationCache = [];
+    private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
+
+    private List<WarehouseDetails> _warehouses = [];
+    private Guid? _warehouseId;
+    private StorageLocationLookupItem? _transitStorageLocation;
+    private bool _isLoadingWarehouses;
+    private bool _isSaving;
+    private string? _errorMessage;
+    private int _storageLocationSearchVersion;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadWarehousesAsync();
+    }
+
+    private async Task LoadWarehousesAsync()
+    {
+        _isLoadingWarehouses = true;
+        _errorMessage = null;
+
+        try
+        {
+            ListRequest request = new(
+                Skip: 0,
+                Take: LookupTake,
+                SortBy: "code",
+                SortDescending: false,
+                IncludeInactive: false);
+
+            ListResult<WarehouseDetails> result = await WmsTopologyApiClient
+                .ListWarehousesAsync(request);
+
+            _warehouses = result.Items.ToList();
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            _warehouses = [];
+        }
+        finally
+        {
+            _isLoadingWarehouses = false;
+        }
+    }
+
+    private Task OnWarehouseChanged(Guid? value)
+    {
+        _warehouseId = value;
+        _transitStorageLocation = null;
+        _storageLocationCache.Clear();
+        _storageLocationSearchVersion++;
+
+        foreach (TransferLineModel line in _lines)
+        {
+            line.SourceStorageLocation = null;
+            line.DestinationStorageLocation = null;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task OnTransitStorageLocationChanged(StorageLocationLookupItem? value)
+    {
+        _transitStorageLocation = CoerceWarehouseLocation(value);
+        return Task.CompletedTask;
+    }
+
+    private Task OnStockKeepingUnitChanged(TransferLineModel line, StockKeepingUnitLookupItem? value)
+    {
+        line.StockKeepingUnit = value;
+        return Task.CompletedTask;
+    }
+
+    private Task OnSourceStorageLocationChanged(TransferLineModel line, StorageLocationLookupItem? value)
+    {
+        line.SourceStorageLocation = CoerceWarehouseLocation(value);
+        return Task.CompletedTask;
+    }
+
+    private Task OnDestinationStorageLocationChanged(TransferLineModel line, StorageLocationLookupItem? value)
+    {
+        line.DestinationStorageLocation = CoerceWarehouseLocation(value);
+        return Task.CompletedTask;
+    }
+
+    private void AddLine()
+    {
+        _lines.Add(new TransferLineModel());
+    }
+
+    private void RemoveLine(TransferLineModel line)
+    {
+        if (_lines.Count == 1)
+        {
+            return;
+        }
+
+        _lines.Remove(line);
+    }
+
+    private async Task<IEnumerable<StockKeepingUnitLookupItem>> SearchStockKeepingUnitsAsync(
+        string value,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            IReadOnlyList<StockKeepingUnitLookupItem> items = await WmsCatalogApiClient
+                .LookupStockKeepingUnitsAsync(
+                    new LookupStockKeepingUnitsRequest
+                    {
+                        SearchText = value,
+                        Take = AutocompleteTake,
+                        SelectableOnly = true
+                    },
+                    cancellationToken);
+
+            return items;
+        }
+        catch (Exception exception)
+            when (exception is OperationCanceledException && cancellationToken.IsCancellationRequested)
+        {
+            return [];
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            return [];
+        }
+    }
+
+    private async Task<IEnumerable<StorageLocationLookupItem>> SearchStorageLocationsAsync(
+        string value,
+        CancellationToken cancellationToken)
+    {
+        if (_warehouseId is not Guid warehouseId)
+        {
+            return [];
+        }
+
+        int searchVersion = _storageLocationSearchVersion;
+        string cacheKey = $"{warehouseId:N}:{value}";
+
+        if (_storageLocationCache.TryGetValue(cacheKey, out IReadOnlyList<StorageLocationLookupItem>? cachedItems))
+        {
+            return cachedItems;
+        }
+
+        try
+        {
+            IReadOnlyList<StorageLocationLookupItem> items = await WmsTopologyApiClient
+                .LookupStorageLocationsAsync(
+                    warehouseId,
+                    new LookupStorageLocationsRequest
+                    {
+                        SearchText = value,
+                        Take = AutocompleteTake,
+                        SelectableOnly = true
+                    },
+                    cancellationToken);
+
+            if (searchVersion != _storageLocationSearchVersion ||
+                _warehouseId != warehouseId)
+            {
+                return [];
+            }
+
+            _storageLocationCache[cacheKey] = items;
+            return items;
+        }
+        catch (Exception exception)
+            when (exception is OperationCanceledException && cancellationToken.IsCancellationRequested)
+        {
+            return [];
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            return [];
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        string? clientError = ValidateClientState();
+
+        if (clientError is not null)
+        {
+            _errorMessage = clientError;
+            return;
+        }
+
+        _isSaving = true;
+        _errorMessage = null;
+
+        try
+        {
+            CreateInventoryTransferRequest request = new(
+                _warehouseId,
+                _warehouseId,
+                _transitStorageLocation?.Id,
+                _lines.Select(line => new CreateInventoryTransferLineRequest(
+                        line.StockKeepingUnit?.Id,
+                        line.SourceStorageLocation?.Id,
+                        line.DestinationStorageLocation?.Id,
+                        line.RequestedQuantity))
+                    .ToArray());
+
+            ApiResult<InventoryTransferDetails> result = await WmsInventoryApiClient
+                .TryCreateInventoryTransferAsync(request);
+
+            if (result.IsFailure)
+            {
+                _errorMessage = result.Error?.Message ?? "Inventory transfer creation failed.";
+                return;
+            }
+
+            if (result.Value is null)
+            {
+                _errorMessage = "The operation completed without returning transfer details.";
+                return;
+            }
+
+            MudDialog.Close(DialogResult.Ok(result.Value));
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private string? ValidateClientState()
+    {
+        if (_warehouseId is null)
+        {
+            return "Warehouse is required.";
+        }
+
+        if (_lines.Count == 0)
+        {
+            return "At least one transfer line is required.";
+        }
+
+        for (int index = 0; index < _lines.Count; index++)
+        {
+            TransferLineModel line = _lines[index];
+
+            if (line.StockKeepingUnit is null)
+            {
+                return $"Line {index + 1}: SKU is required.";
+            }
+
+            if (line.SourceStorageLocation is null)
+            {
+                return $"Line {index + 1}: source location is required.";
+            }
+
+            if (line.DestinationStorageLocation is null)
+            {
+                return $"Line {index + 1}: destination location is required.";
+            }
+
+            if (line.SourceStorageLocation.Id == line.DestinationStorageLocation.Id)
+            {
+                return $"Line {index + 1}: source and destination must be different.";
+            }
+
+            if (line.RequestedQuantity <= 0)
+            {
+                return $"Line {index + 1}: requested quantity must be greater than zero.";
+            }
+        }
+
+        return null;
+    }
+
+    private StorageLocationLookupItem? CoerceWarehouseLocation(StorageLocationLookupItem? value)
+    {
+        if (value is not null &&
+            (_warehouseId is null || value.WarehouseId != _warehouseId.Value))
+        {
+            return null;
+        }
+
+        return value;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private static string FormatStorageLocation(StorageLocationLookupItem? storageLocation) =>
+        storageLocation is null ? string.Empty : $"{storageLocation.Code} - {storageLocation.Name}";
+
+    private static string FormatStockKeepingUnit(StockKeepingUnitLookupItem? stockKeepingUnit) =>
+        stockKeepingUnit is null ? string.Empty : $"{stockKeepingUnit.Code} - {stockKeepingUnit.Name}";
+
+    private sealed class TransferLineModel
+    {
+        public StockKeepingUnitLookupItem? StockKeepingUnit { get; set; }
+
+        public StorageLocationLookupItem? SourceStorageLocation { get; set; }
+
+        public StorageLocationLookupItem? DestinationStorageLocation { get; set; }
+
+        public decimal RequestedQuantity { get; set; } = 1;
+    }
+}

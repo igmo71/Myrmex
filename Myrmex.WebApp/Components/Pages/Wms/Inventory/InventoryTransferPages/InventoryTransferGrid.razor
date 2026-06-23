@@ -1,0 +1,69 @@
+@using Myrmex.Shared.Wms.Inventory
+
+<MudDataGrid T="InventoryTransferDetails"
+             Items="Transfers"
+             Dense="true"
+             Hover="true"
+             Bordered="true"
+             Striped="true"
+             Filterable="false">
+    <Columns>
+        <TemplateColumn Title="Transfer">
+            <CellTemplate>
+                <MudText Typo="Typo.body2">@context.Item.Code</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @context.Item.CreatedAtUtc.ToLocalTime().ToString("g")
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Warehouse">
+            <CellTemplate>
+                <MudText Typo="Typo.body2">@context.Item.SourceWarehouse.Code</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @context.Item.SourceWarehouse.Name
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Transit">
+            <CellTemplate>
+                @(context.Item.TransitStorageLocation?.Code ?? "Direct")
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Lines">
+            <CellTemplate>
+                @context.Item.Lines.Count
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Status">
+            <CellTemplate>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info">
+                    @context.Item.Status
+                </MudChip>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Actions" Sortable="false">
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                               Size="Size.Small"
+                               OnClick="@(() => DetailsRequested.InvokeAsync(context.Item))" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <NoRecordsContent>
+        <MudText>No transfers have been created in this page session.</MudText>
+    </NoRecordsContent>
+</MudDataGrid>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<InventoryTransferDetails> Transfers { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<InventoryTransferDetails> DetailsRequested { get; set; }
+}

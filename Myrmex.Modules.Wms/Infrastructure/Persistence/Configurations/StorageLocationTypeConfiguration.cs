@@ -104,6 +104,30 @@ internal sealed class StorageLocationTypeConfiguration : IEntityTypeConfiguratio
                 CreatedAtUtc = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
                 UpdatedAtUtc = (DateTimeOffset?)null,
                 IsActive = true
+            },
+            new
+            {
+                Id = WmsSeedIds.StorageLocationTypeInternalTransit,
+                Code = "INTERNAL_TRANSIT",
+                Name = "Internal transit",
+                Description = "System storage location type for internal inventory transfer transit.",
+                IsSystem = true,
+                SortOrder = 60,
+                CreatedAtUtc = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                UpdatedAtUtc = (DateTimeOffset?)null,
+                IsActive = true
+            },
+            new
+            {
+                Id = WmsSeedIds.StorageLocationTypeExternalTransit,
+                Code = "EXTERNAL_TRANSIT",
+                Name = "External transit",
+                Description = "System storage location type reserved for external inventory transfer transit.",
+                IsSystem = true,
+                SortOrder = 70,
+                CreatedAtUtc = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                UpdatedAtUtc = (DateTimeOffset?)null,
+                IsActive = true
             });
     }
 }

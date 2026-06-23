@@ -12,10 +12,10 @@
 
 **Purpose**: Create feature folders and shared test scaffolding without changing runtime behavior.
 
-- [ ] T001 Create Inventory Transfer shared contract files with empty records/placeholders in `Myrmex.Shared/Wms/Inventory/CreateInventoryTransferRequest.cs`, `Myrmex.Shared/Wms/Inventory/CreateInventoryTransferLineRequest.cs`, `Myrmex.Shared/Wms/Inventory/MoveInventoryTransferLineRequest.cs`, `Myrmex.Shared/Wms/Inventory/PickInventoryTransferLineRequest.cs`, `Myrmex.Shared/Wms/Inventory/PlaceInventoryTransferLineRequest.cs`, `Myrmex.Shared/Wms/Inventory/ListInventoryTransfersRequest.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferSortBy.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferStatusDetails.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferListItem.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferDetails.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferLineDetails.cs`, and `Myrmex.Shared/Wms/Inventory/InventoryTransferMovementDetails.cs`
-- [ ] T002 Create Inventory Transfer backend folders and placeholder files in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransfers/`, `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/`, and `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryTransferEndpoints.cs`
-- [ ] T003 Create Inventory Transfer WebApp folders and placeholder files in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/Index.razor`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/Index.razor.cs`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferFilters.razor`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferGrid.razor`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferGridRequest.cs`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferDetailsDialog.razor`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/CreateInventoryTransferDialog.razor`, and `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferMovementDialog.razor`
-- [ ] T004 Create Inventory Transfer test scaffolding files in `Myrmex.Tests/Wms/Inventory/Testing/InventoryTransferTestData.cs`, `Myrmex.Tests/Wms/Inventory/Domain/InventoryTransferTests.cs`, `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`, `Myrmex.Tests/Wms/Inventory/Persistence/InventoryTransferPersistenceTests.cs`, and `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryTransferEndpointTests.cs`
+- [X] T001 Create Inventory Transfer shared contract files with empty records/placeholders in `Myrmex.Shared/Wms/Inventory/CreateInventoryTransferRequest.cs`, `Myrmex.Shared/Wms/Inventory/CreateInventoryTransferLineRequest.cs`, `Myrmex.Shared/Wms/Inventory/MoveInventoryTransferLineRequest.cs`, `Myrmex.Shared/Wms/Inventory/PickInventoryTransferLineRequest.cs`, `Myrmex.Shared/Wms/Inventory/PlaceInventoryTransferLineRequest.cs`, `Myrmex.Shared/Wms/Inventory/ListInventoryTransfersRequest.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferSortBy.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferStatusDetails.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferListItem.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferDetails.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferLineDetails.cs`, and `Myrmex.Shared/Wms/Inventory/InventoryTransferMovementDetails.cs`
+- [X] T002 Create Inventory Transfer backend folders and placeholder files in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransfers/`, `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/`, and `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryTransferEndpoints.cs`
+- [X] T003 Create Inventory Transfer WebApp folders and placeholder files in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/Index.razor`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/Index.razor.cs`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferFilters.razor`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferGrid.razor`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferGridRequest.cs`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferDetailsDialog.razor`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/CreateInventoryTransferDialog.razor`, and `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferMovementDialog.razor`
+- [X] T004 Create Inventory Transfer test scaffolding files in `Myrmex.Tests/Wms/Inventory/Testing/InventoryTransferTestData.cs`, `Myrmex.Tests/Wms/Inventory/Domain/InventoryTransferTests.cs`, `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`, `Myrmex.Tests/Wms/Inventory/Persistence/InventoryTransferPersistenceTests.cs`, and `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryTransferEndpointTests.cs`
 
 ---
 
@@ -27,26 +27,26 @@
 
 ### Tests
 
-- [ ] T005 [P] Add persistence test for storage-location type seed regression risk covering `InternalTransit` and `ExternalTransit` in `Myrmex.Tests/Wms/Inventory/Persistence/InventoryTransferPersistenceTests.cs`
-- [ ] T006 [P] Add domain test for nullable transit and no persisted execution-mode regression risk in `Myrmex.Tests/Wms/Inventory/Domain/InventoryTransferTests.cs`
-- [ ] T007 [P] Add domain test for movement fact fields and no persisted movement-type/scanner-state regression risk in `Myrmex.Tests/Wms/Inventory/Domain/InventoryTransferTests.cs`
-- [ ] T008 [P] Add domain test for transfer transaction factory creating exactly two `InventoryLedgerEntry` rows with `InventoryTransactionType.Transfer` in `Myrmex.Tests/Wms/Inventory/Domain/InventoryTransactionTests.cs`
+- [X] T005 [P] Add persistence test for storage-location type seed regression risk covering `InternalTransit` and `ExternalTransit` in `Myrmex.Tests/Wms/Inventory/Persistence/InventoryTransferPersistenceTests.cs`
+- [X] T006 [P] Add domain test for nullable transit and no persisted execution-mode regression risk in `Myrmex.Tests/Wms/Inventory/Domain/InventoryTransferTests.cs`
+- [X] T007 [P] Add domain test for movement fact fields and no persisted movement-type/scanner-state regression risk in `Myrmex.Tests/Wms/Inventory/Domain/InventoryTransferTests.cs`
+- [X] T008 [P] Add domain test for transfer transaction factory creating exactly two `InventoryLedgerEntry` rows with `InventoryTransactionType.Transfer` in `Myrmex.Tests/Wms/Inventory/Domain/InventoryTransactionTests.cs`
 
 ### Implementation
 
-- [ ] T009 Add `Transfer = 2` to `InventoryTransactionType` in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryTransactionType.cs`
-- [ ] T010 Add a transfer factory that creates one transfer transaction with exactly two `InventoryLedgerEntry` entities in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryTransaction.cs`
-- [ ] T011 Implement `InventoryTransferStatus` in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransfers/InventoryTransferStatus.cs`
-- [ ] T012 Implement `InventoryTransferLine` with requested quantity and computed progress helpers in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransfers/InventoryTransferLine.cs`
-- [ ] T013 Implement immutable `InventoryTransferMovement` with `InventoryTransactionId` in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransfers/InventoryTransferMovement.cs`
-- [ ] T014 Implement `InventoryTransfer` aggregate with nullable `TransitStorageLocationId`, line collection, movement collection, and status behavior in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransfers/InventoryTransfer.cs`
-- [ ] T015 Extend storage-location type seed data with `INTERNAL_TRANSIT` and `EXTERNAL_TRANSIT` in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/StorageLocationTypeConfiguration.cs`
-- [ ] T016 Add storage-location type seed identifiers for internal and external transit in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsSeedIds.cs`
-- [ ] T017 Add transfer table, key, foreign-key, and index names in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs`
-- [ ] T018 Implement transfer EF mapping in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryTransferConfiguration.cs`
-- [ ] T019 Implement transfer line EF mapping in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryTransferLineConfiguration.cs`
-- [ ] T020 Implement transfer movement EF mapping in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryTransferMovementConfiguration.cs`
-- [ ] T021 Add transfer DbSets to `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs`
+- [X] T009 Add `Transfer = 2` to `InventoryTransactionType` in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryTransactionType.cs`
+- [X] T010 Add a transfer factory that creates one transfer transaction with exactly two `InventoryLedgerEntry` entities in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryTransaction.cs`
+- [X] T011 Implement `InventoryTransferStatus` in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransfers/InventoryTransferStatus.cs`
+- [X] T012 Implement `InventoryTransferLine` with requested quantity and computed progress helpers in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransfers/InventoryTransferLine.cs`
+- [X] T013 Implement immutable `InventoryTransferMovement` with `InventoryTransactionId` in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransfers/InventoryTransferMovement.cs`
+- [X] T014 Implement `InventoryTransfer` aggregate with nullable `TransitStorageLocationId`, line collection, movement collection, and status behavior in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransfers/InventoryTransfer.cs`
+- [X] T015 Extend storage-location type seed data with `INTERNAL_TRANSIT` and `EXTERNAL_TRANSIT` in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/StorageLocationTypeConfiguration.cs`
+- [X] T016 Add storage-location type seed identifiers for internal and external transit in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsSeedIds.cs`
+- [X] T017 Add transfer table, key, foreign-key, and index names in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs`
+- [X] T018 Implement transfer EF mapping in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryTransferConfiguration.cs`
+- [X] T019 Implement transfer line EF mapping in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryTransferLineConfiguration.cs`
+- [X] T020 Implement transfer movement EF mapping in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryTransferMovementConfiguration.cs`
+- [X] T021 Add transfer DbSets to `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs`
 - [ ] T022 Create EF migration for transfer tables and transit storage-location type seed changes in `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/<timestamp>_AddInventoryTransfers.cs`
 
 **Checkpoint**: Transfer entities, reference data, and persistence mappings are ready for user story slices.
@@ -61,21 +61,21 @@
 
 ### Tests
 
-- [ ] T023 [P] [US1] Add handler test for same-warehouse create-transfer success and external-transfer rejection in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
-- [ ] T024 [P] [US1] Add handler test for active SKU, regular source/destination locations, internal transit location, and positive quantity validation in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
-- [ ] T025 [P] [US1] Add endpoint test for create-transfer route, body binding, and representative ProblemDetails behavior in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryTransferEndpointTests.cs`
-- [ ] T026 [P] [US1] Add API-client test for create-transfer request body and write-result mapping in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [X] T023 [P] [US1] Add handler test for same-warehouse create-transfer success and external-transfer rejection in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
+- [X] T024 [P] [US1] Add handler test for active SKU, regular source/destination locations, internal transit location, and positive quantity validation in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
+- [X] T025 [P] [US1] Add endpoint test for create-transfer route, body binding, and representative ProblemDetails behavior in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryTransferEndpointTests.cs`
+- [X] T026 [P] [US1] Add API-client test for create-transfer request body and write-result mapping in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation
 
-- [ ] T027 [US1] Implement create-transfer shared request and transfer details contracts in `Myrmex.Shared/Wms/Inventory/CreateInventoryTransferRequest.cs`, `Myrmex.Shared/Wms/Inventory/CreateInventoryTransferLineRequest.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferStatusDetails.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferDetails.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferLineDetails.cs`, and `Myrmex.Shared/Wms/Inventory/InventoryTransferMovementDetails.cs`
-- [ ] T028 [US1] Implement create-transfer command, validation, persistence, and details reload in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/CreateInventoryTransfer.cs`
-- [ ] T029 [US1] Implement transfer details projection helpers for created transfer responses in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/InventoryTransferQueryableExtensions.cs`
-- [ ] T030 [US1] Implement create-transfer endpoint mapping in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryTransferEndpoints.cs`
-- [ ] T031 [US1] Register transfer endpoints in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryEndpoints.cs`
-- [ ] T032 [US1] Add create-transfer API-client method in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
-- [ ] T033 [US1] Implement create-transfer dialog with multiple line editing in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/CreateInventoryTransferDialog.razor`
-- [ ] T034 [US1] Wire create-transfer dialog into the transfer page state in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/Index.razor.cs`
+- [X] T027 [US1] Implement create-transfer shared request and transfer details contracts in `Myrmex.Shared/Wms/Inventory/CreateInventoryTransferRequest.cs`, `Myrmex.Shared/Wms/Inventory/CreateInventoryTransferLineRequest.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferStatusDetails.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferDetails.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferLineDetails.cs`, and `Myrmex.Shared/Wms/Inventory/InventoryTransferMovementDetails.cs`
+- [X] T028 [US1] Implement create-transfer command, validation, persistence, and details reload in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/CreateInventoryTransfer.cs`
+- [X] T029 [US1] Implement transfer details projection helpers for created transfer responses in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/InventoryTransferQueryableExtensions.cs`
+- [X] T030 [US1] Implement create-transfer endpoint mapping in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryTransferEndpoints.cs`
+- [X] T031 [US1] Register transfer endpoints in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryEndpoints.cs`
+- [X] T032 [US1] Add create-transfer API-client method in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [X] T033 [US1] Implement create-transfer dialog with multiple line editing in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/CreateInventoryTransferDialog.razor`
+- [X] T034 [US1] Wire create-transfer dialog into the transfer page state in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/Index.razor.cs`
 
 **Checkpoint**: User Story 1 is independently functional and ready for validation before movement execution is added.
 

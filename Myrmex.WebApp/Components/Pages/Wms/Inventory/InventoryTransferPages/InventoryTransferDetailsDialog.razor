@@ -1,0 +1,55 @@
+@using Myrmex.Shared.Wms.Inventory
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Transfer.Code</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudGrid>
+                <MudItem xs="12" md="4">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Status</MudText>
+                    <MudText Typo="Typo.body2">@Transfer.Status</MudText>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Warehouse</MudText>
+                    <MudText Typo="Typo.body2">@Transfer.SourceWarehouse.Code - @Transfer.SourceWarehouse.Name</MudText>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Transit</MudText>
+                    <MudText Typo="Typo.body2">@(Transfer.TransitStorageLocation?.Code ?? "Direct")</MudText>
+                </MudItem>
+            </MudGrid>
+
+            <MudTable Items="Transfer.Lines" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>SKU</MudTh>
+                    <MudTh>Source</MudTh>
+                    <MudTh>Destination</MudTh>
+                    <MudTh>Requested</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Sku.Code</MudTd>
+                    <MudTd>@context.SourceStorageLocation.Code</MudTd>
+                    <MudTd>@context.DestinationStorageLocation.Code</MudTd>
+                    <MudTd>@context.RequestedQuantity</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public InventoryTransferDetails Transfer { get; set; } = null!;
+
+    private void Close() => MudDialog.Close();
+}

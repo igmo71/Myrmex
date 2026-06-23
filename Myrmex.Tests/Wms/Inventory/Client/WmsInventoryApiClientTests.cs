@@ -287,6 +287,64 @@ public sealed class WmsInventoryApiClientTests
     }
 
     [Fact]
+    public async Task TryCreateInventoryTransferAsync_WhenSuccessful_PostsRequestBodyAndMapsDetails()
+    {
+        Guid warehouseId = Guid.Parse("018f0000-0000-7000-8000-000000000301");
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
+        Guid sourceLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000201");
+        Guid destinationLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000202");
+        InventoryTransferDetails details = CreateInventoryTransferDetails(
+            warehouseId,
+            stockKeepingUnitId,
+            sourceLocationId,
+            destinationLocationId);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+
+        ApiResult<InventoryTransferDetails> result = await apiClient.TryCreateInventoryTransferAsync(
+            new CreateInventoryTransferRequest(
+                warehouseId,
+                warehouseId,
+                TransitStorageLocationId: null,
+                [
+                    new CreateInventoryTransferLineRequest(
+                        stockKeepingUnitId,
+                        sourceLocationId,
+                        destinationLocationId,
+                        RequestedQuantity: 5)
+                ]),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(details.Id, result.Value.Id);
+        Assert.Equal(InventoryTransferStatusDetails.Created, result.Value.Status);
+        InventoryTransferLineDetails line = Assert.Single(result.Value.Lines);
+        Assert.Equal(stockKeepingUnitId, line.Sku.Id);
+        Assert.Equal(sourceLocationId, line.SourceStorageLocation.Id);
+        Assert.Equal(destinationLocationId, line.DestinationStorageLocation.Id);
+        Assert.Equal(5, line.RequestedQuantity);
+        Assert.Empty(result.Value.Movements);
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal("/api/wms/inventory/transfers", handler.RequestPath);
+
+        using JsonDocument requestBody = JsonDocument.Parse(handler.RequestBody);
+        JsonElement root = requestBody.RootElement;
+        Assert.Equal(warehouseId, root.GetProperty("sourceWarehouseId").GetGuid());
+        Assert.Equal(warehouseId, root.GetProperty("destinationWarehouseId").GetGuid());
+        Assert.True(root.GetProperty("transitStorageLocationId").ValueKind is JsonValueKind.Null);
+        JsonElement requestLine = root.GetProperty("lines")[0];
+        Assert.Equal(stockKeepingUnitId, requestLine.GetProperty("stockKeepingUnitId").GetGuid());
+        Assert.Equal(sourceLocationId, requestLine.GetProperty("sourceStorageLocationId").GetGuid());
+        Assert.Equal(destinationLocationId, requestLine.GetProperty("destinationStorageLocationId").GetGuid());
+        Assert.Equal(5, requestLine.GetProperty("requestedQuantity").GetDecimal());
+    }
+
+    [Fact]
     public async Task GetInventoryBalanceByIdAsync_WhenMalformedErrorReturned_ThrowsApiExceptionWithFallbackMessage()
     {
         Guid inventoryBalanceId = Guid.Parse("018f0000-0000-7000-8000-000000000999");
@@ -428,6 +486,49 @@ public sealed class WmsInventoryApiClientTests
                             "MAIN",
                             "Main Warehouse")))
             ]);
+    }
+
+    private static InventoryTransferDetails CreateInventoryTransferDetails(
+        Guid warehouseId,
+        Guid stockKeepingUnitId,
+        Guid sourceLocationId,
+        Guid destinationLocationId)
+    {
+        return new InventoryTransferDetails(
+            Guid.Parse("018f0000-0000-7000-8000-000000000601"),
+            "TR-001",
+            InventoryTransferStatusDetails.Created,
+            DateTimeOffset.Parse("2026-06-19T09:00:00Z"),
+            UpdatedAtUtc: null,
+            new InventoryTransferDetails.WarehouseInfo(warehouseId, "MAIN", "Main Warehouse"),
+            new InventoryTransferDetails.WarehouseInfo(warehouseId, "MAIN", "Main Warehouse"),
+            TransitStorageLocation: null,
+            [
+                new InventoryTransferLineDetails(
+                    Guid.Parse("018f0000-0000-7000-8000-000000000602"),
+                    RequestedQuantity: 5,
+                    MovedQuantity: 0,
+                    PickedQuantity: 0,
+                    PlacedQuantity: 0,
+                    InTransitQuantity: 0,
+                    new InventoryTransferLineDetails.StockKeepingUnitInfo(
+                        stockKeepingUnitId,
+                        "SKU-001",
+                        "Widget",
+                        new InventoryTransferLineDetails.UnitOfMeasureInfo(
+                            Guid.Parse("018f0000-0000-7000-8000-000000000111"),
+                            "EA",
+                            "ea")),
+                    new InventoryTransferLineDetails.StorageLocationInfo(
+                        sourceLocationId,
+                        "A-01-01",
+                        "A-01-01"),
+                    new InventoryTransferLineDetails.StorageLocationInfo(
+                        destinationLocationId,
+                        "A-01-02",
+                        "A-01-02"))
+            ],
+            []);
     }
 
     private sealed class StubHttpMessageHandler(

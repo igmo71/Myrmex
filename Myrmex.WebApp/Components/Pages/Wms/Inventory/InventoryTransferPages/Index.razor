@@ -1,0 +1,38 @@
+@page "/wms/inventory/transfers"
+@using Myrmex.Shared.Wms.Inventory
+
+<PageTitle>WMS Inventory Transfers</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
+    <MudStack Spacing="3">
+        <MudStack Row="true"
+                  AlignItems="AlignItems.Center"
+                  Justify="Justify.SpaceBetween">
+            <div>
+                <MudText Typo="Typo.h5">Inventory Transfers</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Internal transfer documents.
+                </MudText>
+            </div>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="OpenCreateTransferAsync">
+                Create transfer
+            </MudButton>
+        </MudStack>
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+                @_errorMessage
+            </MudAlert>
+        }
+
+        <InventoryTransferFilters />
+
+        <InventoryTransferGrid Transfers="@_createdTransfers"
+                               DetailsRequested="OpenDetailsAsync" />
+    </MudStack>
+</MudContainer>
