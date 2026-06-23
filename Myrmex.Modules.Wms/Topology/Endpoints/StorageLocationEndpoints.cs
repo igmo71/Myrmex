@@ -139,7 +139,9 @@ internal static class StorageLocationEndpoints
             WarehouseId = warehouseId,
             SearchText = request.SearchText,
             Take = request.Take,
-            SelectableOnly = request.SelectableOnly
+            SelectableOnly = request.SelectableOnly,
+            StorageLocationTypeCode = request.StorageLocationTypeCode,
+            ExcludeTransitTypes = request.ExcludeTransitTypes
         };
 
         var result = await queryDispatcher

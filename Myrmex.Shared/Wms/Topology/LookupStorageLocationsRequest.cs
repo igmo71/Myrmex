@@ -7,4 +7,8 @@ public sealed record LookupStorageLocationsRequest
     public int? Take { get; init; }
 
     public bool SelectableOnly { get; init; } = true;
+
+    public string? StorageLocationTypeCode { get; init; }
+
+    public bool ExcludeTransitTypes { get; init; }
 }

@@ -261,6 +261,16 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
 
         query.Add($"selectableOnly={request.SelectableOnly.ToString().ToLowerInvariant()}");
 
+        if (!string.IsNullOrWhiteSpace(request.StorageLocationTypeCode))
+        {
+            query.Add($"storageLocationTypeCode={HttpUtility.UrlEncode(request.StorageLocationTypeCode)}");
+        }
+
+        if (request.ExcludeTransitTypes)
+        {
+            query.Add("excludeTransitTypes=true");
+        }
+
         return query.Count == 0
             ? path
             : $"{path}?{string.Join("&", query)}";

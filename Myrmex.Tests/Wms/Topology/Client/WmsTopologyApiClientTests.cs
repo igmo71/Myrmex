@@ -137,7 +137,9 @@ public sealed class WmsTopologyApiClientTests
             {
                 SearchText = "Pick",
                 Take = 20,
-                SelectableOnly = false
+                SelectableOnly = false,
+                StorageLocationTypeCode = "INTERNAL_TRANSIT",
+                ExcludeTransitTypes = true
             },
             cancellationTokenSource.Token);
 
@@ -147,7 +149,9 @@ public sealed class WmsTopologyApiClientTests
         Assert.False(item.IsActive);
         Assert.Equal(HttpMethod.Get, handler.RequestMethod);
         Assert.Equal($"/api/wms/topology/warehouses/{warehouseId}/locations/lookup", handler.RequestPath);
-        Assert.Equal("?searchText=Pick&take=20&selectableOnly=false", handler.RequestQuery);
+        Assert.Equal(
+            "?searchText=Pick&take=20&selectableOnly=false&storageLocationTypeCode=INTERNAL_TRANSIT&excludeTransitTypes=true",
+            handler.RequestQuery);
     }
 
     [Fact]

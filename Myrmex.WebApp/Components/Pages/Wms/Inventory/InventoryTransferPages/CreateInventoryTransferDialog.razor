@@ -44,7 +44,7 @@
                                  Disabled="_warehouseId is null"
                                  Value="_transitStorageLocation"
                                  ValueChanged="OnTransitStorageLocationChanged"
-                                 SearchFunc="SearchStorageLocationsAsync"
+                                 SearchFunc="SearchInternalTransitLocationsAsync"
                                  ToStringFunc="FormatStorageLocation"
                                  HelperText="&#160;">
                     <ItemTemplate>
@@ -139,7 +139,7 @@
                                                          Disabled="_warehouseId is null"
                                                          Value="line.SourceStorageLocation"
                                                          ValueChanged="@((StorageLocationLookupItem? value) => OnSourceStorageLocationChanged(line, value))"
-                                                         SearchFunc="SearchStorageLocationsAsync"
+                                                         SearchFunc="SearchRegularStorageLocationsAsync"
                                                          ToStringFunc="FormatStorageLocation">
                                             <ItemTemplate>
                                                 <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
@@ -165,7 +165,7 @@
                                                          Disabled="_warehouseId is null"
                                                          Value="line.DestinationStorageLocation"
                                                          ValueChanged="@((StorageLocationLookupItem? value) => OnDestinationStorageLocationChanged(line, value))"
-                                                         SearchFunc="SearchStorageLocationsAsync"
+                                                         SearchFunc="SearchRegularStorageLocationsAsync"
                                                          ToStringFunc="FormatStorageLocation">
                                             <ItemTemplate>
                                                 <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
@@ -212,6 +212,7 @@
 @code {
     private const int LookupTake = 100;
     private const int AutocompleteTake = 20;
+    private const string InternalTransitStorageLocationTypeCode = "INTERNAL_TRANSIT";
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
@@ -358,8 +359,32 @@
         }
     }
 
+    private Task<IEnumerable<StorageLocationLookupItem>> SearchInternalTransitLocationsAsync(
+        string value,
+        CancellationToken cancellationToken)
+    {
+        return SearchStorageLocationsAsync(
+            value,
+            storageLocationTypeCode: InternalTransitStorageLocationTypeCode,
+            excludeTransitTypes: false,
+            cancellationToken);
+    }
+
+    private Task<IEnumerable<StorageLocationLookupItem>> SearchRegularStorageLocationsAsync(
+        string value,
+        CancellationToken cancellationToken)
+    {
+        return SearchStorageLocationsAsync(
+            value,
+            storageLocationTypeCode: null,
+            excludeTransitTypes: true,
+            cancellationToken);
+    }
+
     private async Task<IEnumerable<StorageLocationLookupItem>> SearchStorageLocationsAsync(
         string value,
+        string? storageLocationTypeCode,
+        bool excludeTransitTypes,
         CancellationToken cancellationToken)
     {
         if (_warehouseId is not Guid warehouseId)
@@ -368,7 +393,7 @@
         }
 
         int searchVersion = _storageLocationSearchVersion;
-        string cacheKey = $"{warehouseId:N}:{value}";
+        string cacheKey = $"{warehouseId:N}:{storageLocationTypeCode}:{excludeTransitTypes}:{value}";
 
         if (_storageLocationCache.TryGetValue(cacheKey, out IReadOnlyList<StorageLocationLookupItem>? cachedItems))
         {
@@ -384,7 +409,9 @@
                     {
                         SearchText = value,
                         Take = AutocompleteTake,
-                        SelectableOnly = true
+                        SelectableOnly = true,
+                        StorageLocationTypeCode = storageLocationTypeCode,
+                        ExcludeTransitTypes = excludeTransitTypes
                     },
                     cancellationToken);
 
