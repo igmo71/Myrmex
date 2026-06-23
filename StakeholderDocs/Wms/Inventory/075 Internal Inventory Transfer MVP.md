@@ -16,6 +16,8 @@ Internal movement through transit:
   Storage → InternalTransit → Storage
 ```
 
+In this document, `Storage` means a regular stock-holding storage location type used for normal inventory storage.
+
 The implementation must remain compatible with future barcode scanner execution, but scanner workflow itself is out of scope for this MVP.
 
 This issue intentionally does not introduce external transfer, system warehouse `TRANSIT`, LPN, package-level tracking, batches, serials, expiry dates, reservations, discrepancies, movement cancellation, or scanner sessions.
@@ -83,6 +85,7 @@ The MVP must support:
 * movement from source storage location to internal transit location;
 * movement from internal transit location to destination storage location;
 * one Inventory Ledger transaction per committed movement;
+* two Inventory Ledger entries per committed movement;
 * computed requested, picked, placed, and in-transit quantities;
 * automatic completion after full placement;
 * read-only movement history.
@@ -717,7 +720,8 @@ Cancellation is out of scope.
 5. If `TransitStorageLocationId` is specified:
 
    * transit location must belong to the transfer warehouse;
-   * transit location must have type `InternalTransit`.
+   * transit location must have type `InternalTransit`;
+   * transit location must be active.
 6. Transfer must contain at least one line.
 7. Completed transfer is read-only for new movements.
 8. Transfer scope is computed and not persisted.
@@ -732,17 +736,20 @@ Cancellation is out of scope.
 2. `SourceStorageLocationId` is required.
 3. `DestinationStorageLocationId` is required.
 4. `RequestedQuantity` must be greater than zero.
-5. Source location must belong to the transfer warehouse.
-6. Destination location must belong to the transfer warehouse.
-7. Source and destination locations must be different.
-8. Source location must be a normal storage location.
-9. Destination location must be a normal storage location.
-10. Source location must not be `InternalTransit`.
-11. Destination location must not be `InternalTransit`.
-12. Picked quantity must never exceed requested quantity.
-13. Placed quantity must never exceed picked quantity.
-14. Placed quantity must never exceed requested quantity.
-15. In-transit quantity must never be negative.
+5. SKU must be active.
+6. Source location must belong to the transfer warehouse.
+7. Destination location must belong to the transfer warehouse.
+8. Source location must be active.
+9. Destination location must be active.
+10. Source and destination locations must be different.
+11. Source location must be a normal storage location.
+12. Destination location must be a normal storage location.
+13. Source location must not be `InternalTransit`.
+14. Destination location must not be `InternalTransit`.
+15. Picked quantity must never exceed requested quantity.
+16. Placed quantity must never exceed picked quantity.
+17. Placed quantity must never exceed requested quantity.
+18. In-transit quantity must never be negative.
 
 ---
 
@@ -795,7 +802,7 @@ ToStorageLocationId must be line.DestinationStorageLocationId
 Quantity rules:
 
 ```text
-Direct movement quantity must not exceed remaining quantity to pick.
+Direct movement quantity must not exceed remaining quantity to move.
 
 Pick movement quantity must not exceed remaining quantity to pick.
 
@@ -1393,6 +1400,7 @@ And the line has remaining quantity to move
 When the operator moves quantity
 Then InventoryTransferMovement is created
 And InventoryTransaction is created
+And two InventoryLedgerEntry records are created
 And source balance decreases
 And destination balance increases
 And PickedQuantity increases
@@ -1416,6 +1424,7 @@ And the line has remaining quantity to pick
 When the operator picks quantity
 Then InventoryTransferMovement is created
 And InventoryTransaction is created
+And two InventoryLedgerEntry records are created
 And source balance decreases
 And internal transit balance increases
 And PickedQuantity increases
@@ -1437,6 +1446,7 @@ Given a transfer line with positive in-transit quantity
 When the operator places quantity
 Then InventoryTransferMovement is created
 And InventoryTransaction is created
+And two InventoryLedgerEntry records are created
 And internal transit balance decreases
 And destination balance increases
 And PlacedQuantity increases
@@ -1530,6 +1540,14 @@ then the system rejects the request.
 
 ---
 
+## Reject inactive transfer references
+
+Given inactive SKU, source location, destination location, or transit location,
+when the user creates a transfer or commits a movement,
+then the system rejects the request.
+
+---
+
 ## Reject line from another warehouse
 
 Given a source or destination location from another warehouse,
@@ -1542,7 +1560,7 @@ then the system rejects the request.
 
 Given a direct transfer line with requested quantity 10,
 when the user moves 4,
-then the system creates one movement and one inventory transaction,
+then the system creates one movement, one inventory transaction, and two inventory ledger entries,
 and calculated quantities become:
 
 ```text
@@ -1574,7 +1592,7 @@ then the system rejects the operation.
 
 Given a transit transfer line with requested quantity 10,
 when the user picks 4,
-then the system creates one movement and one inventory transaction,
+then the system creates one movement, one inventory transaction, and two inventory ledger entries,
 and calculated quantities become:
 
 ```text
@@ -1606,7 +1624,7 @@ then the system rejects the operation.
 
 Given a transfer line with picked quantity 4 and placed quantity 0,
 when the user places 2,
-then the system creates one movement and one inventory transaction,
+then the system creates one movement, one inventory transaction, and two inventory ledger entries,
 and calculated quantities become:
 
 ```text
@@ -1719,27 +1737,27 @@ then it must not introduce scan sessions, scanner device integration, package-le
 
 10. Should one transfer line support multiple destination locations?
 
-MVP recommendation: no. Use multiple lines.
+    MVP recommendation: no. Use multiple lines.
 
 11. Should completed transfers be immutable?
 
-MVP recommendation: yes for this MVP.
+    MVP recommendation: yes for this MVP.
 
 12. Should `ExternalTransit` be added now?
 
-MVP recommendation: yes as storage location type value only. No external transfer behavior is included.
+    MVP recommendation: yes as storage location type value only. No external transfer behavior is included.
 
 13. Should transfer movements appear in the existing Inventory Ledger UI?
 
-MVP recommendation: yes. They should appear as normal inventory transactions with transaction details identifying transfer movement as the source.
+    MVP recommendation: yes. They should appear as normal inventory transactions with transaction details identifying transfer movement as the source.
 
 14. Should scanner audit be stored later?
 
-MVP recommendation: possibly, but not in `InventoryTransferMovement`. Scanner audit should be modeled separately if needed.
+    MVP recommendation: possibly, but not in `InventoryTransferMovement`. Scanner audit should be modeled separately if needed.
 
 15. Should scanner flow define a fixed scan order?
 
-MVP recommendation: no. Scan order is a future application/mobile workflow concern and may vary by warehouse layout and physical process.
+    MVP recommendation: no. Scan order is a future application/mobile workflow concern and may vary by warehouse layout and physical process.
 
 ---
 
