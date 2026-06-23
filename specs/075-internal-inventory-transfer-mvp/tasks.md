@@ -47,7 +47,7 @@
 - [X] T019 Implement transfer line EF mapping in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryTransferLineConfiguration.cs`
 - [X] T020 Implement transfer movement EF mapping in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryTransferMovementConfiguration.cs`
 - [X] T021 Add transfer DbSets to `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs`
-- [ ] T022 Create EF migration for transfer tables and transit storage-location type seed changes in `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/<timestamp>_AddInventoryTransfers.cs`
+- [X] T022 Create EF migration for transfer tables and transit storage-location type seed changes in `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/<timestamp>_AddInventoryTransfers.cs`
 
 **Checkpoint**: Transfer entities, reference data, and persistence mappings are ready for user story slices.
 
