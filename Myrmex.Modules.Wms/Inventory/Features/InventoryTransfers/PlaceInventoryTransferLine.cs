@@ -153,7 +153,13 @@ internal static class PlaceInventoryTransferLine
                 return ServiceResult<InventoryTransferDetails>.Invalid(movementValidation.Errors);
             }
 
-            transfer.AddMovement(movement!);
+            DomainValidationResult addMovementValidation = transfer.AddMovement(movement!);
+
+            if (!addMovementValidation.IsValid)
+            {
+                return ServiceResult<InventoryTransferDetails>.Fail(CompletedTransferConflict());
+            }
+
             dbContext.InventoryTransferMovements.Add(movement!);
             dbContext.InventoryTransactions.Add(createdTransaction);
 

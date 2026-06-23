@@ -174,15 +174,15 @@
 
 ### Tests
 
-- [ ] T070 [P] [US5] Add domain/handler test for direct transfer completion after final movement in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
-- [ ] T071 [P] [US5] Add domain/handler test for transit transfer completion only when placed equals requested and in-transit is zero in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
-- [ ] T072 [P] [US5] Add handler test for completed transfer rejecting move, pick, and place without changing balances or movement history in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
+- [X] T070 [P] [US5] Add domain/handler test for direct transfer completion after final movement in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
+- [X] T071 [P] [US5] Add domain/handler test for transit transfer completion only when placed equals requested and in-transit is zero in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
+- [X] T072 [P] [US5] Add handler test for completed transfer rejecting move, pick, and place without changing balances or movement history in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
 
 ### Implementation
 
-- [ ] T073 [US5] Finalize completion status calculation and read-only guard in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransfers/InventoryTransfer.cs`
-- [ ] T074 [US5] Apply completion status update after direct move, pick, and place commands in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/MoveInventoryTransferLine.cs`, `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/PickInventoryTransferLine.cs`, and `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/PlaceInventoryTransferLine.cs`
-- [ ] T075 [US5] Hide movement actions for completed transfers in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferDetailsDialog.razor`
+- [X] T073 [US5] Finalize completion status calculation and read-only guard in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransfers/InventoryTransfer.cs`
+- [X] T074 [US5] Apply completion status update after direct move, pick, and place commands in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/MoveInventoryTransferLine.cs`, `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/PickInventoryTransferLine.cs`, and `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/PlaceInventoryTransferLine.cs`
+- [X] T075 [US5] Hide movement actions for completed transfers in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferDetailsDialog.razor`
 
 **Checkpoint**: User Story 5 completion behavior protects finished transfers.
 

@@ -48,12 +48,21 @@ internal sealed class InventoryTransfer : AggregateRoot
 
     public bool UsesTransit => TransitStorageLocationId.HasValue;
 
-    internal void AddMovement(InventoryTransferMovement movement)
+    internal DomainValidationResult AddMovement(InventoryTransferMovement movement)
     {
         ArgumentNullException.ThrowIfNull(movement);
+
+        if (Status == InventoryTransferStatus.Completed)
+        {
+            return DomainValidationResult.From(
+                [DomainValidationFailure.IncorrectState<InventoryTransfer>(nameof(Status))]);
+        }
+
         _movements.Add(movement);
-        Status = InventoryTransferStatus.InProgress;
+        RecalculateStatus();
         Touch();
+
+        return DomainValidationResult.Valid;
     }
 
     internal void RecalculateStatus()

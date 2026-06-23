@@ -775,6 +775,200 @@ public sealed class InventoryTransferHandlerTests
         Assert.Equal(references.InternalTransitStorageLocation.Id, item.TransitStorageLocation?.Id);
     }
 
+    [Fact]
+    public async Task MoveAsync_WhenFinalDirectQuantityIsMoved_CompletesTransfer()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        SeededInventoryTransferReferences references = await InventoryTransferTestData
+            .SeedReferencesAsync(testDbContext.DbContext);
+        InventoryTransferDetails transfer = await CreateTransferAsync(
+            testDbContext.DbContext,
+            references,
+            transitStorageLocationId: null,
+            requestedQuantity: 5);
+        await SeedBalanceAsync(
+            testDbContext.DbContext,
+            references.StockKeepingUnit.Id,
+            references.SourceStorageLocation.Id,
+            quantity: 10);
+        testDbContext.DbContext.ChangeTracker.Clear();
+        MoveInventoryTransferLine.Handler handler = new(
+            testDbContext.DbContext,
+            new RecordingDomainEventDispatcher());
+
+        ServiceResult<InventoryTransferDetails> result = await handler.HandleAsync(
+            new MoveInventoryTransferLine.Command(
+                transfer.Id,
+                transfer.Lines[0].Id,
+                Quantity: 5),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(InventoryTransferStatusDetails.Completed, result.Value.Status);
+        InventoryTransferLineDetails line = Assert.Single(result.Value.Lines);
+        Assert.Equal(5, line.MovedQuantity);
+        Assert.Equal(5, line.PickedQuantity);
+        Assert.Equal(5, line.PlacedQuantity);
+        Assert.Equal(0, line.InTransitQuantity);
+
+        InventoryTransfer savedTransfer = await testDbContext.DbContext.InventoryTransfers
+            .SingleAsync(x => x.Id == transfer.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(InventoryTransferStatus.Completed, savedTransfer.Status);
+    }
+
+    [Fact]
+    public async Task PickAndPlaceAsync_WhenTransitTransferIsFullyPlaced_CompletesOnlyAfterInTransitIsZero()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        RecordingDomainEventDispatcher domainEventDispatcher = new();
+        SeededInventoryTransferReferences references = await InventoryTransferTestData
+            .SeedReferencesAsync(testDbContext.DbContext);
+        InventoryTransferDetails transfer = await CreateTransferAsync(
+            testDbContext.DbContext,
+            references,
+            references.InternalTransitStorageLocation.Id,
+            requestedQuantity: 5);
+        await SeedBalanceAsync(
+            testDbContext.DbContext,
+            references.StockKeepingUnit.Id,
+            references.SourceStorageLocation.Id,
+            quantity: 10);
+
+        PickInventoryTransferLine.Handler pickHandler = new(
+            testDbContext.DbContext,
+            domainEventDispatcher);
+        ServiceResult<InventoryTransferDetails> pickResult = await pickHandler.HandleAsync(
+            new PickInventoryTransferLine.Command(
+                transfer.Id,
+                transfer.Lines[0].Id,
+                Quantity: 5),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(pickResult.IsSuccess);
+        Assert.Equal(InventoryTransferStatusDetails.InProgress, pickResult.Value.Status);
+        InventoryTransferLineDetails pickedLine = Assert.Single(pickResult.Value.Lines);
+        Assert.Equal(5, pickedLine.PickedQuantity);
+        Assert.Equal(0, pickedLine.PlacedQuantity);
+        Assert.Equal(5, pickedLine.InTransitQuantity);
+
+        testDbContext.DbContext.ChangeTracker.Clear();
+        PlaceInventoryTransferLine.Handler placeHandler = new(
+            testDbContext.DbContext,
+            domainEventDispatcher);
+        ServiceResult<InventoryTransferDetails> partialPlaceResult = await placeHandler.HandleAsync(
+            new PlaceInventoryTransferLine.Command(
+                transfer.Id,
+                transfer.Lines[0].Id,
+                Quantity: 4),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(partialPlaceResult.IsSuccess);
+        Assert.Equal(InventoryTransferStatusDetails.InProgress, partialPlaceResult.Value.Status);
+        InventoryTransferLineDetails partiallyPlacedLine = Assert.Single(partialPlaceResult.Value.Lines);
+        Assert.Equal(5, partiallyPlacedLine.PickedQuantity);
+        Assert.Equal(4, partiallyPlacedLine.PlacedQuantity);
+        Assert.Equal(1, partiallyPlacedLine.InTransitQuantity);
+
+        testDbContext.DbContext.ChangeTracker.Clear();
+        ServiceResult<InventoryTransferDetails> finalPlaceResult = await placeHandler.HandleAsync(
+            new PlaceInventoryTransferLine.Command(
+                transfer.Id,
+                transfer.Lines[0].Id,
+                Quantity: 1),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(finalPlaceResult.IsSuccess);
+        Assert.Equal(InventoryTransferStatusDetails.Completed, finalPlaceResult.Value.Status);
+        InventoryTransferLineDetails completedLine = Assert.Single(finalPlaceResult.Value.Lines);
+        Assert.Equal(5, completedLine.PickedQuantity);
+        Assert.Equal(5, completedLine.PlacedQuantity);
+        Assert.Equal(0, completedLine.InTransitQuantity);
+
+        InventoryTransfer savedTransfer = await testDbContext.DbContext.InventoryTransfers
+            .SingleAsync(x => x.Id == transfer.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(InventoryTransferStatus.Completed, savedTransfer.Status);
+    }
+
+    [Fact]
+    public async Task MovePickAndPlaceAsync_WhenTransferIsCompleted_RejectWithoutChangingBalancesOrHistory()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        RecordingDomainEventDispatcher domainEventDispatcher = new();
+        SeededInventoryTransferReferences references = await InventoryTransferTestData
+            .SeedReferencesAsync(testDbContext.DbContext);
+        InventoryTransferDetails transfer = await CreateTransferAsync(
+            testDbContext.DbContext,
+            references,
+            transitStorageLocationId: null,
+            requestedQuantity: 5);
+        await SeedBalanceAsync(
+            testDbContext.DbContext,
+            references.StockKeepingUnit.Id,
+            references.SourceStorageLocation.Id,
+            quantity: 10);
+        await MoveAsync(testDbContext.DbContext, domainEventDispatcher, transfer, quantity: 5);
+        testDbContext.DbContext.ChangeTracker.Clear();
+
+        int movementCountBefore = await testDbContext.DbContext.InventoryTransferMovements.CountAsync(TestContext.Current.CancellationToken);
+        int transactionCountBefore = await testDbContext.DbContext.InventoryTransactions.CountAsync(TestContext.Current.CancellationToken);
+        int ledgerEntryCountBefore = await testDbContext.DbContext.InventoryLedgerEntries.CountAsync(TestContext.Current.CancellationToken);
+        decimal sourceBalanceBefore = await GetBalanceQuantityAsync(
+            testDbContext.DbContext,
+            references.StockKeepingUnit.Id,
+            references.SourceStorageLocation.Id);
+        decimal destinationBalanceBefore = await GetBalanceQuantityAsync(
+            testDbContext.DbContext,
+            references.StockKeepingUnit.Id,
+            references.DestinationStorageLocation.Id);
+
+        MoveInventoryTransferLine.Handler moveHandler = new(
+            testDbContext.DbContext,
+            domainEventDispatcher);
+        PickInventoryTransferLine.Handler pickHandler = new(
+            testDbContext.DbContext,
+            domainEventDispatcher);
+        PlaceInventoryTransferLine.Handler placeHandler = new(
+            testDbContext.DbContext,
+            domainEventDispatcher);
+
+        ServiceResult<InventoryTransferDetails> moveResult = await moveHandler.HandleAsync(
+            new MoveInventoryTransferLine.Command(
+                transfer.Id,
+                transfer.Lines[0].Id,
+                Quantity: 1),
+            TestContext.Current.CancellationToken);
+        ServiceResult<InventoryTransferDetails> pickResult = await pickHandler.HandleAsync(
+            new PickInventoryTransferLine.Command(
+                transfer.Id,
+                transfer.Lines[0].Id,
+                Quantity: 1),
+            TestContext.Current.CancellationToken);
+        ServiceResult<InventoryTransferDetails> placeResult = await placeHandler.HandleAsync(
+            new PlaceInventoryTransferLine.Command(
+                transfer.Id,
+                transfer.Lines[0].Id,
+                Quantity: 1),
+            TestContext.Current.CancellationToken);
+
+        Assert.False(moveResult.IsSuccess);
+        Assert.Equal("InventoryTransfer.Completed", moveResult.Error?.Code);
+        Assert.False(pickResult.IsSuccess);
+        Assert.Equal("InventoryTransfer.Completed", pickResult.Error?.Code);
+        Assert.False(placeResult.IsSuccess);
+        Assert.Equal("InventoryTransfer.Completed", placeResult.Error?.Code);
+        Assert.Equal(movementCountBefore, await testDbContext.DbContext.InventoryTransferMovements.CountAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(transactionCountBefore, await testDbContext.DbContext.InventoryTransactions.CountAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(ledgerEntryCountBefore, await testDbContext.DbContext.InventoryLedgerEntries.CountAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(sourceBalanceBefore, await GetBalanceQuantityAsync(
+            testDbContext.DbContext,
+            references.StockKeepingUnit.Id,
+            references.SourceStorageLocation.Id));
+        Assert.Equal(destinationBalanceBefore, await GetBalanceQuantityAsync(
+            testDbContext.DbContext,
+            references.StockKeepingUnit.Id,
+            references.DestinationStorageLocation.Id));
+    }
+
     private static async Task<InventoryTransferDetails> CreateTransferAsync(
         WmsDbContext dbContext,
         SeededInventoryTransferReferences references,
@@ -820,6 +1014,26 @@ public sealed class InventoryTransferHandlerTests
         inventoryBalance.ClearDomainEvents();
         dbContext.InventoryBalances.Add(inventoryBalance);
         await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
+
+    private static async Task MoveAsync(
+        WmsDbContext dbContext,
+        RecordingDomainEventDispatcher domainEventDispatcher,
+        InventoryTransferDetails transfer,
+        decimal quantity)
+    {
+        MoveInventoryTransferLine.Handler handler = new(
+            dbContext,
+            domainEventDispatcher);
+
+        ServiceResult<InventoryTransferDetails> result = await handler.HandleAsync(
+            new MoveInventoryTransferLine.Command(
+                transfer.Id,
+                transfer.Lines[0].Id,
+                quantity),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
     }
 
     private static async Task PickAsync(

@@ -122,26 +122,28 @@
     [Parameter]
     public EventCallback<InventoryTransferDetails> TransferChanged { get; set; }
 
+    private bool IsCompleted => Transfer.Status == InventoryTransferStatusDetails.Completed;
+
     private void Close() => MudDialog.Close();
 
     private bool CanMove(InventoryTransferLineDetails line)
     {
         return Transfer.TransitStorageLocation is null &&
-               Transfer.Status != InventoryTransferStatusDetails.Completed &&
+               !IsCompleted &&
                line.MovedQuantity < line.RequestedQuantity;
     }
 
     private bool CanPick(InventoryTransferLineDetails line)
     {
         return Transfer.TransitStorageLocation is not null &&
-               Transfer.Status != InventoryTransferStatusDetails.Completed &&
+               !IsCompleted &&
                line.PickedQuantity < line.RequestedQuantity;
     }
 
     private bool CanPlace(InventoryTransferLineDetails line)
     {
         return Transfer.TransitStorageLocation is not null &&
-               Transfer.Status != InventoryTransferStatusDetails.Completed &&
+               !IsCompleted &&
                line.InTransitQuantity > 0;
     }
 
