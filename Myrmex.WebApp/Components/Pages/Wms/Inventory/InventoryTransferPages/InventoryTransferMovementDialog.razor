@@ -4,7 +4,7 @@
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">Move transfer line</MudText>
+        <MudText Typo="Typo.h6">@DialogTitle</MudText>
     </TitleContent>
 
     <DialogContent>
@@ -20,18 +20,18 @@
                 <MudGrid>
                     <MudItem xs="12" md="6">
                         <MudTextField T="string"
-                                      Label="Source"
+                                      Label="@FromLabel"
                                       Variant="Variant.Outlined"
                                       Margin="Margin.Dense"
-                                      Value="@SourceDisplay"
+                                      Value="@FromDisplay"
                                       Disabled="true" />
                     </MudItem>
                     <MudItem xs="12" md="6">
                         <MudTextField T="string"
-                                      Label="Destination"
+                                      Label="@ToLabel"
                                       Variant="Variant.Outlined"
                                       Margin="Margin.Dense"
-                                      Value="@DestinationDisplay"
+                                      Value="@ToDisplay"
                                       Disabled="true" />
                     </MudItem>
                 </MudGrid>
@@ -44,7 +44,7 @@
                                  Format="0.####" />
 
                 <MudNumericField T="decimal"
-                                 Label="Move quantity"
+                                 Label="@QuantityLabel"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="@(0.0001m)"
@@ -74,7 +74,7 @@
 
         <MudButton Color="Color.Primary"
                    Variant="Variant.Filled"
-                   OnClick="MoveAsync"
+                   OnClick="SaveAsync"
                    Disabled="_isSaving || RemainingQuantity <= 0">
             @if (_isSaving)
             {
@@ -82,7 +82,7 @@
                                      Indeterminate="true"
                                      Class="me-2" />
             }
-            Move
+            @ActionButtonText
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -97,6 +97,9 @@
     [Parameter, EditorRequired]
     public InventoryTransferLineDetails Line { get; set; } = null!;
 
+    [Parameter]
+    public string Action { get; set; } = MoveAction;
+
     [Inject]
     private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = null!;
 
@@ -107,20 +110,62 @@
     private bool _isSaving;
     private string? _errorMessage;
 
-    private decimal RemainingQuantity => Line.RequestedQuantity - Line.MovedQuantity;
+    public const string MoveAction = "Move";
+    public const string PickAction = "Pick";
+    public const string PlaceAction = "Place";
+
+    private bool IsPick => Action == PickAction;
+
+    private bool IsPlace => Action == PlaceAction;
+
+    private decimal RemainingQuantity => IsPlace
+        ? Line.InTransitQuantity
+        : IsPick
+            ? Line.RequestedQuantity - Line.PickedQuantity
+            : Line.RequestedQuantity - Line.MovedQuantity;
 
     private string SkuDisplay => $"{Line.Sku.Code} - {Line.Sku.Name}";
 
-    private string SourceDisplay => $"{Line.SourceStorageLocation.Code} - {Line.SourceStorageLocation.Name}";
+    private string FromLabel => IsPlace ? "Transit" : "Source";
 
-    private string DestinationDisplay => $"{Line.DestinationStorageLocation.Code} - {Line.DestinationStorageLocation.Name}";
+    private string ToLabel => IsPick ? "Transit" : "Destination";
+
+    private string FromDisplay => IsPlace
+        ? TransitDisplay
+        : $"{Line.SourceStorageLocation.Code} - {Line.SourceStorageLocation.Name}";
+
+    private string ToDisplay => IsPick
+        ? TransitDisplay
+        : $"{Line.DestinationStorageLocation.Code} - {Line.DestinationStorageLocation.Name}";
+
+    private string TransitDisplay => Transfer.TransitStorageLocation is null
+        ? string.Empty
+        : $"{Transfer.TransitStorageLocation.Code} - {Transfer.TransitStorageLocation.Name}";
+
+    private string DialogTitle => IsPick
+        ? "Pick transfer line"
+        : IsPlace
+            ? "Place transfer line"
+            : "Move transfer line";
+
+    private string QuantityLabel => IsPick
+        ? "Pick quantity"
+        : IsPlace
+            ? "Place quantity"
+            : "Move quantity";
+
+    private string ActionButtonText => IsPick
+        ? "Pick"
+        : IsPlace
+            ? "Place"
+            : "Move";
 
     protected override void OnInitialized()
     {
         _quantity = RemainingQuantity > 0 ? RemainingQuantity : 0;
     }
 
-    private async Task MoveAsync()
+    private async Task SaveAsync()
     {
         if (_form is null)
         {
@@ -136,7 +181,7 @@
 
         if (_quantity <= 0 || _quantity > RemainingQuantity)
         {
-            _errorMessage = "Move quantity must be greater than zero and no more than the remaining quantity.";
+            _errorMessage = $"{ActionButtonText} quantity must be greater than zero and no more than the remaining quantity.";
             return;
         }
 
@@ -145,11 +190,7 @@
 
         try
         {
-            ApiResult<InventoryTransferDetails> result = await WmsInventoryApiClient
-                .TryMoveInventoryTransferLineAsync(
-                    Transfer.Id,
-                    Line.Id,
-                    new MoveInventoryTransferLineRequest(_quantity));
+            ApiResult<InventoryTransferDetails> result = await ExecuteAsync();
 
             if (result.IsFailure)
             {
@@ -173,6 +214,30 @@
         {
             _isSaving = false;
         }
+    }
+
+    private async Task<ApiResult<InventoryTransferDetails>> ExecuteAsync()
+    {
+        if (IsPick)
+        {
+            return await WmsInventoryApiClient.TryPickInventoryTransferLineAsync(
+                Transfer.Id,
+                Line.Id,
+                new PickInventoryTransferLineRequest(_quantity));
+        }
+
+        if (IsPlace)
+        {
+            return await WmsInventoryApiClient.TryPlaceInventoryTransferLineAsync(
+                Transfer.Id,
+                Line.Id,
+                new PlaceInventoryTransferLineRequest(_quantity));
+        }
+
+        return await WmsInventoryApiClient.TryMoveInventoryTransferLineAsync(
+            Transfer.Id,
+            Line.Id,
+            new MoveInventoryTransferLineRequest(_quantity));
     }
 
     private void Cancel() => MudDialog.Cancel();

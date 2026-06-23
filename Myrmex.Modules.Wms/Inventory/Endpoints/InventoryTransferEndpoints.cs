@@ -21,6 +21,14 @@ internal static class InventoryTransferEndpoints
             .WithName("MoveInventoryTransferLine")
             .WithSummary("Move Inventory Transfer Line");
 
+        group.MapPost("/transfers/{transferId:guid}/lines/{lineId:guid}/pick", PickInventoryTransferLineAsync)
+            .WithName("PickInventoryTransferLine")
+            .WithSummary("Pick Inventory Transfer Line To Transit");
+
+        group.MapPost("/transfers/{transferId:guid}/lines/{lineId:guid}/place", PlaceInventoryTransferLineAsync)
+            .WithName("PlaceInventoryTransferLine")
+            .WithSummary("Place Inventory Transfer Line From Transit");
+
         return group;
     }
 
@@ -61,6 +69,42 @@ internal static class InventoryTransferEndpoints
 
         var result = await commandDispatcher
             .DispatchAsync<MoveInventoryTransferLine.Command, ServiceResult<InventoryTransferDetails>>(command, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> PickInventoryTransferLineAsync(
+        Guid transferId,
+        Guid lineId,
+        PickInventoryTransferLineRequest request,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new PickInventoryTransferLine.Command(
+            transferId,
+            lineId,
+            request.Quantity);
+
+        var result = await commandDispatcher
+            .DispatchAsync<PickInventoryTransferLine.Command, ServiceResult<InventoryTransferDetails>>(command, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> PlaceInventoryTransferLineAsync(
+        Guid transferId,
+        Guid lineId,
+        PlaceInventoryTransferLineRequest request,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new PlaceInventoryTransferLine.Command(
+            transferId,
+            lineId,
+            request.Quantity);
+
+        var result = await commandDispatcher
+            .DispatchAsync<PlaceInventoryTransferLine.Command, ServiceResult<InventoryTransferDetails>>(command, cancellationToken);
 
         return result.ToHttpResult();
     }

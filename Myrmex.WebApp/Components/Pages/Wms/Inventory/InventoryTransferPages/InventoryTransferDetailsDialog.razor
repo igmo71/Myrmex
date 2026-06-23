@@ -30,6 +30,9 @@
                     <MudTh>Destination</MudTh>
                     <MudTh>Requested</MudTh>
                     <MudTh>Moved</MudTh>
+                    <MudTh>Picked</MudTh>
+                    <MudTh>Placed</MudTh>
+                    <MudTh>In transit</MudTh>
                     <MudTh></MudTh>
                 </HeaderContent>
                 <RowTemplate>
@@ -38,14 +41,35 @@
                     <MudTd>@context.DestinationStorageLocation.Code</MudTd>
                     <MudTd>@context.RequestedQuantity</MudTd>
                     <MudTd>@context.MovedQuantity</MudTd>
+                    <MudTd>@context.PickedQuantity</MudTd>
+                    <MudTd>@context.PlacedQuantity</MudTd>
+                    <MudTd>@context.InTransitQuantity</MudTd>
                     <MudTd>
                         @if (CanMove(context))
                         {
                             <MudButton Size="Size.Small"
                                        Color="Color.Primary"
                                        Variant="Variant.Outlined"
-                                       OnClick="@(() => OpenMoveDialogAsync(context))">
+                                       OnClick="@(() => OpenMovementDialogAsync(context, InventoryTransferMovementDialog.MoveAction))">
                                 Move
+                            </MudButton>
+                        }
+                        @if (CanPick(context))
+                        {
+                            <MudButton Size="Size.Small"
+                                       Color="Color.Primary"
+                                       Variant="Variant.Outlined"
+                                       OnClick="@(() => OpenMovementDialogAsync(context, InventoryTransferMovementDialog.PickAction))">
+                                Pick
+                            </MudButton>
+                        }
+                        @if (CanPlace(context))
+                        {
+                            <MudButton Size="Size.Small"
+                                       Color="Color.Primary"
+                                       Variant="Variant.Outlined"
+                                       OnClick="@(() => OpenMovementDialogAsync(context, InventoryTransferMovementDialog.PlaceAction))">
+                                Place
                             </MudButton>
                         }
                     </MudTd>
@@ -78,12 +102,29 @@
                line.MovedQuantity < line.RequestedQuantity;
     }
 
-    private async Task OpenMoveDialogAsync(InventoryTransferLineDetails line)
+    private bool CanPick(InventoryTransferLineDetails line)
+    {
+        return Transfer.TransitStorageLocation is not null &&
+               Transfer.Status != InventoryTransferStatusDetails.Completed &&
+               line.PickedQuantity < line.RequestedQuantity;
+    }
+
+    private bool CanPlace(InventoryTransferLineDetails line)
+    {
+        return Transfer.TransitStorageLocation is not null &&
+               Transfer.Status != InventoryTransferStatusDetails.Completed &&
+               line.InTransitQuantity > 0;
+    }
+
+    private async Task OpenMovementDialogAsync(
+        InventoryTransferLineDetails line,
+        string action)
     {
         DialogParameters parameters = new()
         {
             [nameof(InventoryTransferMovementDialog.Transfer)] = Transfer,
-            [nameof(InventoryTransferMovementDialog.Line)] = line
+            [nameof(InventoryTransferMovementDialog.Line)] = line,
+            [nameof(InventoryTransferMovementDialog.Action)] = action
         };
 
         DialogOptions options = new()
@@ -94,7 +135,7 @@
         };
 
         IDialogReference dialog = await DialogService.ShowAsync<InventoryTransferMovementDialog>(
-            "Move transfer line",
+            $"{action} transfer line",
             parameters,
             options);
 

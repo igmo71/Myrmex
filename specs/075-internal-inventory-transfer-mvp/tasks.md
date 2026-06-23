@@ -117,20 +117,20 @@
 
 ### Tests
 
-- [ ] T045 [P] [US3] Add handler test for pick creating movement, transfer transaction, two `InventoryLedgerEntry` rows, source/transit balance changes, and picked/in-transit progress in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
-- [ ] T046 [P] [US3] Add handler test for place creating movement, transfer transaction, two `InventoryLedgerEntry` rows, transit/destination balance changes, and placed/in-transit progress in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
-- [ ] T047 [P] [US3] Add handler test for over-pick, over-place, insufficient source balance, and wrong direct move operation rejection on transit transfer in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
-- [ ] T048 [P] [US3] Add API-client test for pick/place request bodies and refreshed transfer details deserialization in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [X] T045 [P] [US3] Add handler test for pick creating movement, transfer transaction, two `InventoryLedgerEntry` rows, source/transit balance changes, and picked/in-transit progress in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
+- [X] T046 [P] [US3] Add handler test for place creating movement, transfer transaction, two `InventoryLedgerEntry` rows, transit/destination balance changes, and placed/in-transit progress in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
+- [X] T047 [P] [US3] Add handler test for over-pick, over-place, insufficient source balance, and wrong direct move operation rejection on transit transfer in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
+- [X] T048 [P] [US3] Add API-client test for pick/place request bodies and refreshed transfer details deserialization in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation
 
-- [ ] T049 [US3] Implement pick/place shared request contracts in `Myrmex.Shared/Wms/Inventory/PickInventoryTransferLineRequest.cs` and `Myrmex.Shared/Wms/Inventory/PlaceInventoryTransferLineRequest.cs`
-- [ ] T050 [US3] Implement pick command with balance updates, transfer transaction creation, two `InventoryLedgerEntry` entities, and movement persistence in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/PickInventoryTransferLine.cs`
-- [ ] T051 [US3] Implement place command with balance updates, transfer transaction creation, two `InventoryLedgerEntry` entities, and movement persistence in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/PlaceInventoryTransferLine.cs`
-- [ ] T052 [US3] Implement pick and place endpoint mappings in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryTransferEndpoints.cs`
-- [ ] T053 [US3] Add pick and place API-client methods in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
-- [ ] T054 [US3] Add pick and place modes to movement dialog in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferMovementDialog.razor`
-- [ ] T055 [US3] Wire pick/place action visibility and refresh behavior into transfer details UI in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferDetailsDialog.razor`
+- [X] T049 [US3] Implement pick/place shared request contracts in `Myrmex.Shared/Wms/Inventory/PickInventoryTransferLineRequest.cs` and `Myrmex.Shared/Wms/Inventory/PlaceInventoryTransferLineRequest.cs`
+- [X] T050 [US3] Implement pick command with balance updates, transfer transaction creation, two `InventoryLedgerEntry` entities, and movement persistence in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/PickInventoryTransferLine.cs`
+- [X] T051 [US3] Implement place command with balance updates, transfer transaction creation, two `InventoryLedgerEntry` entities, and movement persistence in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/PlaceInventoryTransferLine.cs`
+- [X] T052 [US3] Implement pick and place endpoint mappings in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryTransferEndpoints.cs`
+- [X] T053 [US3] Add pick and place API-client methods in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [X] T054 [US3] Add pick and place modes to movement dialog in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferMovementDialog.razor`
+- [X] T055 [US3] Wire pick/place action visibility and refresh behavior into transfer details UI in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferDetailsDialog.razor`
 
 **Checkpoint**: User Story 3 transit movement works independently for transit transfers.
 
