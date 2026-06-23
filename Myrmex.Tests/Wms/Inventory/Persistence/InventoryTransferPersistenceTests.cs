@@ -54,6 +54,22 @@ public sealed class InventoryTransferPersistenceTests
     }
 
     [Fact]
+    public async Task Model_HasMovementWithoutPersistedStockKeepingUnit()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+
+        var entityType = testDbContext.DbContext.Model.FindEntityType(typeof(InventoryTransferMovement));
+
+        Assert.NotNull(entityType);
+        Assert.DoesNotContain(entityType.GetProperties(), property =>
+            property.Name == nameof(InventoryTransferLine.StockKeepingUnitId));
+        Assert.DoesNotContain(entityType.GetForeignKeys(), foreignKey =>
+            foreignKey.GetConstraintName() == "FK_wms_inventory_transfer_movements_stock_keeping_units_stock_keeping_unit_id");
+        Assert.DoesNotContain(entityType.GetIndexes(), index =>
+            index.GetDatabaseName() == "IX_wms_inventory_transfer_movements_stock_keeping_unit_id");
+    }
+
+    [Fact]
     public async Task Model_HasMovementInventoryTransactionRelationship()
     {
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();

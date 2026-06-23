@@ -64,7 +64,6 @@ public sealed class InventoryTransferTests
         var result = InventoryTransferMovement.Create(
             lineId,
             transactionId,
-            StockKeepingUnitId,
             SourceStorageLocationId,
             DestinationStorageLocationId,
             quantity: 4,
@@ -74,7 +73,6 @@ public sealed class InventoryTransferTests
         Assert.True(result.IsValid);
         Assert.NotNull(movement);
         Assert.Equal(transactionId, movement.InventoryTransactionId);
-        Assert.Equal(StockKeepingUnitId, movement.StockKeepingUnitId);
         Assert.Equal(SourceStorageLocationId, movement.FromStorageLocationId);
         Assert.Equal(DestinationStorageLocationId, movement.ToStorageLocationId);
         Assert.Equal(4, movement.Quantity);
@@ -87,6 +85,7 @@ public sealed class InventoryTransferTests
 
         Assert.DoesNotContain("MovementType", propertyNames);
         Assert.DoesNotContain("ScannerState", propertyNames);
+        Assert.DoesNotContain(nameof(InventoryTransferLine.StockKeepingUnitId), propertyNames);
     }
 
     private static InventoryTransferLine CreateLine()

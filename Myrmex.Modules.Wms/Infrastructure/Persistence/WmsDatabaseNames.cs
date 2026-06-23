@@ -102,13 +102,11 @@ internal static class WmsDatabaseNames
     public const string InventoryTransferMovementInventoryTransferForeignKey = "FK_wms_inventory_transfer_movements_inventory_transfers_inventory_transfer_id";
     public const string InventoryTransferMovementInventoryTransferLineForeignKey = "FK_wms_inventory_transfer_movements_inventory_transfer_lines_inventory_transfer_line_id";
     public const string InventoryTransferMovementInventoryTransactionForeignKey = "FK_wms_inventory_transfer_movements_inventory_transactions_inventory_transaction_id";
-    public const string InventoryTransferMovementStockKeepingUnitForeignKey = "FK_wms_inventory_transfer_movements_stock_keeping_units_stock_keeping_unit_id";
     public const string InventoryTransferMovementFromStorageLocationForeignKey = "FK_wms_inventory_transfer_movements_storage_locations_from_storage_location_id";
     public const string InventoryTransferMovementToStorageLocationForeignKey = "FK_wms_inventory_transfer_movements_storage_locations_to_storage_location_id";
     public const string InventoryTransferMovementInventoryTransferIdIndex = "IX_wms_inventory_transfer_movements_inventory_transfer_id";
     public const string InventoryTransferMovementInventoryTransferLineIdIndex = "IX_wms_inventory_transfer_movements_inventory_transfer_line_id";
     public const string InventoryTransferMovementInventoryTransactionIdIndex = "IX_wms_inventory_transfer_movements_inventory_transaction_id";
-    public const string InventoryTransferMovementStockKeepingUnitIdIndex = "IX_wms_inventory_transfer_movements_stock_keeping_unit_id";
     public const string InventoryTransferMovementFromStorageLocationIdIndex = "IX_wms_inventory_transfer_movements_from_storage_location_id";
     public const string InventoryTransferMovementToStorageLocationIdIndex = "IX_wms_inventory_transfer_movements_to_storage_location_id";
 }

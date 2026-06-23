@@ -79,13 +79,13 @@ internal static class InventoryTransferQueryableExtensions
                     movement.OccurredAtUtc,
                     movement.Quantity,
                     new InventoryTransferDetailsData.StockKeepingUnitInfo(
-                        movement.StockKeepingUnitId,
-                        movement.StockKeepingUnit.Code,
-                        movement.StockKeepingUnit.Name,
+                        movement.InventoryTransferLine.StockKeepingUnitId,
+                        movement.InventoryTransferLine.StockKeepingUnit.Code,
+                        movement.InventoryTransferLine.StockKeepingUnit.Name,
                         new InventoryTransferDetailsData.UnitOfMeasureInfo(
-                            movement.StockKeepingUnit.BaseUnitOfMeasureId,
-                            movement.StockKeepingUnit.BaseUnitOfMeasure.Code,
-                            movement.StockKeepingUnit.BaseUnitOfMeasure.Symbol)),
+                            movement.InventoryTransferLine.StockKeepingUnit.BaseUnitOfMeasureId,
+                            movement.InventoryTransferLine.StockKeepingUnit.BaseUnitOfMeasure.Code,
+                            movement.InventoryTransferLine.StockKeepingUnit.BaseUnitOfMeasure.Symbol)),
                     new InventoryTransferDetailsData.StorageLocationInfo(
                         movement.FromStorageLocationId,
                         movement.FromStorageLocation.Code,

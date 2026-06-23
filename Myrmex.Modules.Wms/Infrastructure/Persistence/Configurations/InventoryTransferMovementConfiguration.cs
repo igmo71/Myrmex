@@ -22,9 +22,6 @@ internal sealed class InventoryTransferMovementConfiguration : IEntityTypeConfig
         builder.Property(x => x.InventoryTransactionId)
             .IsRequired();
 
-        builder.Property(x => x.StockKeepingUnitId)
-            .IsRequired();
-
         builder.Property(x => x.FromStorageLocationId)
             .IsRequired();
 
@@ -50,12 +47,6 @@ internal sealed class InventoryTransferMovementConfiguration : IEntityTypeConfig
             .HasConstraintName(WmsDatabaseNames.InventoryTransferMovementInventoryTransactionForeignKey)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(x => x.StockKeepingUnit)
-            .WithMany()
-            .HasForeignKey(x => x.StockKeepingUnitId)
-            .HasConstraintName(WmsDatabaseNames.InventoryTransferMovementStockKeepingUnitForeignKey)
-            .OnDelete(DeleteBehavior.Restrict);
-
         builder.HasOne(x => x.FromStorageLocation)
             .WithMany()
             .HasForeignKey(x => x.FromStorageLocationId)
@@ -76,9 +67,6 @@ internal sealed class InventoryTransferMovementConfiguration : IEntityTypeConfig
 
         builder.HasIndex(x => x.InventoryTransactionId)
             .HasDatabaseName(WmsDatabaseNames.InventoryTransferMovementInventoryTransactionIdIndex);
-
-        builder.HasIndex(x => x.StockKeepingUnitId)
-            .HasDatabaseName(WmsDatabaseNames.InventoryTransferMovementStockKeepingUnitIdIndex);
 
         builder.HasIndex(x => x.FromStorageLocationId)
             .HasDatabaseName(WmsDatabaseNames.InventoryTransferMovementFromStorageLocationIdIndex);

@@ -1,6 +1,5 @@
 using Myrmex.Core.Domain;
 using Myrmex.Core.Domain.Validation;
-using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryTransactions;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 
@@ -15,7 +14,6 @@ internal sealed class InventoryTransferMovement : EntityBase
     private InventoryTransferMovement(
         Guid inventoryTransferLineId,
         Guid inventoryTransactionId,
-        Guid stockKeepingUnitId,
         Guid fromStorageLocationId,
         Guid toStorageLocationId,
         decimal quantity,
@@ -23,7 +21,6 @@ internal sealed class InventoryTransferMovement : EntityBase
     {
         InventoryTransferLineId = inventoryTransferLineId;
         InventoryTransactionId = inventoryTransactionId;
-        StockKeepingUnitId = stockKeepingUnitId;
         FromStorageLocationId = fromStorageLocationId;
         ToStorageLocationId = toStorageLocationId;
         Quantity = quantity;
@@ -39,9 +36,6 @@ internal sealed class InventoryTransferMovement : EntityBase
     public Guid InventoryTransactionId { get; private set; }
     public InventoryTransaction InventoryTransaction { get; private set; } = null!;
 
-    public Guid StockKeepingUnitId { get; private set; }
-    public StockKeepingUnit StockKeepingUnit { get; private set; } = null!;
-
     public Guid FromStorageLocationId { get; private set; }
     public StorageLocation FromStorageLocation { get; private set; } = null!;
 
@@ -55,7 +49,6 @@ internal sealed class InventoryTransferMovement : EntityBase
     internal static DomainValidationResult Create(
         Guid? inventoryTransferLineId,
         Guid? inventoryTransactionId,
-        Guid? stockKeepingUnitId,
         Guid? fromStorageLocationId,
         Guid? toStorageLocationId,
         decimal quantity,
@@ -72,11 +65,6 @@ internal sealed class InventoryTransferMovement : EntityBase
         if (!inventoryTransactionId.HasValue || inventoryTransactionId.Value == Guid.Empty)
         {
             errors.Add(DomainValidationFailure.Required<InventoryTransferMovement>(nameof(InventoryTransactionId)));
-        }
-
-        if (!stockKeepingUnitId.HasValue || stockKeepingUnitId.Value == Guid.Empty)
-        {
-            errors.Add(DomainValidationFailure.Required<InventoryTransferMovement>(nameof(StockKeepingUnitId)));
         }
 
         if (!fromStorageLocationId.HasValue || fromStorageLocationId.Value == Guid.Empty)
@@ -112,7 +100,6 @@ internal sealed class InventoryTransferMovement : EntityBase
         movement = new InventoryTransferMovement(
             inventoryTransferLineId!.Value,
             inventoryTransactionId!.Value,
-            stockKeepingUnitId!.Value,
             fromStorageLocationId!.Value,
             toStorageLocationId!.Value,
             quantity,
