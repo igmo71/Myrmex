@@ -192,11 +192,11 @@
 
 **Purpose**: Final consistency, validation guidance, and cleanup across all stories.
 
-- [ ] T076 [P] Update quickstart validation notes with any final route or UI naming changes in `specs/075-internal-inventory-transfer-mvp/quickstart.md`
-- [ ] T077 [P] Review generated code for forbidden types and fields, especially absence of `InventoryLedgerImpact`, persisted `TransferExecutionMode`, persisted `MovementType`, scanner fields, and transfer-specific fields on `InventoryTransaction` in `Myrmex.Modules.Wms/Inventory/`
-- [ ] T078 [P] Review shared contracts for transport-only boundaries and no domain/EF/UI dependencies in `Myrmex.Shared/Wms/Inventory/`
-- [ ] T079 [P] Review UI for absence of scanner, package, LPN, batch, serial, expiry, discrepancy, cancellation, correction, approval, route optimization, and external-transfer controls in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/`
-- [ ] T080 Document recommended developer-controlled validation commands in `specs/075-internal-inventory-transfer-mvp/quickstart.md`
+- [X] T076 [P] Update quickstart validation notes with any final route or UI naming changes in `specs/075-internal-inventory-transfer-mvp/quickstart.md`
+- [X] T077 [P] Review generated code for forbidden types and fields, especially absence of `InventoryLedgerImpact`, persisted `TransferExecutionMode`, persisted `MovementType`, scanner fields, and transfer-specific fields on `InventoryTransaction` in `Myrmex.Modules.Wms/Inventory/`
+- [X] T078 [P] Review shared contracts for transport-only boundaries and no domain/EF/UI dependencies in `Myrmex.Shared/Wms/Inventory/`
+- [X] T079 [P] Review UI for absence of scanner, package, LPN, batch, serial, expiry, discrepancy, cancellation, correction, approval, route optimization, and external-transfer controls in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/`
+- [X] T080 Document recommended developer-controlled validation commands in `specs/075-internal-inventory-transfer-mvp/quickstart.md`
 
 ---
 

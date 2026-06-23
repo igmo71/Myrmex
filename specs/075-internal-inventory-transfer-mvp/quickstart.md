@@ -9,16 +9,30 @@ This guide describes validation scenarios for implementation. Per repository wor
 - Seed/reference data includes regular storage-location types plus `InternalTransit` and `ExternalTransit`.
 - Test data includes one active warehouse, active SKU with active base UoM, two active regular storage locations, one active internal transit location, and source inventory balance.
 
+## Final Route and UI Names
+
+- Web UI navigation: WMS -> Inventory -> Inventory Transfers.
+- Web UI route: `/wms/inventory/transfers`.
+- API base route: `/api/wms/inventory`.
+- Transfer list route: `GET /api/wms/inventory/transfers`.
+- Transfer details route: `GET /api/wms/inventory/transfers/{transferId}`.
+- Create transfer route: `POST /api/wms/inventory/transfers`.
+- Direct movement route: `POST /api/wms/inventory/transfers/{transferId}/lines/{lineId}/move`.
+- Transit pick route: `POST /api/wms/inventory/transfers/{transferId}/lines/{lineId}/pick`.
+- Transit place route: `POST /api/wms/inventory/transfers/{transferId}/lines/{lineId}/place`.
+- UI movement actions: `Move` for direct transfers, `Pick` and `Place` for internal-transit transfers, and no movement actions for completed transfers.
+
 ## Recommended Validation Commands
 
-Run these only when the developer is ready:
+Run these only when the developer is ready. Builds, tests, app startup, database updates, EF migration generation, and EF migration application remain developer-controlled.
 
 ```powershell
 dotnet build
 dotnet test
+dotnet test --filter "FullyQualifiedName~InventoryTransfer"
 ```
 
-If implementation creates an EF migration, validate migration shape and apply it only through the developer-controlled workflow.
+If implementation creates an EF migration, validate migration shape and apply it only through the developer-controlled workflow. Do not generate or apply migrations as part of this quickstart unless the developer explicitly requests that database step.
 
 ## Scenario 1: Create Direct Transfer
 
