@@ -1,0 +1,186 @@
+@using Myrmex.Shared.Wms.Inventory
+@inject IDialogService DialogService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Transfer.Code</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudGrid>
+                <MudItem xs="12" md="4">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Status</MudText>
+                    <MudText Typo="Typo.body2">@Transfer.Status</MudText>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Warehouse</MudText>
+                    <MudText Typo="Typo.body2">@Transfer.SourceWarehouse.Code - @Transfer.SourceWarehouse.Name</MudText>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Transit</MudText>
+                    <MudText Typo="Typo.body2">@(Transfer.TransitStorageLocation?.Code ?? "Direct")</MudText>
+                </MudItem>
+            </MudGrid>
+
+            <MudTable Items="Transfer.Lines" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>SKU</MudTh>
+                    <MudTh>Source</MudTh>
+                    <MudTh>Destination</MudTh>
+                    <MudTh>Requested</MudTh>
+                    <MudTh>Moved</MudTh>
+                    <MudTh>Picked</MudTh>
+                    <MudTh>Placed</MudTh>
+                    <MudTh>In transit</MudTh>
+                    <MudTh>Remaining pick</MudTh>
+                    <MudTh>Remaining place</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Sku.Code</MudTd>
+                    <MudTd>@context.SourceStorageLocation.Code</MudTd>
+                    <MudTd>@context.DestinationStorageLocation.Code</MudTd>
+                    <MudTd>@context.RequestedQuantity</MudTd>
+                    <MudTd>@context.MovedQuantity</MudTd>
+                    <MudTd>@context.PickedQuantity</MudTd>
+                    <MudTd>@context.PlacedQuantity</MudTd>
+                    <MudTd>@context.InTransitQuantity</MudTd>
+                    <MudTd>@context.RemainingToPickQuantity</MudTd>
+                    <MudTd>@context.RemainingToPlaceQuantity</MudTd>
+                    <MudTd>
+                        @if (CanMove(context))
+                        {
+                            <MudButton Size="Size.Small"
+                                       Color="Color.Primary"
+                                       Variant="Variant.Outlined"
+                                       OnClick="@(() => OpenMovementDialogAsync(context, InventoryTransferMovementDialog.MoveAction))">
+                                Move
+                            </MudButton>
+                        }
+                        @if (CanPick(context))
+                        {
+                            <MudButton Size="Size.Small"
+                                       Color="Color.Primary"
+                                       Variant="Variant.Outlined"
+                                       OnClick="@(() => OpenMovementDialogAsync(context, InventoryTransferMovementDialog.PickAction))">
+                                Pick
+                            </MudButton>
+                        }
+                        @if (CanPlace(context))
+                        {
+                            <MudButton Size="Size.Small"
+                                       Color="Color.Primary"
+                                       Variant="Variant.Outlined"
+                                       OnClick="@(() => OpenMovementDialogAsync(context, InventoryTransferMovementDialog.PlaceAction))">
+                                Place
+                            </MudButton>
+                        }
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+            <MudText Typo="Typo.subtitle1">Movement history</MudText>
+            <MudTable Items="Transfer.Movements" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>Occurred</MudTh>
+                    <MudTh>Meaning</MudTh>
+                    <MudTh>SKU</MudTh>
+                    <MudTh>From</MudTh>
+                    <MudTh>To</MudTh>
+                    <MudTh>Quantity</MudTh>
+                    <MudTh>Transaction</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.OccurredAtUtc.ToLocalTime().ToString("g")</MudTd>
+                    <MudTd>@context.MovementMeaning</MudTd>
+                    <MudTd>@context.Sku.Code</MudTd>
+                    <MudTd>@context.FromStorageLocation.Code</MudTd>
+                    <MudTd>@context.ToStorageLocation.Code</MudTd>
+                    <MudTd>@context.Quantity</MudTd>
+                    <MudTd>@context.InventoryTransactionId</MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText>No movements recorded.</MudText>
+                </NoRecordsContent>
+            </MudTable>
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public InventoryTransferDetails Transfer { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<InventoryTransferDetails> TransferChanged { get; set; }
+
+    private bool IsCompleted => Transfer.Status == InventoryTransferStatusDetails.Completed;
+
+    private void Close() => MudDialog.Close();
+
+    private bool CanMove(InventoryTransferLineDetails line)
+    {
+        return Transfer.TransitStorageLocation is null &&
+               !IsCompleted &&
+               line.MovedQuantity < line.RequestedQuantity;
+    }
+
+    private bool CanPick(InventoryTransferLineDetails line)
+    {
+        return Transfer.TransitStorageLocation is not null &&
+               !IsCompleted &&
+               line.PickedQuantity < line.RequestedQuantity;
+    }
+
+    private bool CanPlace(InventoryTransferLineDetails line)
+    {
+        return Transfer.TransitStorageLocation is not null &&
+               !IsCompleted &&
+               line.InTransitQuantity > 0;
+    }
+
+    private async Task OpenMovementDialogAsync(
+        InventoryTransferLineDetails line,
+        string action)
+    {
+        DialogParameters parameters = new()
+        {
+            [nameof(InventoryTransferMovementDialog.Transfer)] = Transfer,
+            [nameof(InventoryTransferMovementDialog.Line)] = line,
+            [nameof(InventoryTransferMovementDialog.Action)] = action
+        };
+
+        DialogOptions options = new()
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+
+        IDialogReference dialog = await DialogService.ShowAsync<InventoryTransferMovementDialog>(
+            $"{action} transfer line",
+            parameters,
+            options);
+
+        DialogResult? result = await dialog.Result;
+
+        if (result is null || result.Canceled)
+        {
+            return;
+        }
+
+        if (result.Data is InventoryTransferDetails updatedTransfer)
+        {
+            Transfer = updatedTransfer;
+            await TransferChanged.InvokeAsync(updatedTransfer);
+        }
+    }
+}

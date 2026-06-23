@@ -98,4 +98,46 @@ public sealed class InventoryTransactionTests
             error.Property == nameof(InventoryLedgerEntry.QuantityDelta) &&
             error.Code == "IncorrectState-InventoryLedgerEntry-QuantityDelta");
     }
+
+    [Fact]
+    public void CreateTransfer_WhenBalancesAreValid_CreatesTransactionWithExactlyTwoLedgerEntries()
+    {
+        Guid destinationStorageLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000302");
+        DateTimeOffset occurredAtUtc = DateTimeOffset.Parse("2026-06-19T12:00:00Z");
+
+        var result = InventoryTransaction.CreateTransfer(
+            StockKeepingUnitId,
+            StorageLocationId,
+            destinationStorageLocationId,
+            fromBalanceBefore: 10,
+            fromBalanceAfter: 6,
+            toBalanceBefore: 3,
+            toBalanceAfter: 7,
+            reason: "Internal transfer TR-001",
+            occurredAtUtc,
+            out InventoryTransaction? transaction);
+
+        Assert.True(result.IsValid);
+        Assert.NotNull(transaction);
+        Assert.Equal(InventoryTransactionType.Transfer, transaction.TransactionType);
+        Assert.Equal("Internal transfer TR-001", transaction.Reason);
+        Assert.Equal(occurredAtUtc, transaction.OccurredAtUtc);
+
+        InventoryLedgerEntry[] entries = transaction.Entries.ToArray();
+        Assert.Equal(2, entries.Length);
+
+        Assert.Contains(entries, entry =>
+            entry.StockKeepingUnitId == StockKeepingUnitId &&
+            entry.StorageLocationId == StorageLocationId &&
+            entry.QuantityDelta == -4 &&
+            entry.BalanceBefore == 10 &&
+            entry.BalanceAfter == 6);
+
+        Assert.Contains(entries, entry =>
+            entry.StockKeepingUnitId == StockKeepingUnitId &&
+            entry.StorageLocationId == destinationStorageLocationId &&
+            entry.QuantityDelta == 4 &&
+            entry.BalanceBefore == 3 &&
+            entry.BalanceAfter == 7);
+    }
 }

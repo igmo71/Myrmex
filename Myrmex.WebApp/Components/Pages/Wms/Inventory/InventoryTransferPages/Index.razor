@@ -1,0 +1,61 @@
+@page "/wms/inventory/transfers"
+@using Myrmex.Shared.Wms.Inventory
+
+<PageTitle>WMS Inventory Transfers</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
+    <MudStack Spacing="3">
+        <MudStack Row="true"
+                  AlignItems="AlignItems.Center"
+                  Justify="Justify.SpaceBetween">
+            <div>
+                <MudText Typo="Typo.h5">Inventory Transfers</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Internal transfer documents.
+                </MudText>
+            </div>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="OpenCreateTransferAsync">
+                Create transfer
+            </MudButton>
+        </MudStack>
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+                @_errorMessage
+            </MudAlert>
+        }
+
+        <InventoryTransferFilters Warehouses="@_warehouses"
+                                  SelectedWarehouseId="@_selectedWarehouseId"
+                                  SelectedWarehouseIdChanged="OnWarehouseChanged"
+                                  SelectedStatus="@_selectedStatus"
+                                  SelectedStatusChanged="OnStatusChanged"
+                                  HasTransitLocation="@_hasTransitLocation"
+                                  HasTransitLocationChanged="OnHasTransitLocationChanged"
+                                  TransferCode="@_transferCode"
+                                  TransferCodeChanged="OnTransferCodeChanged"
+                                  CreatedFrom="@_createdFrom"
+                                  CreatedFromChanged="OnCreatedFromChanged"
+                                  CreatedTo="@_createdTo"
+                                  CreatedToChanged="OnCreatedToChanged"
+                                  SelectedStockKeepingUnit="@_selectedStockKeepingUnit"
+                                  SelectedStockKeepingUnitChanged="OnStockKeepingUnitChanged"
+                                  SelectedSourceStorageLocation="@_selectedSourceStorageLocation"
+                                  SelectedSourceStorageLocationChanged="OnSourceStorageLocationChanged"
+                                  SelectedDestinationStorageLocation="@_selectedDestinationStorageLocation"
+                                  SelectedDestinationStorageLocationChanged="OnDestinationStorageLocationChanged"
+                                  IsLoadingWarehouses="@_isLoadingWarehouses"
+                                  SearchStockKeepingUnits="SearchStockKeepingUnitsAsync"
+                                  SearchStorageLocations="SearchStorageLocationsAsync"
+                                  ReloadRequested="ReloadAsync" />
+
+        <InventoryTransferGrid @ref="@_inventoryTransferGrid"
+                               LoadData="LoadInventoryTransfersAsync"
+                               DetailsRequested="OpenDetailsAsync" />
+    </MudStack>
+</MudContainer>

@@ -259,7 +259,20 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
             query.Add($"take={request.Take.Value}");
         }
 
-        query.Add($"selectableOnly={request.SelectableOnly.ToString().ToLowerInvariant()}");
+        if (request.SelectableOnly.HasValue)
+        {
+            query.Add($"selectableOnly={request.SelectableOnly.Value.ToString().ToLowerInvariant()}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.StorageLocationTypeCode))
+        {
+            query.Add($"storageLocationTypeCode={HttpUtility.UrlEncode(request.StorageLocationTypeCode)}");
+        }
+
+        if (request.ExcludeTransitTypes == true)
+        {
+            query.Add("excludeTransitTypes=true");
+        }
 
         return query.Count == 0
             ? path

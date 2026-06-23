@@ -11,6 +11,8 @@ internal static class LookupStorageLocations
 {
     private const int DefaultTake = 20;
     private const int MaxTake = 20;
+    private const string InternalTransitStorageLocationTypeCode = "INTERNAL_TRANSIT";
+    private const string ExternalTransitStorageLocationTypeCode = "EXTERNAL_TRANSIT";
 
     internal sealed record Query : IQuery<ServiceResult<IReadOnlyList<StorageLocationLookupItem>>>
     {
@@ -21,6 +23,10 @@ internal static class LookupStorageLocations
         public int? Take { get; init; }
 
         public bool SelectableOnly { get; init; } = true;
+
+        public string? StorageLocationTypeCode { get; init; }
+
+        public bool ExcludeTransitTypes { get; init; }
     }
 
     internal sealed class Handler(WmsDbContext dbContext)
@@ -51,6 +57,21 @@ internal static class LookupStorageLocations
                     x.IsActive &&
                     x.StorageLocationType.IsActive &&
                     x.StorageLocationStatus.IsActive);
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.StorageLocationTypeCode))
+            {
+                string storageLocationTypeCode = query.StorageLocationTypeCode.Trim();
+
+                queryable = queryable.Where(x =>
+                    x.StorageLocationType.Code == storageLocationTypeCode);
+            }
+
+            if (query.ExcludeTransitTypes)
+            {
+                queryable = queryable.Where(x =>
+                    x.StorageLocationType.Code != InternalTransitStorageLocationTypeCode &&
+                    x.StorageLocationType.Code != ExternalTransitStorageLocationTypeCode);
             }
 
             if (!string.IsNullOrWhiteSpace(query.SearchText))

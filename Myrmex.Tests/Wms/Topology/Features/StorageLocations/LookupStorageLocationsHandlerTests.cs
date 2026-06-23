@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
@@ -111,6 +112,80 @@ public sealed class LookupStorageLocationsHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_WhenStorageLocationTypeCodeIsProvided_ReturnsOnlyMatchingType()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        SeededTopology seeded = await SeedTopologyAsync(testDbContext.DbContext);
+
+        await AddStorageLocationAsync(testDbContext, seeded.WarehouseOne, seeded.ZoneOne, "REGULAR", "Regular");
+        await AddStorageLocationAsync(
+            testDbContext,
+            seeded.WarehouseOne,
+            seeded.ZoneOne,
+            "INTERNAL-TRANSIT",
+            "Internal Transit",
+            storageLocationTypeCode: "INTERNAL_TRANSIT");
+        await AddStorageLocationAsync(
+            testDbContext,
+            seeded.WarehouseOne,
+            seeded.ZoneOne,
+            "EXTERNAL-TRANSIT",
+            "External Transit",
+            storageLocationTypeCode: "EXTERNAL_TRANSIT");
+
+        LookupStorageLocations.Handler handler = new(testDbContext.DbContext);
+
+        ServiceResult<IReadOnlyList<StorageLocationLookupItem>> result = await handler.HandleAsync(
+            new LookupStorageLocations.Query
+            {
+                WarehouseId = seeded.WarehouseOne.Id,
+                StorageLocationTypeCode = "INTERNAL_TRANSIT",
+                SelectableOnly = true
+            },
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(["INTERNAL-TRANSIT"], result.Value.Select(x => x.Code).ToArray());
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenExcludeTransitTypesIsTrue_ReturnsOnlyRegularLocations()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        SeededTopology seeded = await SeedTopologyAsync(testDbContext.DbContext);
+
+        await AddStorageLocationAsync(testDbContext, seeded.WarehouseOne, seeded.ZoneOne, "REGULAR", "Regular");
+        await AddStorageLocationAsync(
+            testDbContext,
+            seeded.WarehouseOne,
+            seeded.ZoneOne,
+            "INTERNAL-TRANSIT",
+            "Internal Transit",
+            storageLocationTypeCode: "INTERNAL_TRANSIT");
+        await AddStorageLocationAsync(
+            testDbContext,
+            seeded.WarehouseOne,
+            seeded.ZoneOne,
+            "EXTERNAL-TRANSIT",
+            "External Transit",
+            storageLocationTypeCode: "EXTERNAL_TRANSIT");
+
+        LookupStorageLocations.Handler handler = new(testDbContext.DbContext);
+
+        ServiceResult<IReadOnlyList<StorageLocationLookupItem>> result = await handler.HandleAsync(
+            new LookupStorageLocations.Query
+            {
+                WarehouseId = seeded.WarehouseOne.Id,
+                ExcludeTransitTypes = true,
+                SelectableOnly = true
+            },
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(["REGULAR"], result.Value.Select(x => x.Code).ToArray());
+    }
+
+    [Fact]
     public async Task HandleAsync_WhenWarehouseDoesNotExist_ReturnsFailure()
     {
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
@@ -148,13 +223,18 @@ public sealed class LookupStorageLocationsHandlerTests
         string name,
         bool isActive = true,
         bool isTypeActive = true,
-        bool isStatusActive = true)
+        bool isStatusActive = true,
+        string? storageLocationTypeCode = null)
     {
-        StorageLocationType type = StorageLocationType.CreateSystem(
-            $"{code}-TYPE",
-            $"{name} Type",
-            description: null,
-            sortOrder: 100);
+        StorageLocationType type = !string.IsNullOrWhiteSpace(storageLocationTypeCode)
+            ? await testDbContext.DbContext.StorageLocationTypes.SingleAsync(
+                x => x.Code == storageLocationTypeCode,
+                TestContext.Current.CancellationToken)
+            : StorageLocationType.CreateSystem(
+                $"{code}-TYPE",
+                $"{name} Type",
+                description: null,
+                sortOrder: 100);
 
         StorageLocationStatus status = StorageLocationStatus.CreateSystem(
             $"{code}-STATUS",
@@ -172,7 +252,11 @@ public sealed class LookupStorageLocationsHandlerTests
             status.Deactivate();
         }
 
-        testDbContext.DbContext.StorageLocationTypes.Add(type);
+        if (string.IsNullOrWhiteSpace(storageLocationTypeCode))
+        {
+            testDbContext.DbContext.StorageLocationTypes.Add(type);
+        }
+
         testDbContext.DbContext.StorageLocationStatuses.Add(status);
         await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 

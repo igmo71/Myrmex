@@ -275,6 +275,160 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                     b.ToTable("inventory_transactions", "wms");
                 });
 
+            modelBuilder.Entity("Myrmex.Modules.Wms.Inventory.Domain.InventoryTransfers.InventoryTransfer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("DestinationWarehouseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SourceWarehouseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<Guid?>("TransitStorageLocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id")
+                        .HasName("PK_wms_inventory_transfers");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("UX_wms_inventory_transfers_code");
+
+                    b.HasIndex("DestinationWarehouseId")
+                        .HasDatabaseName("IX_wms_inventory_transfers_destination_warehouse_id");
+
+                    b.HasIndex("SourceWarehouseId")
+                        .HasDatabaseName("IX_wms_inventory_transfers_source_warehouse_id");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_wms_inventory_transfers_status");
+
+                    b.HasIndex("TransitStorageLocationId")
+                        .HasDatabaseName("IX_wms_inventory_transfers_transit_storage_location_id");
+
+                    b.ToTable("inventory_transfers", "wms");
+                });
+
+            modelBuilder.Entity("Myrmex.Modules.Wms.Inventory.Domain.InventoryTransfers.InventoryTransferLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("DestinationStorageLocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("InventoryTransferId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("RequestedQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<Guid>("SourceStorageLocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("StockKeepingUnitId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id")
+                        .HasName("PK_wms_inventory_transfer_lines");
+
+                    b.HasIndex("DestinationStorageLocationId")
+                        .HasDatabaseName("IX_wms_inventory_transfer_lines_destination_storage_location_id");
+
+                    b.HasIndex("InventoryTransferId")
+                        .HasDatabaseName("IX_wms_inventory_transfer_lines_inventory_transfer_id");
+
+                    b.HasIndex("SourceStorageLocationId")
+                        .HasDatabaseName("IX_wms_inventory_transfer_lines_source_storage_location_id");
+
+                    b.HasIndex("StockKeepingUnitId")
+                        .HasDatabaseName("IX_wms_inventory_transfer_lines_stock_keeping_unit_id");
+
+                    b.ToTable("inventory_transfer_lines", "wms");
+                });
+
+            modelBuilder.Entity("Myrmex.Modules.Wms.Inventory.Domain.InventoryTransfers.InventoryTransferMovement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("FromStorageLocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("InventoryTransactionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("InventoryTransferId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("InventoryTransferLineId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("OccurredAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<Guid>("ToStorageLocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id")
+                        .HasName("PK_wms_inventory_transfer_movements");
+
+                    b.HasIndex("FromStorageLocationId")
+                        .HasDatabaseName("IX_wms_inventory_transfer_movements_from_storage_location_id");
+
+                    b.HasIndex("InventoryTransactionId")
+                        .HasDatabaseName("IX_wms_inventory_transfer_movements_inventory_transaction_id");
+
+                    b.HasIndex("InventoryTransferId")
+                        .HasDatabaseName("IX_wms_inventory_transfer_movements_inventory_transfer_id");
+
+                    b.HasIndex("InventoryTransferLineId")
+                        .HasDatabaseName("IX_wms_inventory_transfer_movements_inventory_transfer_line_id");
+
+                    b.HasIndex("ToStorageLocationId")
+                        .HasDatabaseName("IX_wms_inventory_transfer_movements_to_storage_location_id");
+
+                    b.ToTable("inventory_transfer_movements", "wms");
+                });
+
             modelBuilder.Entity("Myrmex.Modules.Wms.Topology.Domain.StorageLocations.StorageLocation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -531,6 +685,28 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                             IsSystem = true,
                             Name = "Dock",
                             SortOrder = 50
+                        },
+                        new
+                        {
+                            Id = new Guid("018f0000-0000-7000-8000-000000000006"),
+                            Code = "INTERNAL_TRANSIT",
+                            CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "System storage location type for internal inventory transfer transit.",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Internal transit",
+                            SortOrder = 60
+                        },
+                        new
+                        {
+                            Id = new Guid("018f0000-0000-7000-8000-000000000007"),
+                            Code = "EXTERNAL_TRANSIT",
+                            CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "System storage location type reserved for external inventory transfer transit.",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "External transit",
+                            SortOrder = 70
                         });
                 });
 
@@ -691,6 +867,122 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                     b.Navigation("StorageLocation");
                 });
 
+            modelBuilder.Entity("Myrmex.Modules.Wms.Inventory.Domain.InventoryTransfers.InventoryTransfer", b =>
+                {
+                    b.HasOne("Myrmex.Modules.Wms.Topology.Domain.Warehouses.Warehouse", "DestinationWarehouse")
+                        .WithMany()
+                        .HasForeignKey("DestinationWarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_wms_inventory_transfers_warehouses_destination_warehouse_id");
+
+                    b.HasOne("Myrmex.Modules.Wms.Topology.Domain.Warehouses.Warehouse", "SourceWarehouse")
+                        .WithMany()
+                        .HasForeignKey("SourceWarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_wms_inventory_transfers_warehouses_source_warehouse_id");
+
+                    b.HasOne("Myrmex.Modules.Wms.Topology.Domain.StorageLocations.StorageLocation", "TransitStorageLocation")
+                        .WithMany()
+                        .HasForeignKey("TransitStorageLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_wms_inventory_transfers_storage_locations_transit_storage_location_id");
+
+                    b.Navigation("DestinationWarehouse");
+
+                    b.Navigation("SourceWarehouse");
+
+                    b.Navigation("TransitStorageLocation");
+                });
+
+            modelBuilder.Entity("Myrmex.Modules.Wms.Inventory.Domain.InventoryTransfers.InventoryTransferLine", b =>
+                {
+                    b.HasOne("Myrmex.Modules.Wms.Topology.Domain.StorageLocations.StorageLocation", "DestinationStorageLocation")
+                        .WithMany()
+                        .HasForeignKey("DestinationStorageLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_wms_inventory_transfer_lines_storage_locations_destination_storage_location_id");
+
+                    b.HasOne("Myrmex.Modules.Wms.Inventory.Domain.InventoryTransfers.InventoryTransfer", "InventoryTransfer")
+                        .WithMany("Lines")
+                        .HasForeignKey("InventoryTransferId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_wms_inventory_transfer_lines_inventory_transfers_inventory_transfer_id");
+
+                    b.HasOne("Myrmex.Modules.Wms.Topology.Domain.StorageLocations.StorageLocation", "SourceStorageLocation")
+                        .WithMany()
+                        .HasForeignKey("SourceStorageLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_wms_inventory_transfer_lines_storage_locations_source_storage_location_id");
+
+                    b.HasOne("Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits.StockKeepingUnit", "StockKeepingUnit")
+                        .WithMany()
+                        .HasForeignKey("StockKeepingUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_wms_inventory_transfer_lines_stock_keeping_units_stock_keeping_unit_id");
+
+                    b.Navigation("DestinationStorageLocation");
+
+                    b.Navigation("InventoryTransfer");
+
+                    b.Navigation("SourceStorageLocation");
+
+                    b.Navigation("StockKeepingUnit");
+                });
+
+            modelBuilder.Entity("Myrmex.Modules.Wms.Inventory.Domain.InventoryTransfers.InventoryTransferMovement", b =>
+                {
+                    b.HasOne("Myrmex.Modules.Wms.Topology.Domain.StorageLocations.StorageLocation", "FromStorageLocation")
+                        .WithMany()
+                        .HasForeignKey("FromStorageLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_wms_inventory_transfer_movements_storage_locations_from_storage_location_id");
+
+                    b.HasOne("Myrmex.Modules.Wms.Inventory.Domain.InventoryTransactions.InventoryTransaction", "InventoryTransaction")
+                        .WithMany()
+                        .HasForeignKey("InventoryTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_wms_inventory_transfer_movements_inventory_transactions_inventory_transaction_id");
+
+                    b.HasOne("Myrmex.Modules.Wms.Inventory.Domain.InventoryTransfers.InventoryTransfer", "InventoryTransfer")
+                        .WithMany("Movements")
+                        .HasForeignKey("InventoryTransferId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_wms_inventory_transfer_movements_inventory_transfers_inventory_transfer_id");
+
+                    b.HasOne("Myrmex.Modules.Wms.Inventory.Domain.InventoryTransfers.InventoryTransferLine", "InventoryTransferLine")
+                        .WithMany()
+                        .HasForeignKey("InventoryTransferLineId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_wms_inventory_transfer_movements_inventory_transfer_lines_inventory_transfer_line_id");
+
+                    b.HasOne("Myrmex.Modules.Wms.Topology.Domain.StorageLocations.StorageLocation", "ToStorageLocation")
+                        .WithMany()
+                        .HasForeignKey("ToStorageLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_wms_inventory_transfer_movements_storage_locations_to_storage_location_id");
+
+                    b.Navigation("FromStorageLocation");
+
+                    b.Navigation("InventoryTransaction");
+
+                    b.Navigation("InventoryTransfer");
+
+                    b.Navigation("InventoryTransferLine");
+
+                    b.Navigation("ToStorageLocation");
+                });
+
             modelBuilder.Entity("Myrmex.Modules.Wms.Topology.Domain.StorageLocations.StorageLocation", b =>
                 {
                     b.HasOne("Myrmex.Modules.Wms.Topology.Domain.StorageLocations.StorageLocationStatus", "StorageLocationStatus")
@@ -743,6 +1035,13 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Myrmex.Modules.Wms.Inventory.Domain.InventoryTransactions.InventoryTransaction", b =>
                 {
                     b.Navigation("Entries");
+                });
+
+            modelBuilder.Entity("Myrmex.Modules.Wms.Inventory.Domain.InventoryTransfers.InventoryTransfer", b =>
+                {
+                    b.Navigation("Lines");
+
+                    b.Navigation("Movements");
                 });
 #pragma warning restore 612, 618
         }

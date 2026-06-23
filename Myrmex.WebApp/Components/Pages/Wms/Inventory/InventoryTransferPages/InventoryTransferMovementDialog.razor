@@ -1,0 +1,244 @@
+@using System.Globalization
+@using Myrmex.Shared.Wms.Inventory
+@using Myrmex.WebApp.Wms.Api
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@DialogTitle</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudStack Spacing="3">
+                <MudTextField T="string"
+                              Label="SKU"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Value="@SkuDisplay"
+                              Disabled="true" />
+
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField T="string"
+                                      Label="@FromLabel"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Value="@FromDisplay"
+                                      Disabled="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField T="string"
+                                      Label="@ToLabel"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Value="@ToDisplay"
+                                      Disabled="true" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudNumericField T="decimal"
+                                 Label="Remaining quantity"
+                                 Value="@RemainingQuantity"
+                                 Disabled="true"
+                                 Culture="@QuantityCulture"
+                                 Format="0.####" />
+
+                <MudNumericField T="decimal"
+                                 Label="@QuantityLabel"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Min="@(0.0001m)"
+                                 Max="@RemainingQuantity"
+                                 Required="true"
+                                 RequiredError="Move quantity is required."
+                                 Culture="@QuantityCulture"
+                                 Format="0.####"
+                                 InputMode="@(InputMode.@decimal)"
+                                 @bind-Value="_quantity" />
+
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+                        @_errorMessage
+                    </MudAlert>
+                }
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel"
+                   Disabled="_isSaving">
+            Cancel
+        </MudButton>
+
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="SaveAsync"
+                   Disabled="_isSaving || RemainingQuantity <= 0">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Size="Size.Small"
+                                     Indeterminate="true"
+                                     Class="me-2" />
+            }
+            @ActionButtonText
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public InventoryTransferDetails Transfer { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public InventoryTransferLineDetails Line { get; set; } = null!;
+
+    [Parameter]
+    public string Action { get; set; } = MoveAction;
+
+    [Inject]
+    private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = null!;
+
+    private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
+
+    private MudForm? _form;
+    private decimal _quantity;
+    private bool _isSaving;
+    private string? _errorMessage;
+
+    public const string MoveAction = "Move";
+    public const string PickAction = "Pick";
+    public const string PlaceAction = "Place";
+
+    private bool IsPick => Action == PickAction;
+
+    private bool IsPlace => Action == PlaceAction;
+
+    private decimal RemainingQuantity => IsPlace
+        ? Line.InTransitQuantity
+        : IsPick
+            ? Line.RequestedQuantity - Line.PickedQuantity
+            : Line.RequestedQuantity - Line.MovedQuantity;
+
+    private string SkuDisplay => $"{Line.Sku.Code} - {Line.Sku.Name}";
+
+    private string FromLabel => IsPlace ? "Transit" : "Source";
+
+    private string ToLabel => IsPick ? "Transit" : "Destination";
+
+    private string FromDisplay => IsPlace
+        ? TransitDisplay
+        : $"{Line.SourceStorageLocation.Code} - {Line.SourceStorageLocation.Name}";
+
+    private string ToDisplay => IsPick
+        ? TransitDisplay
+        : $"{Line.DestinationStorageLocation.Code} - {Line.DestinationStorageLocation.Name}";
+
+    private string TransitDisplay => Transfer.TransitStorageLocation is null
+        ? string.Empty
+        : $"{Transfer.TransitStorageLocation.Code} - {Transfer.TransitStorageLocation.Name}";
+
+    private string DialogTitle => IsPick
+        ? "Pick transfer line"
+        : IsPlace
+            ? "Place transfer line"
+            : "Move transfer line";
+
+    private string QuantityLabel => IsPick
+        ? "Pick quantity"
+        : IsPlace
+            ? "Place quantity"
+            : "Move quantity";
+
+    private string ActionButtonText => IsPick
+        ? "Pick"
+        : IsPlace
+            ? "Place"
+            : "Move";
+
+    protected override void OnInitialized()
+    {
+        _quantity = RemainingQuantity > 0 ? RemainingQuantity : 0;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        if (_quantity <= 0 || _quantity > RemainingQuantity)
+        {
+            _errorMessage = $"{ActionButtonText} quantity must be greater than zero and no more than the remaining quantity.";
+            return;
+        }
+
+        _isSaving = true;
+        _errorMessage = null;
+
+        try
+        {
+            ApiResult<InventoryTransferDetails> result = await ExecuteAsync();
+
+            if (result.IsFailure)
+            {
+                _errorMessage = result.Error?.Message ?? "Transfer movement failed.";
+                return;
+            }
+
+            if (result.Value is null)
+            {
+                _errorMessage = "The operation completed without returning transfer details.";
+                return;
+            }
+
+            MudDialog.Close(DialogResult.Ok(result.Value));
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task<ApiResult<InventoryTransferDetails>> ExecuteAsync()
+    {
+        if (IsPick)
+        {
+            return await WmsInventoryApiClient.TryPickInventoryTransferLineAsync(
+                Transfer.Id,
+                Line.Id,
+                new PickInventoryTransferLineRequest(_quantity));
+        }
+
+        if (IsPlace)
+        {
+            return await WmsInventoryApiClient.TryPlaceInventoryTransferLineAsync(
+                Transfer.Id,
+                Line.Id,
+                new PlaceInventoryTransferLineRequest(_quantity));
+        }
+
+        return await WmsInventoryApiClient.TryMoveInventoryTransferLineAsync(
+            Transfer.Id,
+            Line.Id,
+            new MoveInventoryTransferLineRequest(_quantity));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

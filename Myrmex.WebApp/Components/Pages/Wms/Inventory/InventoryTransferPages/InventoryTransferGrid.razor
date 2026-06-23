@@ -1,0 +1,202 @@
+@using Myrmex.Shared.Wms.Inventory
+
+<MudDataGrid T="InventoryTransferListItem"
+             @ref="_dataGrid"
+             ServerData="LoadServerDataAsync"
+             Dense="true"
+             Hover="true"
+             Bordered="true"
+             Striped="true"
+             SortMode="SortMode.Single"
+             Filterable="false">
+    <Columns>
+        <TemplateColumn Title="Transfer"
+                        Tag="@InventoryTransferSortBy.Code"
+                        SortBy="@(transfer => transfer.Code)"
+                        Sortable="true">
+            <CellTemplate>
+                <MudText Typo="Typo.body2">@context.Item.Code</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @context.Item.CreatedAtUtc.ToLocalTime().ToString("g")
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Warehouse"
+                        Tag="@InventoryTransferSortBy.WarehouseCode"
+                        SortBy="@(transfer => transfer.SourceWarehouse.Code)"
+                        Sortable="true">
+            <CellTemplate>
+                <MudText Typo="Typo.body2">@context.Item.SourceWarehouse.Code</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @context.Item.SourceWarehouse.Name
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Transit">
+            <CellTemplate>
+                @(context.Item.TransitStorageLocation?.Code ?? "Direct")
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Requested"
+                        Tag="@InventoryTransferSortBy.TotalRequestedQuantity"
+                        SortBy="@(transfer => transfer.TotalRequestedQuantity)"
+                        Sortable="true">
+            <CellTemplate>
+                @context.Item.TotalRequestedQuantity
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Picked"
+                        Tag="@InventoryTransferSortBy.TotalPickedQuantity"
+                        SortBy="@(transfer => transfer.TotalPickedQuantity)"
+                        Sortable="true">
+            <CellTemplate>
+                @context.Item.TotalPickedQuantity
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Placed"
+                        Tag="@InventoryTransferSortBy.TotalPlacedQuantity"
+                        SortBy="@(transfer => transfer.TotalPlacedQuantity)"
+                        Sortable="true">
+            <CellTemplate>
+                @context.Item.TotalPlacedQuantity
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="In transit"
+                        Tag="@InventoryTransferSortBy.TotalInTransitQuantity"
+                        SortBy="@(transfer => transfer.TotalInTransitQuantity)"
+                        Sortable="true">
+            <CellTemplate>
+                @context.Item.TotalInTransitQuantity
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Status"
+                        Tag="@InventoryTransferSortBy.Status"
+                        SortBy="@(transfer => transfer.Status)"
+                        Sortable="true">
+            <CellTemplate>
+                <MudChip T="string"
+                         Size="Size.Small"
+                         Color="@GetStatusColor(context.Item.Status)">
+                    @context.Item.Status
+                </MudChip>
+            </CellTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn Title="Actions" Sortable="false">
+            <CellTemplate>
+                <MudIconButton Icon="@GetActionIcon(context.Item)"
+                               Size="Size.Small"
+                               title="@GetActionTitle(context.Item)"
+                               OnClick="@(() => DetailsRequested.InvokeAsync(context.Item))" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+    <NoRecordsContent>
+        <MudText>No transfers match the current filters.</MudText>
+    </NoRecordsContent>
+
+    <PagerContent>
+        <MudDataGridPager T="InventoryTransferListItem" PageSizeOptions="@PageSizeOptions" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired]
+    public Func<InventoryTransferGridRequest, CancellationToken, Task<GridData<InventoryTransferListItem>>> LoadData { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<InventoryTransferListItem> DetailsRequested { get; set; }
+
+    private MudDataGrid<InventoryTransferListItem>? _dataGrid;
+
+    private static readonly int[] PageSizeOptions = [10, 25, 50, 100];
+
+    private Task<GridData<InventoryTransferListItem>> LoadServerDataAsync(
+        GridState<InventoryTransferListItem> state,
+        CancellationToken cancellationToken)
+    {
+        SortDefinition<InventoryTransferListItem>? sortDefinition =
+            state.SortDefinitions.FirstOrDefault();
+
+        InventoryTransferGridRequest request = new(
+            Skip: state.Page * state.PageSize,
+            Take: state.PageSize,
+            SortBy: ResolveSortBy(sortDefinition),
+            SortDescending: sortDefinition?.Descending ?? true);
+
+        return LoadData(request, cancellationToken);
+    }
+
+    private string ResolveSortBy(SortDefinition<InventoryTransferListItem>? sortDefinition)
+    {
+        if (sortDefinition is null)
+        {
+            return InventoryTransferSortBy.CreatedAtUtc;
+        }
+
+        Column<InventoryTransferListItem>? column =
+            _dataGrid?.GetColumnByPropertyName(sortDefinition.SortBy);
+
+        return column?.Tag as string
+            ?? InventoryTransferSortBy.CreatedAtUtc;
+    }
+
+    public async Task ReloadServerDataAsync()
+    {
+        if (_dataGrid is null)
+        {
+            return;
+        }
+
+        await _dataGrid.ReloadServerData();
+    }
+
+    public async Task ResetAndReloadServerDataAsync()
+    {
+        if (_dataGrid is null)
+        {
+            return;
+        }
+
+        if (_dataGrid.CurrentPage == 0)
+        {
+            await _dataGrid.ReloadServerData();
+            return;
+        }
+
+        _dataGrid.NavigateTo(Page.First);
+    }
+
+    private static Color GetStatusColor(string status)
+    {
+        return status switch
+        {
+            InventoryTransferStatusDetails.Created => Color.Default,
+            InventoryTransferStatusDetails.InProgress => Color.Warning,
+            InventoryTransferStatusDetails.Completed => Color.Success,
+            _ => Color.Default
+        };
+    }
+
+    private static string GetActionIcon(InventoryTransferListItem transfer)
+    {
+        return transfer.Status == InventoryTransferStatusDetails.Completed
+            ? Icons.Material.Filled.Visibility
+            : Icons.Material.Filled.Edit;
+    }
+
+    private static string GetActionTitle(InventoryTransferListItem transfer)
+    {
+        return transfer.Status == InventoryTransferStatusDetails.Completed
+            ? "View transfer"
+            : "Open transfer";
+    }
+}

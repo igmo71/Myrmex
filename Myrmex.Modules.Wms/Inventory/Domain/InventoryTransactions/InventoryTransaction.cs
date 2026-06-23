@@ -76,4 +76,84 @@ internal sealed class InventoryTransaction : AggregateRoot
 
         return DomainValidationResult.Valid;
     }
+
+    public static DomainValidationResult CreateTransfer(
+        Guid? stockKeepingUnitId,
+        Guid? fromStorageLocationId,
+        Guid? toStorageLocationId,
+        decimal fromBalanceBefore,
+        decimal fromBalanceAfter,
+        decimal toBalanceBefore,
+        decimal toBalanceAfter,
+        string? reason,
+        DateTimeOffset occurredAtUtc,
+        out InventoryTransaction? transaction)
+    {
+        List<DomainValidationFailure> errors = [];
+        string trimmedReason = reason?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(trimmedReason))
+        {
+            errors.Add(DomainValidationFailure.Required<InventoryTransaction>(nameof(Reason)));
+        }
+        else if (trimmedReason.Length > ReasonMaxLength)
+        {
+            errors.Add(DomainValidationFailure.TooLong<InventoryTransaction>(nameof(Reason), ReasonMaxLength));
+        }
+
+        decimal fromQuantityDelta = fromBalanceAfter - fromBalanceBefore;
+        decimal toQuantityDelta = toBalanceAfter - toBalanceBefore;
+
+        DomainValidationResult fromEntryValidationResult = InventoryLedgerEntry.Create(
+            stockKeepingUnitId,
+            fromStorageLocationId,
+            fromQuantityDelta,
+            fromBalanceBefore,
+            fromBalanceAfter,
+            out InventoryLedgerEntry? fromEntry);
+
+        DomainValidationResult toEntryValidationResult = InventoryLedgerEntry.Create(
+            stockKeepingUnitId,
+            toStorageLocationId,
+            toQuantityDelta,
+            toBalanceBefore,
+            toBalanceAfter,
+            out InventoryLedgerEntry? toEntry);
+
+        errors.AddRange(fromEntryValidationResult.Errors);
+        errors.AddRange(toEntryValidationResult.Errors);
+
+        if (fromQuantityDelta >= 0)
+        {
+            errors.Add(DomainValidationFailure.IncorrectState<InventoryLedgerEntry>(nameof(InventoryLedgerEntry.QuantityDelta)));
+        }
+
+        if (toQuantityDelta <= 0)
+        {
+            errors.Add(DomainValidationFailure.IncorrectState<InventoryLedgerEntry>(nameof(InventoryLedgerEntry.QuantityDelta)));
+        }
+
+        if (fromQuantityDelta + toQuantityDelta != 0)
+        {
+            errors.Add(DomainValidationFailure.IncorrectState<InventoryTransaction>(nameof(Entries)));
+        }
+
+        DomainValidationResult validationResult = DomainValidationResult.From(errors);
+
+        if (!validationResult.IsValid)
+        {
+            transaction = null;
+            return validationResult;
+        }
+
+        transaction = new InventoryTransaction(
+            InventoryTransactionType.Transfer,
+            trimmedReason,
+            occurredAtUtc);
+
+        transaction._entries.Add(fromEntry!);
+        transaction._entries.Add(toEntry!);
+
+        return DomainValidationResult.Valid;
+    }
 }
