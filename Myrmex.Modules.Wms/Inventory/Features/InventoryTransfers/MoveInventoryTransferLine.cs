@@ -152,6 +152,7 @@ internal static class MoveInventoryTransferLine
             }
 
             transfer.AddMovement(movement!);
+            dbContext.InventoryTransferMovements.Add(movement!);
             dbContext.InventoryTransactions.Add(createdTransaction);
 
             ServiceResult saveResult;
