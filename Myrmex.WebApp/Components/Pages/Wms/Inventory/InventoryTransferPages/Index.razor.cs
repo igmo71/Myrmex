@@ -45,7 +45,9 @@ public partial class Index
     {
         DialogParameters parameters = new()
         {
-            [nameof(InventoryTransferDetailsDialog.Transfer)] = transfer
+            [nameof(InventoryTransferDetailsDialog.Transfer)] = transfer,
+            [nameof(InventoryTransferDetailsDialog.TransferChanged)] =
+                EventCallback.Factory.Create<InventoryTransferDetails>(this, ReplaceTransfer)
         };
 
         DialogOptions options = new()
@@ -59,5 +61,15 @@ public partial class Index
             transfer.Code,
             parameters,
             options);
+    }
+
+    private void ReplaceTransfer(InventoryTransferDetails transfer)
+    {
+        int index = _createdTransfers.FindIndex(x => x.Id == transfer.Id);
+
+        if (index >= 0)
+        {
+            _createdTransfers[index] = transfer;
+        }
     }
 }

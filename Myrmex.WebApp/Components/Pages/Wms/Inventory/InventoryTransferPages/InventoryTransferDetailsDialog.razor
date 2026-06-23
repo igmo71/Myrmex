@@ -1,4 +1,5 @@
 @using Myrmex.Shared.Wms.Inventory
+@inject IDialogService DialogService
 
 <MudDialog>
     <TitleContent>
@@ -28,12 +29,26 @@
                     <MudTh>Source</MudTh>
                     <MudTh>Destination</MudTh>
                     <MudTh>Requested</MudTh>
+                    <MudTh>Moved</MudTh>
+                    <MudTh></MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd>@context.Sku.Code</MudTd>
                     <MudTd>@context.SourceStorageLocation.Code</MudTd>
                     <MudTd>@context.DestinationStorageLocation.Code</MudTd>
                     <MudTd>@context.RequestedQuantity</MudTd>
+                    <MudTd>@context.MovedQuantity</MudTd>
+                    <MudTd>
+                        @if (CanMove(context))
+                        {
+                            <MudButton Size="Size.Small"
+                                       Color="Color.Primary"
+                                       Variant="Variant.Outlined"
+                                       OnClick="@(() => OpenMoveDialogAsync(context))">
+                                Move
+                            </MudButton>
+                        }
+                    </MudTd>
                 </RowTemplate>
             </MudTable>
         </MudStack>
@@ -51,5 +66,49 @@
     [Parameter, EditorRequired]
     public InventoryTransferDetails Transfer { get; set; } = null!;
 
+    [Parameter]
+    public EventCallback<InventoryTransferDetails> TransferChanged { get; set; }
+
     private void Close() => MudDialog.Close();
+
+    private bool CanMove(InventoryTransferLineDetails line)
+    {
+        return Transfer.TransitStorageLocation is null &&
+               Transfer.Status != InventoryTransferStatusDetails.Completed &&
+               line.MovedQuantity < line.RequestedQuantity;
+    }
+
+    private async Task OpenMoveDialogAsync(InventoryTransferLineDetails line)
+    {
+        DialogParameters parameters = new()
+        {
+            [nameof(InventoryTransferMovementDialog.Transfer)] = Transfer,
+            [nameof(InventoryTransferMovementDialog.Line)] = line
+        };
+
+        DialogOptions options = new()
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+
+        IDialogReference dialog = await DialogService.ShowAsync<InventoryTransferMovementDialog>(
+            "Move transfer line",
+            parameters,
+            options);
+
+        DialogResult? result = await dialog.Result;
+
+        if (result is null || result.Canceled)
+        {
+            return;
+        }
+
+        if (result.Data is InventoryTransferDetails updatedTransfer)
+        {
+            Transfer = updatedTransfer;
+            await TransferChanged.InvokeAsync(updatedTransfer);
+        }
+    }
 }

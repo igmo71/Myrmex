@@ -48,6 +48,18 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
+    public async Task<ApiResult<InventoryTransferDetails>> TryMoveInventoryTransferLineAsync(
+        Guid transferId,
+        Guid lineId,
+        MoveInventoryTransferLineRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<InventoryTransferDetails>(
+            $"/api/wms/inventory/transfers/{transferId}/lines/{lineId}/move",
+            request,
+            cancellationToken);
+    }
+
     public async Task<ListResult<InventoryLedgerEntryDetails>> ListInventoryLedgerEntriesAsync(
         ListInventoryLedgerEntriesRequest request,
         CancellationToken cancellationToken = default)

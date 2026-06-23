@@ -113,6 +113,83 @@ public sealed class InventoryTransferEndpointTests
         }
     }
 
+    [Fact]
+    public async Task MoveInventoryTransferLineAsync_BindsRouteAndRequestBodyAndSerializesDetails()
+    {
+        Guid warehouseId = Guid.Parse("018f0000-0000-7000-8000-000000000301");
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
+        Guid sourceLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000201");
+        Guid destinationLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000202");
+        InventoryTransferDetails details = CreateInventoryTransferDetails(
+            warehouseId,
+            stockKeepingUnitId,
+            sourceLocationId,
+            destinationLocationId,
+            status: InventoryTransferStatusDetails.InProgress);
+        InventoryTransferLineDetails line = Assert.Single(details.Lines);
+        RecordingCommandDispatcher commandDispatcher = new(details);
+        await using WebApplication app = CreateInventoryEndpointApp(commandDispatcher);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient httpClient = CreateHttpClient(app);
+
+            using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
+                $"/api/wms/inventory/transfers/{details.Id}/lines/{line.Id}/move",
+                new MoveInventoryTransferLineRequest(3),
+                cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+            Assert.NotNull(commandDispatcher.CapturedMoveCommand);
+            Assert.Equal(details.Id, commandDispatcher.CapturedMoveCommand.TransferId);
+            Assert.Equal(line.Id, commandDispatcher.CapturedMoveCommand.LineId);
+            Assert.Equal(3, commandDispatcher.CapturedMoveCommand.Quantity);
+
+            using JsonDocument json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+            JsonElement root = json.RootElement;
+            Assert.Equal(details.Id, root.GetProperty("id").GetGuid());
+            Assert.Equal(InventoryTransferStatusDetails.InProgress, root.GetProperty("status").GetString());
+            Assert.Equal(1, root.GetProperty("lines").GetArrayLength());
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
+    [Fact]
+    public async Task MoveInventoryTransferLineAsync_WhenConflictFails_Returns409WithProblemDetails()
+    {
+        RecordingCommandDispatcher commandDispatcher = new(
+            ServiceResult<InventoryTransferDetails>.Fail(MoveInventoryTransferLine.OverMoveConflict()));
+        await using WebApplication app = CreateInventoryEndpointApp(commandDispatcher);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient httpClient = CreateHttpClient(app);
+            Guid transferId = Guid.Parse("018f0000-0000-7000-8000-000000000001");
+            Guid lineId = Guid.Parse("018f0000-0000-7000-8000-000000000401");
+
+            using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
+                $"/api/wms/inventory/transfers/{transferId}/lines/{lineId}/move",
+                new MoveInventoryTransferLineRequest(6),
+                cancellationToken);
+
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+
+            using JsonDocument json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+            Assert.Equal("InventoryTransfer.OverMove", json.RootElement.GetProperty("code").GetString());
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
     private static WebApplication CreateInventoryEndpointApp(RecordingCommandDispatcher commandDispatcher)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
@@ -144,12 +221,13 @@ public sealed class InventoryTransferEndpointTests
         Guid warehouseId,
         Guid stockKeepingUnitId,
         Guid sourceLocationId,
-        Guid destinationLocationId)
+        Guid destinationLocationId,
+        string status = InventoryTransferStatusDetails.Created)
     {
         return new InventoryTransferDetails(
             Guid.Parse("018f0000-0000-7000-8000-000000000001"),
             "TR-001",
-            InventoryTransferStatusDetails.Created,
+            status,
             DateTimeOffset.Parse("2026-06-19T09:00:00Z"),
             UpdatedAtUtc: null,
             new InventoryTransferDetails.WarehouseInfo(warehouseId, "MAIN", "Main Warehouse"),
@@ -199,6 +277,8 @@ public sealed class InventoryTransferEndpointTests
 
         public CreateInventoryTransfer.Command? CapturedCommand { get; private set; }
 
+        public MoveInventoryTransferLine.Command? CapturedMoveCommand { get; private set; }
+
         public Task<TResult> DispatchAsync<TCommand, TResult>(
             TCommand command,
             CancellationToken cancellationToken = default)
@@ -209,6 +289,14 @@ public sealed class InventoryTransferEndpointTests
                 typeof(TResult) == typeof(ServiceResult<InventoryTransferDetails>))
             {
                 CapturedCommand = createCommand;
+
+                return Task.FromResult((TResult)(object)_result);
+            }
+
+            if (command is MoveInventoryTransferLine.Command moveCommand &&
+                typeof(TResult) == typeof(ServiceResult<InventoryTransferDetails>))
+            {
+                CapturedMoveCommand = moveCommand;
 
                 return Task.FromResult((TResult)(object)_result);
             }

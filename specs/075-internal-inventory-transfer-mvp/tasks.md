@@ -89,19 +89,21 @@
 
 ### Tests
 
-- [ ] T035 [P] [US2] Add handler test for direct movement creating movement, one transfer transaction, two `InventoryLedgerEntry` rows, balance changes, and progress updates in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
-- [ ] T036 [P] [US2] Add handler test for direct over-move, insufficient source balance, and wrong pick/place operation rejection on direct transfer in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
-- [ ] T037 [P] [US2] Add endpoint test for direct move route, body binding, and representative conflict ProblemDetails behavior in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryTransferEndpointTests.cs`
-- [ ] T038 [P] [US2] Add API-client test for direct move request body and refreshed transfer details deserialization in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [X] T035 [P] [US2] Add handler test for direct movement creating movement, one transfer transaction, two `InventoryLedgerEntry` rows, balance changes, and progress updates in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
+- [X] T036 [P] [US2] Add handler test for direct over-move, insufficient source balance, and wrong pick/place operation rejection on direct transfer in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
+- [X] T037 [P] [US2] Add endpoint test for direct move route, body binding, and representative conflict ProblemDetails behavior in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryTransferEndpointTests.cs`
+- [X] T038 [P] [US2] Add API-client test for direct move request body and refreshed transfer details deserialization in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation
 
-- [ ] T039 [US2] Implement direct move shared request contract in `Myrmex.Shared/Wms/Inventory/MoveInventoryTransferLineRequest.cs`
-- [ ] T040 [US2] Implement direct movement command with balance updates, transfer transaction creation, two `InventoryLedgerEntry` entities, and movement persistence in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/MoveInventoryTransferLine.cs`
-- [ ] T041 [US2] Implement direct move endpoint mapping in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryTransferEndpoints.cs`
-- [ ] T042 [US2] Add direct move API-client method in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
-- [ ] T043 [US2] Add direct move mode to movement dialog in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferMovementDialog.razor`
-- [ ] T044 [US2] Wire direct move action visibility and refresh behavior into transfer details UI in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferDetailsDialog.razor`
+- [X] T039 [US2] Implement direct move shared request contract in `Myrmex.Shared/Wms/Inventory/MoveInventoryTransferLineRequest.cs`
+- [X] T040 [US2] Implement direct movement command with balance updates, transfer transaction creation, two `InventoryLedgerEntry` entities, and movement persistence in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/MoveInventoryTransferLine.cs`
+- [X] T041 [US2] Implement direct move endpoint mapping in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryTransferEndpoints.cs`
+- [X] T042 [US2] Add direct move API-client method in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [X] T043 [US2] Add direct move mode to movement dialog in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferMovementDialog.razor`
+- [X] T044 [US2] Wire direct move action visibility and refresh behavior into transfer details UI in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferDetailsDialog.razor`
+
+**US2 implementation note**: This direct-movement slice rejects direct movement on transit transfers. Pick/place command behavior remains deferred to US3.
 
 **Checkpoint**: User Story 2 direct movement works independently for direct transfers.
 

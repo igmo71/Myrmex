@@ -1,16 +1,89 @@
+@using System.Globalization
+@using Myrmex.Shared.Wms.Inventory
+@using Myrmex.WebApp.Wms.Api
+
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">Transfer movement</MudText>
+        <MudText Typo="Typo.h6">Move transfer line</MudText>
     </TitleContent>
 
     <DialogContent>
-        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
-            No movement actions available.
-        </MudAlert>
+        <MudForm @ref="_form">
+            <MudStack Spacing="3">
+                <MudTextField T="string"
+                              Label="SKU"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Value="@SkuDisplay"
+                              Disabled="true" />
+
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField T="string"
+                                      Label="Source"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Value="@SourceDisplay"
+                                      Disabled="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField T="string"
+                                      Label="Destination"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Value="@DestinationDisplay"
+                                      Disabled="true" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudNumericField T="decimal"
+                                 Label="Remaining quantity"
+                                 Value="@RemainingQuantity"
+                                 Disabled="true"
+                                 Culture="@QuantityCulture"
+                                 Format="0.####" />
+
+                <MudNumericField T="decimal"
+                                 Label="Move quantity"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Min="@(0.0001m)"
+                                 Max="@RemainingQuantity"
+                                 Required="true"
+                                 RequiredError="Move quantity is required."
+                                 Culture="@QuantityCulture"
+                                 Format="0.####"
+                                 InputMode="@(InputMode.@decimal)"
+                                 @bind-Value="_quantity" />
+
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+                        @_errorMessage
+                    </MudAlert>
+                }
+            </MudStack>
+        </MudForm>
     </DialogContent>
 
     <DialogActions>
-        <MudButton OnClick="Close">Close</MudButton>
+        <MudButton OnClick="Cancel"
+                   Disabled="_isSaving">
+            Cancel
+        </MudButton>
+
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="MoveAsync"
+                   Disabled="_isSaving || RemainingQuantity <= 0">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Size="Size.Small"
+                                     Indeterminate="true"
+                                     Class="me-2" />
+            }
+            Move
+        </MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -18,5 +91,89 @@
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
-    private void Close() => MudDialog.Close();
+    [Parameter, EditorRequired]
+    public InventoryTransferDetails Transfer { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public InventoryTransferLineDetails Line { get; set; } = null!;
+
+    [Inject]
+    private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = null!;
+
+    private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
+
+    private MudForm? _form;
+    private decimal _quantity;
+    private bool _isSaving;
+    private string? _errorMessage;
+
+    private decimal RemainingQuantity => Line.RequestedQuantity - Line.MovedQuantity;
+
+    private string SkuDisplay => $"{Line.Sku.Code} - {Line.Sku.Name}";
+
+    private string SourceDisplay => $"{Line.SourceStorageLocation.Code} - {Line.SourceStorageLocation.Name}";
+
+    private string DestinationDisplay => $"{Line.DestinationStorageLocation.Code} - {Line.DestinationStorageLocation.Name}";
+
+    protected override void OnInitialized()
+    {
+        _quantity = RemainingQuantity > 0 ? RemainingQuantity : 0;
+    }
+
+    private async Task MoveAsync()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        if (_quantity <= 0 || _quantity > RemainingQuantity)
+        {
+            _errorMessage = "Move quantity must be greater than zero and no more than the remaining quantity.";
+            return;
+        }
+
+        _isSaving = true;
+        _errorMessage = null;
+
+        try
+        {
+            ApiResult<InventoryTransferDetails> result = await WmsInventoryApiClient
+                .TryMoveInventoryTransferLineAsync(
+                    Transfer.Id,
+                    Line.Id,
+                    new MoveInventoryTransferLineRequest(_quantity));
+
+            if (result.IsFailure)
+            {
+                _errorMessage = result.Error?.Message ?? "Transfer movement failed.";
+                return;
+            }
+
+            if (result.Value is null)
+            {
+                _errorMessage = "The operation completed without returning transfer details.";
+                return;
+            }
+
+            MudDialog.Close(DialogResult.Ok(result.Value));
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
 }

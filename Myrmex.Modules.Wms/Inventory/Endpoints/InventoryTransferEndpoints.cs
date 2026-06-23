@@ -17,6 +17,10 @@ internal static class InventoryTransferEndpoints
             .WithName("CreateInventoryTransfer")
             .WithSummary("Create Inventory Transfer");
 
+        group.MapPost("/transfers/{transferId:guid}/lines/{lineId:guid}/move", MoveInventoryTransferLineAsync)
+            .WithName("MoveInventoryTransferLine")
+            .WithSummary("Move Inventory Transfer Line");
+
         return group;
     }
 
@@ -39,6 +43,24 @@ internal static class InventoryTransferEndpoints
 
         var result = await commandDispatcher
             .DispatchAsync<CreateInventoryTransfer.Command, ServiceResult<InventoryTransferDetails>>(command, cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> MoveInventoryTransferLineAsync(
+        Guid transferId,
+        Guid lineId,
+        MoveInventoryTransferLineRequest request,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new MoveInventoryTransferLine.Command(
+            transferId,
+            lineId,
+            request.Quantity);
+
+        var result = await commandDispatcher
+            .DispatchAsync<MoveInventoryTransferLine.Command, ServiceResult<InventoryTransferDetails>>(command, cancellationToken);
 
         return result.ToHttpResult();
     }
