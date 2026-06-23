@@ -30,9 +30,32 @@
             </MudAlert>
         }
 
-        <InventoryTransferFilters />
+        <InventoryTransferFilters Warehouses="_warehouses"
+                                  SelectedWarehouseId="_selectedWarehouseId"
+                                  SelectedWarehouseIdChanged="OnWarehouseChanged"
+                                  SelectedStatus="_selectedStatus"
+                                  SelectedStatusChanged="OnStatusChanged"
+                                  HasTransitLocation="_hasTransitLocation"
+                                  HasTransitLocationChanged="OnHasTransitLocationChanged"
+                                  TransferCode="_transferCode"
+                                  TransferCodeChanged="OnTransferCodeChanged"
+                                  CreatedFrom="_createdFrom"
+                                  CreatedFromChanged="OnCreatedFromChanged"
+                                  CreatedTo="_createdTo"
+                                  CreatedToChanged="OnCreatedToChanged"
+                                  SelectedStockKeepingUnit="_selectedStockKeepingUnit"
+                                  SelectedStockKeepingUnitChanged="OnStockKeepingUnitChanged"
+                                  SelectedSourceStorageLocation="_selectedSourceStorageLocation"
+                                  SelectedSourceStorageLocationChanged="OnSourceStorageLocationChanged"
+                                  SelectedDestinationStorageLocation="_selectedDestinationStorageLocation"
+                                  SelectedDestinationStorageLocationChanged="OnDestinationStorageLocationChanged"
+                                  IsLoadingWarehouses="_isLoadingWarehouses"
+                                  SearchStockKeepingUnits="SearchStockKeepingUnitsAsync"
+                                  SearchStorageLocations="SearchStorageLocationsAsync"
+                                  ReloadRequested="ReloadAsync" />
 
-        <InventoryTransferGrid Transfers="@_createdTransfers"
+        <InventoryTransferGrid @ref="_inventoryTransferGrid"
+                               LoadData="LoadInventoryTransfersAsync"
                                DetailsRequested="OpenDetailsAsync" />
     </MudStack>
 </MudContainer>

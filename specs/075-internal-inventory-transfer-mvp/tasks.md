@@ -144,23 +144,23 @@
 
 ### Tests
 
-- [ ] T056 [P] [US4] Add handler/query test for transfer details progress formulas and read-only movement history projection in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
-- [ ] T057 [P] [US4] Add handler/query test for server-driven transfer list filters, count-before-paging, deterministic sorting, and aggregate quantities in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
-- [ ] T058 [P] [US4] Add endpoint test for list query binding and transfer details route serialization in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryTransferEndpointTests.cs`
-- [ ] T059 [P] [US4] Add API-client test for transfer list URL construction, details route, cancellation, and deserialization in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [X] T056 [P] [US4] Add handler/query test for transfer details progress formulas and read-only movement history projection in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
+- [X] T057 [P] [US4] Add handler/query test for server-driven transfer list filters, count-before-paging, deterministic sorting, and aggregate quantities in `Myrmex.Tests/Wms/Inventory/Features/InventoryTransfers/InventoryTransferHandlerTests.cs`
+- [X] T058 [P] [US4] Add endpoint test for list query binding and transfer details route serialization in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryTransferEndpointTests.cs`
+- [X] T059 [P] [US4] Add API-client test for transfer list URL construction, details route, cancellation, and deserialization in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation
 
-- [ ] T060 [US4] Implement list/detail shared contracts and sort keys in `Myrmex.Shared/Wms/Inventory/ListInventoryTransfersRequest.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferSortBy.cs`, and `Myrmex.Shared/Wms/Inventory/InventoryTransferListItem.cs`
-- [ ] T061 [US4] Implement get-transfer details query in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/GetInventoryTransferById.cs`
-- [ ] T062 [US4] Implement list-transfers query with filters, count-before-paging, deterministic sorting, and bounded projection in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/ListInventoryTransfers.cs`
-- [ ] T063 [US4] Complete projection helpers for list items, line progress, movement meaning, and movement history in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/InventoryTransferQueryableExtensions.cs`
-- [ ] T064 [US4] Implement list and details endpoint mappings in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryTransferEndpoints.cs`
-- [ ] T065 [US4] Add list/details API-client methods and URL builder in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
-- [ ] T066 [US4] Implement transfer page and grid request mapping in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/Index.razor`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/Index.razor.cs`, and `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferGridRequest.cs`
-- [ ] T067 [US4] Implement transfer filters and grid in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferFilters.razor` and `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferGrid.razor`
-- [ ] T068 [US4] Implement transfer details dialog with read-only movement history in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferDetailsDialog.razor`
-- [ ] T069 [US4] Add Inventory Transfers navigation item in `Myrmex.WebApp/Components/Layout/NavMenu.razor`
+- [X] T060 [US4] Implement list/detail shared contracts and sort keys in `Myrmex.Shared/Wms/Inventory/ListInventoryTransfersRequest.cs`, `Myrmex.Shared/Wms/Inventory/InventoryTransferSortBy.cs`, and `Myrmex.Shared/Wms/Inventory/InventoryTransferListItem.cs`
+- [X] T061 [US4] Implement get-transfer details query in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/GetInventoryTransferById.cs`
+- [X] T062 [US4] Implement list-transfers query with filters, count-before-paging, deterministic sorting, and bounded projection in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/ListInventoryTransfers.cs`
+- [X] T063 [US4] Complete projection helpers for list items, line progress, movement meaning, and movement history in `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/InventoryTransferQueryableExtensions.cs`
+- [X] T064 [US4] Implement list and details endpoint mappings in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryTransferEndpoints.cs`
+- [X] T065 [US4] Add list/details API-client methods and URL builder in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [X] T066 [US4] Implement transfer page and grid request mapping in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/Index.razor`, `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/Index.razor.cs`, and `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferGridRequest.cs`
+- [X] T067 [US4] Implement transfer filters and grid in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferFilters.razor` and `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferGrid.razor`
+- [X] T068 [US4] Implement transfer details dialog with read-only movement history in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryTransferPages/InventoryTransferDetailsDialog.razor`
+- [X] T069 [US4] Add Inventory Transfers navigation item in `Myrmex.WebApp/Components/Layout/NavMenu.razor`
 
 **Checkpoint**: User Story 4 monitoring is independently usable after movement data exists.
 

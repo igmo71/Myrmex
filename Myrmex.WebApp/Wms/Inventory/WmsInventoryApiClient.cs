@@ -48,6 +48,26 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
+    public async Task<ListResult<InventoryTransferListItem>> ListInventoryTransfersAsync(
+        ListInventoryTransfersRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        string url = BuildInventoryTransferListUrl(request);
+
+        return await httpClient.GetRequiredAsync<ListResult<InventoryTransferListItem>>(
+            url,
+            cancellationToken);
+    }
+
+    public async Task<InventoryTransferDetails> GetInventoryTransferByIdAsync(
+        Guid transferId,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.GetRequiredAsync<InventoryTransferDetails>(
+            $"/api/wms/inventory/transfers/{transferId}",
+            cancellationToken);
+    }
+
     public async Task<ApiResult<InventoryTransferDetails>> TryMoveInventoryTransferLineAsync(
         Guid transferId,
         Guid lineId,
@@ -206,6 +226,84 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
         {
             query.Add(
                 $"occurredToUtc={HttpUtility.UrlEncode(request.OccurredToUtc.Value.ToString("O", CultureInfo.InvariantCulture))}");
+        }
+
+        return query.Count == 0
+            ? path
+            : $"{path}?{string.Join("&", query)}";
+    }
+
+    private static string BuildInventoryTransferListUrl(ListInventoryTransfersRequest request)
+    {
+        string path = "/api/wms/inventory/transfers";
+
+        List<string> query = [];
+
+        if (request.Skip.HasValue)
+        {
+            query.Add($"skip={request.Skip.Value}");
+        }
+
+        if (request.Take.HasValue)
+        {
+            query.Add($"take={request.Take.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SortBy))
+        {
+            query.Add($"sortBy={HttpUtility.UrlEncode(request.SortBy)}");
+        }
+
+        if (request.SortDescending.HasValue)
+        {
+            query.Add($"sortDescending={request.SortDescending.Value.ToString().ToLowerInvariant()}");
+        }
+
+        if (request.WarehouseId.HasValue)
+        {
+            query.Add($"warehouseId={request.WarehouseId.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Status))
+        {
+            query.Add($"status={HttpUtility.UrlEncode(request.Status)}");
+        }
+
+        if (request.CreatedFromUtc.HasValue)
+        {
+            query.Add(
+                $"createdFromUtc={HttpUtility.UrlEncode(request.CreatedFromUtc.Value.ToString("O", CultureInfo.InvariantCulture))}");
+        }
+
+        if (request.CreatedToUtc.HasValue)
+        {
+            query.Add(
+                $"createdToUtc={HttpUtility.UrlEncode(request.CreatedToUtc.Value.ToString("O", CultureInfo.InvariantCulture))}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.TransferCode))
+        {
+            query.Add($"transferCode={HttpUtility.UrlEncode(request.TransferCode)}");
+        }
+
+        if (request.SourceStorageLocationId.HasValue)
+        {
+            query.Add($"sourceStorageLocationId={request.SourceStorageLocationId.Value}");
+        }
+
+        if (request.DestinationStorageLocationId.HasValue)
+        {
+            query.Add($"destinationStorageLocationId={request.DestinationStorageLocationId.Value}");
+        }
+
+        if (request.StockKeepingUnitId.HasValue)
+        {
+            query.Add($"stockKeepingUnitId={request.StockKeepingUnitId.Value}");
+        }
+
+        if (request.HasTransitLocation.HasValue)
+        {
+            query.Add($"hasTransitLocation={request.HasTransitLocation.Value.ToString().ToLowerInvariant()}");
         }
 
         return query.Count == 0

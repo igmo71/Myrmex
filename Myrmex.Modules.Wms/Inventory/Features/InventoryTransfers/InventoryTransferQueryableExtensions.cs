@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryTransfers;
 using Myrmex.Shared.Wms.Inventory;
 
@@ -78,6 +79,18 @@ internal static class InventoryTransferQueryableExtensions
                     movement.InventoryTransactionId,
                     movement.OccurredAtUtc,
                     movement.Quantity,
+                    movement.FromStorageLocationId == movement.InventoryTransferLine.SourceStorageLocationId &&
+                    movement.ToStorageLocationId == movement.InventoryTransferLine.DestinationStorageLocationId
+                        ? "Direct"
+                        : transfer.TransitStorageLocationId != null &&
+                          movement.FromStorageLocationId == movement.InventoryTransferLine.SourceStorageLocationId &&
+                          movement.ToStorageLocationId == transfer.TransitStorageLocationId.Value
+                            ? "Pick"
+                            : transfer.TransitStorageLocationId != null &&
+                              movement.FromStorageLocationId == transfer.TransitStorageLocationId.Value &&
+                              movement.ToStorageLocationId == movement.InventoryTransferLine.DestinationStorageLocationId
+                                ? "Place"
+                                : "Movement",
                     new InventoryTransferDetailsData.StockKeepingUnitInfo(
                         movement.InventoryTransferLine.StockKeepingUnitId,
                         movement.InventoryTransferLine.StockKeepingUnit.Code,
@@ -126,6 +139,8 @@ internal static class InventoryTransferQueryableExtensions
                 line.PickedQuantity,
                 line.PlacedQuantity,
                 line.InTransitQuantity,
+                line.RequestedQuantity - line.PickedQuantity,
+                line.PickedQuantity - line.PlacedQuantity,
                 new InventoryTransferLineDetails.StockKeepingUnitInfo(
                     line.Sku.Id,
                     line.Sku.Code,
@@ -149,6 +164,7 @@ internal static class InventoryTransferQueryableExtensions
                 movement.InventoryTransactionId,
                 movement.OccurredAtUtc,
                 movement.Quantity,
+                movement.MovementMeaning,
                 new InventoryTransferMovementDetails.StockKeepingUnitInfo(
                     movement.Sku.Id,
                     movement.Sku.Code,
@@ -166,6 +182,191 @@ internal static class InventoryTransferQueryableExtensions
                     movement.ToStorageLocation.Code,
                     movement.ToStorageLocation.Name)))
                 .ToList());
+    }
+
+    public static IQueryable<InventoryTransferListItemData> ProjectListItemData(this IQueryable<InventoryTransfer> queryable)
+    {
+        return queryable.Select(transfer => new InventoryTransferListItemData(
+            transfer.Id,
+            transfer.Code,
+            transfer.Status.ToString(),
+            transfer.CreatedAtUtc,
+            transfer.UpdatedAtUtc,
+            transfer.Lines.Sum(line => line.RequestedQuantity),
+            transfer.Movements
+                .Where(movement => movement.FromStorageLocationId == movement.InventoryTransferLine.SourceStorageLocationId)
+                .Sum(movement => movement.Quantity),
+            transfer.Movements
+                .Where(movement => movement.ToStorageLocationId == movement.InventoryTransferLine.DestinationStorageLocationId)
+                .Sum(movement => movement.Quantity),
+            transfer.Movements
+                .Where(movement => movement.FromStorageLocationId == movement.InventoryTransferLine.SourceStorageLocationId)
+                .Sum(movement => movement.Quantity) -
+            transfer.Movements
+                .Where(movement => movement.ToStorageLocationId == movement.InventoryTransferLine.DestinationStorageLocationId)
+                .Sum(movement => movement.Quantity),
+            new InventoryTransferListItemData.WarehouseInfo(
+                transfer.SourceWarehouseId,
+                transfer.SourceWarehouse.Code,
+                transfer.SourceWarehouse.Name),
+            new InventoryTransferListItemData.WarehouseInfo(
+                transfer.DestinationWarehouseId,
+                transfer.DestinationWarehouse.Code,
+                transfer.DestinationWarehouse.Name),
+            transfer.TransitStorageLocation == null
+                ? null
+                : new InventoryTransferListItemData.StorageLocationInfo(
+                    transfer.TransitStorageLocation.Id,
+                    transfer.TransitStorageLocation.Code,
+                    transfer.TransitStorageLocation.Name)));
+    }
+
+    public static InventoryTransferListItem ToListItem(this InventoryTransferListItemData data)
+    {
+        return new InventoryTransferListItem(
+            data.Id,
+            data.Code,
+            data.Status,
+            data.CreatedAtUtc,
+            data.UpdatedAtUtc,
+            data.TotalRequestedQuantity,
+            data.TotalPickedQuantity,
+            data.TotalPlacedQuantity,
+            data.TotalInTransitQuantity,
+            new InventoryTransferListItem.WarehouseInfo(
+                data.SourceWarehouse.Id,
+                data.SourceWarehouse.Code,
+                data.SourceWarehouse.Name),
+            new InventoryTransferListItem.WarehouseInfo(
+                data.DestinationWarehouse.Id,
+                data.DestinationWarehouse.Code,
+                data.DestinationWarehouse.Name),
+            data.TransitStorageLocation is null
+                ? null
+                : new InventoryTransferListItem.StorageLocationInfo(
+                    data.TransitStorageLocation.Id,
+                    data.TransitStorageLocation.Code,
+                    data.TransitStorageLocation.Name));
+    }
+
+    public static IQueryable<InventoryTransfer> ApplyFilters(
+        this IQueryable<InventoryTransfer> queryable,
+        ListInventoryTransfers.Query query)
+    {
+        if (query.WarehouseId is Guid warehouseId)
+        {
+            queryable = queryable.Where(x => x.SourceWarehouseId == warehouseId);
+        }
+
+        if (query.Status is InventoryTransferStatus status)
+        {
+            queryable = queryable.Where(x => x.Status == status);
+        }
+
+        if (query.CreatedFromUtc is DateTimeOffset createdFromUtc)
+        {
+            queryable = queryable.Where(x => x.CreatedAtUtc >= createdFromUtc);
+        }
+
+        if (query.CreatedToUtc is DateTimeOffset createdToUtc)
+        {
+            queryable = queryable.Where(x => x.CreatedAtUtc <= createdToUtc);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.TransferCode))
+        {
+            string transferCode = query.TransferCode.Trim();
+            queryable = queryable.Where(x => EF.Functions.Like(x.Code, $"%{transferCode}%"));
+        }
+
+        if (query.SourceStorageLocationId is Guid sourceStorageLocationId)
+        {
+            queryable = queryable.Where(x => x.Lines.Any(line => line.SourceStorageLocationId == sourceStorageLocationId));
+        }
+
+        if (query.DestinationStorageLocationId is Guid destinationStorageLocationId)
+        {
+            queryable = queryable.Where(x => x.Lines.Any(line => line.DestinationStorageLocationId == destinationStorageLocationId));
+        }
+
+        if (query.StockKeepingUnitId is Guid stockKeepingUnitId)
+        {
+            queryable = queryable.Where(x => x.Lines.Any(line => line.StockKeepingUnitId == stockKeepingUnitId));
+        }
+
+        if (query.HasTransitLocation is bool hasTransitLocation)
+        {
+            queryable = hasTransitLocation
+                ? queryable.Where(x => x.TransitStorageLocationId != null)
+                : queryable.Where(x => x.TransitStorageLocationId == null);
+        }
+
+        return queryable;
+    }
+
+    public static IQueryable<InventoryTransfer> ApplySorting(
+        this IQueryable<InventoryTransfer> queryable,
+        string? sortBy,
+        bool sortDescending)
+    {
+        if (sortBy == InventoryTransferSortBy.Code)
+            return sortDescending
+                ? queryable.OrderByDescending(x => x.Code).ThenBy(x => x.Id)
+                : queryable.OrderBy(x => x.Code).ThenBy(x => x.Id);
+
+        if (sortBy == InventoryTransferSortBy.Status)
+            return sortDescending
+                ? queryable.OrderByDescending(x => x.Status).ThenBy(x => x.Id)
+                : queryable.OrderBy(x => x.Status).ThenBy(x => x.Id);
+
+        if (sortBy == InventoryTransferSortBy.WarehouseCode)
+            return sortDescending
+                ? queryable.OrderByDescending(x => x.SourceWarehouse.Code).ThenBy(x => x.Id)
+                : queryable.OrderBy(x => x.SourceWarehouse.Code).ThenBy(x => x.Id);
+
+        if (sortBy == InventoryTransferSortBy.TotalRequestedQuantity)
+            return sortDescending
+                ? queryable.OrderByDescending(x => x.Lines.Sum(line => line.RequestedQuantity)).ThenBy(x => x.Id)
+                : queryable.OrderBy(x => x.Lines.Sum(line => line.RequestedQuantity)).ThenBy(x => x.Id);
+
+        if (sortBy == InventoryTransferSortBy.TotalPickedQuantity)
+            return sortDescending
+                ? queryable.OrderByDescending(x => x.Movements
+                    .Where(movement => movement.FromStorageLocationId == movement.InventoryTransferLine.SourceStorageLocationId)
+                    .Sum(movement => movement.Quantity)).ThenBy(x => x.Id)
+                : queryable.OrderBy(x => x.Movements
+                    .Where(movement => movement.FromStorageLocationId == movement.InventoryTransferLine.SourceStorageLocationId)
+                    .Sum(movement => movement.Quantity)).ThenBy(x => x.Id);
+
+        if (sortBy == InventoryTransferSortBy.TotalPlacedQuantity)
+            return sortDescending
+                ? queryable.OrderByDescending(x => x.Movements
+                    .Where(movement => movement.ToStorageLocationId == movement.InventoryTransferLine.DestinationStorageLocationId)
+                    .Sum(movement => movement.Quantity)).ThenBy(x => x.Id)
+                : queryable.OrderBy(x => x.Movements
+                    .Where(movement => movement.ToStorageLocationId == movement.InventoryTransferLine.DestinationStorageLocationId)
+                    .Sum(movement => movement.Quantity)).ThenBy(x => x.Id);
+
+        if (sortBy == InventoryTransferSortBy.TotalInTransitQuantity)
+            return sortDescending
+                ? queryable.OrderByDescending(x =>
+                    x.Movements
+                        .Where(movement => movement.FromStorageLocationId == movement.InventoryTransferLine.SourceStorageLocationId)
+                        .Sum(movement => movement.Quantity) -
+                    x.Movements
+                        .Where(movement => movement.ToStorageLocationId == movement.InventoryTransferLine.DestinationStorageLocationId)
+                        .Sum(movement => movement.Quantity)).ThenBy(x => x.Id)
+                : queryable.OrderBy(x =>
+                    x.Movements
+                        .Where(movement => movement.FromStorageLocationId == movement.InventoryTransferLine.SourceStorageLocationId)
+                        .Sum(movement => movement.Quantity) -
+                    x.Movements
+                        .Where(movement => movement.ToStorageLocationId == movement.InventoryTransferLine.DestinationStorageLocationId)
+                        .Sum(movement => movement.Quantity)).ThenBy(x => x.Id);
+
+        return sortDescending
+            ? queryable.OrderByDescending(x => x.CreatedAtUtc).ThenByDescending(x => x.Id)
+            : queryable.OrderBy(x => x.CreatedAtUtc).ThenBy(x => x.Id);
     }
 }
 
@@ -210,7 +411,27 @@ internal sealed record InventoryTransferDetailsData(
         Guid InventoryTransactionId,
         DateTimeOffset OccurredAtUtc,
         decimal Quantity,
+        string MovementMeaning,
         StockKeepingUnitInfo Sku,
         StorageLocationInfo FromStorageLocation,
         StorageLocationInfo ToStorageLocation);
+}
+
+internal sealed record InventoryTransferListItemData(
+    Guid Id,
+    string Code,
+    string Status,
+    DateTimeOffset CreatedAtUtc,
+    DateTimeOffset? UpdatedAtUtc,
+    decimal TotalRequestedQuantity,
+    decimal TotalPickedQuantity,
+    decimal TotalPlacedQuantity,
+    decimal TotalInTransitQuantity,
+    InventoryTransferListItemData.WarehouseInfo SourceWarehouse,
+    InventoryTransferListItemData.WarehouseInfo DestinationWarehouse,
+    InventoryTransferListItemData.StorageLocationInfo? TransitStorageLocation)
+{
+    public sealed record WarehouseInfo(Guid Id, string Code, string Name);
+
+    public sealed record StorageLocationInfo(Guid Id, string Code, string Name);
 }

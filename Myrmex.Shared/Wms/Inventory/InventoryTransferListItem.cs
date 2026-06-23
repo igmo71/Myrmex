@@ -6,7 +6,10 @@ public sealed record InventoryTransferListItem(
     string Status,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? UpdatedAtUtc,
-    decimal RequestedQuantity,
+    decimal TotalRequestedQuantity,
+    decimal TotalPickedQuantity,
+    decimal TotalPlacedQuantity,
+    decimal TotalInTransitQuantity,
     InventoryTransferListItem.WarehouseInfo SourceWarehouse,
     InventoryTransferListItem.WarehouseInfo DestinationWarehouse,
     InventoryTransferListItem.StorageLocationInfo? TransitStorageLocation)

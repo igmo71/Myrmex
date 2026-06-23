@@ -160,6 +160,70 @@ public sealed class WmsInventoryApiClientTests
     }
 
     [Fact]
+    public async Task ListInventoryTransfersAsync_WhenRequestHasExplicitValues_IncludesQueryParametersAndMapsListItems()
+    {
+        Guid warehouseId = Guid.Parse("018f0000-0000-7000-8000-000000000301");
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
+        Guid sourceLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000201");
+        Guid destinationLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000202");
+        DateTimeOffset createdFromUtc = DateTimeOffset.Parse("2026-06-18T09:00:00+00:00");
+        DateTimeOffset createdToUtc = DateTimeOffset.Parse("2026-06-19T09:00:00+00:00");
+        InventoryTransferListItem details = CreateInventoryTransferListItem(warehouseId);
+        ListResult<InventoryTransferListItem> response = new([details], TotalCount: 1, Skip: 7, Take: 13);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(response),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+
+        ListResult<InventoryTransferListItem> result = await apiClient.ListInventoryTransfersAsync(
+            new ListInventoryTransfersRequest
+            {
+                Skip = 7,
+                Take = 13,
+                SortBy = InventoryTransferSortBy.TotalInTransitQuantity,
+                SortDescending = true,
+                WarehouseId = warehouseId,
+                Status = InventoryTransferStatusDetails.InProgress,
+                CreatedFromUtc = createdFromUtc,
+                CreatedToUtc = createdToUtc,
+                TransferCode = "TR",
+                SourceStorageLocationId = sourceLocationId,
+                DestinationStorageLocationId = destinationLocationId,
+                StockKeepingUnitId = stockKeepingUnitId,
+                HasTransitLocation = true
+            },
+            TestContext.Current.CancellationToken);
+
+        Dictionary<string, string> query = ParseQuery(handler.RequestQuery);
+
+        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
+        Assert.Equal("/api/wms/inventory/transfers", handler.RequestPath);
+        Assert.Equal("7", query["skip"]);
+        Assert.Equal("13", query["take"]);
+        Assert.Equal(InventoryTransferSortBy.TotalInTransitQuantity, query["sortBy"]);
+        Assert.Equal("true", query["sortDescending"]);
+        Assert.Equal(warehouseId.ToString(), query["warehouseId"]);
+        Assert.Equal(InventoryTransferStatusDetails.InProgress, query["status"]);
+        Assert.Equal(createdFromUtc.ToString("O"), query["createdFromUtc"]);
+        Assert.Equal(createdToUtc.ToString("O"), query["createdToUtc"]);
+        Assert.Equal("TR", query["transferCode"]);
+        Assert.Equal(sourceLocationId.ToString(), query["sourceStorageLocationId"]);
+        Assert.Equal(destinationLocationId.ToString(), query["destinationStorageLocationId"]);
+        Assert.Equal(stockKeepingUnitId.ToString(), query["stockKeepingUnitId"]);
+        Assert.Equal("true", query["hasTransitLocation"]);
+
+        InventoryTransferListItem item = Assert.Single(result.Items);
+        Assert.Equal(details.Id, item.Id);
+        Assert.Equal(4, item.TotalPickedQuantity);
+        Assert.Equal(2, item.TotalPlacedQuantity);
+        Assert.Equal(2, item.TotalInTransitQuantity);
+        Assert.Equal("MAIN", item.SourceWarehouse.Code);
+        Assert.Equal("TR-IN-01", item.TransitStorageLocation?.Code);
+    }
+
+    [Fact]
     public async Task GetInventoryTransactionByIdAsync_WhenSuccessful_UsesDetailsRouteAndMapsNestedEntries()
     {
         Guid transactionId = Guid.Parse("018f0000-0000-7000-8000-000000000401");
@@ -195,6 +259,45 @@ public sealed class WmsInventoryApiClientTests
     }
 
     [Fact]
+    public async Task GetInventoryTransferByIdAsync_WhenSuccessful_UsesDetailsRouteAndMapsMovementHistory()
+    {
+        Guid warehouseId = Guid.Parse("018f0000-0000-7000-8000-000000000301");
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
+        Guid sourceLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000201");
+        Guid destinationLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000202");
+        InventoryTransferDetails details = CreateInventoryTransferDetails(
+            warehouseId,
+            stockKeepingUnitId,
+            sourceLocationId,
+            destinationLocationId,
+            status: InventoryTransferStatusDetails.InProgress,
+            movedQuantity: 3,
+            includeMovement: true);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+
+        InventoryTransferDetails result = await apiClient.GetInventoryTransferByIdAsync(
+            details.Id,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
+        Assert.Equal($"/api/wms/inventory/transfers/{details.Id}", handler.RequestPath);
+        Assert.Equal(details.Id, result.Id);
+        InventoryTransferLineDetails line = Assert.Single(result.Lines);
+        Assert.Equal(2, line.RemainingToPickQuantity);
+        Assert.Equal(0, line.RemainingToPlaceQuantity);
+        InventoryTransferMovementDetails movement = Assert.Single(result.Movements);
+        Assert.Equal("Direct", movement.MovementMeaning);
+        Assert.Equal(stockKeepingUnitId, movement.Sku.Id);
+        Assert.Equal(sourceLocationId, movement.FromStorageLocation.Id);
+        Assert.Equal(destinationLocationId, movement.ToStorageLocation.Id);
+    }
+
+    [Fact]
     public async Task ListInventoryLedgerEntriesAsync_WhenCallerCancels_ObservesCancellableRequest()
     {
         using CancellableHttpMessageHandler handler = new();
@@ -204,6 +307,27 @@ public sealed class WmsInventoryApiClientTests
 
         Task<ListResult<InventoryLedgerEntryDetails>> requestTask = apiClient.ListInventoryLedgerEntriesAsync(
             new ListInventoryLedgerEntriesRequest(),
+            cancellationTokenSource.Token);
+
+        await handler.RequestStarted.Task.WaitAsync(TestContext.Current.CancellationToken);
+        Assert.True(handler.RequestCancellationToken.CanBeCanceled);
+
+        cancellationTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => requestTask);
+        Assert.True(handler.CancellationObserved);
+    }
+
+    [Fact]
+    public async Task ListInventoryTransfersAsync_WhenCallerCancels_ObservesCancellableRequest()
+    {
+        using CancellableHttpMessageHandler handler = new();
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+        using CancellationTokenSource cancellationTokenSource = new();
+
+        Task<ListResult<InventoryTransferListItem>> requestTask = apiClient.ListInventoryTransfersAsync(
+            new ListInventoryTransfersRequest(),
             cancellationTokenSource.Token);
 
         await handler.RequestStarted.Task.WaitAsync(TestContext.Current.CancellationToken);
@@ -603,6 +727,25 @@ public sealed class WmsInventoryApiClientTests
             ]);
     }
 
+    private static InventoryTransferListItem CreateInventoryTransferListItem(Guid warehouseId)
+    {
+        Guid transitLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000203");
+
+        return new InventoryTransferListItem(
+            Guid.Parse("018f0000-0000-7000-8000-000000000701"),
+            "TR-001",
+            InventoryTransferStatusDetails.InProgress,
+            DateTimeOffset.Parse("2026-06-19T09:00:00Z"),
+            UpdatedAtUtc: null,
+            TotalRequestedQuantity: 5,
+            TotalPickedQuantity: 4,
+            TotalPlacedQuantity: 2,
+            TotalInTransitQuantity: 2,
+            new InventoryTransferListItem.WarehouseInfo(warehouseId, "MAIN", "Main Warehouse"),
+            new InventoryTransferListItem.WarehouseInfo(warehouseId, "MAIN", "Main Warehouse"),
+            new InventoryTransferListItem.StorageLocationInfo(transitLocationId, "TR-IN-01", "TR-IN-01"));
+    }
+
     private static InventoryTransferDetails CreateInventoryTransferDetails(
         Guid warehouseId,
         Guid stockKeepingUnitId,
@@ -643,6 +786,8 @@ public sealed class WmsInventoryApiClientTests
                     resolvedPickedQuantity,
                     resolvedPlacedQuantity,
                     resolvedInTransitQuantity,
+                    RemainingToPickQuantity: 5 - resolvedPickedQuantity,
+                    RemainingToPlaceQuantity: resolvedPickedQuantity - resolvedPlacedQuantity,
                     new InventoryTransferLineDetails.StockKeepingUnitInfo(
                         stockKeepingUnitId,
                         "SKU-001",
@@ -669,6 +814,7 @@ public sealed class WmsInventoryApiClientTests
                         Guid.Parse("018f0000-0000-7000-8000-000000000604"),
                         DateTimeOffset.Parse("2026-06-19T09:15:00Z"),
                         movedQuantity,
+                        "Direct",
                         new InventoryTransferMovementDetails.StockKeepingUnitInfo(
                             stockKeepingUnitId,
                             "SKU-001",

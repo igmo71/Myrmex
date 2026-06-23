@@ -7,6 +7,8 @@ public sealed record InventoryTransferLineDetails(
     decimal PickedQuantity,
     decimal PlacedQuantity,
     decimal InTransitQuantity,
+    decimal RemainingToPickQuantity,
+    decimal RemainingToPlaceQuantity,
     InventoryTransferLineDetails.StockKeepingUnitInfo Sku,
     InventoryTransferLineDetails.StorageLocationInfo SourceStorageLocation,
     InventoryTransferLineDetails.StorageLocationInfo DestinationStorageLocation)

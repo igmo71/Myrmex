@@ -6,6 +6,7 @@ public sealed record InventoryTransferMovementDetails(
     Guid InventoryTransactionId,
     DateTimeOffset OccurredAtUtc,
     decimal Quantity,
+    string MovementMeaning,
     InventoryTransferMovementDetails.StockKeepingUnitInfo Sku,
     InventoryTransferMovementDetails.StorageLocationInfo FromStorageLocation,
     InventoryTransferMovementDetails.StorageLocationInfo ToStorageLocation)
