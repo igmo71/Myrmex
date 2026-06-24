@@ -69,11 +69,11 @@
 
 ### Tests for User Story 2
 
-- [ ] T014 [US2] Extend `Myrmex.Tests/Wms/Inventory/Features/InventoryBalances/MoveInventoryBalanceHandlerTests.cs` with focused assertions for one Transfer transaction, exactly two balanced source/destination entries, shared occurrence time/reason, no Inventory Transfer or adjustment artifacts, and atomic rollback for concurrency or persistence failure
+- [X] T014 [US2] Extend `Myrmex.Tests/Wms/Inventory/Features/InventoryBalances/MoveInventoryBalanceHandlerTests.cs` with focused assertions for one Transfer transaction, exactly two balanced source/destination entries, shared occurrence time/reason, no Inventory Transfer or adjustment artifacts, and atomic rollback for concurrency or persistence failure
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Add structured success and rejection diagnostics containing SKU, source, destination, quantity, created transaction identity when available, and safe rejection reason in `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/MoveInventoryBalance.cs`
+- [X] T015 [US2] Add structured success and rejection diagnostics containing SKU, source, destination, quantity, created transaction identity when available, and safe rejection reason in `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/MoveInventoryBalance.cs`
 
 **Checkpoint**: Successful and rejected moves are auditable without transfer-document or adjustment side effects.
 

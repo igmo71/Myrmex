@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Myrmex.AppDispatching.EventDispatching;
 using Myrmex.Core.Application;
 using Myrmex.Core.Domain;
@@ -31,7 +32,8 @@ internal static class MoveInventoryBalance
 
     internal sealed class Handler(
         WmsDbContext dbContext,
-        IDomainEventDispatcher domainEventDispatcher)
+        IDomainEventDispatcher domainEventDispatcher,
+        ILogger<Handler> logger)
         : ICommandHandler<Command, ServiceResult<MoveInventoryBalanceResult>>
     {
         public async Task<ServiceResult<MoveInventoryBalanceResult>> HandleAsync(
@@ -44,7 +46,9 @@ internal static class MoveInventoryBalance
 
             if (validationErrors.Count > 0)
             {
-                return ServiceResult<MoveInventoryBalanceResult>.Invalid(validationErrors);
+                return Reject(
+                    command,
+                    ServiceResult<MoveInventoryBalanceResult>.Invalid(validationErrors));
             }
 
             StockKeepingUnit? stockKeepingUnit = await dbContext.StockKeepingUnits
@@ -54,10 +58,12 @@ internal static class MoveInventoryBalance
 
             if (stockKeepingUnit is null)
             {
-                return ServiceResult<MoveInventoryBalanceResult>.Fail(
-                    ServiceError.NotFound<StockKeepingUnit>(
-                        "Stock keeping unit not found.",
-                        nameof(Command.StockKeepingUnitId)));
+                return Reject(
+                    command,
+                    ServiceResult<MoveInventoryBalanceResult>.Fail(
+                        ServiceError.NotFound<StockKeepingUnit>(
+                            "Stock keeping unit not found.",
+                            nameof(Command.StockKeepingUnitId))));
             }
 
             StorageLocation? sourceLocation = await LoadLocationAsync(
@@ -66,10 +72,12 @@ internal static class MoveInventoryBalance
 
             if (sourceLocation is null)
             {
-                return ServiceResult<MoveInventoryBalanceResult>.Fail(
-                    ServiceError.NotFound<StorageLocation>(
-                        "Source storage location not found.",
-                        nameof(Command.SourceStorageLocationId)));
+                return Reject(
+                    command,
+                    ServiceResult<MoveInventoryBalanceResult>.Fail(
+                        ServiceError.NotFound<StorageLocation>(
+                            "Source storage location not found.",
+                            nameof(Command.SourceStorageLocationId))));
             }
 
             StorageLocation? destinationLocation = await LoadLocationAsync(
@@ -78,10 +86,12 @@ internal static class MoveInventoryBalance
 
             if (destinationLocation is null)
             {
-                return ServiceResult<MoveInventoryBalanceResult>.Fail(
-                    ServiceError.NotFound<StorageLocation>(
-                        "Destination storage location not found.",
-                        nameof(Command.DestinationStorageLocationId)));
+                return Reject(
+                    command,
+                    ServiceResult<MoveInventoryBalanceResult>.Fail(
+                        ServiceError.NotFound<StorageLocation>(
+                            "Destination storage location not found.",
+                            nameof(Command.DestinationStorageLocationId))));
             }
 
             ServiceError? eligibilityError = ValidateEligibility(
@@ -91,7 +101,9 @@ internal static class MoveInventoryBalance
 
             if (eligibilityError is not null)
             {
-                return ServiceResult<MoveInventoryBalanceResult>.Fail(eligibilityError);
+                return Reject(
+                    command,
+                    ServiceResult<MoveInventoryBalanceResult>.Fail(eligibilityError));
             }
 
             InventoryBalance? sourceBalance = await dbContext.InventoryBalances
@@ -104,12 +116,12 @@ internal static class MoveInventoryBalance
                 expectedSourceVersion is null ||
                 !sourceBalance.RowVersion.SequenceEqual(expectedSourceVersion))
             {
-                return ConcurrencyConflict();
+                return Reject(command, ConcurrencyConflict());
             }
 
             if (sourceBalance.Quantity < command.Quantity)
             {
-                return InsufficientQuantityConflict();
+                return Reject(command, InsufficientQuantityConflict());
             }
 
             InventoryBalance? destinationBalance = await dbContext.InventoryBalances
@@ -128,7 +140,9 @@ internal static class MoveInventoryBalance
 
             if (!sourceUpdateResult.IsValid)
             {
-                return ServiceResult<MoveInventoryBalanceResult>.Invalid(sourceUpdateResult.Errors);
+                return Reject(
+                    command,
+                    ServiceResult<MoveInventoryBalanceResult>.Invalid(sourceUpdateResult.Errors));
             }
 
             if (destinationBalance is null)
@@ -141,7 +155,9 @@ internal static class MoveInventoryBalance
 
                 if (!destinationCreateResult.IsValid)
                 {
-                    return ServiceResult<MoveInventoryBalanceResult>.Invalid(destinationCreateResult.Errors);
+                    return Reject(
+                        command,
+                        ServiceResult<MoveInventoryBalanceResult>.Invalid(destinationCreateResult.Errors));
                 }
 
                 dbContext.InventoryBalances.Add(destinationBalance!);
@@ -153,7 +169,9 @@ internal static class MoveInventoryBalance
 
                 if (!destinationUpdateResult.IsValid)
                 {
-                    return ServiceResult<MoveInventoryBalanceResult>.Invalid(destinationUpdateResult.Errors);
+                    return Reject(
+                        command,
+                        ServiceResult<MoveInventoryBalanceResult>.Invalid(destinationUpdateResult.Errors));
                 }
             }
 
@@ -173,20 +191,34 @@ internal static class MoveInventoryBalance
 
             if (!transactionResult.IsValid)
             {
-                return ServiceResult<MoveInventoryBalanceResult>.Invalid(transactionResult.Errors);
+                return Reject(
+                    command,
+                    ServiceResult<MoveInventoryBalanceResult>.Invalid(transactionResult.Errors));
             }
 
-            dbContext.InventoryTransactions.Add(
-                inventoryTransaction
+            InventoryTransaction createdTransaction = inventoryTransaction
                 ?? throw new InvalidOperationException(
-                    "InventoryTransaction.CreateTransfer returned a valid result without a transaction."));
+                    "InventoryTransaction.CreateTransfer returned a valid result without a transaction.");
+
+            dbContext.InventoryTransactions.Add(createdTransaction);
 
             ServiceResult saveResult = await SaveChangesAsync(cancellationToken);
 
             if (!saveResult.IsSuccess)
             {
-                return ServiceResult<MoveInventoryBalanceResult>.Fail(saveResult.Error);
+                return Reject(
+                    command,
+                    ServiceResult<MoveInventoryBalanceResult>.Fail(saveResult.Error),
+                    createdTransaction.Id);
             }
+
+            logger.LogInformation(
+                "Manual inventory move completed for SKU {StockKeepingUnitId} from {SourceStorageLocationId} to {DestinationStorageLocationId}. Quantity {Quantity}; transaction {InventoryTransactionId}.",
+                command.StockKeepingUnitId,
+                command.SourceStorageLocationId,
+                command.DestinationStorageLocationId,
+                command.Quantity,
+                createdTransaction.Id);
 
             InventoryBalanceDetailsData[] balances = await dbContext.InventoryBalances
                 .AsNoTracking()
@@ -201,6 +233,14 @@ internal static class MoveInventoryBalance
 
             if (sourceDetailsData is null || destinationDetailsData is null)
             {
+                logger.LogError(
+                    "Manual inventory move result could not be loaded for SKU {StockKeepingUnitId} from {SourceStorageLocationId} to {DestinationStorageLocationId}. Quantity {Quantity}; transaction {InventoryTransactionId}.",
+                    command.StockKeepingUnitId,
+                    command.SourceStorageLocationId,
+                    command.DestinationStorageLocationId,
+                    command.Quantity,
+                    createdTransaction.Id);
+
                 return ServiceResult<MoveInventoryBalanceResult>.Fail(
                     ServiceError.Failure<InventoryBalance>(
                         "Inventory balances were saved but could not be loaded."));
@@ -216,6 +256,23 @@ internal static class MoveInventoryBalance
                     destinationQuantityBefore,
                     destinationQuantityAfter,
                     occurredAtUtc));
+        }
+
+        private ServiceResult<MoveInventoryBalanceResult> Reject(
+            Command command,
+            ServiceResult<MoveInventoryBalanceResult> result,
+            Guid? inventoryTransactionId = null)
+        {
+            logger.LogWarning(
+                "Manual inventory move rejected for SKU {StockKeepingUnitId} from {SourceStorageLocationId} to {DestinationStorageLocationId}. Quantity {Quantity}; transaction {InventoryTransactionId}; rejection {RejectionCode}.",
+                command.StockKeepingUnitId,
+                command.SourceStorageLocationId,
+                command.DestinationStorageLocationId,
+                command.Quantity,
+                inventoryTransactionId,
+                result.Error?.Code ?? "Error.Unknown");
+
+            return result;
         }
 
         private Task<StorageLocation?> LoadLocationAsync(

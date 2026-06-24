@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryTransactions;
@@ -11,6 +12,65 @@ namespace Myrmex.Tests.Wms.Inventory.Features.InventoryBalances;
 
 public sealed class MoveInventoryBalanceHandlerTests
 {
+    [Fact]
+    public async Task HandleAsync_WhenMoveSucceeds_CreatesOneBalancedTransferHistoryWithoutTransferDocument()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        SeededManualInventoryMove seeded = await InventoryBalanceTestData
+            .SeedManualInventoryMoveAsync(testDbContext.DbContext);
+        MoveInventoryBalance.Handler handler = CreateHandler(testDbContext);
+
+        ServiceResult<MoveInventoryBalanceResult> result = await handler.HandleAsync(
+            CreateCommand(seeded, quantity: 4),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+
+        InventoryTransaction transaction = await testDbContext.DbContext.InventoryTransactions
+            .Include(x => x.Entries)
+            .SingleAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(InventoryTransactionType.Transfer, transaction.TransactionType);
+        Assert.Equal("Replenish pick face", transaction.Reason);
+        Assert.Equal(result.Value.OccurredAtUtc, transaction.OccurredAtUtc);
+
+        InventoryLedgerEntry[] entries = transaction.Entries
+            .OrderBy(x => x.StorageLocationId)
+            .ToArray();
+
+        Assert.Equal(2, entries.Length);
+
+        InventoryLedgerEntry sourceEntry = Assert.Single(
+            entries,
+            x => x.StorageLocationId == seeded.SourceStorageLocation.Id);
+        Assert.Equal(seeded.StockKeepingUnit.Id, sourceEntry.StockKeepingUnitId);
+        Assert.Equal(-4, sourceEntry.QuantityDelta);
+        Assert.Equal(10, sourceEntry.BalanceBefore);
+        Assert.Equal(6, sourceEntry.BalanceAfter);
+
+        InventoryLedgerEntry destinationEntry = Assert.Single(
+            entries,
+            x => x.StorageLocationId == seeded.DestinationStorageLocation.Id);
+        Assert.Equal(seeded.StockKeepingUnit.Id, destinationEntry.StockKeepingUnitId);
+        Assert.Equal(4, destinationEntry.QuantityDelta);
+        Assert.Equal(3, destinationEntry.BalanceBefore);
+        Assert.Equal(7, destinationEntry.BalanceAfter);
+
+        Assert.Equal(0, entries.Sum(x => x.QuantityDelta));
+        Assert.Equal(
+            0,
+            await testDbContext.DbContext.InventoryTransfers.CountAsync(
+                TestContext.Current.CancellationToken));
+        Assert.Equal(
+            0,
+            await testDbContext.DbContext.InventoryTransferMovements.CountAsync(
+                TestContext.Current.CancellationToken));
+        Assert.DoesNotContain(
+            await testDbContext.DbContext.InventoryTransactions
+                .ToListAsync(TestContext.Current.CancellationToken),
+            x => x.TransactionType == InventoryTransactionType.Adjustment);
+    }
+
     [Fact]
     public async Task HandleAsync_WhenDestinationExists_MovesQuantityAndReturnsAuthoritativeDetails()
     {
@@ -162,6 +222,10 @@ public sealed class MoveInventoryBalanceHandlerTests
             0,
             await testDbContext.DbContext.InventoryTransactions.CountAsync(
                 TestContext.Current.CancellationToken));
+        Assert.Equal(
+            0,
+            await testDbContext.DbContext.InventoryLedgerEntries.CountAsync(
+                TestContext.Current.CancellationToken));
     }
 
     [Theory]
@@ -264,10 +328,18 @@ public sealed class MoveInventoryBalanceHandlerTests
         InventoryBalance source = await testDbContext.DbContext.InventoryBalances.SingleAsync(
             x => x.Id == seeded.SourceBalance.Id,
             TestContext.Current.CancellationToken);
+        InventoryBalance destination = await testDbContext.DbContext.InventoryBalances.SingleAsync(
+            x => x.Id == seeded.DestinationBalance!.Id,
+            TestContext.Current.CancellationToken);
         Assert.Equal(10, source.Quantity);
+        Assert.Equal(4, destination.Quantity);
         Assert.Equal(
             0,
             await testDbContext.DbContext.InventoryTransactions.CountAsync(
+                TestContext.Current.CancellationToken));
+        Assert.Equal(
+            0,
+            await testDbContext.DbContext.InventoryLedgerEntries.CountAsync(
                 TestContext.Current.CancellationToken));
     }
 
@@ -305,6 +377,10 @@ public sealed class MoveInventoryBalanceHandlerTests
             0,
             await testDbContext.DbContext.InventoryTransactions.CountAsync(
                 TestContext.Current.CancellationToken));
+        Assert.Equal(
+            0,
+            await testDbContext.DbContext.InventoryLedgerEntries.CountAsync(
+                TestContext.Current.CancellationToken));
     }
 
     public static IEnumerable<object[]> InvalidCommands()
@@ -338,7 +414,8 @@ public sealed class MoveInventoryBalanceHandlerTests
     {
         return new MoveInventoryBalance.Handler(
             testDbContext.DbContext,
-            new RecordingDomainEventDispatcher());
+            new RecordingDomainEventDispatcher(),
+            NullLogger<MoveInventoryBalance.Handler>.Instance);
     }
 
     private static MoveInventoryBalance.Command CreateCommand(
