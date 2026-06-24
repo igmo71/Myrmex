@@ -106,7 +106,7 @@
 **Purpose**: Validate the integrated feature and guard the explicitly excluded scope.
 
 - [ ] T022 Execute and record the lookup, existing/missing destination, full move, concurrency, missing-reference, eligibility, and UI smoke scenarios in `specs/077-manual-inventory-move/quickstart.md`
-- [ ] T023 Developer validation: run `dotnet build` and `dotnet test` with `MYRMEX_WMS_TEST_CONNECTION` targeting a dedicated `_test` database, then record command results in `specs/077-manual-inventory-move/quickstart.md`
+- [ ] T023 Record developer-provided validation results for dotnet build and dotnet test with `MYRMEX_WMS_TEST_CONNECTION` targeting a dedicated `_test` database in `specs/077-manual-inventory-move/quickstart.md`
 - [ ] T024 Review the final diff for bounded point queries, one move save, no migration, and no Inventory Transfer, adjustment, scanner UI, inter-warehouse, or transit workflow changes; record the review result in `specs/077-manual-inventory-move/quickstart.md`
 
 ---
