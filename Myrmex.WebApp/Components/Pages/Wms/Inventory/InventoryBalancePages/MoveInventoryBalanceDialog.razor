@@ -1,0 +1,366 @@
+@using System.Globalization
+@using Myrmex.Shared.Wms.Inventory
+@using Myrmex.Shared.Wms.Topology
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Move inventory</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        @if (_result is null)
+        {
+            <MudForm @ref="_form">
+                <MudStack Spacing="3">
+                    <MudTextField T="string"
+                                  Label="SKU"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Value="@StockKeepingUnitDisplay"
+                                  Disabled="true" />
+
+                    <MudTextField T="string"
+                                  Label="Warehouse"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Value="@WarehouseDisplay"
+                                  Disabled="true" />
+
+                    <MudTextField T="string"
+                                  Label="Source location"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Value="@SourceStorageLocationDisplay"
+                                  Disabled="true" />
+
+                    <MudNumericField T="decimal"
+                                     Label="Current quantity"
+                                     Value="InventoryBalance.Quantity"
+                                     Disabled="true"
+                                     Culture="@QuantityCulture"
+                                     Format="0.####" />
+
+                    <MudTextField T="string"
+                                  Label="Base UoM"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Value="@BaseUnitOfMeasureDisplay"
+                                  Disabled="true" />
+
+                    <MudAutocomplete T="StorageLocationLookupItem"
+                                     Label="Destination location"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     Required="true"
+                                     RequiredError="Destination location is required."
+                                     Clearable="true"
+                                     ShowProgressIndicator="true"
+                                     MinCharacters="0"
+                                     DebounceInterval="300"
+                                     MaxItems="20"
+                                     ResetValueOnEmptyText="true"
+                                     CoerceText="false"
+                                     CoerceValue="false"
+                                     Disabled="_isSaving || _hasConflict"
+                                     Value="_destinationStorageLocation"
+                                     ValueChanged="OnDestinationStorageLocationChanged"
+                                     SearchFunc="SearchDestinationStorageLocationsAsync"
+                                     ToStringFunc="FormatStorageLocation">
+                        <ItemTemplate>
+                            <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                        </ItemTemplate>
+                        <NoItemsTemplate>
+                            <MudText>No eligible destination locations found.</MudText>
+                        </NoItemsTemplate>
+                    </MudAutocomplete>
+
+                    <MudNumericField T="decimal"
+                                     Label="Quantity to move"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     Min="@(0.0001m)"
+                                     Max="@InventoryBalance.Quantity"
+                                     Required="true"
+                                     RequiredError="Quantity is required."
+                                     Culture="@QuantityCulture"
+                                     Format="0.####"
+                                     InputMode="@(InputMode.@decimal)"
+                                     Disabled="_isSaving || _hasConflict"
+                                     @bind-Value="_quantity" />
+
+                    <MudTextField T="string"
+                                  Label="Reason"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Required="true"
+                                  RequiredError="Reason is required."
+                                  MaxLength="500"
+                                  Lines="3"
+                                  Disabled="_isSaving || _hasConflict"
+                                  @bind-Value="_reason" />
+
+                    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                    {
+                        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+                            @_errorMessage
+                        </MudAlert>
+                    }
+                </MudStack>
+            </MudForm>
+        }
+        else
+        {
+            <MudStack Spacing="3">
+                <MudAlert Severity="Severity.Success" Variant="Variant.Filled">
+                    Inventory moved successfully.
+                </MudAlert>
+
+                <MudTextField T="string"
+                              Label="Moved quantity"
+                              Value="@FormatQuantity(_result.MovedQuantity)"
+                              Disabled="true" />
+
+                <MudTextField T="string"
+                              Label="Source"
+                              Value="@FormatBalanceResult(_result.SourceBalance, _result.SourceQuantityBefore, _result.SourceQuantityAfter)"
+                              Disabled="true" />
+
+                <MudTextField T="string"
+                              Label="Destination"
+                              Value="@FormatBalanceResult(_result.DestinationBalance, _result.DestinationQuantityBefore, _result.DestinationQuantityAfter)"
+                              Disabled="true" />
+            </MudStack>
+        }
+    </DialogContent>
+
+    <DialogActions>
+        @if (_result is null)
+        {
+            <MudButton OnClick="Cancel"
+                       Disabled="_isSaving">
+                Close
+            </MudButton>
+
+            <MudButton Color="Color.Primary"
+                       Variant="Variant.Filled"
+                       OnClick="SaveAsync"
+                       Disabled="_isSaving || _hasConflict">
+                @if (_isSaving)
+                {
+                    <MudProgressCircular Size="Size.Small"
+                                         Indeterminate="true"
+                                         Class="me-2" />
+                }
+                Move
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Color="Color.Primary"
+                       Variant="Variant.Filled"
+                       OnClick="Done">
+                Done
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private const int AutocompleteTake = 20;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public InventoryBalanceDetails InventoryBalance { get; set; } = null!;
+
+    [Inject]
+    private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = null!;
+
+    [Inject]
+    private WmsTopologyApiClient WmsTopologyApiClient { get; set; } = null!;
+
+    private static readonly CultureInfo QuantityCulture =
+        CultureInfo.GetCultureInfo("ru-RU");
+
+    private MudForm? _form;
+    private StorageLocationLookupItem? _destinationStorageLocation;
+    private decimal _quantity = 1;
+    private string? _reason;
+    private bool _isSaving;
+    private bool _hasConflict;
+    private string? _errorMessage;
+    private MoveInventoryBalanceResult? _result;
+
+    private string StockKeepingUnitDisplay =>
+        $"{InventoryBalance.Sku.Code} - {InventoryBalance.Sku.Name}";
+
+    private string WarehouseDisplay =>
+        $"{InventoryBalance.StorageLocation.Warehouse.Code} - {InventoryBalance.StorageLocation.Warehouse.Name}";
+
+    private string SourceStorageLocationDisplay =>
+        $"{InventoryBalance.StorageLocation.Code} - {InventoryBalance.StorageLocation.Name}";
+
+    private string BaseUnitOfMeasureDisplay =>
+        string.IsNullOrWhiteSpace(InventoryBalance.Sku.BaseUom.Symbol)
+            ? InventoryBalance.Sku.BaseUom.Code
+            : $"{InventoryBalance.Sku.BaseUom.Code} ({InventoryBalance.Sku.BaseUom.Symbol})";
+
+    private Task OnDestinationStorageLocationChanged(StorageLocationLookupItem? value)
+    {
+        _destinationStorageLocation =
+            value is not null &&
+            value.WarehouseId == InventoryBalance.StorageLocation.Warehouse.Id &&
+            value.Id != InventoryBalance.StorageLocation.Id
+                ? value
+                : null;
+
+        return Task.CompletedTask;
+    }
+
+    private async Task<IEnumerable<StorageLocationLookupItem>> SearchDestinationStorageLocationsAsync(
+        string value,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            IReadOnlyList<StorageLocationLookupItem> items = await WmsTopologyApiClient
+                .LookupStorageLocationsAsync(
+                    InventoryBalance.StorageLocation.Warehouse.Id,
+                    new LookupStorageLocationsRequest
+                    {
+                        SearchText = value,
+                        Take = AutocompleteTake,
+                        SelectableOnly = true,
+                        ExcludeTransitTypes = true
+                    },
+                    cancellationToken);
+
+            return items.Where(x => x.Id != InventoryBalance.StorageLocation.Id);
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            return [];
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            return [];
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        if (_destinationStorageLocation is null)
+        {
+            _errorMessage = "Destination location is required.";
+            return;
+        }
+
+        if (_quantity <= 0 || _quantity > InventoryBalance.Quantity)
+        {
+            _errorMessage =
+                "Quantity must be greater than zero and no greater than the current source quantity.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_reason))
+        {
+            _errorMessage = "Reason is required.";
+            return;
+        }
+
+        _isSaving = true;
+        _errorMessage = null;
+
+        try
+        {
+            MoveInventoryBalanceRequest request = new(
+                InventoryBalance.Sku.Id,
+                InventoryBalance.StorageLocation.Id,
+                _destinationStorageLocation.Id,
+                _quantity,
+                _reason,
+                InventoryBalance.BalanceVersion);
+
+            ApiResult<MoveInventoryBalanceResult> result =
+                await WmsInventoryApiClient.TryMoveInventoryBalanceAsync(request);
+
+            if (result.IsFailure)
+            {
+                if (result.Error?.Status == 409)
+                {
+                    _hasConflict = true;
+                    _errorMessage =
+                        "Inventory changed while the move was being saved. Close this dialog, review the refreshed balances, and retry.";
+                    return;
+                }
+
+                _errorMessage = result.Error?.Message ?? "Inventory move failed.";
+                return;
+            }
+
+            if (result.Value is null)
+            {
+                _errorMessage =
+                    "The operation completed without returning inventory move details.";
+                return;
+            }
+
+            _result = result.Value;
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        if (_hasConflict)
+        {
+            MudDialog.Close(
+                DialogResult.Ok(InventoryBalanceDialogOutcome.ConcurrencyConflict));
+            return;
+        }
+
+        MudDialog.Cancel();
+    }
+
+    private void Done()
+    {
+        MudDialog.Close(DialogResult.Ok(_result));
+    }
+
+    private static string FormatStorageLocation(StorageLocationLookupItem? storageLocation) =>
+        storageLocation is null
+            ? string.Empty
+            : $"{storageLocation.Code} - {storageLocation.Name}";
+
+    private static string FormatBalanceResult(
+        InventoryBalanceDetails balance,
+        decimal before,
+        decimal after) =>
+        $"{balance.StorageLocation.Code} - {balance.StorageLocation.Name}: " +
+        $"{FormatQuantity(before)} → {FormatQuantity(after)}";
+
+    private static string FormatQuantity(decimal quantity) =>
+        quantity.ToString("0.####", QuantityCulture);
+}

@@ -238,6 +238,43 @@ public partial class Index
         await ReloadInventoryBalancesAsync();
     }
 
+    private async Task MoveInventoryBalanceAsync(InventoryBalanceDetails inventoryBalance)
+    {
+        DialogParameters parameters = new()
+        {
+            [nameof(MoveInventoryBalanceDialog.InventoryBalance)] = inventoryBalance
+        };
+
+        DialogOptions options = new()
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+
+        IDialogReference dialog = await DialogService.ShowAsync<MoveInventoryBalanceDialog>(
+            "Move inventory",
+            parameters,
+            options);
+
+        DialogResult? result = await dialog.Result;
+
+        if (result is null || result.Canceled)
+        {
+            return;
+        }
+
+        if (result.Data is InventoryBalanceDialogOutcome moveOutcome &&
+            moveOutcome == InventoryBalanceDialogOutcome.ConcurrencyConflict)
+        {
+            await ReloadInventoryBalancesAsync();
+            return;
+        }
+
+        Snackbar.Add("Inventory moved.", Severity.Success);
+        await ReloadInventoryBalancesAsync();
+    }
+
     private void OpenInventoryLedgerHistory(InventoryBalanceDetails inventoryBalance)
     {
         string url =

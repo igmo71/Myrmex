@@ -10,12 +10,121 @@ using Myrmex.Modules.Wms.Inventory.Endpoints;
 using Myrmex.Modules.Wms.Inventory.Features.InventoryBalances;
 using Myrmex.Shared.Common;
 using Myrmex.Shared.Wms.Inventory;
+using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace Myrmex.Tests.Wms.Inventory.Endpoints;
 
 public sealed class InventoryBalanceEndpointTests
 {
+    [Fact]
+    public async Task MoveInventoryBalanceAsync_BindsBodyAndSerializesResult()
+    {
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
+        Guid sourceStorageLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000201");
+        Guid destinationStorageLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000202");
+        MoveInventoryBalanceResult moveResult = CreateMoveResult(
+            stockKeepingUnitId,
+            sourceStorageLocationId,
+            destinationStorageLocationId);
+        RecordingCommandDispatcher commandDispatcher = new(moveResult);
+        await using WebApplication app = CreateInventoryEndpointApp(
+            new RecordingQueryDispatcher(moveResult.SourceBalance),
+            commandDispatcher);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient httpClient = CreateHttpClient(app);
+            MoveInventoryBalanceRequest request = new(
+                stockKeepingUnitId,
+                sourceStorageLocationId,
+                destinationStorageLocationId,
+                Quantity: 4,
+                Reason: "Consolidate stock",
+                ExpectedSourceBalanceVersion: "AAAAAAAAB9E=");
+
+            using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
+                "/api/wms/inventory/balances/move",
+                request,
+                cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+            Assert.NotNull(commandDispatcher.CapturedMoveCommand);
+            Assert.Equal(stockKeepingUnitId, commandDispatcher.CapturedMoveCommand.StockKeepingUnitId);
+            Assert.Equal(sourceStorageLocationId, commandDispatcher.CapturedMoveCommand.SourceStorageLocationId);
+            Assert.Equal(destinationStorageLocationId, commandDispatcher.CapturedMoveCommand.DestinationStorageLocationId);
+            Assert.Equal(4, commandDispatcher.CapturedMoveCommand.Quantity);
+            Assert.Equal("Consolidate stock", commandDispatcher.CapturedMoveCommand.Reason);
+            Assert.Equal("AAAAAAAAB9E=", commandDispatcher.CapturedMoveCommand.ExpectedSourceBalanceVersion);
+            Assert.True(commandDispatcher.CapturedCancellationToken.CanBeCanceled);
+
+            using JsonDocument json = JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync(cancellationToken));
+            Assert.Equal(4, json.RootElement.GetProperty("movedQuantity").GetDecimal());
+            Assert.Equal(6, json.RootElement.GetProperty("sourceQuantityAfter").GetDecimal());
+            Assert.Equal(7, json.RootElement.GetProperty("destinationQuantityAfter").GetDecimal());
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
+    [Theory]
+    [InlineData(ServiceErrorType.Invalid, HttpStatusCode.BadRequest)]
+    [InlineData(ServiceErrorType.NotFound, HttpStatusCode.NotFound)]
+    [InlineData(ServiceErrorType.Conflict, HttpStatusCode.Conflict)]
+    public async Task MoveInventoryBalanceAsync_WhenCommandFails_ReturnsProblemDetails(
+        ServiceErrorType errorType,
+        HttpStatusCode expectedStatus)
+    {
+        ServiceError error = new(
+            errorType,
+            "InventoryBalance.MoveRejected",
+            "Move rejected.",
+            "Quantity");
+        RecordingCommandDispatcher commandDispatcher = new(
+            ServiceResult<MoveInventoryBalanceResult>.Fail(error));
+        InventoryBalanceDetails details = CreateInventoryBalanceDetails(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid());
+        await using WebApplication app = CreateInventoryEndpointApp(
+            new RecordingQueryDispatcher(details),
+            commandDispatcher);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient httpClient = CreateHttpClient(app);
+            using HttpResponseMessage response = await httpClient.PostAsJsonAsync(
+                "/api/wms/inventory/balances/move",
+                new MoveInventoryBalanceRequest(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    1,
+                    "Move",
+                    "AAAAAAAAB9E="),
+                cancellationToken);
+
+            Assert.Equal(expectedStatus, response.StatusCode);
+            using JsonDocument json = JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync(cancellationToken));
+            Assert.Equal(
+                "InventoryBalance.MoveRejected",
+                json.RootElement.GetProperty("code").GetString());
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
     [Fact]
     public async Task ListInventoryBalancesAsync_BindsQueryParametersAndSerializesNestedDetails()
     {
@@ -71,17 +180,54 @@ public sealed class InventoryBalanceEndpointTests
         }
     }
 
-    private static WebApplication CreateInventoryEndpointApp(RecordingQueryDispatcher queryDispatcher)
+    private static WebApplication CreateInventoryEndpointApp(
+        RecordingQueryDispatcher queryDispatcher,
+        ICommandDispatcher? commandDispatcher = null)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Services.AddSingleton<IQueryDispatcher>(queryDispatcher);
-        builder.Services.AddSingleton<ICommandDispatcher, UnsupportedCommandDispatcher>();
+        builder.Services.AddSingleton<ICommandDispatcher>(
+            commandDispatcher ?? new UnsupportedCommandDispatcher());
 
         WebApplication app = builder.Build();
         app.MapGroup("/api/wms/inventory").MapInventoryBalanceEndpoints();
 
         return app;
+    }
+
+    private static MoveInventoryBalanceResult CreateMoveResult(
+        Guid stockKeepingUnitId,
+        Guid sourceStorageLocationId,
+        Guid destinationStorageLocationId)
+    {
+        Guid warehouseId = Guid.Parse("018f0000-0000-7000-8000-000000000301");
+        InventoryBalanceDetails source = CreateInventoryBalanceDetails(
+            stockKeepingUnitId,
+            sourceStorageLocationId,
+            warehouseId) with
+        {
+            Quantity = 6,
+            BalanceVersion = "AAAAAAAAB9I="
+        };
+        InventoryBalanceDetails destination = CreateInventoryBalanceDetails(
+            stockKeepingUnitId,
+            destinationStorageLocationId,
+            warehouseId) with
+        {
+            Quantity = 7,
+            BalanceVersion = "AAAAAAAAB9M="
+        };
+
+        return new MoveInventoryBalanceResult(
+            source,
+            destination,
+            MovedQuantity: 4,
+            SourceQuantityBefore: 10,
+            SourceQuantityAfter: 6,
+            DestinationQuantityBefore: 3,
+            DestinationQuantityAfter: 7,
+            DateTimeOffset.Parse("2026-06-24T09:00:00Z"));
     }
 
     private static HttpClient CreateHttpClient(WebApplication app)
@@ -167,6 +313,43 @@ public sealed class InventoryBalanceEndpointTests
             where TResult : IServiceResult
         {
             throw new NotSupportedException("Command dispatch is not expected in this endpoint test.");
+        }
+    }
+
+    private sealed class RecordingCommandDispatcher : ICommandDispatcher
+    {
+        private readonly ServiceResult<MoveInventoryBalanceResult> _result;
+
+        public RecordingCommandDispatcher(MoveInventoryBalanceResult result)
+            : this(ServiceResult<MoveInventoryBalanceResult>.Success(result))
+        {
+        }
+
+        public RecordingCommandDispatcher(ServiceResult<MoveInventoryBalanceResult> result)
+        {
+            _result = result;
+        }
+
+        public MoveInventoryBalance.Command? CapturedMoveCommand { get; private set; }
+
+        public CancellationToken CapturedCancellationToken { get; private set; }
+
+        public Task<TResult> DispatchAsync<TCommand, TResult>(
+            TCommand command,
+            CancellationToken cancellationToken = default)
+            where TCommand : ICommand<TResult>
+            where TResult : IServiceResult
+        {
+            if (command is MoveInventoryBalance.Command moveCommand &&
+                typeof(TResult) == typeof(ServiceResult<MoveInventoryBalanceResult>))
+            {
+                CapturedMoveCommand = moveCommand;
+                CapturedCancellationToken = cancellationToken;
+                return Task.FromResult((TResult)(object)_result);
+            }
+
+            throw new NotSupportedException(
+                $"Unexpected command type {typeof(TCommand).FullName}.");
         }
     }
 }

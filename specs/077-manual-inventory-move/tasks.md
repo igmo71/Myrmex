@@ -18,8 +18,8 @@
 
 **Purpose**: Establish the public write contract used by the endpoint, API client, and UI.
 
-- [ ] T001 [P] Define nullable identifiers, positive quantity input, reason, and expected source rowversion in `Myrmex.Shared/Wms/Inventory/MoveInventoryBalanceRequest.cs`
-- [ ] T002 [P] Define the authoritative move outcome with both `InventoryBalanceDetails` snapshots, moved quantity, before/after quantities, and occurrence time in `Myrmex.Shared/Wms/Inventory/MoveInventoryBalanceResult.cs`
+- [X] T001 [P] Define nullable identifiers, positive quantity input, reason, and expected source rowversion in `Myrmex.Shared/Wms/Inventory/MoveInventoryBalanceRequest.cs`
+- [X] T002 [P] Define the authoritative move outcome with both `InventoryBalanceDetails` snapshots, moved quantity, before/after quantities, and occurrence time in `Myrmex.Shared/Wms/Inventory/MoveInventoryBalanceResult.cs`
 
 ---
 
@@ -29,7 +29,7 @@
 
 **Critical**: Complete this phase before handler tests.
 
-- [ ] T003 Extend `Myrmex.Tests/Wms/Inventory/Testing/InventoryBalanceTestData.cs` with builders for two regular locations in one warehouse, a second warehouse, transit locations, inactive SKU/location/type/status references, and optional destination balances
+- [X] T003 Extend `Myrmex.Tests/Wms/Inventory/Testing/InventoryBalanceTestData.cs` with builders for two regular locations in one warehouse, a second warehouse, transit locations, inactive SKU/location/type/status references, and optional destination balances
 
 **Checkpoint**: Shared contracts and reusable test fixtures are ready.
 
@@ -43,19 +43,19 @@
 
 ### Tests for User Story 1
 
-- [ ] T004 [US1] Write SQL Server handler tests for existing-destination success, missing-destination creation, full-source zero retention, returned before/after details, validation failures, missing-reference 404 results, stale/missing/insufficient source conflicts, destination concurrency, and no partial balance changes in `Myrmex.Tests/Wms/Inventory/Features/InventoryBalances/MoveInventoryBalanceHandlerTests.cs`
-- [ ] T005 [P] [US1] Add focused POST route/body binding, success serialization, representative validation/not-found/conflict ProblemDetails, and cancellation dispatch tests in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryBalanceEndpointTests.cs`
-- [ ] T006 [P] [US1] Add API-client tests for the exact move route, serialized request body, shared result deserialization, cancellation propagation, and representative 409 mapping in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [X] T004 [US1] Write SQL Server handler tests for existing-destination success, missing-destination creation, full-source zero retention, returned before/after details, validation failures, missing-reference 404 results, stale/missing/insufficient source conflicts, destination concurrency, and no partial balance changes in `Myrmex.Tests/Wms/Inventory/Features/InventoryBalances/MoveInventoryBalanceHandlerTests.cs`
+- [X] T005 [P] [US1] Add focused POST route/body binding, success serialization, representative validation/not-found/conflict ProblemDetails, and cancellation dispatch tests in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryBalanceEndpointTests.cs`
+- [X] T006 [P] [US1] Add API-client tests for the exact move route, serialized request body, shared result deserialization, cancellation propagation, and representative 409 mapping in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Implement `MoveInventoryBalance.Command` and handler validation, reference eligibility, source rowversion/quantity checks, destination update-or-create behavior, one `CreateTransfer` transaction, one atomic save, concurrency/duplicate mapping, result reload, and cancellation in `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/MoveInventoryBalance.cs`
-- [ ] T008 [US1] Map `POST /balances/move` to the internal command and `ApiResult<MoveInventoryBalanceResult>` HTTP convention in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs`
-- [ ] T009 [US1] Add `TryMoveInventoryBalanceAsync` using `/api/wms/inventory/balances/move` and propagate cancellation in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
-- [ ] T010 [US1] Build the MudBlazor move dialog with read-only source context, bounded warehouse-scoped non-transit destination lookup, source exclusion, quantity/reason validation, stale-conflict lockout, and success summary in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/MoveInventoryBalanceDialog.razor`
-- [ ] T011 [US1] Add a labeled Move row action and `MoveRequested` callback beside History and Adjust in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/InventoryBalanceGrid.razor`
-- [ ] T012 [US1] Add dialog orchestration, success/conflict handling, snackbar feedback, and grid reload behavior in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/Index.razor.cs`
-- [ ] T013 [US1] Wire the grid `MoveRequested` event to the page handler in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/Index.razor`
+- [X] T007 [US1] Implement `MoveInventoryBalance.Command` and handler validation, reference eligibility, source rowversion/quantity checks, destination update-or-create behavior, one `CreateTransfer` transaction, one atomic save, concurrency/duplicate mapping, result reload, and cancellation in `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/MoveInventoryBalance.cs`
+- [X] T008 [US1] Map `POST /balances/move` to the internal command and `ApiResult<MoveInventoryBalanceResult>` HTTP convention in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs`
+- [X] T009 [US1] Add `TryMoveInventoryBalanceAsync` using `/api/wms/inventory/balances/move` and propagate cancellation in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [X] T010 [US1] Build the MudBlazor move dialog with read-only source context, bounded warehouse-scoped non-transit destination lookup, source exclusion, quantity/reason validation, stale-conflict lockout, and success summary in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/MoveInventoryBalanceDialog.razor`
+- [X] T011 [US1] Add a labeled Move row action and `MoveRequested` callback beside History and Adjust in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/InventoryBalanceGrid.razor`
+- [X] T012 [US1] Add dialog orchestration, success/conflict handling, snackbar feedback, and grid reload behavior in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/Index.razor.cs`
+- [X] T013 [US1] Wire the grid `MoveRequested` event to the page handler in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryBalancePages/Index.razor`
 
 **Checkpoint**: The operator workflow moves inventory, reports authoritative results, and refreshes the grid.
 
