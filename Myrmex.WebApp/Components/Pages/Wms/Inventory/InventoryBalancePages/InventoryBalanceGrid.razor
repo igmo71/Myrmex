@@ -77,6 +77,10 @@
                                  OnClick="@(() => AdjustRequested.InvokeAsync(context.Item))">
                         Adjust
                     </MudMenuItem>
+                    <MudMenuItem Icon="@Icons.Material.Filled.MoveDown"
+                                 OnClick="@(() => MoveRequested.InvokeAsync(context.Item))">
+                        Move
+                    </MudMenuItem>
                 </MudMenu>
             </CellTemplate>
         </TemplateColumn>
@@ -100,6 +104,9 @@
 
     [Parameter]
     public EventCallback<InventoryBalanceDetails> HistoryRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<InventoryBalanceDetails> MoveRequested { get; set; }
 
     private MudDataGrid<InventoryBalanceDetails>? _dataGrid;
 

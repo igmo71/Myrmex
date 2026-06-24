@@ -5,6 +5,6 @@ Durable project guidance lives in `.specify/memory/`. Read only the files releva
 - `myrmex-development-workflow.md` before executing or recommending work.
 - Architecture, testing, API, and roadmap memory only when that area is touched.
 
-For active feature work on Internal Inventory Transfer MVP, start with `specs/075-internal-inventory-transfer-mvp/plan.md` and `tasks.md` when it exists. Read other feature artifacts only when directly relevant.
+For active feature work on Manual Inventory Move, start with `specs/077-manual-inventory-move/plan.md` and `tasks.md` when it exists. Read other feature artifacts only when directly relevant.
 
 <!-- SPECKIT END -->

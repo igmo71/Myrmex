@@ -13,6 +13,200 @@ public sealed class WmsInventoryApiClientTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
+    public async Task GetInventoryBalanceBySkuAndStorageLocationAsync_WhenSuccessful_UsesExactUrlAndMapsDetails()
+    {
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
+        Guid storageLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000201");
+        InventoryBalanceDetails details = CreateInventoryBalanceDetails(
+            stockKeepingUnitId: stockKeepingUnitId,
+            storageLocationId: storageLocationId,
+            quantity: 12.5m,
+            balanceVersion: "AAAAAAAAB9E=");
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+        using CancellationTokenSource cancellationTokenSource = new();
+
+        InventoryBalanceDetails result =
+            await apiClient.GetInventoryBalanceBySkuAndStorageLocationAsync(
+                stockKeepingUnitId,
+                storageLocationId,
+                cancellationTokenSource.Token);
+
+        Assert.Equal(HttpMethod.Get, handler.RequestMethod);
+        Assert.Equal("/api/wms/inventory/balances/lookup", handler.RequestPath);
+        Dictionary<string, string> query = ParseQuery(handler.RequestQuery);
+        Assert.Equal(stockKeepingUnitId.ToString(), query["skuId"]);
+        Assert.Equal(storageLocationId.ToString(), query["storageLocationId"]);
+        Assert.Equal(details.Id, result.Id);
+        Assert.Equal(12.5m, result.Quantity);
+        Assert.Equal("AAAAAAAAB9E=", result.BalanceVersion);
+    }
+
+    [Fact]
+    public async Task GetInventoryBalanceBySkuAndStorageLocationAsync_WhenMissing_ThrowsApiException()
+    {
+        Guid stockKeepingUnitId = Guid.NewGuid();
+        Guid storageLocationId = Guid.NewGuid();
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.NotFound,
+            """
+            {
+              "status": 404,
+              "title": "Not Found",
+              "detail": "Inventory balance not found.",
+              "code": "NotFound-InventoryBalance"
+            }
+            """,
+            "application/problem+json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+
+        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
+            apiClient.GetInventoryBalanceBySkuAndStorageLocationAsync(
+                stockKeepingUnitId,
+                storageLocationId,
+                TestContext.Current.CancellationToken));
+
+        Assert.Equal(404, exception.Status);
+        Assert.Equal("Inventory balance not found.", exception.Message);
+        Assert.Equal("NotFound-InventoryBalance", exception.Extensions["code"]);
+    }
+
+    [Fact]
+    public async Task GetInventoryBalanceBySkuAndStorageLocationAsync_WhenCanceled_PropagatesCancellation()
+    {
+        using CancellableHttpMessageHandler handler = new();
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+        using CancellationTokenSource cancellationTokenSource = new();
+
+        Task<InventoryBalanceDetails> requestTask =
+            apiClient.GetInventoryBalanceBySkuAndStorageLocationAsync(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                cancellationTokenSource.Token);
+
+        await handler.RequestStarted.Task;
+        cancellationTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => requestTask);
+        Assert.True(handler.CancellationObserved);
+    }
+
+    [Fact]
+    public async Task TryMoveInventoryBalanceAsync_WhenSuccessful_PostsRequestAndMapsResult()
+    {
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
+        Guid sourceStorageLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000201");
+        Guid destinationStorageLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000202");
+        MoveInventoryBalanceResult response = CreateMoveInventoryBalanceResult(
+            stockKeepingUnitId,
+            sourceStorageLocationId,
+            destinationStorageLocationId);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(response),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+        using CancellationTokenSource cancellationTokenSource = new();
+
+        ApiResult<MoveInventoryBalanceResult> result =
+            await apiClient.TryMoveInventoryBalanceAsync(
+                new MoveInventoryBalanceRequest(
+                    stockKeepingUnitId,
+                    sourceStorageLocationId,
+                    destinationStorageLocationId,
+                    Quantity: 4,
+                    Reason: "Consolidate stock",
+                    ExpectedSourceBalanceVersion: "AAAAAAAAB9E="),
+                cancellationTokenSource.Token);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(4, result.Value.MovedQuantity);
+        Assert.Equal(6, result.Value.SourceBalance.Quantity);
+        Assert.Equal(7, result.Value.DestinationBalance.Quantity);
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal("/api/wms/inventory/balances/move", handler.RequestPath);
+
+        using JsonDocument requestBody = JsonDocument.Parse(handler.RequestBody);
+        JsonElement root = requestBody.RootElement;
+        Assert.Equal(stockKeepingUnitId, root.GetProperty("stockKeepingUnitId").GetGuid());
+        Assert.Equal(sourceStorageLocationId, root.GetProperty("sourceStorageLocationId").GetGuid());
+        Assert.Equal(destinationStorageLocationId, root.GetProperty("destinationStorageLocationId").GetGuid());
+        Assert.Equal(4, root.GetProperty("quantity").GetDecimal());
+        Assert.Equal("Consolidate stock", root.GetProperty("reason").GetString());
+        Assert.Equal("AAAAAAAAB9E=", root.GetProperty("expectedSourceBalanceVersion").GetString());
+    }
+
+    [Fact]
+    public async Task TryMoveInventoryBalanceAsync_WhenConflict_ReturnsApiError()
+    {
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.Conflict,
+            """
+            {
+              "status": 409,
+              "title": "Conflict",
+              "detail": "Inventory changed.",
+              "code": "InventoryBalance.ConcurrencyConflict"
+            }
+            """,
+            "application/problem+json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+
+        ApiResult<MoveInventoryBalanceResult> result =
+            await apiClient.TryMoveInventoryBalanceAsync(
+                new MoveInventoryBalanceRequest(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    1,
+                    "Move",
+                    "AAAAAAAAB9E="),
+                TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(409, result.Error?.Status);
+        Assert.Equal("Inventory changed.", result.Error?.Message);
+        Assert.Equal(
+            "InventoryBalance.ConcurrencyConflict",
+            result.Error?.Extensions["code"]);
+    }
+
+    [Fact]
+    public async Task TryMoveInventoryBalanceAsync_WhenCanceled_PropagatesCancellation()
+    {
+        using CancellableHttpMessageHandler handler = new();
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsInventoryApiClient apiClient = new(httpClient);
+        using CancellationTokenSource cancellationTokenSource = new();
+
+        Task<ApiResult<MoveInventoryBalanceResult>> requestTask =
+            apiClient.TryMoveInventoryBalanceAsync(
+                new MoveInventoryBalanceRequest(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    1,
+                    "Move",
+                    "AAAAAAAAB9E="),
+                cancellationTokenSource.Token);
+
+        await handler.RequestStarted.Task;
+        cancellationTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => requestTask);
+        Assert.True(handler.CancellationObserved);
+    }
+
+    [Fact]
     public async Task ListInventoryBalancesAsync_WhenRequestHasNoValues_OmitsNullableQueryParametersAndMapsNestedDetails()
     {
         InventoryBalanceDetails details = CreateInventoryBalanceDetails();
@@ -658,6 +852,34 @@ public sealed class WmsInventoryApiClientTests
                     Guid.Parse("018f0000-0000-7000-8000-000000000301"),
                     "MAIN",
                     "Main Warehouse")));
+    }
+
+    private static MoveInventoryBalanceResult CreateMoveInventoryBalanceResult(
+        Guid stockKeepingUnitId,
+        Guid sourceStorageLocationId,
+        Guid destinationStorageLocationId)
+    {
+        InventoryBalanceDetails source = CreateInventoryBalanceDetails(
+            stockKeepingUnitId: stockKeepingUnitId,
+            storageLocationId: sourceStorageLocationId,
+            quantity: 6,
+            balanceVersion: "AAAAAAAAB9I=");
+        InventoryBalanceDetails destination = CreateInventoryBalanceDetails(
+            inventoryBalanceId: Guid.Parse("018f0000-0000-7000-8000-000000000002"),
+            stockKeepingUnitId: stockKeepingUnitId,
+            storageLocationId: destinationStorageLocationId,
+            quantity: 7,
+            balanceVersion: "AAAAAAAAB9M=");
+
+        return new MoveInventoryBalanceResult(
+            source,
+            destination,
+            MovedQuantity: 4,
+            SourceQuantityBefore: 10,
+            SourceQuantityAfter: 6,
+            DestinationQuantityBefore: 3,
+            DestinationQuantityAfter: 7,
+            DateTimeOffset.Parse("2026-06-24T09:00:00Z"));
     }
 
     private static InventoryLedgerEntryDetails CreateInventoryLedgerEntryDetails(

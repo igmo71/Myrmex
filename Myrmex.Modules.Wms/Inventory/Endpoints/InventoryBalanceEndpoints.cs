@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Myrmex.AppDispatching.CommandDispatching;
 using Myrmex.AppDispatching.QueryDispatching;
 using Myrmex.AspNetCore.Results;
 using Myrmex.Core.Application.Queries;
@@ -19,9 +20,17 @@ internal static class InventoryBalanceEndpoints
             .WithName("ListInventoryBalances")
             .WithSummary("List Inventory Balances");
 
+        group.MapGet("/balances/lookup", GetInventoryBalanceBySkuAndStorageLocationAsync)
+            .WithName("GetInventoryBalanceBySkuAndStorageLocation")
+            .WithSummary("Get Inventory Balance By SKU And Storage Location");
+
         group.MapGet("/balances/{inventoryBalanceId:guid}", GetInventoryBalanceByIdAsync)
             .WithName("GetInventoryBalanceById")
             .WithSummary("Get Inventory Balance By Id");
+
+        group.MapPost("/balances/move", MoveInventoryBalanceAsync)
+            .WithName("MoveInventoryBalance")
+            .WithSummary("Move Inventory Balance");
 
         return group;
     }
@@ -59,6 +68,47 @@ internal static class InventoryBalanceEndpoints
 
         var result = await queryDispatcher
             .DispatchAsync<GetInventoryBalanceById.Query, ServiceResult<InventoryBalanceDetails>>(query, cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> GetInventoryBalanceBySkuAndStorageLocationAsync(
+        Guid skuId,
+        Guid storageLocationId,
+        IQueryDispatcher queryDispatcher,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetInventoryBalanceBySkuAndStorageLocation.Query(
+            skuId,
+            storageLocationId);
+
+        var result = await queryDispatcher
+            .DispatchAsync<
+                GetInventoryBalanceBySkuAndStorageLocation.Query,
+                ServiceResult<InventoryBalanceDetails>>(
+                query,
+                cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> MoveInventoryBalanceAsync(
+        MoveInventoryBalanceRequest request,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new MoveInventoryBalance.Command(
+            request.StockKeepingUnitId,
+            request.SourceStorageLocationId,
+            request.DestinationStorageLocationId,
+            request.Quantity,
+            request.Reason,
+            request.ExpectedSourceBalanceVersion);
+
+        var result = await commandDispatcher
+            .DispatchAsync<MoveInventoryBalance.Command, ServiceResult<MoveInventoryBalanceResult>>(
+                command,
+                cancellationToken);
+
         return result.ToHttpResult();
     }
 }

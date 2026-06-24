@@ -11,6 +11,85 @@ namespace Myrmex.Tests.Wms.Inventory.Testing;
 
 internal static class InventoryBalanceTestData
 {
+    internal static async Task<SeededManualInventoryMove> SeedManualInventoryMoveAsync(
+        WmsDbContext dbContext,
+        decimal sourceQuantity = 10,
+        decimal? destinationQuantity = 3)
+    {
+        SeededInventoryTransferReferences references =
+            await InventoryTransferTestData.SeedReferencesAsync(dbContext);
+
+        Warehouse secondWarehouse = CreateWarehouse(
+            code: "SECOND",
+            name: "Second Warehouse");
+        Zone secondZone = CreateZone(
+            secondWarehouse.Id,
+            code: "ZONE-B",
+            name: "Zone B");
+        StorageLocation crossWarehouseLocation = CreateStorageLocation(
+            secondWarehouse.Id,
+            secondZone.Id,
+            references.RegularStorageLocationType.Id,
+            references.StorageLocationStatus.Id,
+            code: "B-01-01");
+
+        var sourceResult = InventoryBalance.Create(
+            references.StockKeepingUnit.Id,
+            references.SourceStorageLocation.Id,
+            sourceQuantity,
+            out InventoryBalance? sourceBalance);
+
+        Assert.True(sourceResult.IsValid);
+        Assert.NotNull(sourceBalance);
+        sourceBalance.ClearDomainEvents();
+
+        InventoryBalance? destinationBalance = null;
+
+        if (destinationQuantity.HasValue)
+        {
+            var destinationResult = InventoryBalance.Create(
+                references.StockKeepingUnit.Id,
+                references.DestinationStorageLocation.Id,
+                destinationQuantity.Value,
+                out destinationBalance);
+
+            Assert.True(destinationResult.IsValid);
+            Assert.NotNull(destinationBalance);
+            destinationBalance.ClearDomainEvents();
+        }
+
+        dbContext.Warehouses.Add(secondWarehouse);
+        dbContext.Zones.Add(secondZone);
+        dbContext.StorageLocations.Add(crossWarehouseLocation);
+        dbContext.InventoryBalances.Add(sourceBalance);
+
+        if (destinationBalance is not null)
+        {
+            dbContext.InventoryBalances.Add(destinationBalance);
+        }
+
+        await dbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return new SeededManualInventoryMove(
+            references.BaseUnitOfMeasure,
+            references.StockKeepingUnit,
+            references.Warehouse,
+            references.Zone,
+            references.RegularStorageLocationType,
+            references.InternalTransitStorageLocationType,
+            references.ExternalTransitStorageLocationType,
+            references.StorageLocationStatus,
+            references.SourceStorageLocation,
+            references.DestinationStorageLocation,
+            references.InternalTransitStorageLocation,
+            references.ExternalTransitStorageLocation,
+            secondWarehouse,
+            secondZone,
+            crossWarehouseLocation,
+            sourceBalance,
+            destinationBalance);
+    }
+
     internal static async Task<SeededInventoryBalance> SeedInventoryBalanceAsync(
         WmsDbContext dbContext,
         decimal quantity)
@@ -108,11 +187,13 @@ internal static class InventoryBalanceTestData
         return stockKeepingUnit;
     }
 
-    internal static Warehouse CreateWarehouse()
+    internal static Warehouse CreateWarehouse(
+        string code = "MAIN",
+        string name = "Main Warehouse")
     {
         var result = Warehouse.Create(
-            code: "MAIN",
-            name: "Main Warehouse",
+            code,
+            name,
             description: null,
             out Warehouse? warehouse);
 
@@ -123,12 +204,15 @@ internal static class InventoryBalanceTestData
         return warehouse;
     }
 
-    internal static Zone CreateZone(Guid warehouseId)
+    internal static Zone CreateZone(
+        Guid warehouseId,
+        string code = "ZONE-A",
+        string name = "Zone A")
     {
         var result = Zone.Create(
             warehouseId,
-            code: "ZONE-A",
-            name: "Zone A",
+            code,
+            name,
             description: null,
             out Zone? zone);
 
@@ -143,15 +227,16 @@ internal static class InventoryBalanceTestData
         Guid warehouseId,
         Guid zoneId,
         Guid storageLocationTypeId,
-        Guid storageLocationStatusId)
+        Guid storageLocationStatusId,
+        string code = "A-01-01")
     {
         var result = StorageLocation.Create(
             warehouseId,
             zoneId,
             storageLocationTypeId,
             storageLocationStatusId,
-            code: "A-01-01",
-            name: "A-01-01",
+            code,
+            name: code,
             description: null,
             isPickable: true,
             out StorageLocation? storageLocation);
@@ -182,3 +267,22 @@ internal sealed record SeededInventoryReferences(
     StorageLocationType StorageLocationType,
     StorageLocationStatus StorageLocationStatus,
     StorageLocation StorageLocation);
+
+internal sealed record SeededManualInventoryMove(
+    UnitOfMeasure BaseUnitOfMeasure,
+    StockKeepingUnit StockKeepingUnit,
+    Warehouse Warehouse,
+    Zone Zone,
+    StorageLocationType RegularStorageLocationType,
+    StorageLocationType InternalTransitStorageLocationType,
+    StorageLocationType ExternalTransitStorageLocationType,
+    StorageLocationStatus StorageLocationStatus,
+    StorageLocation SourceStorageLocation,
+    StorageLocation DestinationStorageLocation,
+    StorageLocation InternalTransitStorageLocation,
+    StorageLocation ExternalTransitStorageLocation,
+    Warehouse SecondWarehouse,
+    Zone SecondZone,
+    StorageLocation CrossWarehouseStorageLocation,
+    InventoryBalance SourceBalance,
+    InventoryBalance? DestinationBalance);
