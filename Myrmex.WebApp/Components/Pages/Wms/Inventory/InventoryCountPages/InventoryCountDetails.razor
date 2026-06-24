@@ -1,0 +1,187 @@
+@page "/wms/inventory/counts/{InventoryCountId:guid}"
+@using Myrmex.Shared.Wms.Inventory
+@inject WmsInventoryApiClient WmsInventoryApiClient
+@inject IDialogService DialogService
+
+<PageTitle>Inventory Count</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+    }
+    else if (_count is not null)
+    {
+        <MudStack Spacing="3">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <div>
+                    <MudText Typo="Typo.h5">Inventory Count</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        @_count.Warehouse.Code - @_count.Warehouse.Name
+                    </MudText>
+                </div>
+                <MudButton Color="Color.Primary"
+                           Variant="Variant.Filled"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="OpenAddLineAsync">
+                    Add line
+                </MudButton>
+            </MudStack>
+
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudGrid>
+                    <MudItem xs="12" md="3">
+                        <MudText Typo="Typo.caption">Status</MudText>
+                        <MudText>@_count.Status</MudText>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudText Typo="Typo.caption">Created</MudText>
+                        <MudText>@_count.CreatedAtUtc.ToLocalTime().ToString("g")</MudText>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudText Typo="Typo.caption">Created by</MudText>
+                        <MudText>@_count.CreatedByActorId</MudText>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudText Typo="Typo.caption">Reason</MudText>
+                        <MudText>@(_count.Reason ?? "—")</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+
+            <MudTable Items="_count.Lines" Dense="true" Hover="true" Bordered="true">
+                <HeaderContent>
+                    <MudTh>SKU</MudTh>
+                    <MudTh>Location</MudTh>
+                    <MudTh>System quantity</MudTh>
+                    <MudTh>Counted quantity</MudTh>
+                    <MudTh>Variance</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        @context.Sku.Code - @context.Sku.Name
+                        <MudText Typo="Typo.caption">@FormatUom(context)</MudText>
+                    </MudTd>
+                    <MudTd>@context.StorageLocation.Code - @context.StorageLocation.Name</MudTd>
+                    <MudTd>@context.SystemQuantity</MudTd>
+                    <MudTd>@(context.CountedQuantity?.ToString() ?? "—")</MudTd>
+                    <MudTd>@(context.VarianceQuantity?.ToString() ?? "—")</MudTd>
+                    <MudTd>@context.Status</MudTd>
+                    <MudTd>
+                        @if (context.Status == InventoryCountLineStatusDetails.Pending)
+                        {
+                            <MudButton Size="Size.Small"
+                                       Color="Color.Error"
+                                       Variant="Variant.Text"
+                                       OnClick="@(() => RemoveLineAsync(context))">
+                                Remove
+                            </MudButton>
+                        }
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudText>No count lines have been added.</MudText>
+                </NoRecordsContent>
+            </MudTable>
+        </MudStack>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public Guid InventoryCountId { get; set; }
+
+    private InventoryCountDetails? _count;
+    private bool _isLoading;
+    private string? _errorMessage;
+
+    protected override Task OnParametersSetAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            _count = await WmsInventoryApiClient.GetInventoryCountByIdAsync(InventoryCountId);
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OpenAddLineAsync()
+    {
+        if (_count is null)
+        {
+            return;
+        }
+
+        DialogParameters parameters = new()
+        {
+            [nameof(AddInventoryCountLineDialog.Count)] = _count
+        };
+        IDialogReference dialog = await DialogService.ShowAsync<AddInventoryCountLineDialog>(
+            "Add count line",
+            parameters,
+            new DialogOptions { CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.Medium });
+        DialogResult? result = await dialog.Result;
+
+        if (result is not null &&
+            !result.Canceled &&
+            result.Data is InventoryCountDetails updated)
+        {
+            _count = updated;
+        }
+    }
+
+    private async Task RemoveLineAsync(InventoryCountLineDetails line)
+    {
+        if (_count is null)
+        {
+            return;
+        }
+
+        bool? confirmed = await DialogService.ShowMessageBoxAsync(
+            "Remove count line",
+            $"Remove Pending line {line.Sku.Code} at {line.StorageLocation.Code}?",
+            yesText: "Remove",
+            cancelText: "Cancel");
+
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        ApiResult<InventoryCountDetails> result =
+            await WmsInventoryApiClient.TryRemoveInventoryCountLineAsync(
+                _count.Id,
+                line.Id,
+                line.LineVersion);
+
+        if (result.IsFailure || result.Value is null)
+        {
+            _errorMessage = result.Error?.Message ?? "Removing the count line failed.";
+            return;
+        }
+
+        _count = result.Value;
+    }
+
+    private static string FormatUom(InventoryCountLineDetails line) =>
+        string.IsNullOrWhiteSpace(line.Sku.BaseUom.Symbol)
+            ? line.Sku.BaseUom.Code
+            : $"{line.Sku.BaseUom.Code} ({line.Sku.BaseUom.Symbol})";
+}

@@ -1125,3 +1125,188 @@ public sealed class WmsInventoryApiClientTests
         }
     }
 }
+
+public sealed class InventoryCountApiClientTests
+{
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    [Fact]
+    public async Task CountPreparationMethods_UseExpectedRoutesBodiesAndQuery()
+    {
+        InventoryCountDetails details = CreateDetails();
+
+        using CountStubHttpMessageHandler createHandler = new(details);
+        WmsInventoryApiClient createClient = new(CreateHttpClient(createHandler));
+        ApiResult<InventoryCountDetails> createResult = await createClient.TryCreateInventoryCountAsync(
+            new CreateInventoryCountRequest(details.Warehouse.Id, "Cycle count"),
+            TestContext.Current.CancellationToken);
+        Assert.True(createResult.IsSuccess);
+        Assert.Equal(HttpMethod.Post, createHandler.Method);
+        Assert.Equal("/api/wms/inventory/counts", createHandler.Path);
+        using (JsonDocument body = JsonDocument.Parse(createHandler.Body))
+        {
+            Assert.Equal(details.Warehouse.Id, body.RootElement.GetProperty("warehouseId").GetGuid());
+            Assert.False(body.RootElement.TryGetProperty("actorId", out _));
+        }
+
+        using CountStubHttpMessageHandler detailsHandler = new(details);
+        WmsInventoryApiClient detailsClient = new(CreateHttpClient(detailsHandler));
+        InventoryCountDetails loaded = await detailsClient.GetInventoryCountByIdAsync(
+            details.Id,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(details.Id, loaded.Id);
+        Assert.Equal(HttpMethod.Get, detailsHandler.Method);
+        Assert.Equal($"/api/wms/inventory/counts/{details.Id}", detailsHandler.Path);
+
+        InventoryCountLineDetails line = Assert.Single(details.Lines);
+        using CountStubHttpMessageHandler addHandler = new(details);
+        WmsInventoryApiClient addClient = new(CreateHttpClient(addHandler));
+        ApiResult<InventoryCountDetails> addResult = await addClient.TryAddInventoryCountLineAsync(
+            details.Id,
+            new AddInventoryCountLineRequest(
+                line.Sku.Id,
+                line.StorageLocation.Id,
+                details.CountVersion),
+            TestContext.Current.CancellationToken);
+        Assert.True(addResult.IsSuccess);
+        Assert.Equal(HttpMethod.Post, addHandler.Method);
+        Assert.Equal($"/api/wms/inventory/counts/{details.Id}/lines", addHandler.Path);
+
+        using CountStubHttpMessageHandler removeHandler = new(details);
+        WmsInventoryApiClient removeClient = new(CreateHttpClient(removeHandler));
+        ApiResult<InventoryCountDetails> removeResult = await removeClient.TryRemoveInventoryCountLineAsync(
+            details.Id,
+            line.Id,
+            line.LineVersion,
+            TestContext.Current.CancellationToken);
+        Assert.True(removeResult.IsSuccess);
+        Assert.Equal(HttpMethod.Delete, removeHandler.Method);
+        Assert.Equal($"/api/wms/inventory/counts/{details.Id}/lines/{line.Id}", removeHandler.Path);
+        Assert.Contains("expectedLineVersion=", removeHandler.Query);
+    }
+
+    [Fact]
+    public async Task TryCreateInventoryCountAsync_WhenConflict_MapsProblemDetails()
+    {
+        using CountStubHttpMessageHandler handler = new(
+            HttpStatusCode.Conflict,
+            """
+            {"status":409,"title":"Conflict","detail":"Count changed.","code":"InventoryCount.ConcurrencyConflict"}
+            """,
+            "application/problem+json");
+        WmsInventoryApiClient client = new(CreateHttpClient(handler));
+
+        ApiResult<InventoryCountDetails> result = await client.TryCreateInventoryCountAsync(
+            new CreateInventoryCountRequest(Guid.NewGuid(), null),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(409, result.Error?.Status);
+        Assert.Equal("Count changed.", result.Error?.Message);
+    }
+
+    private static HttpClient CreateHttpClient(HttpMessageHandler handler) =>
+        new(handler) { BaseAddress = new Uri("https://myrmex.test") };
+
+    private static InventoryCountDetails CreateDetails()
+    {
+        InventoryCountLineDetails line = new(
+            Guid.Parse("018f0000-0000-7000-8000-000000000101"),
+            "AAAAAAAAB9I=",
+            InventoryCountLineStatusDetails.Pending,
+            true,
+            10,
+            null,
+            null,
+            "AAAAAAAAB9A=",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            DateTimeOffset.Parse("2026-06-24T09:05:00Z"),
+            null,
+            new InventoryCountLineDetails.StockKeepingUnitInfo(
+                Guid.Parse("018f0000-0000-7000-8000-000000000201"),
+                "SKU-001",
+                "Widget",
+                new InventoryCountLineDetails.UnitOfMeasureInfo(
+                    Guid.Parse("018f0000-0000-7000-8000-000000000211"),
+                    "EA",
+                    "ea")),
+            new InventoryCountLineDetails.StorageLocationInfo(
+                Guid.Parse("018f0000-0000-7000-8000-000000000301"),
+                "A-01-01",
+                "A-01-01"));
+
+        return new InventoryCountDetails(
+            Guid.Parse("018f0000-0000-7000-8000-000000000001"),
+            "AAAAAAAAB9E=",
+            InventoryCountStatusDetails.Draft,
+            "Cycle count",
+            DateTimeOffset.Parse("2026-06-24T09:00:00Z"),
+            null,
+            null,
+            null,
+            "operator-001",
+            null,
+            null,
+            new InventoryCountDetails.WarehouseInfo(
+                Guid.Parse("018f0000-0000-7000-8000-000000000401"),
+                "MAIN",
+                "Main Warehouse"),
+            [line]);
+    }
+
+    private sealed class CountStubHttpMessageHandler : HttpMessageHandler
+    {
+        private readonly HttpStatusCode _statusCode;
+        private readonly string _content;
+        private readonly string _mediaType;
+
+        public CountStubHttpMessageHandler(InventoryCountDetails details)
+            : this(
+                HttpStatusCode.OK,
+                JsonSerializer.Serialize(details, JsonOptions),
+                "application/json")
+        {
+        }
+
+        public CountStubHttpMessageHandler(
+            HttpStatusCode statusCode,
+            string content,
+            string mediaType)
+        {
+            _statusCode = statusCode;
+            _content = content;
+            _mediaType = mediaType;
+        }
+
+        public HttpMethod? Method { get; private set; }
+        public string? Path { get; private set; }
+        public string? Query { get; private set; }
+        public string Body { get; private set; } = string.Empty;
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            Method = request.Method;
+            Path = request.RequestUri?.AbsolutePath;
+            Query = request.RequestUri?.Query;
+
+            if (request.Content is not null)
+            {
+                Body = await request.Content.ReadAsStringAsync(cancellationToken);
+            }
+
+            return new HttpResponseMessage(_statusCode)
+            {
+                Content = new StringContent(_content, Encoding.UTF8, _mediaType)
+            };
+        }
+    }
+}

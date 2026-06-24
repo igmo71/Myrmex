@@ -1,0 +1,190 @@
+@using Myrmex.Shared.Wms.Catalog
+@using Myrmex.Shared.Wms.Inventory
+@using Myrmex.Shared.Wms.Topology
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Add count line</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudStack Spacing="3">
+                <MudText Typo="Typo.body2">
+                    Warehouse: @Count.Warehouse.Code - @Count.Warehouse.Name
+                </MudText>
+
+                <MudAutocomplete T="StockKeepingUnitLookupItem"
+                                 Label="SKU"
+                                 Required="true"
+                                 RequiredError="SKU is required."
+                                 Variant="Variant.Outlined"
+                                 Clearable="true"
+                                 MinCharacters="0"
+                                 MaxItems="20"
+                                 DebounceInterval="300"
+                                 SearchFunc="SearchSkusAsync"
+                                 ToStringFunc="FormatSku"
+                                 @bind-Value="_sku" />
+
+                <MudAutocomplete T="StorageLocationLookupItem"
+                                 Label="Storage location"
+                                 Required="true"
+                                 RequiredError="Storage location is required."
+                                 Variant="Variant.Outlined"
+                                 Clearable="true"
+                                 MinCharacters="0"
+                                 MaxItems="20"
+                                 DebounceInterval="300"
+                                 SearchFunc="SearchLocationsAsync"
+                                 ToStringFunc="FormatLocation"
+                                 @bind-Value="_location" />
+
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+                }
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_isSaving">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="SaveAsync"
+                   Disabled="_isSaving">
+            Add line
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public InventoryCountDetails Count { get; set; } = null!;
+
+    [Inject]
+    private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = null!;
+
+    [Inject]
+    private WmsCatalogApiClient WmsCatalogApiClient { get; set; } = null!;
+
+    [Inject]
+    private WmsTopologyApiClient WmsTopologyApiClient { get; set; } = null!;
+
+    private MudForm? _form;
+    private StockKeepingUnitLookupItem? _sku;
+    private StorageLocationLookupItem? _location;
+    private string? _errorMessage;
+    private bool _isSaving;
+
+    private async Task<IEnumerable<StockKeepingUnitLookupItem>> SearchSkusAsync(
+        string value,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await WmsCatalogApiClient.LookupStockKeepingUnitsAsync(
+                new LookupStockKeepingUnitsRequest
+                {
+                    SearchText = value,
+                    Take = 20,
+                    SelectableOnly = true
+                },
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return [];
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            return [];
+        }
+    }
+
+    private async Task<IEnumerable<StorageLocationLookupItem>> SearchLocationsAsync(
+        string value,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await WmsTopologyApiClient.LookupStorageLocationsAsync(
+                Count.Warehouse.Id,
+                new LookupStorageLocationsRequest
+                {
+                    SearchText = value,
+                    Take = 20,
+                    SelectableOnly = true,
+                    ExcludeTransitTypes = true
+                },
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return [];
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            return [];
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid || _sku is null || _location is null)
+        {
+            return;
+        }
+
+        _isSaving = true;
+        _errorMessage = null;
+
+        try
+        {
+            ApiResult<InventoryCountDetails> result =
+                await WmsInventoryApiClient.TryAddInventoryCountLineAsync(
+                    Count.Id,
+                    new AddInventoryCountLineRequest(
+                        _sku.Id,
+                        _location.Id,
+                        Count.CountVersion));
+
+            if (result.IsFailure || result.Value is null)
+            {
+                _errorMessage = result.Error?.Message ?? "Adding the count line failed.";
+                return;
+            }
+
+            MudDialog.Close(DialogResult.Ok(result.Value));
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private static string FormatSku(StockKeepingUnitLookupItem? item) =>
+        item is null ? string.Empty : $"{item.Code} - {item.Name}";
+
+    private static string FormatLocation(StorageLocationLookupItem? item) =>
+        item is null ? string.Empty : $"{item.Code} - {item.Name}";
+}

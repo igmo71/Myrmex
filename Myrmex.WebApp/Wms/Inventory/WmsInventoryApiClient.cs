@@ -8,6 +8,51 @@ namespace Myrmex.WebApp.Wms.Inventory;
 
 public sealed class WmsInventoryApiClient(HttpClient httpClient)
 {
+    public async Task<ApiResult<InventoryCountDetails>> TryCreateInventoryCountAsync(
+        CreateInventoryCountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<InventoryCountDetails>(
+            "/api/wms/inventory/counts",
+            request,
+            cancellationToken);
+    }
+
+    public async Task<InventoryCountDetails> GetInventoryCountByIdAsync(
+        Guid inventoryCountId,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.GetRequiredAsync<InventoryCountDetails>(
+            $"/api/wms/inventory/counts/{inventoryCountId}",
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<InventoryCountDetails>> TryAddInventoryCountLineAsync(
+        Guid inventoryCountId,
+        AddInventoryCountLineRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<InventoryCountDetails>(
+            $"/api/wms/inventory/counts/{inventoryCountId}/lines",
+            request,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<InventoryCountDetails>> TryRemoveInventoryCountLineAsync(
+        Guid inventoryCountId,
+        Guid lineId,
+        string expectedLineVersion,
+        CancellationToken cancellationToken = default)
+    {
+        string url =
+            $"/api/wms/inventory/counts/{inventoryCountId}/lines/{lineId}" +
+            $"?expectedLineVersion={HttpUtility.UrlEncode(expectedLineVersion)}";
+
+        return await httpClient.DeleteAsApiResultAsync<InventoryCountDetails>(
+            url,
+            cancellationToken);
+    }
+
     public async Task<ListResult<InventoryBalanceDetails>> ListInventoryBalancesAsync(
         ListInventoryBalancesRequest request,
         CancellationToken cancellationToken = default)

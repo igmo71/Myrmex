@@ -109,4 +109,32 @@ internal static class WmsDatabaseNames
     public const string InventoryTransferMovementInventoryTransactionIdIndex = "IX_wms_inventory_transfer_movements_inventory_transaction_id";
     public const string InventoryTransferMovementFromStorageLocationIdIndex = "IX_wms_inventory_transfer_movements_from_storage_location_id";
     public const string InventoryTransferMovementToStorageLocationIdIndex = "IX_wms_inventory_transfer_movements_to_storage_location_id";
+
+    public const int InventoryCountReasonMaxLength = 500;
+    public const int InventoryCountActorIdMaxLength = 256;
+    public const int InventoryCountStatusMaxLength = 32;
+    public const int InventoryCountLineStatusMaxLength = 32;
+    public const int InventoryCountLineCommentMaxLength = 500;
+
+    public const string InventoryCountsTable = "inventory_counts";
+    public const string InventoryCountPrimaryKey = "PK_wms_inventory_counts";
+    public const string InventoryCountWarehouseForeignKey = "FK_wms_inventory_counts_warehouses_warehouse_id";
+    public const string InventoryCountWarehouseIdIndex = "IX_wms_inventory_counts_warehouse_id";
+    public const string InventoryCountStatusIndex = "IX_wms_inventory_counts_status";
+    public const string InventoryCountCreatedAtUtcIndex = "IX_wms_inventory_counts_created_at_utc";
+
+    public const string InventoryCountLinesTable = "inventory_count_lines";
+    public const string InventoryCountLinePrimaryKey = "PK_wms_inventory_count_lines";
+    public const string InventoryCountLineInventoryCountForeignKey = "FK_wms_inventory_count_lines_inventory_counts_inventory_count_id";
+    public const string InventoryCountLineStockKeepingUnitForeignKey = "FK_wms_inventory_count_lines_stock_keeping_units_stock_keeping_unit_id";
+    public const string InventoryCountLineStorageLocationForeignKey = "FK_wms_inventory_count_lines_storage_locations_storage_location_id";
+    public const string InventoryCountLineAppliedInventoryTransactionForeignKey = "FK_wms_inventory_count_lines_inventory_transactions_applied_inventory_transaction_id";
+    public const string InventoryCountLineSupersedesForeignKey = "FK_wms_inventory_count_lines_inventory_count_lines_supersedes_inventory_count_line_id";
+    public const string InventoryCountLineInventoryCountIdIndex = "IX_wms_inventory_count_lines_inventory_count_id";
+    public const string InventoryCountLineStockKeepingUnitIdIndex = "IX_wms_inventory_count_lines_stock_keeping_unit_id";
+    public const string InventoryCountLineStorageLocationIdIndex = "IX_wms_inventory_count_lines_storage_location_id";
+    public const string InventoryCountLineStatusIndex = "IX_wms_inventory_count_lines_status";
+    public const string InventoryCountLineCurrentPairUniqueIndex = "UX_wms_inventory_count_lines_current_pair";
+    public const string InventoryCountLineAppliedInventoryTransactionUniqueIndex = "UX_wms_inventory_count_lines_applied_inventory_transaction_id";
+    public const string InventoryCountLineSupersedesUniqueIndex = "UX_wms_inventory_count_lines_supersedes_inventory_count_line_id";
 }
