@@ -1,0 +1,46 @@
+@page "/wms/inventory/counts"
+@using Myrmex.Shared.Wms.Inventory
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Inventory Counts</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pt-4">
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <div>
+                <MudText Typo="Typo.h5">Inventory Counts</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Create a count and prepare SKU/location snapshot lines.
+                </MudText>
+            </div>
+            <MudButton Color="Color.Primary"
+                       Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="CreateAsync">
+                Create count
+            </MudButton>
+        </MudStack>
+
+        <MudAlert Severity="Severity.Info">
+            Count list and history are delivered in the Review Count History phase.
+        </MudAlert>
+    </MudStack>
+</MudContainer>
+
+@code {
+    private async Task CreateAsync()
+    {
+        IDialogReference dialog = await DialogService.ShowAsync<CreateInventoryCountDialog>(
+            "Create inventory count",
+            new DialogOptions { CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.Small });
+        DialogResult? result = await dialog.Result;
+
+        if (result is not null &&
+            !result.Canceled &&
+            result.Data is InventoryCountDetails count)
+        {
+            NavigationManager.NavigateTo($"/wms/inventory/counts/{count.Id}");
+        }
+    }
+}
