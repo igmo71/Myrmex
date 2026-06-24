@@ -32,5 +32,5 @@
 ## Notes
 
 - Validation iteration 1 completed on 2026-06-24.
-- Clarified MVP conflict handling: a Conflict line remains immutable audit evidence and may be superseded by a fresh Pending line for the same SKU/location pair within the same count. The superseding line captures a new system quantity and inventory-state snapshot. This is a limited conflict-recovery flow, not a broader recount or approval workflow.
+- Clarified MVP conflict handling: a Conflict line is immutable audit evidence and may be superseded by a fresh Pending line for the same SKU/location pair within the same count. The superseding line captures a new system quantity and inventory-state snapshot. This is a limited conflict-recovery flow, not a broader recount or approval workflow.
 - All checklist items pass. No clarification markers remain.
