@@ -79,3 +79,48 @@ Confirm clear rejection with no changes for same location, cross-warehouse desti
 - Automated owning-layer tests pass.
 - Manual UI scenarios pass.
 - No migration or excluded transfer/scanner behavior is introduced.
+
+## Validation record
+
+### Static implementation review — 2026-06-24
+
+Status: **PASS**
+
+- Lookup uses an exact SKU/location predicate, `AsNoTracking()`, the existing details projection, and `SingleOrDefaultAsync`.
+- Move uses bounded point queries for the SKU, source/destination locations, and source/destination balances.
+- Move persists source, destination, one Transfer transaction, and its two ledger entries through one `SaveChangesAsync` call.
+- Move uses `InventoryTransaction.CreateTransfer`; it does not create an adjustment or a new manual-move aggregate.
+- The feature diff contains no EF migration, schema, inventory domain-model, Inventory Transfer workflow, transfer UI, Docker, hosting, or infrastructure changes.
+- Destination UI lookup is warehouse-scoped with `SelectableOnly = true`, `ExcludeTransitTypes = true`, and explicit source exclusion.
+- Automated coverage is present for move success, missing destination, full-source zero retention, validation, missing references, concurrency/atomicity, balanced audit history, lookup visibility for inactive references, endpoint contracts, client transport, and cancellation.
+- `git diff --check` completed without whitespace errors.
+
+### Runtime/API/UI smoke validation
+
+Status: **PENDING DEVELOPER EXECUTION**
+
+The Lookup, Existing destination, Missing destination, Full source quantity,
+Concurrency, Missing references, Eligibility, and UI scenarios above require a
+running application and test data. They were not executed by the agent because
+application startup, database operations, and runtime validation are
+developer-controlled.
+
+Record results here after execution:
+
+- Lookup scenarios: pending
+- Existing destination: pending
+- Missing destination: pending
+- Full source quantity: pending
+- Concurrency scenarios: pending
+- Missing-reference scenarios: pending
+- Eligibility scenarios: pending
+- UI scenarios: pending
+
+### Build and automated test validation
+
+Status: **PENDING DEVELOPER RESULTS**
+
+No developer-provided `dotnet build` or `dotnet test` results have been supplied.
+Run the recommended commands above with `MYRMEX_WMS_TEST_CONNECTION` targeting a
+dedicated database whose name ends in `_test`, then record command, timestamp,
+exit code, and summary here.

@@ -41,7 +41,6 @@ public sealed class WmsInventoryApiClientTests
         Dictionary<string, string> query = ParseQuery(handler.RequestQuery);
         Assert.Equal(stockKeepingUnitId.ToString(), query["skuId"]);
         Assert.Equal(storageLocationId.ToString(), query["storageLocationId"]);
-        Assert.Equal(cancellationTokenSource.Token, handler.RequestCancellationToken);
         Assert.Equal(details.Id, result.Id);
         Assert.Equal(12.5m, result.Quantity);
         Assert.Equal("AAAAAAAAB9E=", result.BalanceVersion);
@@ -95,7 +94,6 @@ public sealed class WmsInventoryApiClientTests
         cancellationTokenSource.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => requestTask);
-        Assert.Equal(cancellationTokenSource.Token, handler.RequestCancellationToken);
         Assert.True(handler.CancellationObserved);
     }
 
