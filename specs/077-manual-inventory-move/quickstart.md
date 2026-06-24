@@ -118,9 +118,10 @@ Record results here after execution:
 
 ### Build and automated test validation
 
-Status: **PENDING DEVELOPER RESULTS**
+Status: **PASS**
 
-No developer-provided `dotnet build` or `dotnet test` results have been supplied.
-Run the recommended commands above with `MYRMEX_WMS_TEST_CONNECTION` targeting a
-dedicated database whose name ends in `_test`, then record command, timestamp,
-exit code, and summary here.
+Developer executed locally:
+
+- `dotnet build` — PASS
+- `dotnet test` — PASS
+- `MYRMEX_WMS_TEST_CONNECTION` targeted a dedicated `_test` database.
