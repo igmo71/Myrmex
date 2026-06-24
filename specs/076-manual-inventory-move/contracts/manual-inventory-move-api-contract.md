@@ -66,12 +66,22 @@ Endpoint: `MoveInventoryBalance`
 ### Failures
 
 - `400 Bad Request`: malformed required values/version, non-positive quantity, invalid reason, same location, inactive SKU/location/type/status, cross-warehouse location, or transit location.
-- `404 Not Found`: required reference not found according to existing conventions.
-- `409 Conflict`: source absent/stale/insufficient, destination changed concurrently, or concurrent destination insertion.
+- `404 Not Found` means a requested reference or lookup target does not exist:
+  - the requested lookup has no exact balance for `skuId + storageLocationId`;
+  - the move references a SKU that does not exist;
+  - the move references a source storage location that does not exist;
+  - the move references a destination storage location that does not exist.
+- `409 Conflict` means inventory state changed or cannot be safely committed based on the submitted state:
+  - the SKU and source location exist, but the source balance is missing at commit time;
+  - the submitted source balance version is stale;
+  - the source quantity is insufficient;
+  - an existing destination balance changed concurrently;
+  - another request concurrently created the previously missing destination balance.
+
+A missing destination balance before the move is not an error. The successful operation creates the destination balance with a prior quantity of zero.
 
 Clients refresh current balances and require retry. The server does not replay the operation.
 
 ### Persisted outcome
 
 Every success retains the source row, updates or creates destination, creates one `Transfer` transaction and exactly two balanced entries, and creates no Inventory Transfer or adjustment record.
-

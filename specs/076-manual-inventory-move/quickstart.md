@@ -46,9 +46,20 @@ Move the entire source quantity and confirm the source row remains with zero qua
 ## Concurrency
 
 1. Submit with a stale source version; confirm 409 and no persisted effects.
-2. Submit more than available; confirm conflict and no effects.
-3. Run two moves to the same existing destination; confirm one succeeds and one conflicts.
-4. Repeat with a missing destination; confirm one row is created and the competing request conflicts without partial effects.
+2. Submit more than available; confirm 409 and no effects.
+3. Remove the source balance while retaining the SKU and source location references; confirm 409 and no persisted effects.
+4. Run two moves to the same existing destination; confirm one succeeds and one returns 409.
+5. Repeat with a missing destination; confirm one row is created and the competing request returns 409 without partial effects.
+
+## Missing references
+
+Confirm `404 Not Found` for each independently missing reference:
+
+- SKU;
+- source storage location;
+- destination storage location.
+
+Confirm that a missing destination balance is not an error: a valid move creates it with a prior quantity of zero.
 
 ## Eligibility
 
@@ -68,4 +79,3 @@ Confirm clear rejection with no changes for same location, cross-warehouse desti
 - Automated owning-layer tests pass.
 - Manual UI scenarios pass.
 - No migration or excluded transfer/scanner behavior is introduced.
-

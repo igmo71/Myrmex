@@ -107,11 +107,36 @@ Identity is exact `(StockKeepingUnitId, StorageLocationId)`.
 
 ## Error model
 
-- **Validation**: malformed required values/version, quantity/reason, same location, inactive or ineligible references, cross-warehouse, transit.
-- **Not found**: absent lookup balance or independently loaded required reference.
-- **Conflict**: absent/stale source, insufficient quantity, destination rowversion race, or duplicate destination insert.
+Use this distinction consistently:
+
+- `404 Not Found` means a requested reference or lookup target does not exist.
+- `409 Conflict` means inventory state changed or cannot be safely committed based on the submitted state.
+
+### Validation
+
+- Malformed required values or source version.
+- Non-positive quantity or invalid reason.
+- Same source and destination.
+- Inactive or otherwise ineligible existing references.
+- Cross-warehouse or transit location.
+
+### Not found
+
+- Balance lookup has no exact row for the requested `skuId + storageLocationId`.
+- Move request references a SKU that does not exist.
+- Move request references a source storage location that does not exist.
+- Move request references a destination storage location that does not exist.
+
+### Conflict
+
+- The SKU and source location exist, but the source balance is missing at commit time.
+- The source balance version is stale.
+- The source balance quantity is insufficient.
+- An existing destination balance changed concurrently.
+- Another request concurrently created the previously missing destination balance.
+
+A missing destination balance before the move is valid state, not an error. The successful move creates it with a prior quantity of zero.
 
 ## Persistence impact
 
 No tables, columns, indexes, relationships, or migration are added.
-

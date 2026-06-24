@@ -96,7 +96,7 @@ Myrmex.Tests/Wms/Inventory/
 - **Backend-owned projection**: Reuse `ProjectDetailsData()` and convert rowversion after materialization. Lookup applies no active-state predicate. Post-move result reloads both balances through the same projection.
 - **Server-driven list behavior**: Existing balance list filtering, count-before-paging, deterministic sorting, paging, and result shape remain unchanged.
 - **Client/grid behavior**: Add Move beside History and Adjust. The dialog searches the source warehouse with `SelectableOnly = true` and `ExcludeTransitTypes = true`, excludes the source ID, submits the row version, shows a result summary, and reloads the grid after success/conflict.
-- **Cancellation and errors**: Propagate cancellation end-to-end. Move returns `ApiResult<MoveInventoryBalanceResult>`; lookup uses existing read/load behavior. Validation is 400, absent lookup/reference is 404, and stale/insufficient/concurrent balance state is 409.
+- **Cancellation and errors**: Propagate cancellation end-to-end. Move returns `ApiResult<MoveInventoryBalanceResult>`; lookup uses existing read/load behavior. `404 Not Found` is reserved for a missing lookup target or missing SKU/source-location/destination-location reference. `409 Conflict` is reserved for a missing source balance at commit, stale source version, insufficient source quantity, destination rowversion conflict, or concurrent destination creation.
 - **Risk-based testing**: Handler tests protect quantities, eligibility, concurrency, ledger, and atomicity. Existing domain tests already protect transfer transaction invariants. Endpoint/client tests protect route/body/result boundaries. UI uses manual smoke validation.
 - **Existing pattern precedence**: Follow `AdjustInventoryBalance` for Base64 source version, `MoveInventoryTransferLine` for two-balance ledger orchestration, `GetInventoryBalanceById` for projection, `LookupStorageLocations` for destination search, and `AdjustInventoryBalanceDialog` for form/error behavior.
 
@@ -107,7 +107,7 @@ Myrmex.Tests/Wms/Inventory/
 1. Bind `skuId` and `storageLocationId` from `GET /api/wms/inventory/balances/lookup`.
 2. Query the exact pair with `AsNoTracking()` and `ProjectDetailsData()`.
 3. Return current details even when related SKU/location/type/status is inactive.
-4. Return not found only when no balance row exists. Do not create a balance or apply move eligibility.
+4. Return `404 Not Found` only when no exact balance row exists for the requested SKU/location pair. Do not create a balance or apply move eligibility.
 
 ### Move Validation and Eligibility
 
@@ -117,9 +117,10 @@ Validate before mutation:
 2. Positive quantity; trimmed required reason within `ReasonMaxLength`.
 3. Valid Base64 source version decoding to the SQL Server rowversion length.
 4. Different source/destination IDs.
-5. Existing source balance, matching version, and sufficient quantity.
-6. Existing active SKU. Base UoM activity is not a manual-move rule.
-7. Existing active source/destination locations with active type/status, same warehouse, and types other than `INTERNAL_TRANSIT`/`EXTERNAL_TRANSIT`.
+5. Existing SKU, source location, and destination location references; a missing reference returns `404 Not Found`.
+6. Active SKU. Base UoM activity is not a manual-move rule.
+7. Active source/destination locations with active type/status, same warehouse, and types other than `INTERNAL_TRANSIT`/`EXTERNAL_TRANSIT`.
+8. Existing source balance, matching version, and sufficient quantity; failure of these submitted-state checks returns `409 Conflict`.
 
 The handler is authoritative even when UI lookup has filtered destinations.
 
@@ -139,15 +140,16 @@ No Inventory Transfer, transfer movement, or adjustment record is created.
 
 ### Concurrency and Atomicity
 
-- Explicit source comparison returns `InventoryBalance.ConcurrencyConflict` for absent/stale source state.
+- Explicit source comparison returns `InventoryBalance.ConcurrencyConflict` when the SKU/source-location references exist but the source balance is missing at commit, or when the source balance version is stale.
 - EF rowversion protects existing source and destination rows; `DbUpdateConcurrencyException` returns 409 and is not retried.
 - The existing SKU/location unique index rejects concurrent creation of the same destination and returns 409.
+- A missing destination balance before mutation is valid and is created by the successful move; only a concurrent creation race is a conflict.
 - One relational save is the persisted atomicity boundary for both balances, transaction, and entries.
 - Failed tracked state is not reused and the server does not replay the operation.
 
 ### Test Plan
 
-- SQL Server-backed handlers: existing/missing destination success, full-source zero, one Transfer transaction/two entries, stale/missing/insufficient source, invalid reason/version, same/cross-warehouse/transit/inactive references, destination rowversion conflict, and duplicate destination insertion without partial persistence where practical.
+- SQL Server-backed handlers: existing/missing destination success, full-source zero, one Transfer transaction/two entries, missing SKU/source-location/destination-location references as 404, missing source balance at commit as 409, stale/insufficient source, invalid reason/version, same/cross-warehouse/transit/inactive references, destination rowversion conflict, and duplicate destination insertion without partial persistence where practical.
 - Lookup handler: active/inactive references return details; missing pair returns not found.
 - Domain: rely on current `InventoryTransaction.CreateTransfer` coverage unless its factory changes.
 - Endpoint: query/body dispatch, success serialization, representative 404/409 mapping.
