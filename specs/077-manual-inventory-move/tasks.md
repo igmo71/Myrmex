@@ -87,15 +87,15 @@
 
 ### Tests for User Story 3
 
-- [ ] T016 [US3] Write handler tests for exact-pair details, current balance version, inactive SKU/location/type/status visibility, missing-pair not found, and cancellation in `Myrmex.Tests/Wms/Inventory/Features/InventoryBalances/GetInventoryBalanceBySkuAndStorageLocationHandlerTests.cs`
-- [ ] T017 [P] [US3] Add focused GET query binding, shared details serialization, 404 ProblemDetails, and cancellation dispatch tests in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryBalanceEndpointTests.cs`
-- [ ] T018 [P] [US3] Add API-client tests for the exact encoded lookup URL, shared details mapping, cancellation propagation, and read/load not-found behavior in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [X] T016 [US3] Write handler tests for exact-pair details, current balance version, inactive SKU/location/type/status visibility, missing-pair not found, and cancellation in `Myrmex.Tests/Wms/Inventory/Features/InventoryBalances/GetInventoryBalanceBySkuAndStorageLocationHandlerTests.cs`
+- [X] T017 [P] [US3] Add focused GET query binding, shared details serialization, 404 ProblemDetails, and cancellation dispatch tests in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryBalanceEndpointTests.cs`
+- [X] T018 [P] [US3] Add API-client tests for the exact encoded lookup URL, shared details mapping, cancellation propagation, and read/load not-found behavior in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation for User Story 3
 
-- [ ] T019 [US3] Implement the exact-pair `AsNoTracking` query, existing details projection, post-materialization rowversion conversion, and not-found result in `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/GetInventoryBalanceBySkuAndStorageLocation.cs`
-- [ ] T020 [US3] Map `GET /balances/lookup?skuId={skuId}&storageLocationId={storageLocationId}` before the `{inventoryBalanceId:guid}` route and dispatch the internal query in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs`
-- [ ] T021 [US3] Add `GetInventoryBalanceBySkuAndStorageLocationAsync` with exact query construction and cancellation propagation in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [X] T019 [US3] Implement the exact-pair `AsNoTracking` query, existing details projection, post-materialization rowversion conversion, and not-found result in `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/GetInventoryBalanceBySkuAndStorageLocation.cs`
+- [X] T020 [US3] Map `GET /balances/lookup?skuId={skuId}&storageLocationId={storageLocationId}` before the `{inventoryBalanceId:guid}` route and dispatch the internal query in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryBalanceEndpoints.cs`
+- [X] T021 [US3] Add `GetInventoryBalanceBySkuAndStorageLocationAsync` with exact query construction and cancellation propagation in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
 
 **Checkpoint**: Scanner-ready lookup reports actual persisted balance state independently of move eligibility.
 

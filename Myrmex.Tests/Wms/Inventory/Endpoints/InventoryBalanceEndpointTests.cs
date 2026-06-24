@@ -19,6 +19,81 @@ namespace Myrmex.Tests.Wms.Inventory.Endpoints;
 public sealed class InventoryBalanceEndpointTests
 {
     [Fact]
+    public async Task GetInventoryBalanceBySkuAndStorageLocationAsync_BindsQueryAndSerializesDetails()
+    {
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
+        Guid storageLocationId = Guid.Parse("018f0000-0000-7000-8000-000000000201");
+        Guid warehouseId = Guid.Parse("018f0000-0000-7000-8000-000000000301");
+        InventoryBalanceDetails details = CreateInventoryBalanceDetails(
+            stockKeepingUnitId,
+            storageLocationId,
+            warehouseId);
+        RecordingQueryDispatcher queryDispatcher = new(details);
+        await using WebApplication app = CreateInventoryEndpointApp(queryDispatcher);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient httpClient = CreateHttpClient(app);
+            using HttpResponseMessage response = await httpClient.GetAsync(
+                $"/api/wms/inventory/balances/lookup?skuId={stockKeepingUnitId}&storageLocationId={storageLocationId}",
+                cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+            Assert.NotNull(queryDispatcher.CapturedLookupQuery);
+            Assert.Equal(
+                stockKeepingUnitId,
+                queryDispatcher.CapturedLookupQuery.StockKeepingUnitId);
+            Assert.Equal(
+                storageLocationId,
+                queryDispatcher.CapturedLookupQuery.StorageLocationId);
+            Assert.True(queryDispatcher.CapturedLookupCancellationToken.CanBeCanceled);
+
+            using JsonDocument json = JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync(cancellationToken));
+            Assert.Equal(details.Id, json.RootElement.GetProperty("id").GetGuid());
+            Assert.Equal(
+                details.BalanceVersion,
+                json.RootElement.GetProperty("balanceVersion").GetString());
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
+    [Fact]
+    public async Task GetInventoryBalanceBySkuAndStorageLocationAsync_WhenMissing_Returns404ProblemDetails()
+    {
+        ServiceError error = ServiceError.NotFound<
+            Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances.InventoryBalance>(
+            "Inventory balance not found.");
+        RecordingQueryDispatcher queryDispatcher = new(
+            ServiceResult<InventoryBalanceDetails>.Fail(error));
+        await using WebApplication app = CreateInventoryEndpointApp(queryDispatcher);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient httpClient = CreateHttpClient(app);
+            using HttpResponseMessage response = await httpClient.GetAsync(
+                $"/api/wms/inventory/balances/lookup?skuId={Guid.NewGuid()}&storageLocationId={Guid.NewGuid()}",
+                cancellationToken);
+
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            using JsonDocument json = JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync(cancellationToken));
+            Assert.Equal(error.Code, json.RootElement.GetProperty("code").GetString());
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
+    [Fact]
     public async Task MoveInventoryBalanceAsync_BindsBodyAndSerializesResult()
     {
         Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
@@ -274,9 +349,27 @@ public sealed class InventoryBalanceEndpointTests
                     "Main Warehouse")));
     }
 
-    private sealed class RecordingQueryDispatcher(InventoryBalanceDetails details) : IQueryDispatcher
+    private sealed class RecordingQueryDispatcher : IQueryDispatcher
     {
+        private readonly InventoryBalanceDetails? _details;
+        private readonly ServiceResult<InventoryBalanceDetails> _lookupResult;
+
+        public RecordingQueryDispatcher(InventoryBalanceDetails details)
+        {
+            _details = details;
+            _lookupResult = ServiceResult<InventoryBalanceDetails>.Success(details);
+        }
+
+        public RecordingQueryDispatcher(ServiceResult<InventoryBalanceDetails> lookupResult)
+        {
+            _lookupResult = lookupResult;
+        }
+
         public ListInventoryBalances.Query? CapturedListQuery { get; private set; }
+
+        public GetInventoryBalanceBySkuAndStorageLocation.Query? CapturedLookupQuery { get; private set; }
+
+        public CancellationToken CapturedLookupCancellationToken { get; private set; }
 
         public Task<TResult> DispatchAsync<TQuery, TResult>(
             TQuery query,
@@ -288,6 +381,9 @@ public sealed class InventoryBalanceEndpointTests
                 typeof(TResult) == typeof(ServiceResult<ListResult<InventoryBalanceDetails>>))
             {
                 CapturedListQuery = listQuery;
+                InventoryBalanceDetails details = _details
+                    ?? throw new InvalidOperationException(
+                        "List details were not configured for this dispatcher.");
 
                 ServiceResult<ListResult<InventoryBalanceDetails>> result =
                     ServiceResult<ListResult<InventoryBalanceDetails>>.Success(
@@ -298,6 +394,15 @@ public sealed class InventoryBalanceEndpointTests
                             listQuery.Take));
 
                 return Task.FromResult((TResult)(object)result);
+            }
+
+            if (query is GetInventoryBalanceBySkuAndStorageLocation.Query lookupQuery &&
+                typeof(TResult) == typeof(ServiceResult<InventoryBalanceDetails>))
+            {
+                CapturedLookupQuery = lookupQuery;
+                CapturedLookupCancellationToken = cancellationToken;
+
+                return Task.FromResult((TResult)(object)_lookupResult);
             }
 
             throw new NotSupportedException($"Unexpected query type {typeof(TQuery).FullName}.");

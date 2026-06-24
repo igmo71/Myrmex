@@ -38,6 +38,20 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
+    public async Task<InventoryBalanceDetails> GetInventoryBalanceBySkuAndStorageLocationAsync(
+        Guid stockKeepingUnitId,
+        Guid storageLocationId,
+        CancellationToken cancellationToken = default)
+    {
+        string url =
+            $"/api/wms/inventory/balances/lookup?skuId={stockKeepingUnitId}" +
+            $"&storageLocationId={storageLocationId}";
+
+        return await httpClient.GetRequiredAsync<InventoryBalanceDetails>(
+            url,
+            cancellationToken);
+    }
+
     public async Task<ApiResult<MoveInventoryBalanceResult>> TryMoveInventoryBalanceAsync(
         MoveInventoryBalanceRequest request,
         CancellationToken cancellationToken = default)
