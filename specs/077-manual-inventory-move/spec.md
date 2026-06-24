@@ -169,7 +169,7 @@ As a future scanner client, I need to retrieve the current inventory balance for
 ## Assumptions
 
 - The current branch `077-implement-manual-inventory-move` is the intended feature branch; branch creation was explicitly skipped.
-- Spec Kit directory numbering is independent from branch numbering, so this feature is stored in `specs/076-manual-inventory-move`.
+- Spec Kit directory numbering is independent from branch numbering, so this feature is stored in `specs/077-manual-inventory-move`.
 - The operator has existing permission to view inventory balances and perform inventory operations; new roles or permission models are outside this feature.
 - The physical relocation is performed or controlled by the operator; this feature records the move and does not orchestrate warehouse routing.
 - Existing inventory balance, inventory transaction, inventory ledger, storage-location lookup, and Inventory Balance details concepts are available for reuse during planning.

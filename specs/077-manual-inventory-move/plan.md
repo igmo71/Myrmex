@@ -1,8 +1,8 @@
 # Implementation Plan: Manual Inventory Move
 
-**Branch**: `077-implement-manual-inventory-move` | **Date**: 2026-06-24 | **Spec**: `specs/076-manual-inventory-move/spec.md`
+**Branch**: `077-implement-manual-inventory-move` | **Date**: 2026-06-24 | **Spec**: `specs/077-manual-inventory-move/spec.md`
 
-**Input**: Feature specification from `specs/076-manual-inventory-move/spec.md`, stakeholder document `StakeholderDocs/Wms/Inventory/077 Implement Manual Inventory Move.md`, project governance, and current Inventory Balance, Inventory Adjustment, Inventory Transfer, ledger, topology lookup, WebApp, and test implementations.
+**Input**: Feature specification from `specs/077-manual-inventory-move/spec.md`, stakeholder document `StakeholderDocs/Wms/Inventory/077 Implement Manual Inventory Move.md`, project governance, and current Inventory Balance, Inventory Adjustment, Inventory Transfer, ledger, topology lookup, WebApp, and test implementations.
 
 ## Summary
 
@@ -45,7 +45,7 @@ Add an ad-hoc inventory movement vertical slice that moves one SKU quantity betw
 ### Documentation (this feature)
 
 ```text
-specs/076-manual-inventory-move/
+specs/077-manual-inventory-move/
 ├── plan.md
 ├── research.md
 ├── data-model.md
