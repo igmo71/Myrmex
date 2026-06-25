@@ -116,7 +116,7 @@ internal static class AddInventoryCountLine
             }
 
             InventoryCountLine? addedLine = line
-                 ?? throw new InvalidOperationException("InventoryCount.AddLine returned a valid result without a line.");
+                ?? throw new InvalidOperationException("InventoryCount.AddLine returned a valid result without a line.");
 
             dbContext.InventoryCountLines.Add(addedLine!);
 

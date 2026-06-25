@@ -28,6 +28,7 @@ internal static class SupersedeInventoryCountLine
             CancellationToken cancellationToken = default)
         {
             List<DomainValidationFailure> errors = Validate(command, out byte[]? expectedVersion);
+
             if (errors.Count > 0)
             {
                 return ServiceResult<InventoryCountDetails>.Invalid(errors);
@@ -35,9 +36,8 @@ internal static class SupersedeInventoryCountLine
 
             InventoryCount? count = await dbContext.InventoryCounts
                 .Include(x => x.Lines)
-                .SingleOrDefaultAsync(
-                    x => x.Id == command.InventoryCountId!.Value,
-                    cancellationToken);
+                .SingleOrDefaultAsync(x => x.Id == command.InventoryCountId!.Value, cancellationToken);
+
             if (count is null)
             {
                 return ServiceResult<InventoryCountDetails>.Fail(
@@ -46,8 +46,9 @@ internal static class SupersedeInventoryCountLine
                         nameof(Command.InventoryCountId)));
             }
 
-            InventoryCountLine? line = count.Lines.SingleOrDefault(
-                x => x.Id == command.LineId!.Value);
+            InventoryCountLine? line = count.Lines
+                .SingleOrDefault(x => x.Id == command.LineId!.Value);
+
             if (line is null)
             {
                 return ServiceResult<InventoryCountDetails>.Fail(
@@ -55,11 +56,11 @@ internal static class SupersedeInventoryCountLine
                         "InventoryCountLine not found",
                         nameof(Command.LineId)));
             }
+
             if (!line.RowVersion.SequenceEqual(expectedVersion!))
             {
                 return ServiceResult<InventoryCountDetails>.Fail(
-                    InventoryCountErrors.LineConcurrency(
-                        nameof(Command.ExpectedLineVersion)));
+                    InventoryCountErrors.LineConcurrency(nameof(Command.ExpectedLineVersion)));
             }
 
             InventoryBalance? balance = await dbContext.InventoryBalances
@@ -68,11 +69,13 @@ internal static class SupersedeInventoryCountLine
                     x => x.StockKeepingUnitId == line.StockKeepingUnitId &&
                          x.StorageLocationId == line.StorageLocationId,
                     cancellationToken);
+
             DomainValidationResult result = count.SupersedeLine(
                 line.Id,
                 balance?.Quantity ?? 0,
                 balance?.RowVersion,
                 out InventoryCountLine? replacement);
+
             if (!result.IsValid)
             {
                 return ServiceResult<InventoryCountDetails>.Fail(
@@ -81,7 +84,11 @@ internal static class SupersedeInventoryCountLine
                         nameof(InventoryCountLine.Status)));
             }
 
-            dbContext.InventoryCountLines.Add(replacement!);
+            InventoryCountLine createdReplacement = replacement
+                ?? throw new InvalidOperationException("InventoryCount.SupersedeLine returned a valid result without a replacement.");
+
+            dbContext.InventoryCountLines.Add(createdReplacement);
+
             try
             {
                 await dbContext.SaveChangesAsync(cancellationToken);
@@ -89,8 +96,7 @@ internal static class SupersedeInventoryCountLine
             catch (DbUpdateConcurrencyException)
             {
                 return ServiceResult<InventoryCountDetails>.Fail(
-                    InventoryCountErrors.LineConcurrency(
-                        nameof(Command.ExpectedLineVersion)));
+                    InventoryCountErrors.LineConcurrency(nameof(Command.ExpectedLineVersion)));
             }
             catch (DbUpdateException exception)
                 when (exception.ToString().Contains(
@@ -108,14 +114,9 @@ internal static class SupersedeInventoryCountLine
 
             logger.LogInformation(
                 "Inventory count line {LineId} in count {InventoryCountId} superseded by replacement {ReplacementLineId} for actor {ActorId}.",
-                line.Id,
-                count.Id,
-                replacement!.Id,
-                command.ActorId);
-            return await CreateInventoryCount.LoadDetailsAsync(
-                dbContext,
-                count.Id,
-                cancellationToken);
+                line.Id, count.Id, replacement!.Id, command.ActorId);
+
+            return await CreateInventoryCount.LoadDetailsAsync(dbContext, count.Id, cancellationToken);
         }
 
         private static List<DomainValidationFailure> Validate(
