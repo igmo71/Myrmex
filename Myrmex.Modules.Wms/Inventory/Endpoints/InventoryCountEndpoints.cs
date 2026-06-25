@@ -43,6 +43,14 @@ internal static class InventoryCountEndpoints
             .WithName("SupersedeInventoryCountLine")
             .WithSummary("Supersede Conflicted Inventory Count Line");
 
+        group.MapPost("/counts/{inventoryCountId:guid}/complete", CompleteInventoryCountAsync)
+            .WithName("CompleteInventoryCount")
+            .WithSummary("Complete Inventory Count");
+
+        group.MapPost("/counts/{inventoryCountId:guid}/cancel", CancelInventoryCountAsync)
+            .WithName("CancelInventoryCount")
+            .WithSummary("Cancel Inventory Count");
+
         return group;
     }
 
@@ -69,6 +77,54 @@ internal static class InventoryCountEndpoints
                 command,
                 cancellationToken);
 
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> CompleteInventoryCountAsync(
+        Guid inventoryCountId,
+        ChangeInventoryCountStatusRequest request,
+        HttpContext httpContext,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken = default)
+    {
+        string? actorId = httpContext.GetActorId();
+        if (actorId is null)
+        {
+            return UnauthorizedResult();
+        }
+
+        var command = new CompleteInventoryCount.Command(
+            inventoryCountId,
+            request.ExpectedCountVersion,
+            actorId);
+        ServiceResult<InventoryCountDetails> result = await commandDispatcher
+            .DispatchAsync<CompleteInventoryCount.Command, ServiceResult<InventoryCountDetails>>(
+                command,
+                cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> CancelInventoryCountAsync(
+        Guid inventoryCountId,
+        ChangeInventoryCountStatusRequest request,
+        HttpContext httpContext,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken = default)
+    {
+        string? actorId = httpContext.GetActorId();
+        if (actorId is null)
+        {
+            return UnauthorizedResult();
+        }
+
+        var command = new CancelInventoryCount.Command(
+            inventoryCountId,
+            request.ExpectedCountVersion,
+            actorId);
+        ServiceResult<InventoryCountDetails> result = await commandDispatcher
+            .DispatchAsync<CancelInventoryCount.Command, ServiceResult<InventoryCountDetails>>(
+                command,
+                cancellationToken);
         return result.ToHttpResult();
     }
 

@@ -289,6 +289,81 @@ public sealed class InventoryCountTests
             DateTimeOffset.UtcNow).IsValid);
     }
 
+    [Fact]
+    public void Complete_WhenAllCurrentLinesApplied_RecordsAuditAndMakesCountReadOnly()
+    {
+        InventoryCount count = CreateCount();
+        InventoryCountLine line = AddAndRecordLine(count, 10, 12);
+        count.ApplyLine(
+            line.Id,
+            Guid.NewGuid(),
+            "operator-2",
+            DateTimeOffset.Parse("2026-06-25T11:00:00Z"));
+        DateTimeOffset completedAtUtc = DateTimeOffset.Parse("2026-06-25T12:00:00Z");
+
+        var result = count.Complete(" supervisor-1 ", completedAtUtc);
+
+        Assert.True(result.IsValid);
+        Assert.Equal(InventoryCountStatus.Completed, count.Status);
+        Assert.Equal("supervisor-1", count.CompletedByActorId);
+        Assert.Equal(completedAtUtc, count.CompletedAtUtc);
+        Assert.Null(count.CancelledByActorId);
+        Assert.Null(count.CancelledAtUtc);
+        Assert.False(count.AddLine(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            0,
+            null,
+            out _).IsValid);
+        Assert.False(count.RemovePendingLine(line.Id, out _).IsValid);
+        Assert.False(count.Cancel("operator-3", DateTimeOffset.UtcNow).IsValid);
+    }
+
+    [Fact]
+    public void Complete_WhenEmptyOrCurrentLineUnresolved_IsInvalid()
+    {
+        InventoryCount empty = CreateCount();
+        InventoryCount pending = CreateCount();
+        pending.AddLine(Guid.NewGuid(), Guid.NewGuid(), 0, null, out _);
+        InventoryCount conflict = CreateCount();
+        InventoryCountLine conflictLine = AddAndRecordLine(conflict, 10, 12);
+        conflict.MarkLineConflict(conflictLine.Id);
+
+        Assert.False(empty.Complete("operator-1", DateTimeOffset.UtcNow).IsValid);
+        Assert.False(pending.Complete("operator-1", DateTimeOffset.UtcNow).IsValid);
+        Assert.False(conflict.Complete("operator-1", DateTimeOffset.UtcNow).IsValid);
+        Assert.Equal(InventoryCountStatus.Draft, empty.Status);
+        Assert.Equal(InventoryCountStatus.Draft, pending.Status);
+        Assert.Equal(InventoryCountStatus.InProgress, conflict.Status);
+    }
+
+    [Fact]
+    public void Cancel_WhenActive_RecordsAuditAndPreservesAppliedEvidence()
+    {
+        InventoryCount count = CreateCount();
+        InventoryCountLine appliedLine = AddAndRecordLine(count, 10, 12);
+        Guid transactionId = Guid.NewGuid();
+        count.ApplyLine(
+            appliedLine.Id,
+            transactionId,
+            "operator-2",
+            DateTimeOffset.Parse("2026-06-25T11:00:00Z"));
+        count.AddLine(Guid.NewGuid(), Guid.NewGuid(), 0, null, out InventoryCountLine? pending);
+        DateTimeOffset cancelledAtUtc = DateTimeOffset.Parse("2026-06-25T12:00:00Z");
+
+        var result = count.Cancel(" supervisor-1 ", cancelledAtUtc);
+
+        Assert.True(result.IsValid);
+        Assert.Equal(InventoryCountStatus.Cancelled, count.Status);
+        Assert.Equal("supervisor-1", count.CancelledByActorId);
+        Assert.Equal(cancelledAtUtc, count.CancelledAtUtc);
+        Assert.Equal(InventoryCountLineStatus.Applied, appliedLine.Status);
+        Assert.Equal(transactionId, appliedLine.AppliedInventoryTransactionId);
+        Assert.Equal(InventoryCountLineStatus.Pending, pending!.Status);
+        Assert.False(count.RemovePendingLine(pending.Id, out _).IsValid);
+        Assert.False(count.Complete("operator-3", DateTimeOffset.UtcNow).IsValid);
+    }
+
     private static InventoryCountLine AddAndRecordLine(
         InventoryCount count,
         decimal systemQuantity,
