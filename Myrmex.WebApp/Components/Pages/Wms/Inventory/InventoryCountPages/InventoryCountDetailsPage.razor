@@ -27,12 +27,27 @@
                 </div>
                 @if (CanModifyCount)
                 {
-                    <MudButton Color="Color.Primary"
-                               Variant="Variant.Filled"
-                               StartIcon="@Icons.Material.Filled.Add"
-                               OnClick="OpenAddLineAsync">
-                        Add line
-                    </MudButton>
+                    <MudStack Row="true" Spacing="2">
+                        <MudButton Color="Color.Primary"
+                                   Variant="Variant.Filled"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="OpenAddLineAsync"
+                                   Disabled="_isLifecycleSaving">
+                            Add line
+                        </MudButton>
+                        <MudButton Color="Color.Success"
+                                   Variant="Variant.Filled"
+                                   OnClick="CompleteCountAsync"
+                                   Disabled="@(!CanCompleteCount || _isLifecycleSaving)">
+                            Complete
+                        </MudButton>
+                        <MudButton Color="Color.Error"
+                                   Variant="Variant.Outlined"
+                                   OnClick="CancelCountAsync"
+                                   Disabled="_isLifecycleSaving">
+                            Cancel
+                        </MudButton>
+                    </MudStack>
                 }
             </MudStack>
 
@@ -59,6 +74,26 @@
                         <MudText Typo="Typo.caption">Reason</MudText>
                         <MudText>@(_count.Reason ?? "—")</MudText>
                     </MudItem>
+                    @if (_count.CompletedAtUtc.HasValue)
+                    {
+                        <MudItem xs="12" md="6">
+                            <MudText Typo="Typo.caption">Completed</MudText>
+                            <MudText>
+                                @_count.CompletedAtUtc.Value.ToLocalTime().ToString("g")
+                                by @_count.CompletedByActorId
+                            </MudText>
+                        </MudItem>
+                    }
+                    @if (_count.CancelledAtUtc.HasValue)
+                    {
+                        <MudItem xs="12" md="6">
+                            <MudText Typo="Typo.caption">Cancelled</MudText>
+                            <MudText>
+                                @_count.CancelledAtUtc.Value.ToLocalTime().ToString("g")
+                                by @_count.CancelledByActorId
+                            </MudText>
+                        </MudItem>
+                    }
                 </MudGrid>
             </MudPaper>
 
@@ -188,12 +223,25 @@
 
     private InventoryCountDetails? _count;
     private bool _isLoading;
+    private bool _isLifecycleSaving;
     private string? _errorMessage;
     private string? _actionMessage;
 
     private bool CanModifyCount =>
         _count?.Status is InventoryCountStatusDetails.Draft
             or InventoryCountStatusDetails.InProgress;
+
+    private bool CanCompleteCount =>
+        _count is not null &&
+        _count.Lines.Any(x => x.IsCurrent) &&
+        _count.Lines
+            .Where(x => x.IsCurrent)
+            .All(x => x.Status == InventoryCountLineStatusDetails.Applied);
+
+    private bool HasAppliedAdjustments =>
+        _count?.Lines.Any(x =>
+            x.Status == InventoryCountLineStatusDetails.Applied &&
+            x.AppliedInventoryTransactionId.HasValue) == true;
 
     protected override Task OnParametersSetAsync() => LoadAsync();
 
@@ -433,6 +481,93 @@
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
+        }
+    }
+
+    private async Task CompleteCountAsync()
+    {
+        if (_count is null || !CanCompleteCount)
+        {
+            return;
+        }
+
+        bool? confirmed = await DialogService.ShowMessageBoxAsync(
+            "Complete inventory count",
+            "Complete this count? All current lines are Applied and the count will become read-only.",
+            yesText: "Complete",
+            cancelText: "Cancel");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        _isLifecycleSaving = true;
+        try
+        {
+            ApiResult<InventoryCountDetails> result =
+                await WmsInventoryApiClient.TryCompleteInventoryCountAsync(
+                    _count.Id,
+                    new ChangeInventoryCountStatusRequest(_count.CountVersion));
+            if (result.IsFailure || result.Value is null)
+            {
+                await LoadAsync();
+                _errorMessage = result.Error?.Message ?? "Completing the count failed.";
+                return;
+            }
+
+            _count = result.Value;
+            _actionMessage = "Inventory count completed and is now read-only.";
+            _errorMessage = null;
+        }
+        finally
+        {
+            _isLifecycleSaving = false;
+        }
+    }
+
+    private async Task CancelCountAsync()
+    {
+        if (_count is null)
+        {
+            return;
+        }
+
+        string message = HasAppliedAdjustments
+            ? "Cancel this count? Already Applied inventory adjustments remain effective. The count will become read-only."
+            : "Cancel this count? The count will become read-only.";
+        bool? confirmed = await DialogService.ShowMessageBoxAsync(
+            "Cancel inventory count",
+            message,
+            yesText: "Cancel count",
+            cancelText: "Keep open");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        _isLifecycleSaving = true;
+        try
+        {
+            ApiResult<InventoryCountDetails> result =
+                await WmsInventoryApiClient.TryCancelInventoryCountAsync(
+                    _count.Id,
+                    new ChangeInventoryCountStatusRequest(_count.CountVersion));
+            if (result.IsFailure || result.Value is null)
+            {
+                await LoadAsync();
+                _errorMessage = result.Error?.Message ?? "Cancelling the count failed.";
+                return;
+            }
+
+            _count = result.Value;
+            _actionMessage = HasAppliedAdjustments
+                ? "Inventory count cancelled. Previously Applied adjustments remain effective."
+                : "Inventory count cancelled.";
+            _errorMessage = null;
+        }
+        finally
+        {
+            _isLifecycleSaving = false;
         }
     }
 

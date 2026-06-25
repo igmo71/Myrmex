@@ -351,6 +351,111 @@ public sealed class InventoryCountEndpointTests
         }
     }
 
+    [Fact]
+    public async Task CompleteAndCancelInventoryCountAsync_BindRouteBodyAndActor()
+    {
+        InventoryCountDetails details = CreateDetails();
+        RecordingCommandDispatcher dispatcher = new(details);
+        await using WebApplication app = CreateApp(dispatcher, authenticated: true);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient client = CreateClient(app);
+            using HttpResponseMessage completeResponse = await client.PostAsJsonAsync(
+                $"/api/wms/inventory/counts/{details.Id}/complete",
+                new ChangeInventoryCountStatusRequest(details.CountVersion),
+                cancellationToken);
+            completeResponse.EnsureSuccessStatusCode();
+            InventoryCountDetails? completeDetails =
+                await completeResponse.Content.ReadFromJsonAsync<InventoryCountDetails>(
+                    cancellationToken);
+            Assert.Equal(details.Id, completeDetails?.Id);
+            Assert.NotNull(dispatcher.CompleteCommand);
+            Assert.Equal(details.Id, dispatcher.CompleteCommand.InventoryCountId);
+            Assert.Equal(details.CountVersion, dispatcher.CompleteCommand.ExpectedCountVersion);
+            Assert.Equal("actor-sub", dispatcher.CompleteCommand.ActorId);
+
+            using HttpResponseMessage cancelResponse = await client.PostAsJsonAsync(
+                $"/api/wms/inventory/counts/{details.Id}/cancel",
+                new ChangeInventoryCountStatusRequest(details.CountVersion),
+                cancellationToken);
+            cancelResponse.EnsureSuccessStatusCode();
+            InventoryCountDetails? cancelDetails =
+                await cancelResponse.Content.ReadFromJsonAsync<InventoryCountDetails>(
+                    cancellationToken);
+            Assert.Equal(details.Id, cancelDetails?.Id);
+            Assert.NotNull(dispatcher.CancelCommand);
+            Assert.Equal(details.Id, dispatcher.CancelCommand.InventoryCountId);
+            Assert.Equal(details.CountVersion, dispatcher.CancelCommand.ExpectedCountVersion);
+            Assert.Equal("actor-sub", dispatcher.CancelCommand.ActorId);
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
+    [Theory]
+    [InlineData("complete")]
+    [InlineData("cancel")]
+    public async Task CompleteOrCancelInventoryCountAsync_WhenUnauthenticated_Returns401(
+        string action)
+    {
+        InventoryCountDetails details = CreateDetails();
+        RecordingCommandDispatcher dispatcher = new(details);
+        await using WebApplication app = CreateApp(dispatcher, authenticated: false);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient client = CreateClient(app);
+            using HttpResponseMessage response = await client.PostAsJsonAsync(
+                $"/api/wms/inventory/counts/{details.Id}/{action}",
+                new ChangeInventoryCountStatusRequest(details.CountVersion),
+                cancellationToken);
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.Null(dispatcher.CompleteCommand);
+            Assert.Null(dispatcher.CancelCommand);
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
+    [Fact]
+    public async Task CompleteInventoryCountAsync_WhenLifecycleConflict_Returns409()
+    {
+        InventoryCountDetails details = CreateDetails();
+        RecordingCommandDispatcher dispatcher = new(
+            ServiceResult<InventoryCountDetails>.Fail(
+                InventoryCountErrors.InvalidState(
+                    "Every current line must be Applied.",
+                    nameof(InventoryCountDetails.Status))));
+        await using WebApplication app = CreateApp(dispatcher, authenticated: true);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient client = CreateClient(app);
+            using HttpResponseMessage response = await client.PostAsJsonAsync(
+                $"/api/wms/inventory/counts/{details.Id}/complete",
+                new ChangeInventoryCountStatusRequest(details.CountVersion),
+                cancellationToken);
+
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
     private static WebApplication CreateApp(
         RecordingCommandDispatcher commandDispatcher,
         bool authenticated)
@@ -466,6 +571,8 @@ public sealed class InventoryCountEndpointTests
         public RecordInventoryCountLine.Command? RecordCommand { get; private set; }
         public ApplyInventoryCountLine.Command? ApplyCommand { get; private set; }
         public SupersedeInventoryCountLine.Command? SupersedeCommand { get; private set; }
+        public CompleteInventoryCount.Command? CompleteCommand { get; private set; }
+        public CancelInventoryCount.Command? CancelCommand { get; private set; }
 
         public Task<TResult> DispatchAsync<TCommand, TResult>(
             TCommand command,
@@ -492,6 +599,12 @@ public sealed class InventoryCountEndpointTests
                     break;
                 case SupersedeInventoryCountLine.Command supersede:
                     SupersedeCommand = supersede;
+                    break;
+                case CompleteInventoryCount.Command complete:
+                    CompleteCommand = complete;
+                    break;
+                case CancelInventoryCount.Command cancel:
+                    CancelCommand = cancel;
                     break;
                 default:
                     throw new NotSupportedException(typeof(TCommand).FullName);

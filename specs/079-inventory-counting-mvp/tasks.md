@@ -134,18 +134,18 @@
 
 ### Tests for User Story 4
 
-- [ ] T047 [P] [US4] Extend domain tests for non-empty/all-current-Applied completion, unresolved rejection, completion/cancellation actors and times, final-state immutability, and no adjustment reversal in `Myrmex.Tests/Wms/Inventory/Domain/InventoryCountTests.cs`
-- [ ] T048 [US4] Write SQL Server lifecycle handler tests for completion/cancellation versions, unresolved/current-line checks, preserved Applied balances/transactions, actor persistence, and final-state conflicts in `Myrmex.Tests/Wms/Inventory/Features/InventoryCounts/InventoryCountLifecycleHandlerTests.cs`
-- [ ] T049 [P] [US4] Extend endpoint tests for complete/cancel route/body/actor dispatch, success serialization, unauthenticated 401, and lifecycle conflicts in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryCountEndpointTests.cs`
-- [ ] T050 [P] [US4] Extend API-client tests for complete/cancel routes, versions, cancellation, final detail mapping, and representative conflict in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [X] T047 [P] [US4] Extend domain tests for non-empty/all-current-Applied completion, unresolved rejection, completion/cancellation actors and times, final-state immutability, and no adjustment reversal in `Myrmex.Tests/Wms/Inventory/Domain/InventoryCountTests.cs`
+- [X] T048 [US4] Write SQL Server lifecycle handler tests for completion/cancellation versions, unresolved/current-line checks, preserved Applied balances/transactions, actor persistence, and final-state conflicts in `Myrmex.Tests/Wms/Inventory/Features/InventoryCounts/InventoryCountLifecycleHandlerTests.cs`
+- [X] T049 [P] [US4] Extend endpoint tests for complete/cancel route/body/actor dispatch, success serialization, unauthenticated 401, and lifecycle conflicts in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryCountEndpointTests.cs`
+- [X] T050 [P] [US4] Extend API-client tests for complete/cancel routes, versions, cancellation, final detail mapping, and representative conflict in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation for User Story 4
 
-- [ ] T051 [US4] Implement completion eligibility, completion/cancellation actor audit, final-state immutability, and preserved Applied effects in `Myrmex.Modules.Wms/Inventory/Domain/InventoryCounts/InventoryCount.cs`
-- [ ] T052 [US4] Implement rowversion-aware complete and cancel handlers in `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/CompleteInventoryCount.cs` and `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/CancelInventoryCount.cs`
-- [ ] T053 [US4] Map complete and cancel routes with server-derived actor identity in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryCountEndpoints.cs`
-- [ ] T054 [US4] Add complete and cancel API-client methods in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
-- [ ] T055 [US4] Add complete/cancel confirmations, Applied-adjustment warning, lifecycle action availability, final audit display, and read-only final states in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/InventoryCountDetails.razor`
+- [X] T051 [US4] Implement completion eligibility, completion/cancellation actor audit, final-state immutability, and preserved Applied effects in `Myrmex.Modules.Wms/Inventory/Domain/InventoryCounts/InventoryCount.cs`
+- [X] T052 [US4] Implement rowversion-aware complete and cancel handlers in `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/CompleteInventoryCount.cs` and `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/CancelInventoryCount.cs`
+- [X] T053 [US4] Map complete and cancel routes with server-derived actor identity in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryCountEndpoints.cs`
+- [X] T054 [US4] Add complete and cancel API-client methods in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [X] T055 [US4] Add complete/cancel confirmations, Applied-adjustment warning, lifecycle action availability, final audit display, and read-only final states in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/InventoryCountDetailsPage.razor`
 
 **Checkpoint**: Counts have reliable final states without losing audit history or reversing inventory corrections.
 

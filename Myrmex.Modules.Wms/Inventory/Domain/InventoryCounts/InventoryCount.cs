@@ -131,6 +131,13 @@ internal sealed class InventoryCount : AggregateRoot
 
     public DomainValidationResult RemovePendingLine(Guid lineId, out InventoryCountLine? removedLine)
     {
+        if (Status is InventoryCountStatus.Completed or InventoryCountStatus.Cancelled)
+        {
+            removedLine = null;
+            return DomainValidationResult.Invalid(
+                DomainValidationFailure.IncorrectState<InventoryCount>(nameof(Status)));
+        }
+
         removedLine = _lines.SingleOrDefault(x => x.Id == lineId);
 
         if (removedLine is null)
@@ -149,6 +156,98 @@ internal sealed class InventoryCount : AggregateRoot
         _lines.Remove(removedLine);
         Touch();
         return DomainValidationResult.Valid;
+    }
+
+    public DomainValidationResult Complete(
+        string? actorId,
+        DateTimeOffset completedAtUtc)
+    {
+        List<DomainValidationFailure> errors = ValidateLifecycleActor(
+            actorId,
+            nameof(CompletedByActorId),
+            out string normalizedActorId);
+
+        if (Status is InventoryCountStatus.Completed or InventoryCountStatus.Cancelled)
+        {
+            errors.Add(
+                DomainValidationFailure.IncorrectState<InventoryCount>(nameof(Status)));
+        }
+
+        InventoryCountLine[] currentLines = [.. _lines.Where(x => x.IsCurrent)];
+        if (currentLines.Length == 0)
+        {
+            errors.Add(
+                DomainValidationFailure.IncorrectState<InventoryCount>(nameof(Lines)));
+        }
+        else if (currentLines.Any(x => x.Status != InventoryCountLineStatus.Applied))
+        {
+            errors.Add(
+                DomainValidationFailure.IncorrectState<InventoryCountLine>(
+                    nameof(InventoryCountLine.Status)));
+        }
+
+        DomainValidationResult result = DomainValidationResult.From(errors);
+        if (!result.IsValid)
+        {
+            return result;
+        }
+
+        Status = InventoryCountStatus.Completed;
+        CompletedByActorId = normalizedActorId;
+        CompletedAtUtc = completedAtUtc;
+        Touch();
+        return DomainValidationResult.Valid;
+    }
+
+    public DomainValidationResult Cancel(
+        string? actorId,
+        DateTimeOffset cancelledAtUtc)
+    {
+        List<DomainValidationFailure> errors = ValidateLifecycleActor(
+            actorId,
+            nameof(CancelledByActorId),
+            out string normalizedActorId);
+
+        if (Status is InventoryCountStatus.Completed or InventoryCountStatus.Cancelled)
+        {
+            errors.Add(
+                DomainValidationFailure.IncorrectState<InventoryCount>(nameof(Status)));
+        }
+
+        DomainValidationResult result = DomainValidationResult.From(errors);
+        if (!result.IsValid)
+        {
+            return result;
+        }
+
+        Status = InventoryCountStatus.Cancelled;
+        CancelledByActorId = normalizedActorId;
+        CancelledAtUtc = cancelledAtUtc;
+        Touch();
+        return DomainValidationResult.Valid;
+    }
+
+    private static List<DomainValidationFailure> ValidateLifecycleActor(
+        string? actorId,
+        string property,
+        out string normalizedActorId)
+    {
+        normalizedActorId = actorId?.Trim() ?? string.Empty;
+        List<DomainValidationFailure> errors = [];
+
+        if (string.IsNullOrWhiteSpace(normalizedActorId))
+        {
+            errors.Add(DomainValidationFailure.Required<InventoryCount>(property));
+        }
+        else if (normalizedActorId.Length > ActorIdMaxLength)
+        {
+            errors.Add(
+                DomainValidationFailure.TooLong<InventoryCount>(
+                    property,
+                    ActorIdMaxLength));
+        }
+
+        return errors;
     }
 
     public DomainValidationResult RecordLineCount(

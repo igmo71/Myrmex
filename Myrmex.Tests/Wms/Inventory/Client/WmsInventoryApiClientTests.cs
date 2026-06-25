@@ -1374,6 +1374,94 @@ public sealed class InventoryCountApiClientTests
         Assert.True(handler.CancellationObserved);
     }
 
+    [Fact]
+    public async Task CompleteAndCancelInventoryCountAsync_UseExpectedRoutesAndBodies()
+    {
+        InventoryCountDetails details = CreateDetails();
+
+        using CountStubHttpMessageHandler completeHandler = new(details);
+        WmsInventoryApiClient completeClient = new(CreateHttpClient(completeHandler));
+        ApiResult<InventoryCountDetails> completeResult =
+            await completeClient.TryCompleteInventoryCountAsync(
+                details.Id,
+                new ChangeInventoryCountStatusRequest(details.CountVersion),
+                TestContext.Current.CancellationToken);
+        Assert.True(completeResult.IsSuccess);
+        Assert.Equal(details.Id, completeResult.Value?.Id);
+        Assert.Equal(
+            $"/api/wms/inventory/counts/{details.Id}/complete",
+            completeHandler.Path);
+        using (JsonDocument body = JsonDocument.Parse(completeHandler.Body))
+        {
+            Assert.Equal(
+                details.CountVersion,
+                body.RootElement.GetProperty("expectedCountVersion").GetString());
+            Assert.False(body.RootElement.TryGetProperty("actorId", out _));
+        }
+
+        using CountStubHttpMessageHandler cancelHandler = new(details);
+        WmsInventoryApiClient cancelClient = new(CreateHttpClient(cancelHandler));
+        ApiResult<InventoryCountDetails> cancelResult =
+            await cancelClient.TryCancelInventoryCountAsync(
+                details.Id,
+                new ChangeInventoryCountStatusRequest(details.CountVersion),
+                TestContext.Current.CancellationToken);
+        Assert.True(cancelResult.IsSuccess);
+        Assert.Equal(details.Id, cancelResult.Value?.Id);
+        Assert.Equal(
+            $"/api/wms/inventory/counts/{details.Id}/cancel",
+            cancelHandler.Path);
+        using (JsonDocument body = JsonDocument.Parse(cancelHandler.Body))
+        {
+            Assert.Equal(
+                details.CountVersion,
+                body.RootElement.GetProperty("expectedCountVersion").GetString());
+            Assert.False(body.RootElement.TryGetProperty("actorId", out _));
+        }
+    }
+
+    [Fact]
+    public async Task TryCompleteInventoryCountAsync_WhenConflict_MapsProblemDetails()
+    {
+        using CountStubHttpMessageHandler handler = new(
+            HttpStatusCode.Conflict,
+            """
+            {"status":409,"title":"Conflict","detail":"Count is unresolved.","code":"InventoryCount.InvalidState"}
+            """,
+            "application/problem+json");
+        WmsInventoryApiClient client = new(CreateHttpClient(handler));
+
+        ApiResult<InventoryCountDetails> result =
+            await client.TryCompleteInventoryCountAsync(
+                Guid.NewGuid(),
+                new ChangeInventoryCountStatusRequest("AAAAAAAAB9I="),
+                TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(409, result.Error?.Status);
+        Assert.Equal("InventoryCount.InvalidState", result.Error?.Extensions["code"]);
+    }
+
+    [Fact]
+    public async Task TryCancelInventoryCountAsync_WhenCanceled_PropagatesCancellation()
+    {
+        using CountCancellableHttpMessageHandler handler = new();
+        WmsInventoryApiClient client = new(CreateHttpClient(handler));
+        using CancellationTokenSource cancellationTokenSource = new();
+
+        Task<ApiResult<InventoryCountDetails>> requestTask =
+            client.TryCancelInventoryCountAsync(
+                Guid.NewGuid(),
+                new ChangeInventoryCountStatusRequest("AAAAAAAAB9I="),
+                cancellationTokenSource.Token);
+
+        await handler.RequestStarted.Task;
+        cancellationTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => requestTask);
+        Assert.True(handler.CancellationObserved);
+    }
+
     private static HttpClient CreateHttpClient(HttpMessageHandler handler) =>
         new(handler) { BaseAddress = new Uri("https://myrmex.test") };
 
