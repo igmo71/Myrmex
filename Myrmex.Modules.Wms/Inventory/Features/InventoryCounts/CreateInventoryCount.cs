@@ -34,6 +34,9 @@ internal static class CreateInventoryCount
                 return ServiceResult<InventoryCountDetails>.Invalid(validationResult.Errors);
             }
 
+            InventoryCount? createdCount = count
+                ?? throw new InvalidOperationException("InventoryCount.Create returned a valid result without a count.");
+
             Warehouse? warehouse = await dbContext.Warehouses
                 .AsNoTracking()
                 .SingleOrDefaultAsync(x => x.Id == command.WarehouseId!.Value, cancellationToken);
@@ -50,10 +53,10 @@ internal static class CreateInventoryCount
                     ServiceError.Validation<Warehouse>("Warehouse is inactive", nameof(Command.WarehouseId)));
             }
 
-            dbContext.InventoryCounts.Add(count!);
+            dbContext.InventoryCounts.Add(createdCount);
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            return await LoadDetailsAsync(dbContext, count!.Id, cancellationToken);
+            return await LoadDetailsAsync(dbContext, createdCount.Id, cancellationToken);
         }
     }
 
