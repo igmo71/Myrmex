@@ -192,6 +192,112 @@ internal sealed class InventoryCount : AggregateRoot
         return DomainValidationResult.Valid;
     }
 
+    public DomainValidationResult ApplyLine(
+        Guid lineId,
+        Guid? inventoryTransactionId,
+        string? actorId,
+        DateTimeOffset appliedAtUtc)
+    {
+        if (Status is InventoryCountStatus.Completed or InventoryCountStatus.Cancelled)
+        {
+            return DomainValidationResult.Invalid(
+                DomainValidationFailure.IncorrectState<InventoryCount>(nameof(Status)));
+        }
+
+        InventoryCountLine? line = _lines.SingleOrDefault(x => x.Id == lineId);
+        if (line is null)
+        {
+            return DomainValidationResult.Invalid(
+                DomainValidationFailure.Required<InventoryCountLine>(nameof(lineId)));
+        }
+
+        DomainValidationResult result = line.Apply(
+            inventoryTransactionId,
+            actorId,
+            appliedAtUtc);
+        if (result.IsValid)
+        {
+            Touch();
+        }
+
+        return result;
+    }
+
+    public DomainValidationResult MarkLineConflict(Guid lineId)
+    {
+        if (Status is InventoryCountStatus.Completed or InventoryCountStatus.Cancelled)
+        {
+            return DomainValidationResult.Invalid(
+                DomainValidationFailure.IncorrectState<InventoryCount>(nameof(Status)));
+        }
+
+        InventoryCountLine? line = _lines.SingleOrDefault(x => x.Id == lineId);
+        if (line is null)
+        {
+            return DomainValidationResult.Invalid(
+                DomainValidationFailure.Required<InventoryCountLine>(nameof(lineId)));
+        }
+
+        DomainValidationResult result = line.MarkConflict();
+        if (result.IsValid)
+        {
+            Touch();
+        }
+
+        return result;
+    }
+
+    public DomainValidationResult SupersedeLine(
+        Guid lineId,
+        decimal freshSystemQuantity,
+        byte[]? freshExpectedBalanceVersion,
+        out InventoryCountLine? replacement)
+    {
+        replacement = null;
+
+        if (Status is InventoryCountStatus.Completed or InventoryCountStatus.Cancelled)
+        {
+            return DomainValidationResult.Invalid(
+                DomainValidationFailure.IncorrectState<InventoryCount>(nameof(Status)));
+        }
+
+        InventoryCountLine? line = _lines.SingleOrDefault(x => x.Id == lineId);
+        if (line is null)
+        {
+            return DomainValidationResult.Invalid(
+                DomainValidationFailure.Required<InventoryCountLine>(nameof(lineId)));
+        }
+
+        if (_lines.Any(x => x.SupersedesInventoryCountLineId == line.Id))
+        {
+            return DomainValidationResult.Invalid(
+                DomainValidationFailure.IncorrectState<InventoryCountLine>(
+                    nameof(InventoryCountLine.SupersedesInventoryCountLineId)));
+        }
+
+        DomainValidationResult supersedeResult = line.MarkSuperseded();
+        if (!supersedeResult.IsValid)
+        {
+            return supersedeResult;
+        }
+
+        DomainValidationResult replacementResult = InventoryCountLine.Create(
+            line.StockKeepingUnitId,
+            line.StorageLocationId,
+            freshSystemQuantity,
+            freshExpectedBalanceVersion,
+            out replacement);
+        if (!replacementResult.IsValid)
+        {
+            return replacementResult;
+        }
+
+        replacement!.SetSupersedes(line.Id);
+        _lines.Add(replacement);
+        Touch();
+        return DomainValidationResult.Valid;
+    }
+
     private static string? NormalizeOptional(string? value)
     {
         string? normalized = value?.Trim();

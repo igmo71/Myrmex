@@ -106,21 +106,21 @@
 
 ### Tests for User Story 3
 
-- [ ] T035 [P] [US3] Extend domain tests for zero/non-zero apply states, applier audit, Conflict immutability, Superseded final state, current replacement linkage, and duplicate supersession rejection in `Myrmex.Tests/Wms/Inventory/Domain/InventoryCountTests.cs`
-- [ ] T036 [US3] Write SQL Server apply tests for zero variance, positive/negative existing-balance variance, missing positive balance creation, exactly one Adjustment transaction/ledger entry, generated reason, actor/link persistence, one-save atomicity, and duplicate apply rejection in `Myrmex.Tests/Wms/Inventory/Features/InventoryCounts/ApplyInventoryCountLineHandlerTests.cs`
-- [ ] T037 [US3] Extend SQL Server apply tests for changed/disappeared/appeared balances, rowversion races, persisted Conflict without inventory effects, superseding fresh snapshots, filtered current-line uniqueness, and concurrent replacement conflicts in `Myrmex.Tests/Wms/Inventory/Features/InventoryCounts/ApplyInventoryCountLineHandlerTests.cs`
-- [ ] T038 [P] [US3] Extend persistence tests for unique applied-transaction ownership, unique supersession, current-line filtering, and restricted audit relationships in `Myrmex.Tests/Wms/Inventory/Persistence/InventoryCountPersistenceTests.cs`
-- [ ] T039 [P] [US3] Extend endpoint tests for apply/supersede route/body/actor dispatch, zero/non-zero success serialization, persisted-conflict 409, and unauthenticated behavior in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryCountEndpointTests.cs`
-- [ ] T040 [P] [US3] Extend API-client tests for apply/supersede routes, versions, cancellation, updated detail mapping, and representative conflict in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [X] T035 [P] [US3] Extend domain tests for zero/non-zero apply states, applier audit, Conflict immutability, Superseded final state, current replacement linkage, and duplicate supersession rejection in `Myrmex.Tests/Wms/Inventory/Domain/InventoryCountTests.cs`
+- [X] T036 [US3] Write SQL Server apply tests for zero variance, positive/negative existing-balance variance, missing positive balance creation, exactly one Adjustment transaction/ledger entry, generated reason, actor/link persistence, one-save atomicity, and duplicate apply rejection in `Myrmex.Tests/Wms/Inventory/Features/InventoryCounts/ApplyInventoryCountLineHandlerTests.cs`
+- [X] T037 [US3] Extend SQL Server apply tests for changed/disappeared/appeared balances, rowversion races, persisted Conflict without inventory effects, superseding fresh snapshots, filtered current-line uniqueness, and concurrent replacement conflicts in `Myrmex.Tests/Wms/Inventory/Features/InventoryCounts/ApplyInventoryCountLineHandlerTests.cs`
+- [X] T038 [P] [US3] Extend persistence tests for unique applied-transaction ownership, unique supersession, current-line filtering, and restricted audit relationships in `Myrmex.Tests/Wms/Inventory/Persistence/InventoryCountPersistenceTests.cs`
+- [X] T039 [P] [US3] Extend endpoint tests for apply/supersede route/body/actor dispatch, zero/non-zero success serialization, persisted-conflict 409, and unauthenticated behavior in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryCountEndpointTests.cs`
+- [X] T040 [P] [US3] Extend API-client tests for apply/supersede routes, versions, cancellation, updated detail mapping, and representative conflict in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation for User Story 3
 
-- [ ] T041 [US3] Implement Applied, Conflict, and Superseded transitions, applier audit, replacement creation/linking, and final-state invariants in `Myrmex.Modules.Wms/Inventory/Domain/InventoryCounts/InventoryCount.cs` and `Myrmex.Modules.Wms/Inventory/Domain/InventoryCounts/InventoryCountLine.cs`
-- [ ] T042 [US3] Implement apply handler snapshot comparison, zero-variance resolution, balance update/create, `InventoryTransaction.CreateAdjustment`, generated bounded reason, one-save persistence, conflict-state save, concurrency mapping, diagnostics, and cancellation in `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/ApplyInventoryCountLine.cs`
-- [ ] T043 [US3] Implement supersede handler that atomically marks Conflict as Superseded and adds one fresh Pending current line with a new balance snapshot in `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/SupersedeInventoryCountLine.cs`
-- [ ] T044 [US3] Map apply and supersede routes with server-derived actor identity in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryCountEndpoints.cs`
-- [ ] T045 [US3] Add apply and supersede API-client methods in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
-- [ ] T046 [US3] Add Counted Apply, Conflict Supersede, zero/non-zero result messaging, replacement history, transaction links, stale lockout, and details refresh behavior in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/InventoryCountDetails.razor`
+- [X] T041 [US3] Implement Applied, Conflict, and Superseded transitions, applier audit, replacement creation/linking, and final-state invariants in `Myrmex.Modules.Wms/Inventory/Domain/InventoryCounts/InventoryCount.cs` and `Myrmex.Modules.Wms/Inventory/Domain/InventoryCounts/InventoryCountLine.cs`
+- [X] T042 [US3] Implement apply handler snapshot comparison, zero-variance resolution, balance update/create, `InventoryTransaction.CreateAdjustment`, generated bounded reason, one-save persistence, conflict-state save, concurrency mapping, diagnostics, and cancellation in `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/ApplyInventoryCountLine.cs`
+- [X] T043 [US3] Implement supersede handler that atomically marks Conflict as Superseded and adds one fresh Pending current line with a new balance snapshot in `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/SupersedeInventoryCountLine.cs`
+- [X] T044 [US3] Map apply and supersede routes with server-derived actor identity in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryCountEndpoints.cs`
+- [X] T045 [US3] Add apply and supersede API-client methods in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [X] T046 [US3] Add Counted Apply, Conflict Supersede, zero/non-zero result messaging, replacement history, transaction links, stale lockout, and details refresh behavior in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/InventoryCountDetailsPage.razor`
 
 **Checkpoint**: Count results safely reconcile inventory or produce recoverable immutable conflict evidence.
 

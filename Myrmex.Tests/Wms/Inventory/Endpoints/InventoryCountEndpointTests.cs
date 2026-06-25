@@ -255,6 +255,102 @@ public sealed class InventoryCountEndpointTests
         }
     }
 
+    [Fact]
+    public async Task ApplyAndSupersedeInventoryCountLineAsync_BindRouteBodyAndActor()
+    {
+        InventoryCountDetails details = CreateDetails(includeLine: true);
+        InventoryCountLineDetails line = Assert.Single(details.Lines);
+        RecordingCommandDispatcher dispatcher = new(details);
+        await using WebApplication app = CreateApp(dispatcher, authenticated: true);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient client = CreateClient(app);
+            using HttpResponseMessage applyResponse = await client.PostAsJsonAsync(
+                $"/api/wms/inventory/counts/{details.Id}/lines/{line.Id}/apply",
+                new ApplyInventoryCountLineRequest(line.LineVersion),
+                cancellationToken);
+            applyResponse.EnsureSuccessStatusCode();
+            Assert.NotNull(dispatcher.ApplyCommand);
+            Assert.Equal(line.LineVersion, dispatcher.ApplyCommand.ExpectedLineVersion);
+            Assert.Equal("actor-sub", dispatcher.ApplyCommand.ActorId);
+
+            using HttpResponseMessage supersedeResponse = await client.PostAsJsonAsync(
+                $"/api/wms/inventory/counts/{details.Id}/lines/{line.Id}/supersede",
+                new SupersedeInventoryCountLineRequest(line.LineVersion),
+                cancellationToken);
+            supersedeResponse.EnsureSuccessStatusCode();
+            Assert.NotNull(dispatcher.SupersedeCommand);
+            Assert.Equal(line.LineVersion, dispatcher.SupersedeCommand.ExpectedLineVersion);
+            Assert.Equal("actor-sub", dispatcher.SupersedeCommand.ActorId);
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyInventoryCountLineAsync_WhenConflict_Returns409()
+    {
+        InventoryCountDetails details = CreateDetails(includeLine: true);
+        InventoryCountLineDetails line = Assert.Single(details.Lines);
+        RecordingCommandDispatcher dispatcher = new(
+            ServiceResult<InventoryCountDetails>.Fail(
+                InventoryCountErrors.BalanceSnapshotConflict()));
+        await using WebApplication app = CreateApp(dispatcher, authenticated: true);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient client = CreateClient(app);
+            using HttpResponseMessage response = await client.PostAsJsonAsync(
+                $"/api/wms/inventory/counts/{details.Id}/lines/{line.Id}/apply",
+                new ApplyInventoryCountLineRequest(line.LineVersion),
+                cancellationToken);
+
+            Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
+    [Theory]
+    [InlineData("apply")]
+    [InlineData("supersede")]
+    public async Task ApplyOrSupersedeInventoryCountLineAsync_WhenUnauthenticated_Returns401(
+        string action)
+    {
+        InventoryCountDetails details = CreateDetails(includeLine: true);
+        InventoryCountLineDetails line = Assert.Single(details.Lines);
+        RecordingCommandDispatcher dispatcher = new(details);
+        await using WebApplication app = CreateApp(dispatcher, authenticated: false);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient client = CreateClient(app);
+            using HttpResponseMessage response = await client.PostAsJsonAsync(
+                $"/api/wms/inventory/counts/{details.Id}/lines/{line.Id}/{action}",
+                new ApplyInventoryCountLineRequest(line.LineVersion),
+                cancellationToken);
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.Null(dispatcher.ApplyCommand);
+            Assert.Null(dispatcher.SupersedeCommand);
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
     private static WebApplication CreateApp(
         RecordingCommandDispatcher commandDispatcher,
         bool authenticated)
@@ -368,6 +464,8 @@ public sealed class InventoryCountEndpointTests
         public AddInventoryCountLine.Command? AddCommand { get; private set; }
         public RemoveInventoryCountLine.Command? RemoveCommand { get; private set; }
         public RecordInventoryCountLine.Command? RecordCommand { get; private set; }
+        public ApplyInventoryCountLine.Command? ApplyCommand { get; private set; }
+        public SupersedeInventoryCountLine.Command? SupersedeCommand { get; private set; }
 
         public Task<TResult> DispatchAsync<TCommand, TResult>(
             TCommand command,
@@ -388,6 +486,12 @@ public sealed class InventoryCountEndpointTests
                     break;
                 case RecordInventoryCountLine.Command record:
                     RecordCommand = record;
+                    break;
+                case ApplyInventoryCountLine.Command apply:
+                    ApplyCommand = apply;
+                    break;
+                case SupersedeInventoryCountLine.Command supersede:
+                    SupersedeCommand = supersede;
                     break;
                 default:
                     throw new NotSupportedException(typeof(TCommand).FullName);

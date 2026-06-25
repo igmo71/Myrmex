@@ -1,5 +1,6 @@
 @page "/wms/inventory/counts/{InventoryCountId:guid}"
 @using Myrmex.Shared.Wms.Inventory
+@using Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryLedgerPages
 @inject WmsInventoryApiClient WmsInventoryApiClient
 @inject IDialogService DialogService
 
@@ -70,6 +71,7 @@
                     <MudTh>Variance</MudTh>
                     <MudTh>Status</MudTh>
                     <MudTh>Count evidence</MudTh>
+                    <MudTh>Apply evidence</MudTh>
                     <MudTh>Actions</MudTh>
                 </HeaderContent>
                 <RowTemplate>
@@ -100,6 +102,35 @@
                         }
                     </MudTd>
                     <MudTd>
+                        @if (context.AppliedAtUtc.HasValue)
+                        {
+                            <MudText Typo="Typo.body2">@context.AppliedByActorId</MudText>
+                            <MudText Typo="Typo.caption">
+                                @context.AppliedAtUtc.Value.ToLocalTime().ToString("g")
+                            </MudText>
+                        }
+                        @if (context.AppliedInventoryTransactionId.HasValue)
+                        {
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Text"
+                                       OnClick="@(() => OpenTransactionAsync(context.AppliedInventoryTransactionId.Value))">
+                                View adjustment
+                            </MudButton>
+                        }
+                        @if (context.SupersedesInventoryCountLineId.HasValue)
+                        {
+                            <MudText Typo="Typo.caption">
+                                Replaces @context.SupersedesInventoryCountLineId
+                            </MudText>
+                        }
+                        @if (context.ReplacementInventoryCountLineId.HasValue)
+                        {
+                            <MudText Typo="Typo.caption">
+                                Replaced by @context.ReplacementInventoryCountLineId
+                            </MudText>
+                        }
+                    </MudTd>
+                    <MudTd>
                         @if (CanRecordLine(context))
                         {
                             <MudButton Size="Size.Small"
@@ -109,6 +140,26 @@
                                 @(context.Status == InventoryCountLineStatusDetails.Counted
                                     ? "Edit count"
                                     : "Enter count")
+                            </MudButton>
+                        }
+                        @if (CanModifyCount &&
+                             context.Status == InventoryCountLineStatusDetails.Counted)
+                        {
+                            <MudButton Size="Size.Small"
+                                       Color="Color.Success"
+                                       Variant="Variant.Text"
+                                       OnClick="@(() => ApplyLineAsync(context))">
+                                Apply
+                            </MudButton>
+                        }
+                        @if (CanModifyCount &&
+                             context.Status == InventoryCountLineStatusDetails.Conflict)
+                        {
+                            <MudButton Size="Size.Small"
+                                       Color="Color.Warning"
+                                       Variant="Variant.Text"
+                                       OnClick="@(() => SupersedeLineAsync(context))">
+                                Supersede
                             </MudButton>
                         }
                         @if (CanModifyCount &&
@@ -270,6 +321,119 @@
 
         _count = result.Value;
         _actionMessage = null;
+    }
+
+    private async Task ApplyLineAsync(InventoryCountLineDetails line)
+    {
+        if (_count is null)
+        {
+            return;
+        }
+
+        bool? confirmed = await DialogService.ShowMessageBoxAsync(
+            "Apply count result",
+            line.VarianceQuantity == 0
+                ? "Confirm this physical count with no inventory movement?"
+                : $"Apply variance {line.VarianceQuantity:+0.####;-0.####;0} and set inventory to {line.CountedQuantity:0.####}?",
+            yesText: "Apply",
+            cancelText: "Cancel");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        ApiResult<InventoryCountDetails> result =
+            await WmsInventoryApiClient.TryApplyInventoryCountLineAsync(
+                _count.Id,
+                line.Id,
+                new ApplyInventoryCountLineRequest(line.LineVersion));
+        if (result.IsFailure)
+        {
+            await LoadAsync();
+            _actionMessage = result.Error?.Status == 409
+                ? "Inventory or count state changed. Details were refreshed; supersede a Conflict line to continue."
+                : null;
+            _errorMessage = result.Error?.Status == 409
+                ? null
+                : result.Error?.Message ?? "Applying the count result failed.";
+            return;
+        }
+
+        if (result.Value is null)
+        {
+            _errorMessage = "The operation completed without returning count details.";
+            return;
+        }
+
+        _count = result.Value;
+        InventoryCountLineDetails applied = _count.Lines.Single(x => x.Id == line.Id);
+        _actionMessage = applied.AppliedInventoryTransactionId.HasValue
+            ? $"Inventory adjusted to {applied.CountedQuantity:0.####}. Adjustment transaction {applied.AppliedInventoryTransactionId} was created."
+            : "Count confirmed with zero variance; no inventory transaction was created.";
+        _errorMessage = null;
+    }
+
+    private async Task SupersedeLineAsync(InventoryCountLineDetails line)
+    {
+        if (_count is null)
+        {
+            return;
+        }
+
+        bool? confirmed = await DialogService.ShowMessageBoxAsync(
+            "Supersede conflict",
+            "Keep this conflict as history and create a fresh Pending line from current inventory?",
+            yesText: "Supersede",
+            cancelText: "Cancel");
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        ApiResult<InventoryCountDetails> result =
+            await WmsInventoryApiClient.TrySupersedeInventoryCountLineAsync(
+                _count.Id,
+                line.Id,
+                new SupersedeInventoryCountLineRequest(line.LineVersion));
+        if (result.IsFailure || result.Value is null)
+        {
+            await LoadAsync();
+            _errorMessage = result.Error?.Message ?? "Superseding the conflict failed.";
+            return;
+        }
+
+        _count = result.Value;
+        InventoryCountLineDetails replacement = _count.Lines.Single(
+            x => x.SupersedesInventoryCountLineId == line.Id);
+        _actionMessage =
+            $"Conflict preserved and fresh Pending line created with system quantity {replacement.SystemQuantity:0.####}.";
+        _errorMessage = null;
+    }
+
+    private async Task OpenTransactionAsync(Guid transactionId)
+    {
+        try
+        {
+            InventoryTransactionDetails transaction =
+                await WmsInventoryApiClient.GetInventoryTransactionByIdAsync(transactionId);
+            DialogParameters parameters = new()
+            {
+                [nameof(InventoryTransactionDetailsDialog.Transaction)] = transaction
+            };
+            await DialogService.ShowAsync<InventoryTransactionDetailsDialog>(
+                "Inventory transaction",
+                parameters,
+                new DialogOptions
+                {
+                    CloseButton = true,
+                    FullWidth = true,
+                    MaxWidth = MaxWidth.Large
+                });
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+        }
     }
 
     private bool CanRecordLine(InventoryCountLineDetails countLine) =>

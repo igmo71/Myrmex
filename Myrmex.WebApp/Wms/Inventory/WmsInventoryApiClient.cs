@@ -65,6 +65,30 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
+    public async Task<ApiResult<InventoryCountDetails>> TryApplyInventoryCountLineAsync(
+        Guid inventoryCountId,
+        Guid lineId,
+        ApplyInventoryCountLineRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<InventoryCountDetails>(
+            $"/api/wms/inventory/counts/{inventoryCountId}/lines/{lineId}/apply",
+            request,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<InventoryCountDetails>> TrySupersedeInventoryCountLineAsync(
+        Guid inventoryCountId,
+        Guid lineId,
+        SupersedeInventoryCountLineRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<InventoryCountDetails>(
+            $"/api/wms/inventory/counts/{inventoryCountId}/lines/{lineId}/supersede",
+            request,
+            cancellationToken);
+    }
+
     public async Task<ListResult<InventoryBalanceDetails>> ListInventoryBalancesAsync(
         ListInventoryBalancesRequest request,
         CancellationToken cancellationToken = default)

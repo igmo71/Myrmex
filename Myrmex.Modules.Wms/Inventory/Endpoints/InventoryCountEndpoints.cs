@@ -35,6 +35,14 @@ internal static class InventoryCountEndpoints
             .WithName("RecordInventoryCountLine")
             .WithSummary("Record Inventory Count Line Quantity");
 
+        group.MapPost("/counts/{inventoryCountId:guid}/lines/{lineId:guid}/apply", ApplyInventoryCountLineAsync)
+            .WithName("ApplyInventoryCountLine")
+            .WithSummary("Apply Inventory Count Line");
+
+        group.MapPost("/counts/{inventoryCountId:guid}/lines/{lineId:guid}/supersede", SupersedeInventoryCountLineAsync)
+            .WithName("SupersedeInventoryCountLine")
+            .WithSummary("Supersede Conflicted Inventory Count Line");
+
         return group;
     }
 
@@ -61,6 +69,58 @@ internal static class InventoryCountEndpoints
                 command,
                 cancellationToken);
 
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> ApplyInventoryCountLineAsync(
+        Guid inventoryCountId,
+        Guid lineId,
+        ApplyInventoryCountLineRequest request,
+        HttpContext httpContext,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken = default)
+    {
+        string? actorId = httpContext.GetActorId();
+        if (actorId is null)
+        {
+            return UnauthorizedResult();
+        }
+
+        var command = new ApplyInventoryCountLine.Command(
+            inventoryCountId,
+            lineId,
+            request.ExpectedLineVersion,
+            actorId);
+        ServiceResult<InventoryCountDetails> result = await commandDispatcher
+            .DispatchAsync<ApplyInventoryCountLine.Command, ServiceResult<InventoryCountDetails>>(
+                command,
+                cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> SupersedeInventoryCountLineAsync(
+        Guid inventoryCountId,
+        Guid lineId,
+        SupersedeInventoryCountLineRequest request,
+        HttpContext httpContext,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken = default)
+    {
+        string? actorId = httpContext.GetActorId();
+        if (actorId is null)
+        {
+            return UnauthorizedResult();
+        }
+
+        var command = new SupersedeInventoryCountLine.Command(
+            inventoryCountId,
+            lineId,
+            request.ExpectedLineVersion,
+            actorId);
+        ServiceResult<InventoryCountDetails> result = await commandDispatcher
+            .DispatchAsync<SupersedeInventoryCountLine.Command, ServiceResult<InventoryCountDetails>>(
+                command,
+                cancellationToken);
         return result.ToHttpResult();
     }
 

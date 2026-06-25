@@ -203,6 +203,112 @@ public sealed class InventoryCountTests
         Assert.Null(line.CountedQuantity);
     }
 
+    [Fact]
+    public void ApplyLine_WhenCounted_RecordsAuditAndTransaction()
+    {
+        InventoryCount count = CreateCount();
+        InventoryCountLine line = AddAndRecordLine(count, 10, 12);
+        Guid transactionId = Guid.NewGuid();
+        DateTimeOffset appliedAtUtc = DateTimeOffset.Parse("2026-06-25T11:00:00Z");
+
+        var result = count.ApplyLine(line.Id, transactionId, " operator-2 ", appliedAtUtc);
+
+        Assert.True(result.IsValid);
+        Assert.Equal(InventoryCountLineStatus.Applied, line.Status);
+        Assert.Equal("operator-2", line.AppliedByActorId);
+        Assert.Equal(appliedAtUtc, line.AppliedAtUtc);
+        Assert.Equal(transactionId, line.AppliedInventoryTransactionId);
+        Assert.True(line.IsCurrent);
+    }
+
+    [Fact]
+    public void MarkConflictAndSupersede_PreservesHistoryAndCreatesReplacement()
+    {
+        InventoryCount count = CreateCount();
+        InventoryCountLine conflictLine = AddAndRecordLine(count, 10, 12);
+        Assert.True(count.MarkLineConflict(conflictLine.Id).IsValid);
+        byte[] freshVersion = [8, 7, 6, 5, 4, 3, 2, 1];
+
+        var result = count.SupersedeLine(
+            conflictLine.Id,
+            freshSystemQuantity: 11,
+            freshVersion,
+            out InventoryCountLine? replacement);
+
+        Assert.True(result.IsValid);
+        Assert.NotNull(replacement);
+        Assert.Equal(InventoryCountLineStatus.Superseded, conflictLine.Status);
+        Assert.False(conflictLine.IsCurrent);
+        Assert.Equal(InventoryCountLineStatus.Pending, replacement.Status);
+        Assert.True(replacement.IsCurrent);
+        Assert.Equal(11, replacement.SystemQuantity);
+        Assert.True(freshVersion.SequenceEqual(replacement.ExpectedBalanceVersion!));
+        Assert.Equal(conflictLine.Id, replacement.SupersedesInventoryCountLineId);
+
+        var duplicate = count.SupersedeLine(
+            conflictLine.Id,
+            11,
+            freshVersion,
+            out InventoryCountLine? duplicateReplacement);
+
+        Assert.False(duplicate.IsValid);
+        Assert.Null(duplicateReplacement);
+    }
+
+    [Fact]
+    public void ConflictAndAppliedLines_RejectFurtherMutation()
+    {
+        InventoryCount conflictCount = CreateCount();
+        InventoryCountLine conflictLine = AddAndRecordLine(conflictCount, 10, 12);
+        conflictCount.MarkLineConflict(conflictLine.Id);
+
+        Assert.False(conflictCount.RecordLineCount(
+            conflictLine.Id,
+            13,
+            null,
+            "operator-2",
+            DateTimeOffset.UtcNow).IsValid);
+        Assert.False(conflictCount.ApplyLine(
+            conflictLine.Id,
+            Guid.NewGuid(),
+            "operator-2",
+            DateTimeOffset.UtcNow).IsValid);
+
+        InventoryCount appliedCount = CreateCount();
+        InventoryCountLine appliedLine = AddAndRecordLine(appliedCount, 10, 12);
+        appliedCount.ApplyLine(
+            appliedLine.Id,
+            Guid.NewGuid(),
+            "operator-2",
+            DateTimeOffset.UtcNow);
+
+        Assert.False(appliedCount.ApplyLine(
+            appliedLine.Id,
+            Guid.NewGuid(),
+            "operator-3",
+            DateTimeOffset.UtcNow).IsValid);
+    }
+
+    private static InventoryCountLine AddAndRecordLine(
+        InventoryCount count,
+        decimal systemQuantity,
+        decimal countedQuantity)
+    {
+        count.AddLine(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            systemQuantity,
+            [1, 2, 3, 4, 5, 6, 7, 8],
+            out InventoryCountLine? line);
+        count.RecordLineCount(
+            line!.Id,
+            countedQuantity,
+            null,
+            "operator-1",
+            DateTimeOffset.Parse("2026-06-25T10:00:00Z"));
+        return line;
+    }
+
     private static InventoryCount CreateCount()
     {
         var result = InventoryCount.Create(

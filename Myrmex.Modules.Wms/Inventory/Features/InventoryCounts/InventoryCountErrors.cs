@@ -23,6 +23,12 @@ internal static class InventoryCountErrors
         "The SKU and storage location already have a current line in this count.",
         nameof(InventoryCountLine.StockKeepingUnitId));
 
+    public static ServiceError BalanceSnapshotConflict() => new(
+        ServiceErrorType.Conflict,
+        "InventoryCountLine.BalanceSnapshotConflict",
+        "Inventory changed after the count line snapshot. Supersede the conflict to capture a fresh snapshot.",
+        nameof(InventoryCountLine.ExpectedBalanceVersion));
+
     public static ServiceError InvalidState(string message, string property) => new(
         ServiceErrorType.Conflict,
         "InventoryCount.InvalidState",

@@ -37,5 +37,18 @@ public sealed class InventoryCountPersistenceTests
         Assert.Contains(lineType.GetIndexes(), index =>
             index.GetDatabaseName() == WmsDatabaseNames.InventoryCountLineAppliedInventoryTransactionUniqueIndex &&
             index.IsUnique);
+
+        var appliedTransactionForeignKey = Assert.Single(
+            lineType.GetForeignKeys(),
+            foreignKey => foreignKey.Properties.Any(
+                property => property.Name == nameof(InventoryCountLine.AppliedInventoryTransactionId)));
+        Assert.Equal(DeleteBehavior.Restrict, appliedTransactionForeignKey.DeleteBehavior);
+
+        var supersedesForeignKey = Assert.Single(
+            lineType.GetForeignKeys(),
+            foreignKey => foreignKey.Properties.Any(
+                property => property.Name == nameof(InventoryCountLine.SupersedesInventoryCountLineId)));
+        Assert.Equal(DeleteBehavior.Restrict, supersedesForeignKey.DeleteBehavior);
+        Assert.True(supersedesForeignKey.IsUnique);
     }
 }

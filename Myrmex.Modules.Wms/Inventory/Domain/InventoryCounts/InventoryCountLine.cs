@@ -171,6 +171,80 @@ internal sealed class InventoryCountLine : EntityBase
         return DomainValidationResult.Valid;
     }
 
+    internal DomainValidationResult Apply(
+        Guid? inventoryTransactionId,
+        string? actorId,
+        DateTimeOffset appliedAtUtc)
+    {
+        List<DomainValidationFailure> errors = [];
+        string normalizedActorId = actorId?.Trim() ?? string.Empty;
+
+        if (Status != InventoryCountLineStatus.Counted)
+        {
+            errors.Add(
+                DomainValidationFailure.IncorrectState<InventoryCountLine>(nameof(Status)));
+        }
+
+        if (string.IsNullOrWhiteSpace(normalizedActorId))
+        {
+            errors.Add(
+                DomainValidationFailure.Required<InventoryCountLine>(
+                    nameof(AppliedByActorId)));
+        }
+        else if (normalizedActorId.Length > ActorIdMaxLength)
+        {
+            errors.Add(
+                DomainValidationFailure.TooLong<InventoryCountLine>(
+                    nameof(AppliedByActorId),
+                    ActorIdMaxLength));
+        }
+
+        DomainValidationResult result = DomainValidationResult.From(errors);
+        if (!result.IsValid)
+        {
+            return result;
+        }
+
+        Status = InventoryCountLineStatus.Applied;
+        AppliedByActorId = normalizedActorId;
+        AppliedAtUtc = appliedAtUtc;
+        AppliedInventoryTransactionId = inventoryTransactionId;
+        Touch();
+        return DomainValidationResult.Valid;
+    }
+
+    internal DomainValidationResult MarkConflict()
+    {
+        if (Status != InventoryCountLineStatus.Counted)
+        {
+            return DomainValidationResult.Invalid(
+                DomainValidationFailure.IncorrectState<InventoryCountLine>(nameof(Status)));
+        }
+
+        Status = InventoryCountLineStatus.Conflict;
+        Touch();
+        return DomainValidationResult.Valid;
+    }
+
+    internal DomainValidationResult MarkSuperseded()
+    {
+        if (Status != InventoryCountLineStatus.Conflict)
+        {
+            return DomainValidationResult.Invalid(
+                DomainValidationFailure.IncorrectState<InventoryCountLine>(nameof(Status)));
+        }
+
+        Status = InventoryCountLineStatus.Superseded;
+        IsCurrent = false;
+        Touch();
+        return DomainValidationResult.Valid;
+    }
+
+    internal void SetSupersedes(Guid lineId)
+    {
+        SupersedesInventoryCountLineId = lineId;
+    }
+
     private static string? NormalizeOptional(string? value)
     {
         string? normalized = value?.Trim();
