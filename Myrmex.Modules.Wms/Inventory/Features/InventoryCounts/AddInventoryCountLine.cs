@@ -81,7 +81,7 @@ internal static class AddInventoryCountLine
                 .Include(x => x.StorageLocationStatus)
                 .SingleOrDefaultAsync(x => x.Id == command.StorageLocationId!.Value, cancellationToken);
 
-            ServiceError? locationError = ValidateLocation(count, location, command);
+            ServiceError? locationError = ValidateLocation(count, location);
 
             if (locationError is not null)
             {
@@ -91,8 +91,8 @@ internal static class AddInventoryCountLine
             InventoryBalance? balance = await dbContext.InventoryBalances
                 .AsNoTracking()
                 .SingleOrDefaultAsync(
-                    x => x.StockKeepingUnitId == command.StockKeepingUnitId.Value &&
-                         x.StorageLocationId == command.StorageLocationId.Value,
+                    x => x.StockKeepingUnitId == command.StockKeepingUnitId!.Value &&
+                         x.StorageLocationId == command.StorageLocationId!.Value,
                     cancellationToken);
 
             DomainValidationResult addResult = count.AddLine(
@@ -100,7 +100,7 @@ internal static class AddInventoryCountLine
                 command.StorageLocationId,
                 balance?.Quantity ?? 0,
                 balance?.RowVersion,
-                out _);
+                out InventoryCountLine? line);
 
             if (!addResult.IsValid)
             {
@@ -114,6 +114,11 @@ internal static class AddInventoryCountLine
 
                 return ServiceResult<InventoryCountDetails>.Invalid(addResult.Errors);
             }
+
+            InventoryCountLine? addedLine = line
+                 ?? throw new InvalidOperationException("InventoryCount.AddLine returned a valid result without a line.");
+
+            dbContext.InventoryCountLines.Add(addedLine!);
 
             try
             {
@@ -179,8 +184,7 @@ internal static class AddInventoryCountLine
 
         private static ServiceError? ValidateLocation(
             InventoryCount count,
-            StorageLocation? location,
-            Command command)
+            StorageLocation? location)
         {
             if (location is null)
             {

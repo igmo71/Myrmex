@@ -60,6 +60,11 @@ public sealed class InventoryCountLineHandlerTests
                 null,
                 InventoryCountTestData.ActorId),
             TestContext.Current.CancellationToken);
+
+        Assert.True(created.IsSuccess);
+
+        testDbContext.DbContext.ChangeTracker.Clear();
+
         var addHandler = new AddInventoryCountLine.Handler(testDbContext.DbContext);
         ServiceResult<InventoryCountDetails> added = await addHandler.HandleAsync(
             new AddInventoryCountLine.Command(
@@ -70,9 +75,13 @@ public sealed class InventoryCountLineHandlerTests
                 InventoryCountTestData.ActorId),
             TestContext.Current.CancellationToken);
 
+        Assert.True(added.IsSuccess);
+
         InventoryCountLineDetails line = Assert.Single(added.Value.Lines);
         Assert.Equal(0, line.SystemQuantity);
         Assert.Null(line.ExpectedBalanceVersion);
+
+        testDbContext.DbContext.ChangeTracker.Clear();
 
         var removeHandler = new RemoveInventoryCountLine.Handler(testDbContext.DbContext);
         ServiceResult<InventoryCountDetails> removed = await removeHandler.HandleAsync(

@@ -121,7 +121,10 @@ internal sealed class InventoryCount : AggregateRoot
             return lineResult;
         }
 
-        _lines.Add(line!);
+        var createdLine = line
+            ?? throw new InvalidOperationException("InventoryCountLine.Create returned a valid result without a line.");
+
+        _lines.Add(createdLine);
         Touch();
         return DomainValidationResult.Valid;
     }
