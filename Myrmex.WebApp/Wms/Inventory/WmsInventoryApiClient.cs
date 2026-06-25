@@ -8,6 +8,15 @@ namespace Myrmex.WebApp.Wms.Inventory;
 
 public sealed class WmsInventoryApiClient(HttpClient httpClient)
 {
+    public async Task<ListResult<InventoryCountListItem>> ListInventoryCountsAsync(
+        ListInventoryCountsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.GetRequiredAsync<ListResult<InventoryCountListItem>>(
+            BuildInventoryCountListUrl(request),
+            cancellationToken);
+    }
+
     public async Task<ApiResult<InventoryCountDetails>> TryCreateInventoryCountAsync(
         CreateInventoryCountRequest request,
         CancellationToken cancellationToken = default)
@@ -290,6 +299,59 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
         if (request.WarehouseId.HasValue)
         {
             query.Add($"warehouseId={request.WarehouseId.Value}");
+        }
+
+        return query.Count == 0
+            ? path
+            : $"{path}?{string.Join("&", query)}";
+    }
+
+    private static string BuildInventoryCountListUrl(ListInventoryCountsRequest request)
+    {
+        string path = "/api/wms/inventory/counts";
+        List<string> query = [];
+
+        if (request.Skip.HasValue)
+        {
+            query.Add($"skip={request.Skip.Value}");
+        }
+
+        if (request.Take.HasValue)
+        {
+            query.Add($"take={request.Take.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SortBy))
+        {
+            query.Add($"sortBy={HttpUtility.UrlEncode(request.SortBy)}");
+        }
+
+        if (request.SortDescending.HasValue)
+        {
+            query.Add(
+                $"sortDescending={request.SortDescending.Value.ToString().ToLowerInvariant()}");
+        }
+
+        if (request.WarehouseId.HasValue)
+        {
+            query.Add($"warehouseId={request.WarehouseId.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Status))
+        {
+            query.Add($"status={HttpUtility.UrlEncode(request.Status)}");
+        }
+
+        if (request.CreatedFromUtc.HasValue)
+        {
+            query.Add(
+                $"createdFromUtc={HttpUtility.UrlEncode(request.CreatedFromUtc.Value.ToString("O", CultureInfo.InvariantCulture))}");
+        }
+
+        if (request.CreatedToUtc.HasValue)
+        {
+            query.Add(
+                $"createdToUtc={HttpUtility.UrlEncode(request.CreatedToUtc.Value.ToString("O", CultureInfo.InvariantCulture))}");
         }
 
         return query.Count == 0

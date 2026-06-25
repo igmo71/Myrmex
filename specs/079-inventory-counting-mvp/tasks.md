@@ -159,18 +159,18 @@
 
 ### Tests for User Story 5
 
-- [ ] T056 [US5] Write SQL Server query tests for warehouse/status/date filters, count-before-paging, supported/deterministic sorting, current-line progress, Superseded detail visibility, inactive-reference labels, versions, and cancellation in `Myrmex.Tests/Wms/Inventory/Features/InventoryCounts/InventoryCountQueryHandlerTests.cs`
-- [ ] T057 [P] [US5] Extend endpoint tests for list query binding, details routing, shared list/detail serialization, validation/not-found behavior, and cancellation dispatch in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryCountEndpointTests.cs`
-- [ ] T058 [P] [US5] Extend API-client tests for encoded list filters/sorts/dates, details URL, current DTO fixture deserialization, cancellation, and read-load errors in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [X] T056 [US5] Write SQL Server query tests for warehouse/status/date filters, count-before-paging, supported/deterministic sorting, current-line progress, Superseded detail visibility, inactive-reference labels, versions, and cancellation in `Myrmex.Tests/Wms/Inventory/Features/InventoryCounts/InventoryCountQueryHandlerTests.cs`
+- [X] T057 [P] [US5] Extend endpoint tests for list query binding, details routing, shared list/detail serialization, validation/not-found behavior, and cancellation dispatch in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryCountEndpointTests.cs`
+- [X] T058 [P] [US5] Extend API-client tests for encoded list filters/sorts/dates, details URL, current DTO fixture deserialization, cancellation, and read-load errors in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation for User Story 5
 
-- [ ] T059 [US5] Implement count list filters, status parsing, count-before-paging, deterministic sorting, current-line progress projection, and `ListResult<InventoryCountListItem>` in `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/ListInventoryCounts.cs` and `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/InventoryCountQueryableExtensions.cs`
-- [ ] T060 [US5] Map count list and details GET routes in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryCountEndpoints.cs`
-- [ ] T061 [US5] Add count list URL construction and details load methods in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
-- [ ] T062 [P] [US5] Build count grid request mapping, MudDataGrid server loading, progress/status columns, deterministic sort tags, pager, and empty state in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/InventoryCountGridRequest.cs` and `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/InventoryCountGrid.razor`
-- [ ] T063 [P] [US5] Build warehouse/status/date filters with page reset and reload behavior in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/InventoryCountFilters.razor`
-- [ ] T064 [US5] Build the Inventory Counts list page and code-behind with create/open/cancel orchestration, server-driven loading, errors, and refresh behavior in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/Index.razor` and `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/Index.razor.cs`
+- [X] T059 [US5] Implement count list filters, status parsing, count-before-paging, deterministic sorting, current-line progress projection, and `ListResult<InventoryCountListItem>` in `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/ListInventoryCounts.cs` and `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/InventoryCountQueryableExtensions.cs`
+- [X] T060 [US5] Map count list and details GET routes in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryCountEndpoints.cs`
+- [X] T061 [US5] Add count list URL construction and details load methods in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [X] T062 [P] [US5] Build count grid request mapping, MudDataGrid server loading, progress/status columns, deterministic sort tags, pager, and empty state in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/InventoryCountGridRequest.cs` and `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/InventoryCountGrid.razor`
+- [X] T063 [P] [US5] Build warehouse/status/date filters with page reset and reload behavior in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/InventoryCountFilters.razor`
+- [X] T064 [US5] Build the Inventory Counts list page and code-behind with create/open/cancel orchestration, server-driven loading, errors, and refresh behavior in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/Index.razor` and `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/Index.razor.cs`
 
 **Checkpoint**: Operators can monitor active counts and audit all historical count evidence.
 

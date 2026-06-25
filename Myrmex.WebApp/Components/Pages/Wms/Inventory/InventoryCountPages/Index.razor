@@ -1,17 +1,14 @@
 @page "/wms/inventory/counts"
-@using Myrmex.Shared.Wms.Inventory
-@inject IDialogService DialogService
-@inject NavigationManager NavigationManager
 
 <PageTitle>Inventory Counts</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="pt-4">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
     <MudStack Spacing="3">
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
             <div>
                 <MudText Typo="Typo.h5">Inventory Counts</MudText>
                 <MudText Typo="Typo.body2" Color="Color.Secondary">
-                    Create a count and prepare SKU/location snapshot lines.
+                    Monitor active counts and review permanent count history.
                 </MudText>
             </div>
             <MudButton Color="Color.Primary"
@@ -22,25 +19,26 @@
             </MudButton>
         </MudStack>
 
-        <MudAlert Severity="Severity.Info">
-            Count list and history are delivered in the Review Count History phase.
-        </MudAlert>
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+        }
+
+        <InventoryCountFilters Warehouses="_warehouses"
+                               SelectedWarehouseId="_selectedWarehouseId"
+                               SelectedWarehouseIdChanged="OnWarehouseChanged"
+                               SelectedStatus="_selectedStatus"
+                               SelectedStatusChanged="OnStatusChanged"
+                               CreatedFrom="_createdFrom"
+                               CreatedFromChanged="OnCreatedFromChanged"
+                               CreatedTo="_createdTo"
+                               CreatedToChanged="OnCreatedToChanged"
+                               IsLoadingWarehouses="_isLoadingWarehouses"
+                               ReloadRequested="ReloadAsync" />
+
+        <InventoryCountGrid @ref="_inventoryCountGrid"
+                            LoadData="LoadInventoryCountsAsync"
+                            OpenRequested="OpenAsync"
+                            CancelRequested="CancelAsync" />
     </MudStack>
 </MudContainer>
-
-@code {
-    private async Task CreateAsync()
-    {
-        IDialogReference dialog = await DialogService.ShowAsync<CreateInventoryCountDialog>(
-            "Create inventory count",
-            new DialogOptions { CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.Small });
-        DialogResult? result = await dialog.Result;
-
-        if (result is not null &&
-            !result.Canceled &&
-            result.Data is InventoryCountDetails count)
-        {
-            NavigationManager.NavigateTo($"/wms/inventory/counts/{count.Id}");
-        }
-    }
-}

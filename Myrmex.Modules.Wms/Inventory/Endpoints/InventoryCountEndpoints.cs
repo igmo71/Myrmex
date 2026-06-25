@@ -5,8 +5,10 @@ using Myrmex.AppDispatching.CommandDispatching;
 using Myrmex.AppDispatching.QueryDispatching;
 using Myrmex.AspNetCore.Results;
 using Myrmex.AspNetCore.Security;
+using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Inventory.Features.InventoryCounts;
+using Myrmex.Shared.Common;
 using Myrmex.Shared.Wms.Inventory;
 
 namespace Myrmex.Modules.Wms.Inventory.Endpoints;
@@ -15,6 +17,10 @@ internal static class InventoryCountEndpoints
 {
     public static RouteGroupBuilder MapInventoryCountEndpoints(this RouteGroupBuilder group)
     {
+        group.MapGet("/counts", ListInventoryCountsAsync)
+            .WithName("ListInventoryCounts")
+            .WithSummary("List Inventory Counts");
+
         group.MapPost("/counts", CreateInventoryCountAsync)
             .WithName("CreateInventoryCount")
             .WithSummary("Create Inventory Count");
@@ -52,6 +58,34 @@ internal static class InventoryCountEndpoints
             .WithSummary("Cancel Inventory Count");
 
         return group;
+    }
+
+    private static async Task<IResult> ListInventoryCountsAsync(
+        [AsParameters] ListInventoryCountsRequest request,
+        IQueryDispatcher queryDispatcher,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new ListInventoryCounts.Query
+        {
+            Skip = request.Skip ?? 0,
+            Take = request.Take ?? ListQuery.DefaultTake,
+            SortBy = request.SortBy,
+            SortDescending = request.SortDescending ?? true,
+            WarehouseId = request.WarehouseId,
+            StatusText = request.Status,
+            Status = ListInventoryCounts.ParseStatus(request.Status),
+            CreatedFromUtc = request.CreatedFromUtc,
+            CreatedToUtc = request.CreatedToUtc
+        };
+
+        ServiceResult<ListResult<InventoryCountListItem>> result =
+            await queryDispatcher.DispatchAsync<
+                ListInventoryCounts.Query,
+                ServiceResult<ListResult<InventoryCountListItem>>>(
+                query,
+                cancellationToken);
+
+        return result.ToHttpResult();
     }
 
     private static async Task<IResult> CreateInventoryCountAsync(

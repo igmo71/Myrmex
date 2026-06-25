@@ -1131,6 +1131,81 @@ public sealed class InventoryCountApiClientTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
+    public async Task ListInventoryCountsAsync_EncodesFiltersAndMapsCurrentDto()
+    {
+        InventoryCountDetails details = CreateDetails();
+        InventoryCountListItem item = CreateListItem(details);
+        ListResult<InventoryCountListItem> response = new([item], 1, 4, 9);
+        using CountStubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            JsonSerializer.Serialize(response, JsonOptions),
+            "application/json");
+        WmsInventoryApiClient client = new(CreateHttpClient(handler));
+        DateTimeOffset from = DateTimeOffset.Parse("2026-06-20T09:00:00+03:00");
+        DateTimeOffset to = DateTimeOffset.Parse("2026-06-21T18:00:00+03:00");
+
+        ListResult<InventoryCountListItem> result =
+            await client.ListInventoryCountsAsync(
+                new ListInventoryCountsRequest
+                {
+                    Skip = 4,
+                    Take = 9,
+                    SortBy = InventoryCountSortBy.WarehouseCode,
+                    SortDescending = false,
+                    WarehouseId = details.Warehouse.Id,
+                    Status = InventoryCountStatusDetails.InProgress,
+                    CreatedFromUtc = from,
+                    CreatedToUtc = to
+                },
+                TestContext.Current.CancellationToken);
+
+        Dictionary<string, string> query = ParseCountQuery(handler.Query);
+        Assert.Equal(HttpMethod.Get, handler.Method);
+        Assert.Equal("/api/wms/inventory/counts", handler.Path);
+        Assert.Equal("4", query["skip"]);
+        Assert.Equal("9", query["take"]);
+        Assert.Equal(InventoryCountSortBy.WarehouseCode, query["sortBy"]);
+        Assert.Equal("false", query["sortDescending"]);
+        Assert.Equal(details.Warehouse.Id.ToString(), query["warehouseId"]);
+        Assert.Equal(InventoryCountStatusDetails.InProgress, query["status"]);
+        Assert.Equal(from.ToString("O"), query["createdFromUtc"]);
+        Assert.Equal(to.ToString("O"), query["createdToUtc"]);
+        InventoryCountListItem mapped = Assert.Single(result.Items);
+        Assert.Equal(details.Id, mapped.Id);
+        Assert.Equal(1, mapped.LineCount);
+        Assert.Equal(details.CountVersion, mapped.CountVersion);
+    }
+
+    [Fact]
+    public async Task CountReadMethods_PropagateCancellationAndReadErrors()
+    {
+        using CountCancellableHttpMessageHandler cancellationHandler = new();
+        WmsInventoryApiClient cancellationClient = new(CreateHttpClient(cancellationHandler));
+        using CancellationTokenSource cancellationTokenSource = new();
+        Task<ListResult<InventoryCountListItem>> requestTask =
+            cancellationClient.ListInventoryCountsAsync(
+                new ListInventoryCountsRequest(),
+                cancellationTokenSource.Token);
+        await cancellationHandler.RequestStarted.Task;
+        cancellationTokenSource.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => requestTask);
+
+        using CountStubHttpMessageHandler errorHandler = new(
+            HttpStatusCode.NotFound,
+            """
+            {"status":404,"title":"Not Found","detail":"Inventory count not found.","code":"InventoryCount.NotFound"}
+            """,
+            "application/problem+json");
+        WmsInventoryApiClient errorClient = new(CreateHttpClient(errorHandler));
+        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
+            errorClient.GetInventoryCountByIdAsync(
+                Guid.NewGuid(),
+                TestContext.Current.CancellationToken));
+        Assert.Equal(404, exception.Status);
+        Assert.Equal("InventoryCount.NotFound", exception.Extensions["code"]);
+    }
+
+    [Fact]
     public async Task CountPreparationMethods_UseExpectedRoutesBodiesAndQuery()
     {
         InventoryCountDetails details = CreateDetails();
@@ -1464,6 +1539,38 @@ public sealed class InventoryCountApiClientTests
 
     private static HttpClient CreateHttpClient(HttpMessageHandler handler) =>
         new(handler) { BaseAddress = new Uri("https://myrmex.test") };
+
+    private static Dictionary<string, string> ParseCountQuery(string? query)
+    {
+        var values = HttpUtility.ParseQueryString(query ?? string.Empty);
+        return values.AllKeys
+            .Where(x => x is not null)
+            .ToDictionary(x => x!, x => values[x!]!);
+    }
+
+    private static InventoryCountListItem CreateListItem(InventoryCountDetails details)
+    {
+        return new InventoryCountListItem(
+            details.Id,
+            details.CountVersion,
+            InventoryCountStatusDetails.InProgress,
+            details.Reason,
+            details.CreatedAtUtc,
+            details.UpdatedAtUtc,
+            details.CompletedAtUtc,
+            details.CancelledAtUtc,
+            details.CreatedByActorId,
+            details.CompletedByActorId,
+            details.CancelledByActorId,
+            1,
+            0,
+            1,
+            0,
+            new InventoryCountListItem.WarehouseInfo(
+                details.Warehouse.Id,
+                details.Warehouse.Code,
+                details.Warehouse.Name));
+    }
 
     private static InventoryCountDetails CreateDetails()
     {

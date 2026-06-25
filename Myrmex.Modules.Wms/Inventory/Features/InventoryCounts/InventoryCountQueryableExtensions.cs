@@ -5,6 +5,113 @@ namespace Myrmex.Modules.Wms.Inventory.Features.InventoryCounts;
 
 internal static class InventoryCountQueryableExtensions
 {
+    public static IQueryable<InventoryCountListItemData> ProjectListItemData(
+        this IQueryable<InventoryCount> queryable)
+    {
+        return queryable.Select(count => new InventoryCountListItemData(
+            count.Id,
+            count.RowVersion,
+            count.Status.ToString(),
+            count.Reason,
+            count.CreatedAtUtc,
+            count.UpdatedAtUtc,
+            count.CompletedAtUtc,
+            count.CancelledAtUtc,
+            count.CreatedByActorId,
+            count.CompletedByActorId,
+            count.CancelledByActorId,
+            count.Lines.Count(x => x.IsCurrent),
+            count.Lines.Count(x =>
+                x.IsCurrent &&
+                x.Status == InventoryCountLineStatus.Applied),
+            count.Lines.Count(x =>
+                x.IsCurrent &&
+                x.Status != InventoryCountLineStatus.Applied),
+            count.Lines.Count(x =>
+                x.IsCurrent &&
+                x.Status == InventoryCountLineStatus.Conflict),
+            new InventoryCountListItemData.WarehouseInfo(
+                count.WarehouseId,
+                count.Warehouse.Code,
+                count.Warehouse.Name)));
+    }
+
+    public static InventoryCountListItem ToListItem(
+        this InventoryCountListItemData data)
+    {
+        return new InventoryCountListItem(
+            data.Id,
+            Convert.ToBase64String(data.RowVersion),
+            data.Status,
+            data.Reason,
+            data.CreatedAtUtc,
+            data.UpdatedAtUtc,
+            data.CompletedAtUtc,
+            data.CancelledAtUtc,
+            data.CreatedByActorId,
+            data.CompletedByActorId,
+            data.CancelledByActorId,
+            data.LineCount,
+            data.AppliedLineCount,
+            data.UnresolvedLineCount,
+            data.ConflictLineCount,
+            new InventoryCountListItem.WarehouseInfo(
+                data.Warehouse.Id,
+                data.Warehouse.Code,
+                data.Warehouse.Name));
+    }
+
+    public static IQueryable<InventoryCount> ApplyFilters(
+        this IQueryable<InventoryCount> queryable,
+        ListInventoryCounts.Query query)
+    {
+        if (query.WarehouseId is Guid warehouseId)
+        {
+            queryable = queryable.Where(x => x.WarehouseId == warehouseId);
+        }
+
+        if (query.Status is InventoryCountStatus status)
+        {
+            queryable = queryable.Where(x => x.Status == status);
+        }
+
+        if (query.CreatedFromUtc is DateTimeOffset createdFromUtc)
+        {
+            queryable = queryable.Where(x => x.CreatedAtUtc >= createdFromUtc);
+        }
+
+        if (query.CreatedToUtc is DateTimeOffset createdToUtc)
+        {
+            queryable = queryable.Where(x => x.CreatedAtUtc <= createdToUtc);
+        }
+
+        return queryable;
+    }
+
+    public static IQueryable<InventoryCount> ApplySorting(
+        this IQueryable<InventoryCount> queryable,
+        string? sortBy,
+        bool sortDescending)
+    {
+        if (sortBy == InventoryCountSortBy.Status)
+        {
+            return sortDescending
+                ? queryable.OrderByDescending(x => x.Status).ThenByDescending(x => x.Id)
+                : queryable.OrderBy(x => x.Status).ThenBy(x => x.Id);
+        }
+
+        if (sortBy == InventoryCountSortBy.WarehouseCode)
+        {
+            return sortDescending
+                ? queryable.OrderByDescending(x => x.Warehouse.Code).ThenByDescending(x => x.Id)
+                : queryable.OrderBy(x => x.Warehouse.Code).ThenBy(x => x.Id);
+        }
+
+        return sortDescending
+            ? queryable.OrderByDescending(x => x.CreatedAtUtc).ThenByDescending(x => x.Id)
+            : queryable.OrderBy(x => x.CreatedAtUtc).ThenBy(x => x.Id);
+    }
+
     public static IQueryable<InventoryCountDetailsData> ProjectDetailsData(
         this IQueryable<InventoryCount> queryable)
     {
@@ -116,6 +223,27 @@ internal static class InventoryCountQueryableExtensions
                         line.StorageLocation.Name)))
                 .ToList());
     }
+}
+
+internal sealed record InventoryCountListItemData(
+    Guid Id,
+    byte[] RowVersion,
+    string Status,
+    string? Reason,
+    DateTimeOffset CreatedAtUtc,
+    DateTimeOffset? UpdatedAtUtc,
+    DateTimeOffset? CompletedAtUtc,
+    DateTimeOffset? CancelledAtUtc,
+    string CreatedByActorId,
+    string? CompletedByActorId,
+    string? CancelledByActorId,
+    int LineCount,
+    int AppliedLineCount,
+    int UnresolvedLineCount,
+    int ConflictLineCount,
+    InventoryCountListItemData.WarehouseInfo Warehouse)
+{
+    public sealed record WarehouseInfo(Guid Id, string Code, string Name);
 }
 
 internal sealed record InventoryCountDetailsData(

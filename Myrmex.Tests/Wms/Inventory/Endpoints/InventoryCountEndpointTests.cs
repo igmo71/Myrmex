@@ -5,9 +5,12 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Myrmex.AppDispatching.CommandDispatching;
 using Myrmex.AppDispatching.QueryDispatching;
 using Myrmex.Core.Application;
+using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Inventory.Endpoints;
+using Myrmex.Modules.Wms.Inventory.Domain.InventoryCounts;
 using Myrmex.Modules.Wms.Inventory.Features.InventoryCounts;
+using Myrmex.Shared.Common;
 using Myrmex.Shared.Wms.Inventory;
 using System.Net;
 using System.Net.Http.Json;
@@ -456,15 +459,145 @@ public sealed class InventoryCountEndpointTests
         }
     }
 
+    [Fact]
+    public async Task ListInventoryCountsAsync_BindsQueryAndSerializesList()
+    {
+        InventoryCountDetails details = CreateDetails();
+        InventoryCountListItem listItem = CreateListItem(details);
+        RecordingQueryDispatcher queryDispatcher = new(details, listItem);
+        await using WebApplication app = CreateApp(
+            new RecordingCommandDispatcher(details),
+            authenticated: true,
+            queryDispatcher: queryDispatcher);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient client = CreateClient(app);
+            string url =
+                $"/api/wms/inventory/counts?skip=3&take=7&sortBy={InventoryCountSortBy.WarehouseCode}" +
+                $"&sortDescending=false&warehouseId={details.Warehouse.Id}" +
+                $"&status={InventoryCountStatusDetails.Draft}" +
+                "&createdFromUtc=2026-06-20T00%3A00%3A00Z" +
+                "&createdToUtc=2026-06-21T00%3A00%3A00Z";
+            using HttpResponseMessage response = await client.GetAsync(url, cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+            ListResult<InventoryCountListItem>? payload =
+                await response.Content.ReadFromJsonAsync<ListResult<InventoryCountListItem>>(
+                    cancellationToken);
+            Assert.Equal(listItem.Id, Assert.Single(payload!.Items).Id);
+            Assert.NotNull(queryDispatcher.ListQuery);
+            Assert.Equal(3, queryDispatcher.ListQuery.Skip);
+            Assert.Equal(7, queryDispatcher.ListQuery.Take);
+            Assert.Equal(details.Warehouse.Id, queryDispatcher.ListQuery.WarehouseId);
+            Assert.Equal(InventoryCountStatus.Draft, queryDispatcher.ListQuery.Status);
+            Assert.True(queryDispatcher.LastCancellationToken.CanBeCanceled);
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
+    [Fact]
+    public async Task ListInventoryCountsAsync_WhenValidationFails_Returns400()
+    {
+        InventoryCountDetails details = CreateDetails();
+        RecordingQueryDispatcher queryDispatcher = new(
+            details,
+            ServiceResult<ListResult<InventoryCountListItem>>.Invalid(
+                [DomainValidationFailure.Unsupported<ListInventoryCounts.Query>(
+                    nameof(ListInventoryCounts.Query.Status))]));
+        await using WebApplication app = CreateApp(
+            new RecordingCommandDispatcher(details),
+            authenticated: true,
+            queryDispatcher: queryDispatcher);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient client = CreateClient(app);
+            using HttpResponseMessage response = await client.GetAsync(
+                "/api/wms/inventory/counts?status=Unknown",
+                cancellationToken);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
+    [Fact]
+    public async Task GetInventoryCountByIdAsync_RoutesSerializesAndMapsNotFound()
+    {
+        InventoryCountDetails details = CreateDetails(includeLine: true);
+        RecordingQueryDispatcher successQueries = new(details);
+        await using WebApplication successApp = CreateApp(
+            new RecordingCommandDispatcher(details),
+            authenticated: true,
+            queryDispatcher: successQueries);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await successApp.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient client = CreateClient(successApp);
+            using HttpResponseMessage response = await client.GetAsync(
+                $"/api/wms/inventory/counts/{details.Id}",
+                cancellationToken);
+            response.EnsureSuccessStatusCode();
+            InventoryCountDetails? payload =
+                await response.Content.ReadFromJsonAsync<InventoryCountDetails>(
+                    cancellationToken);
+            Assert.Equal(details.Id, payload?.Id);
+            Assert.Single(payload!.Lines);
+            Assert.Equal(details.Id, successQueries.DetailsQuery?.InventoryCountId);
+        }
+        finally
+        {
+            await successApp.StopAsync(cancellationToken);
+        }
+
+        RecordingQueryDispatcher missingQueries = new(
+            details,
+            ServiceResult<InventoryCountDetails>.Fail(
+                ServiceError.NotFound<InventoryCount>(
+                    "InventoryCount not found",
+                    nameof(GetInventoryCountById.Query.InventoryCountId))));
+        await using WebApplication missingApp = CreateApp(
+            new RecordingCommandDispatcher(details),
+            authenticated: true,
+            queryDispatcher: missingQueries);
+        await missingApp.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient client = CreateClient(missingApp);
+            using HttpResponseMessage response = await client.GetAsync(
+                $"/api/wms/inventory/counts/{Guid.NewGuid()}",
+                cancellationToken);
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+        finally
+        {
+            await missingApp.StopAsync(cancellationToken);
+        }
+    }
+
     private static WebApplication CreateApp(
         RecordingCommandDispatcher commandDispatcher,
-        bool authenticated)
+        bool authenticated,
+        RecordingQueryDispatcher? queryDispatcher = null)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Services.AddSingleton<ICommandDispatcher>(commandDispatcher);
         builder.Services.AddSingleton<IQueryDispatcher>(
-            new RecordingQueryDispatcher(CreateDetails()));
+            queryDispatcher ?? new RecordingQueryDispatcher(CreateDetails()));
 
         WebApplication app = builder.Build();
 
@@ -551,6 +684,30 @@ public sealed class InventoryCountEndpointTests
                 "A-01-01"));
     }
 
+    private static InventoryCountListItem CreateListItem(InventoryCountDetails details)
+    {
+        return new InventoryCountListItem(
+            details.Id,
+            details.CountVersion,
+            details.Status,
+            details.Reason,
+            details.CreatedAtUtc,
+            details.UpdatedAtUtc,
+            details.CompletedAtUtc,
+            details.CancelledAtUtc,
+            details.CreatedByActorId,
+            details.CompletedByActorId,
+            details.CancelledByActorId,
+            details.Lines.Count,
+            0,
+            details.Lines.Count,
+            0,
+            new InventoryCountListItem.WarehouseInfo(
+                details.Warehouse.Id,
+                details.Warehouse.Code,
+                details.Warehouse.Name));
+    }
+
     private sealed class RecordingCommandDispatcher : ICommandDispatcher
     {
         private readonly ServiceResult<InventoryCountDetails> _result;
@@ -614,17 +771,79 @@ public sealed class InventoryCountEndpointTests
         }
     }
 
-    private sealed class RecordingQueryDispatcher(InventoryCountDetails details)
-        : IQueryDispatcher
+    private sealed class RecordingQueryDispatcher : IQueryDispatcher
     {
+        private readonly ServiceResult<InventoryCountDetails> _detailsResult;
+        private readonly ServiceResult<ListResult<InventoryCountListItem>> _listResult;
+
+        public RecordingQueryDispatcher(InventoryCountDetails details)
+            : this(details, CreateListItem(details))
+        {
+        }
+
+        public RecordingQueryDispatcher(
+            InventoryCountDetails details,
+            InventoryCountListItem listItem)
+            : this(
+                details,
+                ServiceResult<ListResult<InventoryCountListItem>>.Success(
+                    new ListResult<InventoryCountListItem>([listItem], 1, 0, 20)))
+        {
+        }
+
+        public RecordingQueryDispatcher(
+            InventoryCountDetails details,
+            ServiceResult<ListResult<InventoryCountListItem>> listResult)
+        {
+            _detailsResult = ServiceResult<InventoryCountDetails>.Success(details);
+            _listResult = listResult;
+        }
+
+        public RecordingQueryDispatcher(
+            InventoryCountDetails details,
+            ServiceResult<InventoryCountDetails> detailsResult)
+        {
+            _detailsResult = detailsResult;
+            _listResult = ServiceResult<ListResult<InventoryCountListItem>>.Success(
+                new ListResult<InventoryCountListItem>(
+                    [CreateListItem(details)],
+                    1,
+                    0,
+                    20));
+        }
+
+        public ListInventoryCounts.Query? ListQuery { get; private set; }
+        public GetInventoryCountById.Query? DetailsQuery { get; private set; }
+        public CancellationToken LastCancellationToken { get; private set; }
+
         public Task<TResult> DispatchAsync<TQuery, TResult>(
             TQuery query,
             CancellationToken cancellationToken = default)
             where TQuery : IQuery<TResult>
             where TResult : IServiceResult
         {
-            return Task.FromResult((TResult)(object)
-                ServiceResult<InventoryCountDetails>.Success(details));
+            LastCancellationToken = cancellationToken;
+            object result = query switch
+            {
+                ListInventoryCounts.Query list => CaptureList(list),
+                GetInventoryCountById.Query details => CaptureDetails(details),
+                _ => throw new NotSupportedException(typeof(TQuery).FullName)
+            };
+            return Task.FromResult((TResult)result);
+        }
+
+        private ServiceResult<ListResult<InventoryCountListItem>> CaptureList(
+            ListInventoryCounts.Query query)
+        {
+            ListQuery = query;
+            return _listResult;
+        }
+
+        private ServiceResult<InventoryCountDetails> CaptureDetails(
+            GetInventoryCountById.Query query)
+        {
+            DetailsQuery = query;
+            return _detailsResult;
         }
     }
 }

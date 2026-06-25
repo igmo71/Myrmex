@@ -1,0 +1,145 @@
+@using Myrmex.Shared.Wms.Inventory
+
+<MudDataGrid T="InventoryCountListItem"
+             @ref="_dataGrid"
+             ServerData="LoadServerDataAsync"
+             Dense="true"
+             Hover="true"
+             Bordered="true"
+             Striped="true"
+             SortMode="SortMode.Single"
+             Filterable="false">
+    <Columns>
+        <TemplateColumn Title="Created"
+                        Tag="@InventoryCountSortBy.CreatedAtUtc"
+                        SortBy="@(count => count.CreatedAtUtc)"
+                        Sortable="true">
+            <CellTemplate>
+                <MudText Typo="Typo.body2">@context.Item.CreatedAtUtc.ToLocalTime().ToString("g")</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @context.Item.CreatedByActorId
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Warehouse"
+                        Tag="@InventoryCountSortBy.WarehouseCode"
+                        SortBy="@(count => count.Warehouse.Code)"
+                        Sortable="true">
+            <CellTemplate>
+                <MudText Typo="Typo.body2">@context.Item.Warehouse.Code</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @context.Item.Warehouse.Name
+                </MudText>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Status"
+                        Tag="@InventoryCountSortBy.Status"
+                        SortBy="@(count => count.Status)"
+                        Sortable="true">
+            <CellTemplate>
+                <MudText>@context.Item.Status</MudText>
+                @if (context.Item.CompletedAtUtc.HasValue)
+                {
+                    <MudText Typo="Typo.caption">
+                        Completed @context.Item.CompletedAtUtc.Value.ToLocalTime().ToString("g")
+                    </MudText>
+                }
+                else if (context.Item.CancelledAtUtc.HasValue)
+                {
+                    <MudText Typo="Typo.caption">
+                        Cancelled @context.Item.CancelledAtUtc.Value.ToLocalTime().ToString("g")
+                    </MudText>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="@(count => count.LineCount)" Title="Current lines" Sortable="false" />
+        <PropertyColumn Property="@(count => count.AppliedLineCount)" Title="Applied" Sortable="false" />
+        <PropertyColumn Property="@(count => count.UnresolvedLineCount)" Title="Unresolved" Sortable="false" />
+        <PropertyColumn Property="@(count => count.ConflictLineCount)" Title="Conflict" Sortable="false" />
+        <TemplateColumn Title="Actions" Sortable="false">
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                               Size="Size.Small"
+                               title="Open count"
+                               OnClick="@(() => OpenRequested.InvokeAsync(context.Item))" />
+                @if (CanCancel(context.Item))
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Cancel"
+                                   Color="Color.Error"
+                                   Size="Size.Small"
+                                   title="Cancel count"
+                                   OnClick="@(() => CancelRequested.InvokeAsync(context.Item))" />
+                }
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <NoRecordsContent>
+        <MudText>No inventory counts match the current filters.</MudText>
+    </NoRecordsContent>
+    <PagerContent>
+        <MudDataGridPager T="InventoryCountListItem" PageSizeOptions="@PageSizeOptions" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired]
+    public Func<InventoryCountGridRequest, CancellationToken, Task<GridData<InventoryCountListItem>>> LoadData { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<InventoryCountListItem> OpenRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<InventoryCountListItem> CancelRequested { get; set; }
+
+    private MudDataGrid<InventoryCountListItem>? _dataGrid;
+    private static readonly int[] PageSizeOptions = [10, 25, 50, 100];
+
+    private Task<GridData<InventoryCountListItem>> LoadServerDataAsync(
+        GridState<InventoryCountListItem> state,
+        CancellationToken cancellationToken)
+    {
+        SortDefinition<InventoryCountListItem>? sort = state.SortDefinitions.FirstOrDefault();
+        return LoadData(
+            new InventoryCountGridRequest(
+                state.Page * state.PageSize,
+                state.PageSize,
+                ResolveSortBy(sort),
+                sort?.Descending ?? true),
+            cancellationToken);
+    }
+
+    private string ResolveSortBy(SortDefinition<InventoryCountListItem>? sort)
+    {
+        if (sort is null)
+        {
+            return InventoryCountSortBy.CreatedAtUtc;
+        }
+
+        Column<InventoryCountListItem>? column =
+            _dataGrid?.GetColumnByPropertyName(sort.SortBy);
+        return column?.Tag as string ?? InventoryCountSortBy.CreatedAtUtc;
+    }
+
+    public Task ReloadServerDataAsync() =>
+        _dataGrid?.ReloadServerData() ?? Task.CompletedTask;
+
+    public async Task ResetAndReloadServerDataAsync()
+    {
+        if (_dataGrid is null)
+        {
+            return;
+        }
+
+        if (_dataGrid.CurrentPage == 0)
+        {
+            await _dataGrid.ReloadServerData();
+            return;
+        }
+
+        _dataGrid.NavigateTo(Page.First);
+    }
+
+    private static bool CanCancel(InventoryCountListItem count) =>
+        count.Status is InventoryCountStatusDetails.Draft
+            or InventoryCountStatusDetails.InProgress;
+}
