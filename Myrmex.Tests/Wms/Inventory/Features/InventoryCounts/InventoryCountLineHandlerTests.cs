@@ -236,6 +236,173 @@ public sealed class InventoryCountLineHandlerTests
         Assert.Equal(ServiceErrorType.Invalid, result.Error.Type);
     }
 
+    [Fact]
+    public async Task RecordLine_WhenPendingAndCounted_PersistsLatestEvidenceAndUpdatesCountVersion()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        SeededInventoryCountReferences references =
+            await InventoryCountTestData.SeedReferencesAsync(testDbContext.DbContext);
+        InventoryCountDetails added = await CreateCountWithLineAsync(testDbContext, references);
+        InventoryCountLineDetails pendingLine = Assert.Single(added.Lines);
+        string initialCountVersion = added.CountVersion;
+
+        var handler = new RecordInventoryCountLine.Handler(testDbContext.DbContext);
+        ServiceResult<InventoryCountDetails> recorded = await handler.HandleAsync(
+            new RecordInventoryCountLine.Command(
+                added.Id,
+                pendingLine.Id,
+                CountedQuantity: 12,
+                Comment: "  Two units behind pallet  ",
+                ExpectedLineVersion: pendingLine.LineVersion,
+                ActorId: InventoryCountTestData.ActorId),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(recorded.IsSuccess);
+        Assert.Equal(InventoryCountStatusDetails.InProgress, recorded.Value.Status);
+        Assert.NotEqual(initialCountVersion, recorded.Value.CountVersion);
+        InventoryCountLineDetails countedLine = Assert.Single(recorded.Value.Lines);
+        Assert.Equal(InventoryCountLineStatusDetails.Counted, countedLine.Status);
+        Assert.Equal(10, countedLine.SystemQuantity);
+        Assert.Equal(12, countedLine.CountedQuantity);
+        Assert.Equal(2, countedLine.VarianceQuantity);
+        Assert.Equal("Two units behind pallet", countedLine.Comment);
+        Assert.Equal(InventoryCountTestData.ActorId, countedLine.CountedByActorId);
+        Assert.NotNull(countedLine.CountedAtUtc);
+
+        ServiceResult<InventoryCountDetails> recounted = await handler.HandleAsync(
+            new RecordInventoryCountLine.Command(
+                recorded.Value.Id,
+                countedLine.Id,
+                CountedQuantity: 9,
+                Comment: null,
+                ExpectedLineVersion: countedLine.LineVersion,
+                ActorId: "operator-002"),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(recounted.IsSuccess);
+        InventoryCountLineDetails revisedLine = Assert.Single(recounted.Value.Lines);
+        Assert.Equal(10, revisedLine.SystemQuantity);
+        Assert.Equal(9, revisedLine.CountedQuantity);
+        Assert.Equal(-1, revisedLine.VarianceQuantity);
+        Assert.Equal("operator-002", revisedLine.CountedByActorId);
+        Assert.NotNull(revisedLine.CountedAtUtc);
+        Assert.True(revisedLine.CountedAtUtc.Value >= countedLine.CountedAtUtc!.Value);
+    }
+
+    [Fact]
+    public async Task RecordLine_WhenInputInvalidOrVersionStale_ReturnsExpectedErrors()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        SeededInventoryCountReferences references =
+            await InventoryCountTestData.SeedReferencesAsync(testDbContext.DbContext);
+        InventoryCountDetails added = await CreateCountWithLineAsync(testDbContext, references);
+        InventoryCountLineDetails line = Assert.Single(added.Lines);
+        var handler = new RecordInventoryCountLine.Handler(testDbContext.DbContext);
+
+        ServiceResult<InventoryCountDetails> negative = await handler.HandleAsync(
+            new RecordInventoryCountLine.Command(
+                added.Id,
+                line.Id,
+                CountedQuantity: -1,
+                Comment: null,
+                ExpectedLineVersion: line.LineVersion,
+                ActorId: InventoryCountTestData.ActorId),
+            TestContext.Current.CancellationToken);
+        ServiceResult<InventoryCountDetails> longComment = await handler.HandleAsync(
+            new RecordInventoryCountLine.Command(
+                added.Id,
+                line.Id,
+                CountedQuantity: 10,
+                Comment: new string('x', 501),
+                ExpectedLineVersion: line.LineVersion,
+                ActorId: InventoryCountTestData.ActorId),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(ServiceErrorType.Invalid, negative.Error.Type);
+        Assert.Equal(ServiceErrorType.Invalid, longComment.Error.Type);
+
+        ServiceResult<InventoryCountDetails> recorded = await handler.HandleAsync(
+            new RecordInventoryCountLine.Command(
+                added.Id,
+                line.Id,
+                CountedQuantity: 10,
+                Comment: null,
+                ExpectedLineVersion: line.LineVersion,
+                ActorId: InventoryCountTestData.ActorId),
+            TestContext.Current.CancellationToken);
+        ServiceResult<InventoryCountDetails> stale = await handler.HandleAsync(
+            new RecordInventoryCountLine.Command(
+                added.Id,
+                line.Id,
+                CountedQuantity: 11,
+                Comment: null,
+                ExpectedLineVersion: line.LineVersion,
+                ActorId: InventoryCountTestData.ActorId),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(recorded.IsSuccess);
+        Assert.Equal(ServiceErrorType.Conflict, stale.Error.Type);
+    }
+
+    [Fact]
+    public async Task RemoveLine_WhenLineWasCounted_ReturnsConflict()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        SeededInventoryCountReferences references =
+            await InventoryCountTestData.SeedReferencesAsync(testDbContext.DbContext);
+        InventoryCountDetails added = await CreateCountWithLineAsync(testDbContext, references);
+        InventoryCountLineDetails line = Assert.Single(added.Lines);
+        InventoryCountDetails recorded = (await new RecordInventoryCountLine.Handler(testDbContext.DbContext)
+            .HandleAsync(
+                new RecordInventoryCountLine.Command(
+                    added.Id,
+                    line.Id,
+                    CountedQuantity: 10,
+                    Comment: null,
+                    ExpectedLineVersion: line.LineVersion,
+                    ActorId: InventoryCountTestData.ActorId),
+                TestContext.Current.CancellationToken)).Value;
+        InventoryCountLineDetails countedLine = Assert.Single(recorded.Lines);
+
+        ServiceResult<InventoryCountDetails> removed =
+            await new RemoveInventoryCountLine.Handler(testDbContext.DbContext).HandleAsync(
+                new RemoveInventoryCountLine.Command(
+                    recorded.Id,
+                    countedLine.Id,
+                    countedLine.LineVersion,
+                    InventoryCountTestData.ActorId),
+                TestContext.Current.CancellationToken);
+
+        Assert.Equal(ServiceErrorType.Conflict, removed.Error.Type);
+        Assert.Equal(
+            1,
+            await testDbContext.DbContext.InventoryCountLines.CountAsync(
+                TestContext.Current.CancellationToken));
+    }
+
+    private static async Task<InventoryCountDetails> CreateCountWithLineAsync(
+        TestWmsDbContext testDbContext,
+        SeededInventoryCountReferences references)
+    {
+        InventoryCountDetails created = (await new CreateInventoryCount.Handler(testDbContext.DbContext)
+            .HandleAsync(
+                new CreateInventoryCount.Command(
+                    references.Warehouse.Id,
+                    null,
+                    InventoryCountTestData.ActorId),
+                TestContext.Current.CancellationToken)).Value;
+
+        return (await new AddInventoryCountLine.Handler(testDbContext.DbContext)
+            .HandleAsync(
+                new AddInventoryCountLine.Command(
+                    created.Id,
+                    references.StockKeepingUnit.Id,
+                    references.ExistingBalanceLocation.Id,
+                    created.CountVersion,
+                    InventoryCountTestData.ActorId),
+                TestContext.Current.CancellationToken)).Value;
+    }
+
     public enum InvalidLocationKind
     {
         InternalTransit,

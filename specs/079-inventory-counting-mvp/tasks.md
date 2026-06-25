@@ -58,7 +58,7 @@
 - [X] T013 [US1] Add inventory-count table, key, foreign-key, index, actor-length, decimal, enum, rowversion, filtered uniqueness, and delete-behavior constants in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs`
 - [X] T014 [US1] Configure `InventoryCount` and `InventoryCountLine` persistence, filtered unique indexes, self-reference, applied-transaction link, and field-backed lines in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryCountConfiguration.cs` and `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/InventoryCountLineConfiguration.cs`
 - [X] T015 [US1] Register count DbSets and mappings in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs`
-- [ ] T016 [US1] Developer-controlled: generate and review the EF Core migration and model snapshot for the two count tables and indexes in `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/` and `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/WmsDbContextModelSnapshot.cs`
+- [X] T016 [US1] Developer-controlled: generate and review the EF Core migration and model snapshot for the two count tables and indexes in `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/` and `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/WmsDbContextModelSnapshot.cs`
 - [X] T017 [US1] Implement count-details projection with Base64 count/line versions, warehouse/SKU/location/base-UoM labels, all line history, actor audit, and replacement links in `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/InventoryCountQueryableExtensions.cs`
 - [X] T018 [US1] Implement create, add-line snapshot/eligibility, and Pending-remove commands with rowversion, duplicate-index, not-found, validation, and cancellation handling in `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/CreateInventoryCount.cs`, `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/AddInventoryCountLine.cs`, and `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/RemoveInventoryCountLine.cs`
 - [X] T019 [US1] Implement required-load details query in `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/GetInventoryCountById.cs`
@@ -80,19 +80,19 @@
 
 ### Tests for User Story 2
 
-- [ ] T025 [P] [US2] Extend domain tests for non-negative count entry, immutable system snapshot, variance calculation, counter replacement, first-entry InProgress transition, and incompatible/final states in `Myrmex.Tests/Wms/Inventory/Domain/InventoryCountTests.cs`
-- [ ] T026 [US2] Write SQL Server handler tests for Pending/Counted edits, actor/time persistence, count rowversion updates, negative/comment validation, stale line conflicts, and Counted deletion rejection in `Myrmex.Tests/Wms/Inventory/Features/InventoryCounts/InventoryCountLineHandlerTests.cs`
-- [ ] T027 [P] [US2] Extend endpoint tests for count-entry body/version/actor dispatch, success serialization, unauthenticated 401, and representative validation/conflict behavior in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryCountEndpointTests.cs`
-- [ ] T028 [P] [US2] Extend API-client tests for the count-entry route/body, version, cancellation, result mapping, and representative conflict in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
+- [X] T025 [P] [US2] Extend domain tests for non-negative count entry, immutable system snapshot, variance calculation, counter replacement, first-entry InProgress transition, and incompatible/final states in `Myrmex.Tests/Wms/Inventory/Domain/InventoryCountTests.cs`
+- [X] T026 [US2] Write SQL Server handler tests for Pending/Counted edits, actor/time persistence, count rowversion updates, negative/comment validation, stale line conflicts, and Counted deletion rejection in `Myrmex.Tests/Wms/Inventory/Features/InventoryCounts/InventoryCountLineHandlerTests.cs`
+- [X] T027 [P] [US2] Extend endpoint tests for count-entry body/version/actor dispatch, success serialization, unauthenticated 401, and representative validation/conflict behavior in `Myrmex.Tests/Wms/Inventory/Endpoints/InventoryCountEndpointTests.cs`
+- [X] T028 [P] [US2] Extend API-client tests for the count-entry route/body, version, cancellation, result mapping, and representative conflict in `Myrmex.Tests/Wms/Inventory/Client/WmsInventoryApiClientTests.cs`
 
 ### Implementation for User Story 2
 
-- [ ] T029 [US2] Implement physical count entry, variance recalculation, counter audit, immutable snapshot preservation, and Draft-to-InProgress transition in `Myrmex.Modules.Wms/Inventory/Domain/InventoryCounts/InventoryCount.cs` and `Myrmex.Modules.Wms/Inventory/Domain/InventoryCounts/InventoryCountLine.cs`
-- [ ] T030 [US2] Implement rowversion-aware count-entry command and handler in `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/RecordInventoryCountLine.cs`
-- [ ] T031 [US2] Map the line count-entry route with server-derived actor identity in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryCountEndpoints.cs`
-- [ ] T032 [US2] Add count-entry API-client transport in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
-- [ ] T033 [US2] Build the count-entry dialog with read-only SKU/location/system/base-UoM context, non-negative quantity, live variance, optional comment, and stale-result handling in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/RecordInventoryCountLineDialog.razor`
-- [ ] T034 [US2] Add Pending/Counted entry/edit actions and refresh the count status, audit, line version, and variance after success in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/InventoryCountDetails.razor`
+- [X] T029 [US2] Implement physical count entry, variance recalculation, counter audit, immutable snapshot preservation, and Draft-to-InProgress transition in `Myrmex.Modules.Wms/Inventory/Domain/InventoryCounts/InventoryCount.cs` and `Myrmex.Modules.Wms/Inventory/Domain/InventoryCounts/InventoryCountLine.cs`
+- [X] T030 [US2] Implement rowversion-aware count-entry command and handler in `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/RecordInventoryCountLine.cs`
+- [X] T031 [US2] Map the line count-entry route with server-derived actor identity in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryCountEndpoints.cs`
+- [X] T032 [US2] Add count-entry API-client transport in `Myrmex.WebApp/Wms/Inventory/WmsInventoryApiClient.cs`
+- [X] T033 [US2] Build the count-entry dialog with read-only SKU/location/system/base-UoM context, non-negative quantity, live variance, optional comment, and stale-result handling in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/RecordInventoryCountLineDialog.razor`
+- [X] T034 [US2] Add Pending/Counted entry/edit actions and refresh the count status, audit, line version, and variance after success in `Myrmex.WebApp/Components/Pages/Wms/Inventory/InventoryCountPages/InventoryCountDetailsPage.razor`
 
 **Checkpoint**: Physical quantities are recorded as permanent counting evidence independently of inventory adjustment.
 

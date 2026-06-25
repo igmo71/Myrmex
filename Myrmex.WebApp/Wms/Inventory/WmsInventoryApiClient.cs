@@ -53,6 +53,18 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
             cancellationToken);
     }
 
+    public async Task<ApiResult<InventoryCountDetails>> TryRecordInventoryCountLineAsync(
+        Guid inventoryCountId,
+        Guid lineId,
+        RecordInventoryCountLineRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<InventoryCountDetails>(
+            $"/api/wms/inventory/counts/{inventoryCountId}/lines/{lineId}/count",
+            request,
+            cancellationToken);
+    }
+
     public async Task<ListResult<InventoryBalanceDetails>> ListInventoryBalancesAsync(
         ListInventoryBalancesRequest request,
         CancellationToken cancellationToken = default)

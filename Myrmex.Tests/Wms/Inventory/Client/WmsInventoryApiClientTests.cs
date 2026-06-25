@@ -1205,6 +1205,89 @@ public sealed class InventoryCountApiClientTests
         Assert.Equal("Count changed.", result.Error?.Message);
     }
 
+    [Fact]
+    public async Task TryRecordInventoryCountLineAsync_UsesExpectedRouteBodyAndMapsResult()
+    {
+        InventoryCountDetails details = CreateDetails();
+        InventoryCountLineDetails line = Assert.Single(details.Lines);
+        using CountStubHttpMessageHandler handler = new(details);
+        WmsInventoryApiClient client = new(CreateHttpClient(handler));
+        using CancellationTokenSource cancellationTokenSource = new();
+
+        ApiResult<InventoryCountDetails> result =
+            await client.TryRecordInventoryCountLineAsync(
+                details.Id,
+                line.Id,
+                new RecordInventoryCountLineRequest(
+                    CountedQuantity: 12,
+                    Comment: "Two units behind pallet",
+                    ExpectedLineVersion: line.LineVersion),
+                cancellationTokenSource.Token);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(details.Id, result.Value?.Id);
+        Assert.Equal(HttpMethod.Post, handler.Method);
+        Assert.Equal(
+            $"/api/wms/inventory/counts/{details.Id}/lines/{line.Id}/count",
+            handler.Path);
+        using JsonDocument body = JsonDocument.Parse(handler.Body);
+        Assert.Equal(12, body.RootElement.GetProperty("countedQuantity").GetDecimal());
+        Assert.Equal(
+            "Two units behind pallet",
+            body.RootElement.GetProperty("comment").GetString());
+        Assert.Equal(
+            line.LineVersion,
+            body.RootElement.GetProperty("expectedLineVersion").GetString());
+        Assert.False(body.RootElement.TryGetProperty("actorId", out _));
+    }
+
+    [Fact]
+    public async Task TryRecordInventoryCountLineAsync_WhenConflict_MapsProblemDetails()
+    {
+        using CountStubHttpMessageHandler handler = new(
+            HttpStatusCode.Conflict,
+            """
+            {"status":409,"title":"Conflict","detail":"Count line changed.","code":"InventoryCountLine.ConcurrencyConflict"}
+            """,
+            "application/problem+json");
+        WmsInventoryApiClient client = new(CreateHttpClient(handler));
+
+        ApiResult<InventoryCountDetails> result =
+            await client.TryRecordInventoryCountLineAsync(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                new RecordInventoryCountLineRequest(12, null, "AAAAAAAAB9I="),
+                TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(409, result.Error?.Status);
+        Assert.Equal("Count line changed.", result.Error?.Message);
+        Assert.Equal(
+            "InventoryCountLine.ConcurrencyConflict",
+            result.Error?.Extensions["code"]);
+    }
+
+    [Fact]
+    public async Task TryRecordInventoryCountLineAsync_WhenCanceled_PropagatesCancellation()
+    {
+        using CountCancellableHttpMessageHandler handler = new();
+        WmsInventoryApiClient client = new(CreateHttpClient(handler));
+        using CancellationTokenSource cancellationTokenSource = new();
+
+        Task<ApiResult<InventoryCountDetails>> requestTask =
+            client.TryRecordInventoryCountLineAsync(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                new RecordInventoryCountLineRequest(12, null, "AAAAAAAAB9I="),
+                cancellationTokenSource.Token);
+
+        await handler.RequestStarted.Task;
+        cancellationTokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => requestTask);
+        Assert.True(handler.CancellationObserved);
+    }
+
     private static HttpClient CreateHttpClient(HttpMessageHandler handler) =>
         new(handler) { BaseAddress = new Uri("https://myrmex.test") };
 
@@ -1289,6 +1372,7 @@ public sealed class InventoryCountApiClientTests
         public string? Path { get; private set; }
         public string? Query { get; private set; }
         public string Body { get; private set; } = string.Empty;
+        public CancellationToken RequestCancellationToken { get; private set; }
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
@@ -1297,6 +1381,7 @@ public sealed class InventoryCountApiClientTests
             Method = request.Method;
             Path = request.RequestUri?.AbsolutePath;
             Query = request.RequestUri?.Query;
+            RequestCancellationToken = cancellationToken;
 
             if (request.Content is not null)
             {
@@ -1307,6 +1392,34 @@ public sealed class InventoryCountApiClientTests
             {
                 Content = new StringContent(_content, Encoding.UTF8, _mediaType)
             };
+        }
+    }
+
+    private sealed class CountCancellableHttpMessageHandler : HttpMessageHandler
+    {
+        public TaskCompletionSource RequestStarted { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public bool CancellationObserved { get; private set; }
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            RequestStarted.SetResult();
+
+            try
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                CancellationObserved = true;
+                throw;
+            }
+
+            throw new InvalidOperationException(
+                "The cancellable handler should not complete successfully.");
         }
     }
 }

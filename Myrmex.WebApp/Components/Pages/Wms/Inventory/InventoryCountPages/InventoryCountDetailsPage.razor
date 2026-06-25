@@ -24,13 +24,21 @@
                         @_count.Warehouse.Code - @_count.Warehouse.Name
                     </MudText>
                 </div>
-                <MudButton Color="Color.Primary"
-                           Variant="Variant.Filled"
-                           StartIcon="@Icons.Material.Filled.Add"
-                           OnClick="OpenAddLineAsync">
-                    Add line
-                </MudButton>
+                @if (CanModifyCount)
+                {
+                    <MudButton Color="Color.Primary"
+                               Variant="Variant.Filled"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="OpenAddLineAsync">
+                        Add line
+                    </MudButton>
+                }
             </MudStack>
+
+            @if (!string.IsNullOrWhiteSpace(_actionMessage))
+            {
+                <MudAlert Severity="Severity.Info">@_actionMessage</MudAlert>
+            }
 
             <MudPaper Class="pa-4" Outlined="true">
                 <MudGrid>
@@ -61,6 +69,7 @@
                     <MudTh>Counted quantity</MudTh>
                     <MudTh>Variance</MudTh>
                     <MudTh>Status</MudTh>
+                    <MudTh>Count evidence</MudTh>
                     <MudTh>Actions</MudTh>
                 </HeaderContent>
                 <RowTemplate>
@@ -74,7 +83,36 @@
                     <MudTd>@(context.VarianceQuantity?.ToString() ?? "—")</MudTd>
                     <MudTd>@context.Status</MudTd>
                     <MudTd>
-                        @if (context.Status == InventoryCountLineStatusDetails.Pending)
+                        @if (context.CountedAtUtc.HasValue)
+                        {
+                            <MudText Typo="Typo.body2">@context.CountedByActorId</MudText>
+                            <MudText Typo="Typo.caption">
+                                @context.CountedAtUtc.Value.ToLocalTime().ToString("g")
+                            </MudText>
+                            @if (!string.IsNullOrWhiteSpace(context.Comment))
+                            {
+                                <MudText Typo="Typo.caption">@context.Comment</MudText>
+                            }
+                        }
+                        else
+                        {
+                            <MudText>—</MudText>
+                        }
+                    </MudTd>
+                    <MudTd>
+                        @if (CanRecordLine(context))
+                        {
+                            <MudButton Size="Size.Small"
+                                       Color="Color.Primary"
+                                       Variant="Variant.Text"
+                                       OnClick="@(() => OpenRecordCountAsync(context))">
+                                @(context.Status == InventoryCountLineStatusDetails.Counted
+                                    ? "Edit count"
+                                    : "Enter count")
+                            </MudButton>
+                        }
+                        @if (CanModifyCount &&
+                             context.Status == InventoryCountLineStatusDetails.Pending)
                         {
                             <MudButton Size="Size.Small"
                                        Color="Color.Error"
@@ -100,6 +138,11 @@
     private InventoryCountDetails? _count;
     private bool _isLoading;
     private string? _errorMessage;
+    private string? _actionMessage;
+
+    private bool CanModifyCount =>
+        _count?.Status is InventoryCountStatusDetails.Draft
+            or InventoryCountStatusDetails.InProgress;
 
     protected override Task OnParametersSetAsync() => LoadAsync();
 
@@ -144,6 +187,54 @@
             result.Data is InventoryCountDetails updated)
         {
             _count = updated;
+            _actionMessage = null;
+        }
+    }
+
+    private async Task OpenRecordCountAsync(InventoryCountLineDetails countLine)
+    {
+        if (_count is null)
+        {
+            return;
+        }
+
+        DialogParameters parameters = new()
+        {
+            [nameof(RecordInventoryCountLineDialog.Count)] = _count,
+            [nameof(RecordInventoryCountLineDialog.CountLine)] = countLine
+        };
+        IDialogReference dialog = await DialogService.ShowAsync<RecordInventoryCountLineDialog>(
+            countLine.Status == InventoryCountLineStatusDetails.Counted
+                ? "Edit physical count"
+                : "Enter physical count",
+            parameters,
+            new DialogOptions
+            {
+                CloseButton = true,
+                FullWidth = true,
+                MaxWidth = MaxWidth.Small
+            });
+        DialogResult? result = await dialog.Result;
+
+        if (result is null || result.Canceled)
+        {
+            return;
+        }
+
+        if (result.Data is InventoryCountDetails updated)
+        {
+            _count = updated;
+            _errorMessage = null;
+            _actionMessage = "Physical count recorded.";
+            return;
+        }
+
+        if (result.Data is string outcome &&
+            outcome == RecordInventoryCountLineDialog.StaleResult)
+        {
+            await LoadAsync();
+            _actionMessage =
+                "The count line changed before it was saved. Details were refreshed.";
         }
     }
 
@@ -178,7 +269,13 @@
         }
 
         _count = result.Value;
+        _actionMessage = null;
     }
+
+    private bool CanRecordLine(InventoryCountLineDetails countLine) =>
+        CanModifyCount &&
+        countLine.Status is InventoryCountLineStatusDetails.Pending
+            or InventoryCountLineStatusDetails.Counted;
 
     private static string FormatUom(InventoryCountLineDetails line) =>
         string.IsNullOrWhiteSpace(line.Sku.BaseUom.Symbol)

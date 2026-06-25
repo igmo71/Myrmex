@@ -1,0 +1,205 @@
+@using System.Globalization
+@using Myrmex.Shared.Wms.Inventory
+@using Myrmex.WebApp.Wms.Api
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@DialogTitle</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudStack Spacing="3">
+                <MudTextField T="string"
+                              Label="SKU"
+                              Value="@SkuDisplay"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Disabled="true" />
+
+                <MudTextField T="string"
+                              Label="Storage location"
+                              Value="@LocationDisplay"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Disabled="true" />
+
+                <MudNumericField T="decimal"
+                                 Label="System quantity"
+                                 Value="@CountLine.SystemQuantity"
+                                 Culture="@QuantityCulture"
+                                 Format="0.####"
+                                 Disabled="true" />
+
+                <MudTextField T="string"
+                              Label="Base UoM"
+                              Value="@BaseUomDisplay"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Disabled="true" />
+
+                <MudNumericField T="decimal"
+                                 Label="Counted quantity"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Min="@(0m)"
+                                 Required="true"
+                                 RequiredError="Counted quantity is required."
+                                 Culture="@QuantityCulture"
+                                 Format="0.####"
+                                 InputMode="@(InputMode.@decimal)"
+                                 @bind-Value="_countedQuantity" />
+
+                <MudNumericField T="decimal"
+                                 Label="Variance"
+                                 Value="@VarianceQuantity"
+                                 Culture="@QuantityCulture"
+                                 Format="+0.####;-0.####;0"
+                                 Disabled="true" />
+
+                <MudTextField T="string"
+                              Label="Comment"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Lines="3"
+                              MaxLength="500"
+                              @bind-Value="_comment" />
+
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+                }
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_isSaving">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="SaveAsync"
+                   Disabled="_isSaving">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Size="Size.Small"
+                                     Indeterminate="true"
+                                     Class="me-2" />
+            }
+            Save count
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    public const string StaleResult = "InventoryCountLineStale";
+
+    private static readonly CultureInfo QuantityCulture =
+        CultureInfo.GetCultureInfo("ru-RU");
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public InventoryCountDetails Count { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public InventoryCountLineDetails CountLine { get; set; } = null!;
+
+    [Inject]
+    private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = null!;
+
+    private MudForm? _form;
+    private decimal _countedQuantity;
+    private string? _comment;
+    private string? _errorMessage;
+    private bool _isSaving;
+
+    private string DialogTitle =>
+        CountLine.Status == InventoryCountLineStatusDetails.Counted
+            ? "Edit physical count"
+            : "Enter physical count";
+
+    private string SkuDisplay => $"{CountLine.Sku.Code} - {CountLine.Sku.Name}";
+
+    private string LocationDisplay =>
+        $"{CountLine.StorageLocation.Code} - {CountLine.StorageLocation.Name}";
+
+    private string BaseUomDisplay =>
+        string.IsNullOrWhiteSpace(CountLine.Sku.BaseUom.Symbol)
+            ? CountLine.Sku.BaseUom.Code
+            : $"{CountLine.Sku.BaseUom.Code} ({CountLine.Sku.BaseUom.Symbol})";
+
+    private decimal VarianceQuantity => _countedQuantity - CountLine.SystemQuantity;
+
+    protected override void OnInitialized()
+    {
+        _countedQuantity = CountLine.CountedQuantity ?? CountLine.SystemQuantity;
+        _comment = CountLine.Comment;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        if (_countedQuantity < 0)
+        {
+            _errorMessage = "Counted quantity must be non-negative.";
+            return;
+        }
+
+        _isSaving = true;
+        _errorMessage = null;
+
+        try
+        {
+            ApiResult<InventoryCountDetails> result =
+                await WmsInventoryApiClient.TryRecordInventoryCountLineAsync(
+                    Count.Id,
+                    CountLine.Id,
+                    new Myrmex.Shared.Wms.Inventory.RecordInventoryCountLineRequest(
+                        _countedQuantity,
+                        _comment,
+                        CountLine.LineVersion));
+
+            if (result.IsFailure)
+            {
+                if (result.Error?.Status == 409)
+                {
+                    MudDialog.Close(DialogResult.Ok(StaleResult));
+                    return;
+                }
+
+                _errorMessage = result.Error?.Message ?? "Recording the count failed.";
+                return;
+            }
+
+            if (result.Value is null)
+            {
+                _errorMessage = "The operation completed without returning count details.";
+                return;
+            }
+
+            MudDialog.Close(DialogResult.Ok(result.Value));
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

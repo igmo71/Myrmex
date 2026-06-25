@@ -31,6 +31,10 @@ internal static class InventoryCountEndpoints
             .WithName("RemoveInventoryCountLine")
             .WithSummary("Remove Pending Inventory Count Line");
 
+        group.MapPost("/counts/{inventoryCountId:guid}/lines/{lineId:guid}/count", RecordInventoryCountLineAsync)
+            .WithName("RecordInventoryCountLine")
+            .WithSummary("Record Inventory Count Line Quantity");
+
         return group;
     }
 
@@ -127,6 +131,37 @@ internal static class InventoryCountEndpoints
 
         ServiceResult<InventoryCountDetails> result = await commandDispatcher
             .DispatchAsync<RemoveInventoryCountLine.Command, ServiceResult<InventoryCountDetails>>(
+                command,
+                cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> RecordInventoryCountLineAsync(
+        Guid inventoryCountId,
+        Guid lineId,
+        RecordInventoryCountLineRequest request,
+        HttpContext httpContext,
+        ICommandDispatcher commandDispatcher,
+        CancellationToken cancellationToken = default)
+    {
+        string? actorId = httpContext.GetActorId();
+
+        if (actorId is null)
+        {
+            return UnauthorizedResult();
+        }
+
+        var command = new RecordInventoryCountLine.Command(
+            inventoryCountId,
+            lineId,
+            request.CountedQuantity,
+            request.Comment,
+            request.ExpectedLineVersion,
+            actorId);
+
+        ServiceResult<InventoryCountDetails> result = await commandDispatcher
+            .DispatchAsync<RecordInventoryCountLine.Command, ServiceResult<InventoryCountDetails>>(
                 command,
                 cancellationToken);
 

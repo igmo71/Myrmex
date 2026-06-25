@@ -151,6 +151,110 @@ public sealed class InventoryCountEndpointTests
         }
     }
 
+    [Fact]
+    public async Task RecordInventoryCountLineAsync_BindsBodyRouteAndAuthenticatedActor()
+    {
+        InventoryCountDetails details = CreateDetails(includeLine: true);
+        InventoryCountLineDetails line = Assert.Single(details.Lines);
+        RecordingCommandDispatcher dispatcher = new(details);
+        await using WebApplication app = CreateApp(dispatcher, authenticated: true);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient client = CreateClient(app);
+            using HttpResponseMessage response = await client.PostAsJsonAsync(
+                $"/api/wms/inventory/counts/{details.Id}/lines/{line.Id}/count",
+                new RecordInventoryCountLineRequest(
+                    CountedQuantity: 12,
+                    Comment: "Two units behind pallet",
+                    ExpectedLineVersion: line.LineVersion),
+                cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+            Assert.NotNull(dispatcher.RecordCommand);
+            Assert.Equal(details.Id, dispatcher.RecordCommand.InventoryCountId);
+            Assert.Equal(line.Id, dispatcher.RecordCommand.LineId);
+            Assert.Equal(12, dispatcher.RecordCommand.CountedQuantity);
+            Assert.Equal("Two units behind pallet", dispatcher.RecordCommand.Comment);
+            Assert.Equal(line.LineVersion, dispatcher.RecordCommand.ExpectedLineVersion);
+            Assert.Equal("actor-sub", dispatcher.RecordCommand.ActorId);
+
+            using JsonDocument json = JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync(cancellationToken));
+            Assert.Equal(details.Id, json.RootElement.GetProperty("id").GetGuid());
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
+    [Fact]
+    public async Task RecordInventoryCountLineAsync_WhenUnauthenticated_Returns401WithoutDispatch()
+    {
+        InventoryCountDetails details = CreateDetails(includeLine: true);
+        InventoryCountLineDetails line = Assert.Single(details.Lines);
+        RecordingCommandDispatcher dispatcher = new(details);
+        await using WebApplication app = CreateApp(dispatcher, authenticated: false);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient client = CreateClient(app);
+            using HttpResponseMessage response = await client.PostAsJsonAsync(
+                $"/api/wms/inventory/counts/{details.Id}/lines/{line.Id}/count",
+                new RecordInventoryCountLineRequest(12, null, line.LineVersion),
+                cancellationToken);
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.Null(dispatcher.RecordCommand);
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
+    [Theory]
+    [InlineData(ServiceErrorType.Invalid, HttpStatusCode.BadRequest)]
+    [InlineData(ServiceErrorType.Conflict, HttpStatusCode.Conflict)]
+    public async Task RecordInventoryCountLineAsync_WhenDispatchFails_MapsError(
+        ServiceErrorType errorType,
+        HttpStatusCode expectedStatus)
+    {
+        InventoryCountDetails details = CreateDetails(includeLine: true);
+        InventoryCountLineDetails line = Assert.Single(details.Lines);
+        ServiceError error = errorType == ServiceErrorType.Invalid
+            ? ServiceError.Validation<InventoryCountDetails>(
+                "Counted quantity is invalid.",
+                nameof(RecordInventoryCountLineRequest.CountedQuantity))
+            : InventoryCountErrors.LineConcurrency(
+                nameof(RecordInventoryCountLineRequest.ExpectedLineVersion));
+        RecordingCommandDispatcher dispatcher = new(
+            ServiceResult<InventoryCountDetails>.Fail(error));
+        await using WebApplication app = CreateApp(dispatcher, authenticated: true);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient client = CreateClient(app);
+            using HttpResponseMessage response = await client.PostAsJsonAsync(
+                $"/api/wms/inventory/counts/{details.Id}/lines/{line.Id}/count",
+                new RecordInventoryCountLineRequest(12, null, line.LineVersion),
+                cancellationToken);
+
+            Assert.Equal(expectedStatus, response.StatusCode);
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
     private static WebApplication CreateApp(
         RecordingCommandDispatcher commandDispatcher,
         bool authenticated)
@@ -263,6 +367,7 @@ public sealed class InventoryCountEndpointTests
         public CreateInventoryCount.Command? CreateCommand { get; private set; }
         public AddInventoryCountLine.Command? AddCommand { get; private set; }
         public RemoveInventoryCountLine.Command? RemoveCommand { get; private set; }
+        public RecordInventoryCountLine.Command? RecordCommand { get; private set; }
 
         public Task<TResult> DispatchAsync<TCommand, TResult>(
             TCommand command,
@@ -280,6 +385,9 @@ public sealed class InventoryCountEndpointTests
                     break;
                 case RemoveInventoryCountLine.Command remove:
                     RemoveCommand = remove;
+                    break;
+                case RecordInventoryCountLine.Command record:
+                    RecordCommand = record;
                     break;
                 default:
                     throw new NotSupportedException(typeof(TCommand).FullName);

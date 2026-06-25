@@ -107,4 +107,73 @@ internal sealed class InventoryCountLine : EntityBase
             : DomainValidationResult.Invalid(
                 DomainValidationFailure.IncorrectState<InventoryCountLine>(nameof(Status)));
     }
+
+    internal DomainValidationResult RecordCount(
+        decimal countedQuantity,
+        string? comment,
+        string? actorId,
+        DateTimeOffset countedAtUtc)
+    {
+        List<DomainValidationFailure> errors = [];
+        string? normalizedComment = NormalizeOptional(comment);
+        string normalizedActorId = actorId?.Trim() ?? string.Empty;
+
+        if (Status is not InventoryCountLineStatus.Pending and not InventoryCountLineStatus.Counted)
+        {
+            errors.Add(
+                DomainValidationFailure.IncorrectState<InventoryCountLine>(nameof(Status)));
+        }
+
+        if (countedQuantity < 0)
+        {
+            errors.Add(
+                DomainValidationFailure.MustBeNonNegative<InventoryCountLine>(
+                    nameof(CountedQuantity)));
+        }
+
+        if (normalizedComment is not null && normalizedComment.Length > CommentMaxLength)
+        {
+            errors.Add(
+                DomainValidationFailure.TooLong<InventoryCountLine>(
+                    nameof(Comment),
+                    CommentMaxLength));
+        }
+
+        if (string.IsNullOrWhiteSpace(normalizedActorId))
+        {
+            errors.Add(
+                DomainValidationFailure.Required<InventoryCountLine>(
+                    nameof(CountedByActorId)));
+        }
+        else if (normalizedActorId.Length > ActorIdMaxLength)
+        {
+            errors.Add(
+                DomainValidationFailure.TooLong<InventoryCountLine>(
+                    nameof(CountedByActorId),
+                    ActorIdMaxLength));
+        }
+
+        DomainValidationResult result = DomainValidationResult.From(errors);
+
+        if (!result.IsValid)
+        {
+            return result;
+        }
+
+        CountedQuantity = countedQuantity;
+        VarianceQuantity = countedQuantity - SystemQuantity;
+        Comment = normalizedComment;
+        CountedByActorId = normalizedActorId;
+        CountedAtUtc = countedAtUtc;
+        Status = InventoryCountLineStatus.Counted;
+        Touch();
+
+        return DomainValidationResult.Valid;
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        string? normalized = value?.Trim();
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+    }
 }

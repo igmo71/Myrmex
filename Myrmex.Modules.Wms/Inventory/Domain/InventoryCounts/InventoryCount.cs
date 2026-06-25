@@ -151,6 +151,47 @@ internal sealed class InventoryCount : AggregateRoot
         return DomainValidationResult.Valid;
     }
 
+    public DomainValidationResult RecordLineCount(
+        Guid lineId,
+        decimal countedQuantity,
+        string? comment,
+        string? actorId,
+        DateTimeOffset countedAtUtc)
+    {
+        if (Status is InventoryCountStatus.Completed or InventoryCountStatus.Cancelled)
+        {
+            return DomainValidationResult.Invalid(
+                DomainValidationFailure.IncorrectState<InventoryCount>(nameof(Status)));
+        }
+
+        InventoryCountLine? line = _lines.SingleOrDefault(x => x.Id == lineId);
+
+        if (line is null)
+        {
+            return DomainValidationResult.Invalid(
+                DomainValidationFailure.Required<InventoryCountLine>(nameof(lineId)));
+        }
+
+        DomainValidationResult lineResult = line.RecordCount(
+            countedQuantity,
+            comment,
+            actorId,
+            countedAtUtc);
+
+        if (!lineResult.IsValid)
+        {
+            return lineResult;
+        }
+
+        if (Status == InventoryCountStatus.Draft)
+        {
+            Status = InventoryCountStatus.InProgress;
+        }
+
+        Touch();
+        return DomainValidationResult.Valid;
+    }
+
     private static string? NormalizeOptional(string? value)
     {
         string? normalized = value?.Trim();
