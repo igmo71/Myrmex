@@ -32,35 +32,39 @@
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
+        <PropertyColumn Property="@(count => count.LineCount)" Title="Current lines" Sortable="false" />
+        <PropertyColumn Property="@(count => count.AppliedLineCount)" Title="Applied" Sortable="false" />
+        <PropertyColumn Property="@(count => count.UnresolvedLineCount)" Title="Unresolved" Sortable="false" />
+        <PropertyColumn Property="@(count => count.ConflictLineCount)" Title="Conflict" Sortable="false" />
         <TemplateColumn Title="Status"
                         Tag="@InventoryCountSortBy.Status"
                         SortBy="@(count => count.Status)"
                         Sortable="true">
             <CellTemplate>
-                <MudText>@context.Item.Status</MudText>
+                <MudChip T="string"
+                         Size="Size.Small"
+                         Color="@GetStatusColor(context.Item.Status)">
+                    @context.Item.Status
+                </MudChip>
                 @if (context.Item.CompletedAtUtc.HasValue)
                 {
                     <MudText Typo="Typo.caption">
-                        Completed @context.Item.CompletedAtUtc.Value.ToLocalTime().ToString("g")
+                        @context.Item.CompletedAtUtc.Value.ToLocalTime().ToString("g")
                     </MudText>
                 }
                 else if (context.Item.CancelledAtUtc.HasValue)
                 {
                     <MudText Typo="Typo.caption">
-                        Cancelled @context.Item.CancelledAtUtc.Value.ToLocalTime().ToString("g")
+                        @context.Item.CancelledAtUtc.Value.ToLocalTime().ToString("g")
                     </MudText>
                 }
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="@(count => count.LineCount)" Title="Current lines" Sortable="false" />
-        <PropertyColumn Property="@(count => count.AppliedLineCount)" Title="Applied" Sortable="false" />
-        <PropertyColumn Property="@(count => count.UnresolvedLineCount)" Title="Unresolved" Sortable="false" />
-        <PropertyColumn Property="@(count => count.ConflictLineCount)" Title="Conflict" Sortable="false" />
         <TemplateColumn Title="Actions" Sortable="false">
             <CellTemplate>
-                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                <MudIconButton Icon="@GetActionIcon(context.Item)"
                                Size="Size.Small"
-                               title="Open count"
+                               title="@GetActionTitle(context.Item)"
                                OnClick="@(() => OpenRequested.InvokeAsync(context.Item))" />
                 @if (CanCancel(context.Item))
                 {
@@ -142,4 +146,42 @@
     private static bool CanCancel(InventoryCountListItem count) =>
         count.Status is InventoryCountStatusDetails.Draft
             or InventoryCountStatusDetails.InProgress;
+
+
+
+    private static Color GetStatusColor(string status)
+    {
+        return status switch
+        {
+            InventoryCountStatusDetails.Draft => Color.Default,
+            InventoryCountStatusDetails.InProgress => Color.Warning,
+            InventoryCountStatusDetails.Completed => Color.Success,
+            InventoryCountStatusDetails.Cancelled => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private static string GetActionIcon(InventoryCountListItem count)
+    {
+        return count.Status switch
+        {
+            InventoryCountStatusDetails.Draft => Icons.Material.Filled.Edit,
+            InventoryCountStatusDetails.InProgress => Icons.Material.Filled.Edit,
+            InventoryCountStatusDetails.Completed => Icons.Material.Filled.Visibility,
+            InventoryCountStatusDetails.Cancelled => Icons.Material.Filled.Visibility,
+            _ => Icons.Material.Filled.Visibility
+        };
+    }
+
+    private static string GetActionTitle(InventoryCountListItem count)
+    {
+        return count.Status switch
+        {
+            InventoryCountStatusDetails.Draft => "Open count",
+            InventoryCountStatusDetails.InProgress => "Open count",
+            InventoryCountStatusDetails.Completed => "View count",
+            InventoryCountStatusDetails.Cancelled => "View count",
+            _ => ""
+        };
+    }
 }
