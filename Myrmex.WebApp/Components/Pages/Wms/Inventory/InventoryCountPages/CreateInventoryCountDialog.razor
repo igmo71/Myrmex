@@ -1,0 +1,134 @@
+@using Myrmex.Shared.Common
+@using Myrmex.Shared.Wms.Inventory
+@using Myrmex.Shared.Wms.Topology
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Create inventory count</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudStack Spacing="3">
+                <MudSelect T="Guid?"
+                           Label="Warehouse"
+                           Variant="Variant.Outlined"
+                           Required="true"
+                           RequiredError="Warehouse is required."
+                           Disabled="_isLoading"
+                           @bind-Value="_warehouseId">
+                    @foreach (WarehouseDetails warehouse in _warehouses)
+                    {
+                        <MudSelectItem T="Guid?" Value="@((Guid?)warehouse.Id)">
+                            @warehouse.Code - @warehouse.Name
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudTextField T="string"
+                              Label="Reason or description"
+                              Variant="Variant.Outlined"
+                              Lines="3"
+                              MaxLength="500"
+                              @bind-Value="_reason" />
+
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                {
+                    <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+                }
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_isSaving">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="SaveAsync"
+                   Disabled="_isSaving || _isLoading">
+            Create
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Inject]
+    private WmsTopologyApiClient WmsTopologyApiClient { get; set; } = null!;
+
+    [Inject]
+    private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = null!;
+
+    private MudForm? _form;
+    private List<WarehouseDetails> _warehouses = [];
+    private Guid? _warehouseId;
+    private string? _reason;
+    private string? _errorMessage;
+    private bool _isLoading;
+    private bool _isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+
+        try
+        {
+            ListResult<WarehouseDetails> result = await WmsTopologyApiClient.ListWarehousesAsync(
+                new ListRequest(0, 100, SortBy: "code", SortDescending: false, IncludeInactive: false));
+            _warehouses = result.Items.ToList();
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        await _form.ValidateAsync();
+
+        if (!_form.IsValid)
+        {
+            return;
+        }
+
+        _isSaving = true;
+        _errorMessage = null;
+
+        try
+        {
+            ApiResult<InventoryCountDetails> result =
+                await WmsInventoryApiClient.TryCreateInventoryCountAsync(
+                    new CreateInventoryCountRequest(_warehouseId, _reason));
+
+            if (result.IsFailure || result.Value is null)
+            {
+                _errorMessage = result.Error?.Message ?? "Inventory count creation failed.";
+                return;
+            }
+
+            MudDialog.Close(DialogResult.Ok(result.Value));
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

@@ -8,6 +8,118 @@ namespace Myrmex.WebApp.Wms.Inventory;
 
 public sealed class WmsInventoryApiClient(HttpClient httpClient)
 {
+    public async Task<ListResult<InventoryCountListItem>> ListInventoryCountsAsync(
+        ListInventoryCountsRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.GetRequiredAsync<ListResult<InventoryCountListItem>>(
+            BuildInventoryCountListUrl(request),
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<InventoryCountDetails>> TryCreateInventoryCountAsync(
+        CreateInventoryCountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<InventoryCountDetails>(
+            "/api/wms/inventory/counts",
+            request,
+            cancellationToken);
+    }
+
+    public async Task<InventoryCountDetails> GetInventoryCountByIdAsync(
+        Guid inventoryCountId,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.GetRequiredAsync<InventoryCountDetails>(
+            $"/api/wms/inventory/counts/{inventoryCountId}",
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<InventoryCountDetails>> TryAddInventoryCountLineAsync(
+        Guid inventoryCountId,
+        AddInventoryCountLineRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<InventoryCountDetails>(
+            $"/api/wms/inventory/counts/{inventoryCountId}/lines",
+            request,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<InventoryCountDetails>> TryRemoveInventoryCountLineAsync(
+        Guid inventoryCountId,
+        Guid lineId,
+        string expectedLineVersion,
+        CancellationToken cancellationToken = default)
+    {
+        string url =
+            $"/api/wms/inventory/counts/{inventoryCountId}/lines/{lineId}" +
+            $"?expectedLineVersion={HttpUtility.UrlEncode(expectedLineVersion)}";
+
+        return await httpClient.DeleteAsApiResultAsync<InventoryCountDetails>(
+            url,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<InventoryCountDetails>> TryRecordInventoryCountLineAsync(
+        Guid inventoryCountId,
+        Guid lineId,
+        RecordInventoryCountLineRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<InventoryCountDetails>(
+            $"/api/wms/inventory/counts/{inventoryCountId}/lines/{lineId}/count",
+            request,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<InventoryCountDetails>> TryApplyInventoryCountLineAsync(
+        Guid inventoryCountId,
+        Guid lineId,
+        ApplyInventoryCountLineRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<InventoryCountDetails>(
+            $"/api/wms/inventory/counts/{inventoryCountId}/lines/{lineId}/apply",
+            request,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<InventoryCountDetails>> TrySupersedeInventoryCountLineAsync(
+        Guid inventoryCountId,
+        Guid lineId,
+        SupersedeInventoryCountLineRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<InventoryCountDetails>(
+            $"/api/wms/inventory/counts/{inventoryCountId}/lines/{lineId}/supersede",
+            request,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<InventoryCountDetails>> TryCompleteInventoryCountAsync(
+        Guid inventoryCountId,
+        ChangeInventoryCountStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<InventoryCountDetails>(
+            $"/api/wms/inventory/counts/{inventoryCountId}/complete",
+            request,
+            cancellationToken);
+    }
+
+    public async Task<ApiResult<InventoryCountDetails>> TryCancelInventoryCountAsync(
+        Guid inventoryCountId,
+        ChangeInventoryCountStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        return await httpClient.PostAsApiResultAsync<InventoryCountDetails>(
+            $"/api/wms/inventory/counts/{inventoryCountId}/cancel",
+            request,
+            cancellationToken);
+    }
+
     public async Task<ListResult<InventoryBalanceDetails>> ListInventoryBalancesAsync(
         ListInventoryBalancesRequest request,
         CancellationToken cancellationToken = default)
@@ -187,6 +299,59 @@ public sealed class WmsInventoryApiClient(HttpClient httpClient)
         if (request.WarehouseId.HasValue)
         {
             query.Add($"warehouseId={request.WarehouseId.Value}");
+        }
+
+        return query.Count == 0
+            ? path
+            : $"{path}?{string.Join("&", query)}";
+    }
+
+    private static string BuildInventoryCountListUrl(ListInventoryCountsRequest request)
+    {
+        string path = "/api/wms/inventory/counts";
+        List<string> query = [];
+
+        if (request.Skip.HasValue)
+        {
+            query.Add($"skip={request.Skip.Value}");
+        }
+
+        if (request.Take.HasValue)
+        {
+            query.Add($"take={request.Take.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SortBy))
+        {
+            query.Add($"sortBy={HttpUtility.UrlEncode(request.SortBy)}");
+        }
+
+        if (request.SortDescending.HasValue)
+        {
+            query.Add(
+                $"sortDescending={request.SortDescending.Value.ToString().ToLowerInvariant()}");
+        }
+
+        if (request.WarehouseId.HasValue)
+        {
+            query.Add($"warehouseId={request.WarehouseId.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Status))
+        {
+            query.Add($"status={HttpUtility.UrlEncode(request.Status)}");
+        }
+
+        if (request.CreatedFromUtc.HasValue)
+        {
+            query.Add(
+                $"createdFromUtc={HttpUtility.UrlEncode(request.CreatedFromUtc.Value.ToString("O", CultureInfo.InvariantCulture))}");
+        }
+
+        if (request.CreatedToUtc.HasValue)
+        {
+            query.Add(
+                $"createdToUtc={HttpUtility.UrlEncode(request.CreatedToUtc.Value.ToString("O", CultureInfo.InvariantCulture))}");
         }
 
         return query.Count == 0

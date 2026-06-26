@@ -1,0 +1,44 @@
+@page "/wms/inventory/counts"
+
+<PageTitle>Inventory Counts</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <div>
+                <MudText Typo="Typo.h5">Inventory Counts</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Monitor active counts and review permanent count history.
+                </MudText>
+            </div>
+            <MudButton Color="Color.Primary"
+                       Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="CreateAsync">
+                Create count
+            </MudButton>
+        </MudStack>
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+        }
+
+        <InventoryCountFilters Warehouses="@_warehouses"
+                               SelectedWarehouseId="@_selectedWarehouseId"
+                               SelectedWarehouseIdChanged="OnWarehouseChanged"
+                               SelectedStatus="@_selectedStatus"
+                               SelectedStatusChanged="OnStatusChanged"
+                               CreatedFrom="@_createdFrom"
+                               CreatedFromChanged="OnCreatedFromChanged"
+                               CreatedTo="@_createdTo"
+                               CreatedToChanged="OnCreatedToChanged"
+                               IsLoadingWarehouses="@_isLoadingWarehouses"
+                               ReloadRequested="ReloadAsync" />
+
+        <InventoryCountGrid @ref="_inventoryCountGrid"
+                            LoadData="LoadInventoryCountsAsync"
+                            OpenRequested="OpenAsync"
+                            CancelRequested="CancelAsync" />
+    </MudStack>
+</MudContainer>

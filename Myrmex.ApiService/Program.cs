@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Myrmex.AppDispatching;
 using Myrmex.Modules.Wms;
 using Scalar.AspNetCore;
@@ -47,6 +48,31 @@ app.MapGet("/weatherforecast", () =>
 .WithName("GetWeatherForecast");
 
 app.MapDefaultEndpoints();
+
+if (app.Environment.IsDevelopment()
+    && app.Configuration.GetValue<bool>("Myrmex:DevelopmentActor:Enabled"))
+{
+    var actorId = app.Configuration["Myrmex:DevelopmentActor:ActorId"];
+    if (string.IsNullOrWhiteSpace(actorId))
+    {
+        actorId = "dev-smoke-operator";
+    }
+
+    app.Use(async (context, next) =>
+    {
+        Claim[] claims =
+        [
+            new("sub", actorId),
+            new(ClaimTypes.NameIdentifier, actorId),
+            new(ClaimTypes.Name, actorId)
+        ];
+
+        context.User = new ClaimsPrincipal(
+            new ClaimsIdentity(claims, authenticationType: "DevelopmentActor"));
+
+        await next(context);
+    });
+}
 
 app.MapWmsModule();
 

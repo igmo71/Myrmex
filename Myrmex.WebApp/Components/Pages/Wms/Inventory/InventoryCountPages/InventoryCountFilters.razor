@@ -1,0 +1,83 @@
+@using Myrmex.Shared.Wms.Inventory
+@using Myrmex.Shared.Wms.Topology
+
+<MudPaper Class="pa-4">
+    <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
+        <MudSelect T="Guid?"
+                   Label="Warehouse"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Clearable="true"
+                   Value="SelectedWarehouseId"
+                   ValueChanged="OnWarehouseChanged"
+                   Disabled="IsLoadingWarehouses"
+                   HelperText="&#160;"
+                   Class="min-width-300">
+            @foreach (WarehouseDetails warehouse in Warehouses)
+            {
+                <MudSelectItem T="Guid?" Value="@((Guid?)warehouse.Id)">
+                    @warehouse.Code - @warehouse.Name
+                </MudSelectItem>
+            }
+        </MudSelect>
+        <MudSelect T="string"
+                   Label="Status"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Clearable="true"
+                   Value="SelectedStatus"
+                   ValueChanged="OnStatusChanged"
+                   HelperText="&#160;"
+                   Class="min-width-220">
+            <MudSelectItem T="string" Value="@InventoryCountStatusDetails.Draft">Draft</MudSelectItem>
+            <MudSelectItem T="string" Value="@InventoryCountStatusDetails.InProgress">In progress</MudSelectItem>
+            <MudSelectItem T="string" Value="@InventoryCountStatusDetails.Completed">Completed</MudSelectItem>
+            <MudSelectItem T="string" Value="@InventoryCountStatusDetails.Cancelled">Cancelled</MudSelectItem>
+        </MudSelect>
+        <MudDatePicker Label="Created from"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Date="CreatedFrom"
+                       DateChanged="OnCreatedFromChanged"
+                       Clearable="true"
+                       HelperText="&#160;"
+                       Class="min-width-220" />
+        <MudDatePicker Label="Created to"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Date="CreatedTo"
+                       DateChanged="OnCreatedToChanged"
+                       Clearable="true"
+                       HelperText="&#160;"
+                       Class="min-width-220" />
+        <MudButton Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   OnClick="OnReloadRequested">
+            Refresh
+        </MudButton>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public IReadOnlyList<WarehouseDetails> Warehouses { get; set; } = [];
+    [Parameter] public Guid? SelectedWarehouseId { get; set; }
+    [Parameter] public EventCallback<Guid?> SelectedWarehouseIdChanged { get; set; }
+    [Parameter] public string? SelectedStatus { get; set; }
+    [Parameter] public EventCallback<string?> SelectedStatusChanged { get; set; }
+    [Parameter] public DateTime? CreatedFrom { get; set; }
+    [Parameter] public EventCallback<DateTime?> CreatedFromChanged { get; set; }
+    [Parameter] public DateTime? CreatedTo { get; set; }
+    [Parameter] public EventCallback<DateTime?> CreatedToChanged { get; set; }
+    [Parameter] public bool IsLoadingWarehouses { get; set; }
+    [Parameter] public EventCallback ReloadRequested { get; set; }
+
+    private Task OnWarehouseChanged(Guid? value) =>
+        SelectedWarehouseIdChanged.InvokeAsync(value);
+    private Task OnStatusChanged(string? value) =>
+        SelectedStatusChanged.InvokeAsync(value);
+    private Task OnCreatedFromChanged(DateTime? value) =>
+        CreatedFromChanged.InvokeAsync(value);
+    private Task OnCreatedToChanged(DateTime? value) =>
+        CreatedToChanged.InvokeAsync(value);
+    private Task OnReloadRequested() => ReloadRequested.InvokeAsync();
+}
