@@ -1,46 +1,156 @@
-Document Inventory Counting MVP implementation lessons as general Myrmex development guidelines.
+# Domain Persistence Guidelines
 
-Scope:
+These guidelines capture domain and persistence lessons reinforced during issue #79, **Inventory Counting MVP**.
 
-* Do not change application behavior.
-* Do not change domain logic, handlers, API contracts, UI, migrations, tests, database schema, authentication, authorization, or infrastructure.
-* Do not run build, tests, migrations, database update, app startup, Docker, or infrastructure commands.
-* Documentation-only change.
+They apply to Myrmex domain entities, EF Core persistence code, and tests that create or persist aggregate graphs.
 
-Add a concise guideline section to the most appropriate persistent project documentation file, preferably `AGENTS.md` if no dedicated architecture/development-guidelines document exists.
+## Aggregate child identity
 
-Document these rules:
+When an aggregate root creates a child entity that has a required parent foreign key, the child factory or constructor must receive and set the aggregate root ID immediately.
 
-1. Aggregate child identity
+Do not rely on EF Core relationship fixup to populate required parent identity for domain-created child entities.
 
-* When an aggregate root creates a child entity that has a required parent FK, the child factory/constructor must receive and set the aggregate root Id immediately.
-* Do not rely on EF relationship fixup to populate required parent identity for domain-created child entities.
+Preferred pattern:
 
-2. Domain creation vs EF tracking
+```csharp
+DomainValidationResult result = InventoryCountLine.Create(
+    inventoryCountId: Id,
+    stockKeepingUnitId,
+    storageLocationId,
+    systemQuantity,
+    expectedBalanceVersion,
+    out InventoryCountLine? line);
+```
 
-* Domain methods may create child entities, but EF tracking is an application/persistence concern.
-* If a handler receives a newly created child entity from a domain method, the handler must explicitly add it to the relevant DbSet so EF persists it as INSERT.
+The child entity should be valid from the domain perspective immediately after creation:
 
-3. Query/persistence test setup
+```csharp
+private InventoryCountLine(
+    Guid inventoryCountId,
+    Guid stockKeepingUnitId,
+    Guid storageLocationId,
+    decimal systemQuantity,
+    byte[]? expectedBalanceVersion)
+{
+    InventoryCountId = inventoryCountId;
+    StockKeepingUnitId = stockKeepingUnitId;
+    StorageLocationId = storageLocationId;
+    SystemQuantity = systemQuantity;
+    ExpectedBalanceVersion = expectedBalanceVersion is null
+        ? null
+        : [.. expectedBalanceVersion];
+}
+```
 
-* Tests that bypass application handlers and directly call domain methods are responsible for modelling persistence setup explicitly.
-* If such a test creates child entities through aggregate methods, it must explicitly add those new children to the DbContext.
+## Domain creation vs EF Core tracking
 
-4. SQL ordering and Guid ordering
+Domain methods may create child entities, but EF Core tracking is an application and persistence concern.
 
-* Do not assert SQL Server `uniqueidentifier` ordering by using .NET `Guid.OrderBy(...)`.
-* For deterministic list queries, use SQL-side tie-breakers such as `ThenBy(x => x.Id)` / `ThenByDescending(x => x.Id)`, but tests should verify primary ordering and stability without assuming .NET and SQL Server Guid comparison order are identical.
+If an application handler receives a newly created child entity from a domain method, the handler must explicitly add it to the relevant `DbSet` so EF Core persists it as an `INSERT`.
 
-5. Test design
+Preferred pattern:
 
-* Avoid combining unrelated assertions in one test.
-* Prefer separate tests for sorting, invalid filters, persistence setup, and state transitions.
+```csharp
+DomainValidationResult result = count.AddLine(
+    stockKeepingUnitId,
+    storageLocationId,
+    systemQuantity,
+    expectedBalanceVersion,
+    out InventoryCountLine? line);
 
-Also add a short note that these rules were reinforced during issue #79 Inventory Counting MVP.
+if (!result.IsValid)
+{
+    return ServiceResult<InventoryCountDetails>.Invalid(result.Errors);
+}
 
-Report:
+dbContext.InventoryCountLines.Add(line!);
+```
 
-* documentation file changed;
-* exact section added;
-* no code changes;
-* recommended developer-controlled validation, if any.
+This keeps responsibilities clear:
+
+* the domain model creates and validates the entity;
+* the application/persistence layer decides how the entity is tracked and saved.
+
+Do not depend on EF Core inferring `Added` state from private backing collections, required foreign keys, or client-generated IDs.
+
+## Query and persistence test setup
+
+Tests that bypass application handlers and call domain methods directly are responsible for modelling persistence setup explicitly.
+
+If such a test creates child entities through aggregate methods, it must explicitly add those new child entities to the `DbContext`.
+
+Example:
+
+```csharp
+Assert.True(count.AddLine(
+    stockKeepingUnitId,
+    storageLocationId,
+    systemQuantity,
+    expectedBalanceVersion,
+    out InventoryCountLine? line).IsValid);
+
+dbContext.InventoryCountLines.Add(line!);
+```
+
+Application-handler tests should prefer the production flow and let handlers perform persistence tracking.
+
+Query and persistence tests may build fixtures directly, but they must make EF Core entity state explicit.
+
+## SQL ordering and Guid ordering
+
+Do not assert SQL Server `uniqueidentifier` ordering by using .NET `Guid.OrderBy(...)` or `Guid.OrderByDescending(...)`.
+
+SQL Server and .NET may compare GUID values differently. A query may be deterministic in SQL while a test that calculates expected order with .NET `Guid` comparison still fails.
+
+For deterministic list queries, use SQL-side tie-breakers:
+
+```csharp
+query.OrderBy(x => x.CreatedAtUtc)
+     .ThenBy(x => x.Id);
+```
+
+or:
+
+```csharp
+query.OrderByDescending(x => x.CreatedAtUtc)
+     .ThenByDescending(x => x.Id);
+```
+
+Tests should verify:
+
+* primary ordering using distinct primary sort values;
+* stable ordering across repeated executions when primary sort values are equal;
+* paging consistency.
+
+Tests should not assume that .NET `Guid` ordering is equivalent to SQL Server `uniqueidentifier` ordering.
+
+## Test design
+
+Avoid combining unrelated assertions in one test.
+
+Prefer small tests with one clear reason to fail.
+
+Good separation examples:
+
+* sorting behavior;
+* invalid filters;
+* paging behavior;
+* persistence setup;
+* state transitions;
+* concurrency behavior;
+* domain validation;
+* endpoint binding;
+* API client transport.
+
+Focused tests make failures easier to diagnose and reduce false conclusions about the failing layer.
+
+## Practical checklist
+
+When adding a domain method that creates a child entity:
+
+1. Verify that the child factory receives the aggregate root ID.
+2. Verify that the child constructor sets the required parent foreign key.
+3. Verify that the application handler explicitly adds the new child entity to the relevant `DbSet`.
+4. Add a domain test proving the child entity receives the parent ID.
+5. Add a handler or persistence test proving the child entity is inserted correctly.
+6. If query tests build fixtures directly through domain methods, explicitly add created child entities to the `DbContext`.
