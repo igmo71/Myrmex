@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Myrmex.Core.Application;
 using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
@@ -16,7 +17,9 @@ internal static class RemoveInventoryCountLine
         string? ExpectedLineVersion,
         string? ActorId) : ICommand<ServiceResult<InventoryCountDetails>>;
 
-    internal sealed class Handler(WmsDbContext dbContext)
+    internal sealed class Handler(
+        WmsDbContext dbContext,
+        ILogger<Handler>? logger = null)
         : ICommandHandler<Command, ServiceResult<InventoryCountDetails>>
     {
         public async Task<ServiceResult<InventoryCountDetails>> HandleAsync(
@@ -79,6 +82,17 @@ internal static class RemoveInventoryCountLine
                 return ServiceResult<InventoryCountDetails>.Fail(
                     InventoryCountErrors.LineConcurrency(nameof(Command.ExpectedLineVersion)));
             }
+
+            logger?.LogInformation(
+                "Inventory count action {Action} completed with outcome {Outcome}. Actor {ActorId}; count {InventoryCountId}; line {LineId}; warehouse {WarehouseId}; SKU {StockKeepingUnitId}; location {StorageLocationId}.",
+                "RemoveLine",
+                "Success",
+                command.ActorId,
+                count.Id,
+                line.Id,
+                count.WarehouseId,
+                line.StockKeepingUnitId,
+                line.StorageLocationId);
 
             return await CreateInventoryCount.LoadDetailsAsync(
                 dbContext,

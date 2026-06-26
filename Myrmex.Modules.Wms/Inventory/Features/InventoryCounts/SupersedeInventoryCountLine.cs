@@ -113,8 +113,16 @@ internal static class SupersedeInventoryCountLine
             }
 
             logger.LogInformation(
-                "Inventory count line {LineId} in count {InventoryCountId} superseded by replacement {ReplacementLineId} for actor {ActorId}.",
-                line.Id, count.Id, replacement!.Id, command.ActorId);
+                "Inventory count action {Action} completed with outcome {Outcome}. Actor {ActorId}; count {InventoryCountId}; line {LineId}; replacement line {ReplacementLineId}; warehouse {WarehouseId}; SKU {StockKeepingUnitId}; location {StorageLocationId}.",
+                "SupersedeLine",
+                "Success",
+                command.ActorId,
+                count.Id,
+                line.Id,
+                replacement!.Id,
+                count.WarehouseId,
+                line.StockKeepingUnitId,
+                line.StorageLocationId);
 
             return await CreateInventoryCount.LoadDetailsAsync(dbContext, count.Id, cancellationToken);
         }

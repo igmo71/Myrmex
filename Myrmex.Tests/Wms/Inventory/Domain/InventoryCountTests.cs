@@ -63,6 +63,7 @@ public sealed class InventoryCountTests
 
         Assert.True(firstResult.IsValid);
         Assert.NotNull(line);
+        Assert.Equal(count.Id, line.InventoryCountId);
         Assert.Equal(12, line.SystemQuantity);
         Assert.True(version.SequenceEqual(line.ExpectedBalanceVersion!));
         Assert.Equal(InventoryCountLineStatus.Pending, line.Status);
@@ -241,6 +242,7 @@ public sealed class InventoryCountTests
         Assert.False(conflictLine.IsCurrent);
         Assert.Equal(InventoryCountLineStatus.Pending, replacement.Status);
         Assert.True(replacement.IsCurrent);
+        Assert.Equal(count.Id, replacement.InventoryCountId);
         Assert.Equal(11, replacement.SystemQuantity);
         Assert.True(freshVersion.SequenceEqual(replacement.ExpectedBalanceVersion!));
         Assert.Equal(conflictLine.Id, replacement.SupersedesInventoryCountLineId);
@@ -253,6 +255,31 @@ public sealed class InventoryCountTests
 
         Assert.False(duplicate.IsValid);
         Assert.Null(duplicateReplacement);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("00000000-0000-0000-0000-000000000000")]
+    public void InventoryCountLineCreate_WhenParentIdentityMissing_IsInvalid(
+        string? inventoryCountIdText)
+    {
+        Guid? inventoryCountId = inventoryCountIdText is null
+            ? null
+            : Guid.Parse(inventoryCountIdText);
+
+        var result = InventoryCountLine.Create(
+            inventoryCountId,
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            systemQuantity: 0,
+            expectedBalanceVersion: null,
+            out InventoryCountLine? line);
+
+        Assert.False(result.IsValid);
+        Assert.Null(line);
+        Assert.Contains(
+            result.Errors,
+            error => error.Property == nameof(InventoryCountLine.InventoryCountId));
     }
 
     [Fact]

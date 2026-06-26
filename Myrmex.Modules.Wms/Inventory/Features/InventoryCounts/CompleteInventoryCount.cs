@@ -76,9 +76,12 @@ internal static class CompleteInventoryCount
             }
 
             logger.LogInformation(
-                "Inventory count {InventoryCountId} completed by actor {ActorId}.",
+                "Inventory count action {Action} completed with outcome {Outcome}. Actor {ActorId}; count {InventoryCountId}; warehouse {WarehouseId}.",
+                "Complete",
+                "Success",
+                command.ActorId,
                 count.Id,
-                command.ActorId);
+                count.WarehouseId);
             return await CreateInventoryCount.LoadDetailsAsync(
                 dbContext,
                 count.Id,

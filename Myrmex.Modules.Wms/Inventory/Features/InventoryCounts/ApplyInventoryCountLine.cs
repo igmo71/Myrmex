@@ -90,6 +90,7 @@ internal static class ApplyInventoryCountLine
             }
 
             DateTimeOffset appliedAtUtc = DateTimeOffset.UtcNow;
+
             if (line.VarianceQuantity == 0)
             {
                 DomainValidationResult zeroResult = count.ApplyLine(
@@ -114,10 +115,17 @@ internal static class ApplyInventoryCountLine
                 }
 
                 logger.LogInformation(
-                    "Inventory count line {LineId} in count {InventoryCountId} applied with zero variance by actor {ActorId}.",
-                    line.Id,
+                    "Inventory count action {Action} completed with outcome {Outcome}. Actor {ActorId}; count {InventoryCountId}; line {LineId}; warehouse {WarehouseId}; SKU {StockKeepingUnitId}; location {StorageLocationId}; conflict reason {ConflictReason}; adjustment transaction {InventoryTransactionId}.",
+                    "ApplyLine",
+                    "AppliedZeroVariance",
+                    command.ActorId,
                     count.Id,
-                    command.ActorId);
+                    line.Id,
+                    count.WarehouseId,
+                    line.StockKeepingUnitId,
+                    line.StorageLocationId,
+                    null,
+                    null);
                 return await CreateInventoryCount.LoadDetailsAsync(
                     dbContext,
                     count.Id,
@@ -183,15 +191,33 @@ internal static class ApplyInventoryCountLine
             ServiceResult saveResult = await SaveSuccessfulApplyAsync(cancellationToken);
             if (!saveResult.IsSuccess)
             {
+                logger.LogWarning(
+                    "Inventory count action {Action} completed with outcome {Outcome}. Actor {ActorId}; count {InventoryCountId}; line {LineId}; warehouse {WarehouseId}; SKU {StockKeepingUnitId}; location {StorageLocationId}; conflict reason {ConflictReason}; adjustment transaction {InventoryTransactionId}.",
+                    "ApplyLine",
+                    "Conflict",
+                    command.ActorId,
+                    count.Id,
+                    line.Id,
+                    count.WarehouseId,
+                    line.StockKeepingUnitId,
+                    line.StorageLocationId,
+                    saveResult.Error?.Code,
+                    createdTransaction.Id);
                 return ServiceResult<InventoryCountDetails>.Fail(saveResult.Error);
             }
 
             logger.LogInformation(
-                "Inventory count line {LineId} in count {InventoryCountId} applied by actor {ActorId}; variance {Variance}; transaction {InventoryTransactionId}.",
-                line.Id,
-                count.Id,
+                "Inventory count action {Action} completed with outcome {Outcome}. Actor {ActorId}; count {InventoryCountId}; line {LineId}; warehouse {WarehouseId}; SKU {StockKeepingUnitId}; location {StorageLocationId}; variance {Variance}; conflict reason {ConflictReason}; adjustment transaction {InventoryTransactionId}.",
+                "ApplyLine",
+                "AppliedAdjustment",
                 command.ActorId,
+                count.Id,
+                line.Id,
+                count.WarehouseId,
+                line.StockKeepingUnitId,
+                line.StorageLocationId,
                 line.VarianceQuantity,
+                null,
                 createdTransaction.Id);
             return await CreateInventoryCount.LoadDetailsAsync(
                 dbContext,
@@ -223,10 +249,17 @@ internal static class ApplyInventoryCountLine
             }
 
             logger.LogWarning(
-                "Inventory count line {LineId} in count {InventoryCountId} marked Conflict by actor {ActorId} because the inventory snapshot changed.",
-                line.Id,
+                "Inventory count action {Action} completed with outcome {Outcome}. Actor {ActorId}; count {InventoryCountId}; line {LineId}; warehouse {WarehouseId}; SKU {StockKeepingUnitId}; location {StorageLocationId}; conflict reason {ConflictReason}; adjustment transaction {InventoryTransactionId}.",
+                "ApplyLine",
+                "Conflict",
+                command.ActorId,
                 count.Id,
-                command.ActorId);
+                line.Id,
+                count.WarehouseId,
+                line.StockKeepingUnitId,
+                line.StorageLocationId,
+                "InventorySnapshotChanged",
+                null);
             return ServiceResult<InventoryCountDetails>.Fail(
                 InventoryCountErrors.BalanceSnapshotConflict());
         }

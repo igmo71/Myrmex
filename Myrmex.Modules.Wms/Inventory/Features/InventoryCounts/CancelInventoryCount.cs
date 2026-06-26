@@ -76,9 +76,13 @@ internal static class CancelInventoryCount
             }
 
             logger.LogInformation(
-                "Inventory count {InventoryCountId} cancelled by actor {ActorId}. Applied inventory adjustments remain effective.",
+                "Inventory count action {Action} completed with outcome {Outcome}. Actor {ActorId}; count {InventoryCountId}; warehouse {WarehouseId}; applied adjustments remain effective {AppliedAdjustmentsRemainEffective}.",
+                "Cancel",
+                "Success",
+                command.ActorId,
                 count.Id,
-                command.ActorId);
+                count.WarehouseId,
+                true);
             return await CreateInventoryCount.LoadDetailsAsync(
                 dbContext,
                 count.Id,

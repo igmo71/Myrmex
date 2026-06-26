@@ -16,11 +16,13 @@ internal sealed class InventoryCountLine : EntityBase
     }
 
     private InventoryCountLine(
+        Guid inventoryCountId,
         Guid stockKeepingUnitId,
         Guid storageLocationId,
         decimal systemQuantity,
         byte[]? expectedBalanceVersion)
     {
+        InventoryCountId = inventoryCountId;
         StockKeepingUnitId = stockKeepingUnitId;
         StorageLocationId = storageLocationId;
         SystemQuantity = systemQuantity;
@@ -60,6 +62,7 @@ internal sealed class InventoryCountLine : EntityBase
     public byte[] RowVersion { get; private set; } = [];
 
     internal static DomainValidationResult Create(
+        Guid? inventoryCountId,
         Guid? stockKeepingUnitId,
         Guid? storageLocationId,
         decimal systemQuantity,
@@ -67,6 +70,13 @@ internal sealed class InventoryCountLine : EntityBase
         out InventoryCountLine? line)
     {
         List<DomainValidationFailure> errors = [];
+
+        if (!inventoryCountId.HasValue || inventoryCountId.Value == Guid.Empty)
+        {
+            errors.Add(
+                DomainValidationFailure.Required<InventoryCountLine>(
+                    nameof(InventoryCountId)));
+        }
 
         if (!stockKeepingUnitId.HasValue || stockKeepingUnitId.Value == Guid.Empty)
         {
@@ -92,6 +102,7 @@ internal sealed class InventoryCountLine : EntityBase
         }
 
         line = new InventoryCountLine(
+            inventoryCountId!.Value,
             stockKeepingUnitId!.Value,
             storageLocationId!.Value,
             systemQuantity,

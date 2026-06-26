@@ -180,11 +180,11 @@
 
 **Purpose**: Verify diagnostics, security boundaries, generated schema, excluded scope, and end-to-end behavior.
 
-- [ ] T065 Add structured diagnostics for actor, count, line, warehouse, SKU, location, action, outcome, conflict reason, and adjustment transaction in `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/`
-- [ ] T066 Review endpoint and shared contracts to confirm actor IDs are server-derived only and no write request accepts actor identity in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryCountEndpoints.cs` and `Myrmex.Shared/Wms/Inventory/`
+- [X] T065 Add structured diagnostics for actor, count, line, warehouse, SKU, location, action, outcome, conflict reason, and adjustment transaction in `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/`
+- [X] T066 Review endpoint and shared contracts to confirm actor IDs are server-derived only and no write request accepts actor identity in `Myrmex.Modules.Wms/Inventory/Endpoints/InventoryCountEndpoints.cs` and `Myrmex.Shared/Wms/Inventory/`
 - [ ] T067 Developer-controlled: build the solution and run automated tests with a dedicated `_test` SQL Server connection, then record commands/results in `specs/079-inventory-counting-mvp/quickstart.md`
 - [ ] T068 Developer-controlled: apply/review the inventory-count migration and execute authenticated API/UI smoke scenarios for create, add/remove, count, apply, conflict/supersede, complete/cancel, list, and details in `specs/079-inventory-counting-mvp/quickstart.md`
-- [ ] T069 Review the final diff for one-save non-zero apply, persisted Conflict without inventory effects, filtered current-line uniqueness, audit identity, no client-supplied actor, and no freeze/reservation/approval/scanner/batch/external workflow; record the review in `specs/079-inventory-counting-mvp/quickstart.md`
+- [X] T069 Review the final diff for one-save non-zero apply, persisted Conflict without inventory effects, filtered current-line uniqueness, audit identity, no client-supplied actor, and no freeze/reservation/approval/scanner/batch/external workflow; record the review in `specs/079-inventory-counting-mvp/quickstart.md`
 
 ---
 

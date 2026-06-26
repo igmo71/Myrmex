@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Myrmex.Core.Domain;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryCounts;
@@ -16,47 +15,63 @@ public sealed class InventoryCountQueryHandlerTests
     public async Task List_AppliesFiltersBeforePagingAndProjectsCurrentProgress()
     {
         await using TestWmsDbContext db = await TestWmsDbContext.CreateAsync();
+
         SeededInventoryCountReferences references =
             await InventoryCountTestData.SeedReferencesAsync(db.DbContext);
+
         InventoryCount older = await CreateCountAsync(
             db,
             references.Warehouse.Id,
             "Older",
             DateTimeOffset.Parse("2026-06-20T08:00:00Z"));
+
         InventoryCount newer = await CreateCountAsync(
             db,
             references.Warehouse.Id,
             "Newer",
             DateTimeOffset.Parse("2026-06-21T08:00:00Z"));
+
         await CreateCountAsync(
             db,
             references.SecondWarehouse.Id,
             "Other warehouse",
             DateTimeOffset.Parse("2026-06-22T08:00:00Z"));
 
-        Assert.True(newer.AddLine(
+        var addLineResult = newer.AddLine(
             references.StockKeepingUnit.Id,
             references.ExistingBalanceLocation.Id,
             10,
             references.ExistingBalance!.RowVersion,
-            out InventoryCountLine? applied).IsValid);
+            out InventoryCountLine? applied);
+
+        Assert.True(addLineResult.IsValid);
+
+        db.DbContext.Add(applied!);
+
         Assert.True(newer.RecordLineCount(
             applied!.Id,
             10,
             "verified",
             "counter-1",
             DateTimeOffset.Parse("2026-06-21T09:00:00Z")).IsValid);
+
         Assert.True(newer.ApplyLine(
             applied.Id,
             null,
             "applier-1",
             DateTimeOffset.Parse("2026-06-21T10:00:00Z")).IsValid);
-        Assert.True(newer.AddLine(
+
+        addLineResult = newer.AddLine(
             references.StockKeepingUnit.Id,
             references.MissingBalanceLocation.Id,
             0,
             null,
-            out _).IsValid);
+            out InventoryCountLine? unresolved);
+
+        db.DbContext.Add(unresolved!);
+
+        Assert.True(addLineResult.IsValid);
+
         await db.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var handler = new ListInventoryCounts.Handler(db.DbContext);
@@ -89,25 +104,28 @@ public sealed class InventoryCountQueryHandlerTests
     }
 
     [Fact]
-    public async Task List_SortsDeterministicallyAndRejectsInvalidFilters()
+    public async Task List_WhenSortByCreatedAtUtcDescending_OrdersByCreatedAtUtcDescending()
     {
         await using TestWmsDbContext db = await TestWmsDbContext.CreateAsync();
+
         SeededInventoryCountReferences references =
             await InventoryCountTestData.SeedReferencesAsync(db.DbContext);
-        DateTimeOffset sameCreatedAt = DateTimeOffset.Parse("2026-06-20T08:00:00Z");
+
         InventoryCount first = await CreateCountAsync(
             db,
             references.Warehouse.Id,
             "First",
-            sameCreatedAt);
+            DateTimeOffset.Parse("2026-06-20T08:00:00Z"));
+
         InventoryCount second = await CreateCountAsync(
             db,
             references.Warehouse.Id,
             "Second",
-            sameCreatedAt);
+            DateTimeOffset.Parse("2026-06-20T09:00:00Z"));
+
         var handler = new ListInventoryCounts.Handler(db.DbContext);
 
-        ServiceResult<ListResult<InventoryCountListItem>> sorted =
+        ServiceResult<ListResult<InventoryCountListItem>> result =
             await handler.HandleAsync(
                 new ListInventoryCounts.Query
                 {
@@ -115,6 +133,71 @@ public sealed class InventoryCountQueryHandlerTests
                     SortDescending = true
                 },
                 TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+
+        Assert.Equal(
+            [second.Id, first.Id],
+            result.Value.Items.Select(x => x.Id));
+    }
+
+    [Fact]
+    public async Task List_WhenCreatedAtUtcEqual_ReturnsStableOrder()
+    {
+        await using TestWmsDbContext db = await TestWmsDbContext.CreateAsync();
+
+        SeededInventoryCountReferences references =
+            await InventoryCountTestData.SeedReferencesAsync(db.DbContext);
+
+        DateTimeOffset sameCreatedAt = DateTimeOffset.Parse("2026-06-20T08:00:00Z");
+
+        await CreateCountAsync(
+            db,
+            references.Warehouse.Id,
+            "First",
+            sameCreatedAt);
+
+        await CreateCountAsync(
+            db,
+            references.Warehouse.Id,
+            "Second",
+            sameCreatedAt);
+
+        var handler = new ListInventoryCounts.Handler(db.DbContext);
+
+        ServiceResult<ListResult<InventoryCountListItem>> firstResult =
+            await handler.HandleAsync(
+                new ListInventoryCounts.Query
+                {
+                    SortBy = InventoryCountSortBy.CreatedAtUtc,
+                    SortDescending = true
+                },
+                TestContext.Current.CancellationToken);
+
+        ServiceResult<ListResult<InventoryCountListItem>> secondResult =
+            await handler.HandleAsync(
+                new ListInventoryCounts.Query
+                {
+                    SortBy = InventoryCountSortBy.CreatedAtUtc,
+                    SortDescending = true
+                },
+                TestContext.Current.CancellationToken);
+
+        Assert.True(firstResult.IsSuccess);
+        Assert.True(secondResult.IsSuccess);
+
+        Assert.Equal(
+            firstResult.Value.Items.Select(x => x.Id),
+            secondResult.Value.Items.Select(x => x.Id));
+    }
+
+    [Fact]
+    public async Task List_WhenFiltersInvalid_ReturnsInvalidResult()
+    {
+        await using TestWmsDbContext db = await TestWmsDbContext.CreateAsync();
+
+        var handler = new ListInventoryCounts.Handler(db.DbContext);
+
         ServiceResult<ListResult<InventoryCountListItem>> invalidStatus =
             await handler.HandleAsync(
                 new ListInventoryCounts.Query
@@ -122,6 +205,7 @@ public sealed class InventoryCountQueryHandlerTests
                     StatusText = "Unknown"
                 },
                 TestContext.Current.CancellationToken);
+
         ServiceResult<ListResult<InventoryCountListItem>> invalidDates =
             await handler.HandleAsync(
                 new ListInventoryCounts.Query
@@ -131,10 +215,10 @@ public sealed class InventoryCountQueryHandlerTests
                 },
                 TestContext.Current.CancellationToken);
 
-        Assert.Equal(
-            new[] { first.Id, second.Id }.OrderByDescending(x => x),
-            sorted.Value.Items.Select(x => x.Id));
+        Assert.False(invalidStatus.IsSuccess);
         Assert.Equal(ServiceErrorType.Invalid, invalidStatus.Error.Type);
+
+        Assert.False(invalidDates.IsSuccess);
         Assert.Equal(ServiceErrorType.Invalid, invalidDates.Error.Type);
     }
 
@@ -149,12 +233,17 @@ public sealed class InventoryCountQueryHandlerTests
             references.Warehouse.Id,
             "History",
             DateTimeOffset.Parse("2026-06-20T08:00:00Z"));
-        Assert.True(count.AddLine(
+
+        var addLineResult = count.AddLine(
             references.StockKeepingUnit.Id,
             references.ExistingBalanceLocation.Id,
             10,
             references.ExistingBalance!.RowVersion,
-            out InventoryCountLine? original).IsValid);
+            out InventoryCountLine? original);
+        Assert.True(addLineResult.IsValid);
+
+        db.DbContext.Add(original!);
+
         Assert.True(count.RecordLineCount(
             original!.Id,
             11,
@@ -162,11 +251,17 @@ public sealed class InventoryCountQueryHandlerTests
             "counter-1",
             DateTimeOffset.Parse("2026-06-20T09:00:00Z")).IsValid);
         Assert.True(count.MarkLineConflict(original.Id).IsValid);
-        Assert.True(count.SupersedeLine(
+
+        var supersedeLineResult = count.SupersedeLine(
             original.Id,
             12,
             references.ExistingBalance.RowVersion,
-            out InventoryCountLine? replacement).IsValid);
+            out InventoryCountLine? replacement);
+
+        Assert.True(supersedeLineResult.IsValid);
+
+        db.DbContext.Add(replacement!);
+
         references.StockKeepingUnit.Deactivate();
         references.ExistingBalanceLocation.Deactivate();
         await db.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);

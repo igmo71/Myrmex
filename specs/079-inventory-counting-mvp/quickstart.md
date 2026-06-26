@@ -116,3 +116,60 @@ Confirm rejection for:
 - Manual UI and authenticated-principal scenarios pass.
 - One count migration is reviewed and applied by the developer.
 - No inventory freeze, reservation, approval, scanner/mobile, batch/serial/LPN, external integration, or unrelated workflow is introduced.
+
+## Phase 8 static review record
+
+Static review performed on 2026-06-25. No build, test, application startup,
+database update, migration application, Docker, infrastructure, or UI/API smoke
+command was executed during this review.
+
+### Diagnostics review
+
+- Count write handlers emit structured action and outcome diagnostics.
+- Applicable diagnostics include actor, count, line, warehouse, SKU, and
+  storage-location identifiers.
+- Apply diagnostics distinguish zero variance, adjustment success, and
+  conflict outcomes. They include conflict reason and adjustment transaction
+  identifiers where applicable.
+
+### Security boundary review
+
+- Public write requests contain business values and expected rowversions only.
+- No public Inventory Count request accepts an actor identifier.
+- Every write endpoint obtains the actor from `HttpContext.GetActorId()` and
+  returns unauthorized before dispatch when no stable authenticated identity is
+  available.
+- No production authentication provider or count-specific authorization model
+  is introduced by this feature.
+
+### Persistence and scope review
+
+- Successful non-zero apply tracks the count line, balance, adjustment
+  transaction, and ledger event effects before the single
+  `SaveChangesAsync` call in `SaveSuccessfulApplyAsync`.
+- Snapshot mismatch is detected before inventory mutation. The conflict path
+  marks and saves only the count/line Conflict outcome and returns a conflict
+  result.
+- The current-line uniqueness index covers count, SKU, and location and is
+  filtered to current lines. The generated migration and model snapshot contain
+  the same filtered index.
+- Count and line actor identities are stored by domain operations and projected
+  into list/detail audit views.
+- Source review found no inventory freeze, reservation, approval,
+  scanner/mobile, count-wave/task generation, batch/serial/LPN, or external
+  integration workflow added by Inventory Counting.
+
+### Developer-controlled validation still required
+
+Record the exact command output and result before marking the corresponding
+tasks complete:
+
+```powershell
+$env:MYRMEX_WMS_TEST_CONNECTION = "<dedicated database ending in _test>"
+dotnet build Myrmex.slnx
+dotnet test Myrmex.Tests\Myrmex.Tests.csproj
+```
+
+The developer must also review/apply the generated Inventory Count migration
+using the repository-approved EF workflow, then execute every authenticated
+API/UI scenario in this quickstart and record the observed results.

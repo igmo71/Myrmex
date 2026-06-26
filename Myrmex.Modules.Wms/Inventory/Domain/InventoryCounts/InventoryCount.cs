@@ -110,6 +110,7 @@ internal sealed class InventoryCount : AggregateRoot
         }
 
         DomainValidationResult lineResult = InventoryCountLine.Create(
+            Id,
             stockKeepingUnitId,
             storageLocationId,
             systemQuantity,
@@ -381,6 +382,7 @@ internal sealed class InventoryCount : AggregateRoot
         }
 
         DomainValidationResult replacementResult = InventoryCountLine.Create(
+            Id,
             line.StockKeepingUnitId,
             line.StorageLocationId,
             freshSystemQuantity,
