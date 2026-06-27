@@ -1,6 +1,7 @@
 using MudBlazor.Services;
 using Myrmex.WebApp;
 using Myrmex.WebApp.Components;
+using Myrmex.WebApp.Integrations.OneC;
 using Myrmex.WebApp.Wms.Catalog;
 using Myrmex.WebApp.Wms.Inventory;
 using Myrmex.WebApp.Wms.Topology;
@@ -36,6 +37,15 @@ builder.Services.AddHttpClient<WmsInventoryApiClient>(client =>
 {
     client.BaseAddress = new("https+http://apiservice");
 });
+
+#pragma warning disable EXTEXP0001
+builder.Services.AddHttpClient<OneCIntegrationApiClient>(client =>
+{
+    client.BaseAddress = new("https+http://apiservice");
+    client.Timeout = Timeout.InfiniteTimeSpan;
+})
+.RemoveAllResilienceHandlers(); // Long-running import calls must not be cut by default Aspire HTTP resilience timeout.
+#pragma warning restore EXTEXP0001
 
 // Add MudBlazor services
 builder.Services.AddMudServices();

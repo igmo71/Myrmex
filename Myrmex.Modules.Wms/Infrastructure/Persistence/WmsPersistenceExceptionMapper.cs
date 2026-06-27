@@ -25,6 +25,10 @@ internal static class WmsPersistenceExceptionMapper
         {
             return ServiceError.Conflict<Warehouse>("Code already exists", nameof(Warehouse.Code));
         }
+        if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.WarehouseExternalRefKeyUniqueIndex))
+        {
+            return ServiceError.Conflict<Warehouse>("External reference key already exists", nameof(Warehouse.ExternalRefKey));
+        }
         if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.ZoneWarehouseIdCodeUniqueIndex))
         {
             return ServiceError.Conflict<Zone>("Code already exists", nameof(Zone.Code));
@@ -45,9 +49,17 @@ internal static class WmsPersistenceExceptionMapper
         {
             return ServiceError.Conflict<StockKeepingUnit>("Code already exists", nameof(StockKeepingUnit.Code));
         }
+        if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.StockKeepingUnitExternalRefKeyUniqueIndex))
+        {
+            return ServiceError.Conflict<StockKeepingUnit>("External reference key already exists", nameof(StockKeepingUnit.ExternalRefKey));
+        }
         if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.UnitOfMeasureCodeUniqueIndex))
         {
             return ServiceError.Conflict<UnitOfMeasure>("Code already exists", nameof(UnitOfMeasure.Code));
+        }
+        if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.UnitOfMeasureExternalRefKeyUniqueIndex))
+        {
+            return ServiceError.Conflict<UnitOfMeasure>("External reference key already exists", nameof(UnitOfMeasure.ExternalRefKey));
         }
         if (exception.IsUniqueConstraintViolation(WmsDatabaseNames.SkuBarcodeValueUniqueIndex))
         {

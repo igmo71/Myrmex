@@ -35,6 +35,17 @@ internal sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehous
         builder.Property(x => x.IsActive)
             .IsRequired();
 
+        builder.Property(x => x.ExternalRefKey)
+            .IsRequired(false);
+
+        builder.HasIndex(x => x.ExternalRefKey)
+            .IsUnique()
+            .HasFilter("[ExternalRefKey] IS NOT NULL")
+            .HasDatabaseName(WmsDatabaseNames.WarehouseExternalRefKeyUniqueIndex);
+
+        builder.Property(x => x.LastImportedAtUtc)
+            .IsRequired(false);
+
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 

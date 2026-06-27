@@ -9,6 +9,23 @@ namespace Myrmex.Tests.Wms.Catalog.Persistence;
 public sealed class StockKeepingUnitPersistenceTests
 {
     [Fact]
+    public async Task Model_HasNullableImportMetadataAndFilteredUniqueExternalRefKeyIndex()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        var entityType = testDbContext.DbContext.Model.FindEntityType(typeof(StockKeepingUnit));
+
+        Assert.NotNull(entityType);
+        Assert.True(entityType.FindProperty(nameof(StockKeepingUnit.ExternalRefKey))!.IsNullable);
+        Assert.True(entityType.FindProperty(nameof(StockKeepingUnit.LastImportedAtUtc))!.IsNullable);
+
+        var index = Assert.Single(entityType.GetIndexes(), candidate =>
+            candidate.GetDatabaseName() == WmsDatabaseNames.StockKeepingUnitExternalRefKeyUniqueIndex);
+        Assert.True(index.IsUnique);
+        Assert.Equal("[ExternalRefKey] IS NOT NULL", index.GetFilter());
+        Assert.Equal([nameof(StockKeepingUnit.ExternalRefKey)], index.Properties.Select(x => x.Name).ToArray());
+    }
+
+    [Fact]
     public async Task Model_HasUniqueStockKeepingUnitCodeIndex()
     {
         // Arrange

@@ -1,0 +1,234 @@
+@page "/integrations/1c"
+@rendermode InteractiveServer
+@using Myrmex.Shared.Integrations.OneC
+@using Myrmex.WebApp.Integrations.OneC
+@inject OneCIntegrationApiClient ApiClient
+
+<PageTitle>Интеграция с 1С</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-6">
+    <MudText Typo="Typo.h4" GutterBottom="true">Интеграция с 1С</MudText>
+    <MudText Class="mb-4">
+        Проверка доступности публикации OData и справочников складов, единиц измерения и номенклатуры.
+    </MudText>
+
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               Disabled="@_isChecking"
+               OnClick="TestConnectionAsync">
+        @(_isChecking ? "Проверка..." : "Проверить подключение")
+    </MudButton>
+
+    @if (_response is not null)
+    {
+        <MudAlert Severity="Severity.Success" Class="mt-4">
+            Подключение готово. Проверено: @_response.CheckedAtUtc.ToLocalTime().ToString("g").
+        </MudAlert>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-4">@_errorMessage</MudAlert>
+    }
+
+    <MudDivider Class="my-6" />
+    <MudText Typo="Typo.h5" GutterBottom="true">Импорт справочников</MudText>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Secondary"
+                   Disabled="@IsWarehouseImporting"
+                   OnClick="ImportWarehousesAsync">
+            @(IsWarehouseImporting ? "Импорт складов..." : "Импортировать склады")
+        </MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Secondary"
+                   Disabled="@IsUomImporting"
+                   OnClick="ImportUnitsOfMeasureAsync">
+            @(IsUomImporting ? "Импорт единиц измерения..." : "Импортировать единицы измерения")
+        </MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Secondary"
+                   Disabled="@IsSkuImporting"
+                   OnClick="ImportStockKeepingUnitsAsync">
+            @(IsSkuImporting ? "Импорт номенклатуры..." : "Импортировать номенклатуру")
+        </MudButton>
+    </MudStack>
+
+    @if (!string.IsNullOrWhiteSpace(_importErrorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-4">@_importErrorMessage</MudAlert>
+    }
+
+    @if (_importResponse is not null)
+    {
+        <MudAlert Severity="@(_importResponse.IsComplete ? Severity.Success : Severity.Warning)" Class="mt-4">
+            @(_importResponse.IsComplete ? "Импорт завершён." : "Импорт завершён не полностью.")
+        </MudAlert>
+        <MudPaper Class="pa-4 mt-3" Elevation="1">
+            <MudText><b>Тип:</b> @ReferenceTypeLabel(_importResponse.ReferenceType)</MudText>
+            <MudText>
+                Обработано: @_importResponse.Processed; создано: @_importResponse.Created;
+                обновлено: @_importResponse.Updated; пропущено: @_importResponse.Skipped;
+                ошибок: @_importResponse.Failed.
+            </MudText>
+            @if (_importResponse.OperationError is not null)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3">
+                    @_importResponse.OperationError.Message (@_importResponse.OperationError.Reason)
+                </MudAlert>
+            }
+            @if (_importResponse.Errors.Count > 0)
+            {
+                <MudText Typo="Typo.h6" Class="mt-4">Ошибки и пропуски (не более 50)</MudText>
+                <table class="mud-table-root mt-2">
+                    <thead>
+                        <tr><th>Код</th><th>Причина</th><th>Сообщение</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (OneCImportRecordError error in _importResponse.Errors)
+                        {
+                            <tr>
+                                <td>@(error.Code ?? "—")</td>
+                                <td>@error.Reason</td>
+                                <td>@error.Message</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    private bool _isChecking;
+    private OneCConnectionTestResponse? _response;
+    private string? _errorMessage;
+    private bool _isWarehouseImporting;
+    private bool _isUomImporting;
+    private bool _isSkuImporting;
+    private OneCImportResponse? _importResponse;
+    private string? _importErrorMessage;
+    private bool IsWarehouseImporting => _isWarehouseImporting;
+    private bool IsUomImporting => _isUomImporting;
+    private bool IsSkuImporting => _isSkuImporting;
+
+    private async Task TestConnectionAsync()
+    {
+        _isChecking = true;
+        _response = null;
+        _errorMessage = null;
+
+        try
+        {
+            ApiResult<OneCConnectionTestResponse> result = await ApiClient.TestConnectionAsync();
+            if (result.IsSuccess)
+            {
+                _response = result.Value;
+            }
+            else
+            {
+                _errorMessage = result.Error?.Message ?? "Не удалось проверить подключение к 1С.";
+            }
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Не удалось связаться с API для проверки подключения к 1С.";
+        }
+        finally
+        {
+            _isChecking = false;
+        }
+    }
+
+    private async Task ImportWarehousesAsync()
+    {
+        if (_isWarehouseImporting)
+        {
+            return;
+        }
+
+        _isWarehouseImporting = true;
+        try
+        {
+            await ImportAsync(ApiClient.ImportWarehousesAsync);
+        }
+        finally
+        {
+            _isWarehouseImporting = false;
+        }
+    }
+
+    private async Task ImportUnitsOfMeasureAsync()
+    {
+        if (_isUomImporting)
+        {
+            return;
+        }
+
+        _isUomImporting = true;
+        try
+        {
+            await ImportAsync(ApiClient.ImportUnitsOfMeasureAsync);
+        }
+        finally
+        {
+            _isUomImporting = false;
+        }
+    }
+
+    private async Task ImportStockKeepingUnitsAsync()
+    {
+        if (_isSkuImporting)
+        {
+            return;
+        }
+
+        _isSkuImporting = true;
+        try
+        {
+            await ImportAsync(ApiClient.ImportStockKeepingUnitsAsync);
+        }
+        finally
+        {
+            _isSkuImporting = false;
+        }
+    }
+
+    private async Task ImportAsync(
+        Func<CancellationToken, Task<ApiResult<OneCImportResponse>>> import)
+    {
+        _importErrorMessage = null;
+
+        try
+        {
+            ApiResult<OneCImportResponse> result = await import(CancellationToken.None);
+            if (result.IsSuccess)
+            {
+                _importResponse = result.Value;
+            }
+            else
+            {
+                _importErrorMessage = IsAlreadyInProgress(result.Error)
+                    ? "Импорт этого справочника уже выполняется."
+                    : result.Error?.Message ?? "Не удалось выполнить импорт из 1С.";
+            }
+        }
+        catch (Exception)
+        {
+            _importErrorMessage = "Не удалось связаться с API для импорта из 1С.";
+        }
+    }
+
+    private static bool IsAlreadyInProgress(ApiError? error) =>
+        error?.Status == 409 &&
+        error.Extensions.TryGetValue("code", out string? code) &&
+        string.Equals(code, "OneCImport.AlreadyInProgress", StringComparison.Ordinal);
+
+    private static string ReferenceTypeLabel(string referenceType) => referenceType switch
+    {
+        "warehouses" => "Склады",
+        "uoms" => "Единицы измерения",
+        "skus" => "Номенклатура / SKU",
+        _ => referenceType
+    };
+}

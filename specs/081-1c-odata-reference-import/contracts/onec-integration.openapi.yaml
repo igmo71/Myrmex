@@ -1,0 +1,316 @@
+openapi: 3.0.3
+info:
+  title: Myrmex 1C OData Reference Import API
+  version: 1.0.0-mvp
+  description: >-
+    Synchronous, manually triggered connection test and one-way reference imports.
+    Credentials are deployment configuration and are never accepted in request bodies.
+servers:
+  - url: /
+tags:
+  - name: 1C Integration
+paths:
+  /api/integrations/1c/connection/test:
+    post:
+      tags: [1C Integration]
+      operationId: testOneCConnection
+      summary: Test configured 1C connection and required entity sets
+      description: Requires an authenticated Myrmex actor. No request body is accepted.
+      x-myrmex-actor-required: true
+      x-future-authorization-policy: Wms.Integrations.OneC.Import
+      responses:
+        '200':
+          description: Connection, credentials, and required collections are ready.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OneCConnectionTestResponse'
+        '400':
+          $ref: '#/components/responses/ConfigurationProblem'
+        '401':
+          $ref: '#/components/responses/UnauthorizedProblem'
+        '502':
+          $ref: '#/components/responses/SourceProblem'
+        '504':
+          $ref: '#/components/responses/TimeoutProblem'
+        '500':
+          $ref: '#/components/responses/UnexpectedProblem'
+
+  /api/integrations/1c/warehouses/import:
+    post:
+      tags: [1C Integration]
+      operationId: importOneCWarehouses
+      summary: Import warehouses from 1C
+      description: >-
+        Runs synchronously. A started import returns HTTP 200 for both complete and
+        incomplete outcomes; inspect isComplete and operationError. No request body.
+      x-myrmex-actor-required: true
+      x-future-authorization-policy: Wms.Integrations.OneC.Import
+      responses:
+        '200':
+          $ref: '#/components/responses/ImportResponse'
+        '400':
+          $ref: '#/components/responses/ConfigurationProblem'
+        '401':
+          $ref: '#/components/responses/UnauthorizedProblem'
+        '409':
+          $ref: '#/components/responses/AlreadyInProgressProblem'
+        '500':
+          $ref: '#/components/responses/UnexpectedProblem'
+
+  /api/integrations/1c/uoms/import:
+    post:
+      tags: [1C Integration]
+      operationId: importOneCUnitsOfMeasure
+      summary: Import units of measure from 1C
+      description: >-
+        Runs synchronously. A started import returns HTTP 200 for both complete and
+        incomplete outcomes; inspect isComplete and operationError. No request body.
+      x-myrmex-actor-required: true
+      x-future-authorization-policy: Wms.Integrations.OneC.Import
+      responses:
+        '200':
+          $ref: '#/components/responses/ImportResponse'
+        '400':
+          $ref: '#/components/responses/ConfigurationProblem'
+        '401':
+          $ref: '#/components/responses/UnauthorizedProblem'
+        '409':
+          $ref: '#/components/responses/AlreadyInProgressProblem'
+        '500':
+          $ref: '#/components/responses/UnexpectedProblem'
+
+  /api/integrations/1c/skus/import:
+    post:
+      tags: [1C Integration]
+      operationId: importOneCStockKeepingUnits
+      summary: Import nomenclature as Myrmex SKUs
+      description: >-
+        Runs synchronously with deterministic offset paging. Units of measure must
+        be imported first so each nomenclature ЕдиницаИзмерения_Key can resolve by
+        ExternalRefKey to an active local UoM. A started import returns HTTP 200 for
+        both complete and incomplete outcomes. No request body.
+      x-myrmex-actor-required: true
+      x-future-authorization-policy: Wms.Integrations.OneC.Import
+      responses:
+        '200':
+          $ref: '#/components/responses/ImportResponse'
+        '400':
+          $ref: '#/components/responses/ConfigurationProblem'
+        '401':
+          $ref: '#/components/responses/UnauthorizedProblem'
+        '409':
+          $ref: '#/components/responses/AlreadyInProgressProblem'
+        '500':
+          $ref: '#/components/responses/UnexpectedProblem'
+
+components:
+  responses:
+    ImportResponse:
+      description: Complete or incomplete import summary containing committed-batch counts only.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OneCImportResponse'
+    ConfigurationProblem:
+      description: Integration is disabled or required configuration is invalid.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            disabled:
+              value:
+                type: https://httpstatuses.com/400
+                title: Bad Request
+                status: 400
+                detail: 1C integration is disabled.
+                code: OneC.ConfigurationInvalid
+    UnauthorizedProblem:
+      description: No authenticated Myrmex actor is available.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    AlreadyInProgressProblem:
+      description: Another import of the same reference type is already running in this API process.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            sameTypeImport:
+              value:
+                type: https://httpstatuses.com/409
+                title: Conflict
+                status: 409
+                detail: An import of this reference type is already in progress.
+                code: OneCImport.AlreadyInProgress
+    SourceProblem:
+      description: The connection test could not validate the configured 1C source.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    TimeoutProblem:
+      description: The connection test exceeded the configured source timeout.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    UnexpectedProblem:
+      description: Unexpected server failure before a stable import response could be produced.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+  schemas:
+    OneCConnectionTestResponse:
+      type: object
+      additionalProperties: false
+      required: [checkedAtUtc, isReady, checkedReferenceTypes]
+      properties:
+        checkedAtUtc:
+          type: string
+          format: date-time
+        isReady:
+          type: boolean
+          enum: [true]
+        checkedReferenceTypes:
+          type: array
+          minItems: 3
+          maxItems: 3
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/OneCReferenceType'
+
+    OneCImportResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - referenceType
+        - isComplete
+        - processed
+        - created
+        - updated
+        - skipped
+        - failed
+        - startedAtUtc
+        - completedAtUtc
+        - errors
+      properties:
+        referenceType:
+          $ref: '#/components/schemas/OneCReferenceType'
+        isComplete:
+          type: boolean
+        processed:
+          type: integer
+          format: int32
+          minimum: 0
+        created:
+          type: integer
+          format: int32
+          minimum: 0
+        updated:
+          type: integer
+          format: int32
+          minimum: 0
+        skipped:
+          type: integer
+          format: int32
+          minimum: 0
+        failed:
+          type: integer
+          format: int32
+          minimum: 0
+        startedAtUtc:
+          type: string
+          format: date-time
+        completedAtUtc:
+          type: string
+          format: date-time
+        operationError:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/OneCImportOperationError'
+        errors:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/OneCImportRecordError'
+      description: >-
+        processed must equal created + updated + skipped + failed. Counts include
+        completed committed batches only. isComplete=false requires operationError;
+        isComplete=true requires operationError to be null.
+
+    OneCImportOperationError:
+      type: object
+      additionalProperties: false
+      required: [reason, message]
+      properties:
+        reason:
+          type: string
+          enum:
+            - AuthenticationFailed
+            - SourceUnavailable
+            - EntitySetUnavailable
+            - MalformedResponse
+            - Timeout
+            - StableOrderingUnsupported
+            - BatchCommitFailed
+            - Cancelled
+        message:
+          type: string
+
+    OneCImportRecordError:
+      type: object
+      additionalProperties: false
+      required: [reason, message]
+      properties:
+        externalRefKey:
+          type: string
+          format: uuid
+          nullable: true
+        code:
+          type: string
+          nullable: true
+        reason:
+          type: string
+          enum:
+            - InvalidSourceRecord
+            - SourceFolder
+            - SourceRecordDeletionMarked
+            - CodeAlreadyExistsWithoutExternalRefKey
+            - CodeAlreadyUsedByAnotherRecord
+            - BaseUnitOfMeasureExternalRefKeyMissing
+            - BaseUnitOfMeasureNotImported
+            - BaseUnitOfMeasureInactive
+            - DeletionNotSupported
+        message:
+          type: string
+
+    OneCReferenceType:
+      type: string
+      enum: [warehouses, uoms, skus]
+
+    ProblemDetails:
+      type: object
+      required: [status, title]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+        property:
+          type: string
+      additionalProperties: true

@@ -89,8 +89,14 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<Guid?>("ExternalRefKey")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LastImportedAtUtc")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -110,6 +116,11 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("UX_wms_stock_keeping_units_code");
 
+                    b.HasIndex("ExternalRefKey")
+                        .IsUnique()
+                        .HasDatabaseName("UX_wms_stock_keeping_units_external_ref_key")
+                        .HasFilter("[ExternalRefKey] IS NOT NULL");
+
                     b.ToTable("stock_keeping_units", "wms");
                 });
 
@@ -127,8 +138,14 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<Guid?>("ExternalRefKey")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LastImportedAtUtc")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -148,6 +165,11 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                     b.HasIndex("Code")
                         .IsUnique()
                         .HasDatabaseName("UX_wms_units_of_measure_code");
+
+                    b.HasIndex("ExternalRefKey")
+                        .IsUnique()
+                        .HasDatabaseName("UX_wms_units_of_measure_external_ref_key")
+                        .HasFilter("[ExternalRefKey] IS NOT NULL");
 
                     b.ToTable("units_of_measure", "wms");
                 });
@@ -902,8 +924,14 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<Guid?>("ExternalRefKey")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LastImportedAtUtc")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -919,6 +947,11 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                     b.HasIndex("Code")
                         .IsUnique()
                         .HasDatabaseName("UX_wms_warehouses_code");
+
+                    b.HasIndex("ExternalRefKey")
+                        .IsUnique()
+                        .HasDatabaseName("UX_wms_warehouses_external_ref_key")
+                        .HasFilter("[ExternalRefKey] IS NOT NULL");
 
                     b.ToTable("warehouses", "wms");
                 });

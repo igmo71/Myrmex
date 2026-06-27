@@ -5,6 +5,7 @@ internal static class WmsDatabaseNames
     public const string WarehousesTable = "warehouses";
     public const string WarehousePrimaryKey = "PK_wms_warehouses";
     public const string WarehouseCodeUniqueIndex = "UX_wms_warehouses_code";
+    public const string WarehouseExternalRefKeyUniqueIndex = "UX_wms_warehouses_external_ref_key";
 
     public const string ZonesTable = "zones";
     public const string ZonePrimaryKey = "PK_wms_zones";
@@ -37,12 +38,14 @@ internal static class WmsDatabaseNames
     public const string StockKeepingUnitsTable = "stock_keeping_units";
     public const string StockKeepingUnitPrimaryKey = "PK_wms_stock_keeping_units";
     public const string StockKeepingUnitCodeUniqueIndex = "UX_wms_stock_keeping_units_code";
+    public const string StockKeepingUnitExternalRefKeyUniqueIndex = "UX_wms_stock_keeping_units_external_ref_key";
     public const string StockKeepingUnitBaseUnitOfMeasureForeignKey = "FK_wms_stock_keeping_units_units_of_measure_base_unit_of_measure_id";
     public const string StockKeepingUnitBaseUnitOfMeasureIdIndex = "IX_wms_stock_keeping_units_base_unit_of_measure_id";
 
     public const string UnitsOfMeasureTable = "units_of_measure";
     public const string UnitOfMeasurePrimaryKey = "PK_wms_units_of_measure";
     public const string UnitOfMeasureCodeUniqueIndex = "UX_wms_units_of_measure_code";
+    public const string UnitOfMeasureExternalRefKeyUniqueIndex = "UX_wms_units_of_measure_external_ref_key";
 
     public const string SkuBarcodesTable = "sku_barcodes";
     public const string SkuBarcodePrimaryKey = "PK_wms_sku_barcodes";

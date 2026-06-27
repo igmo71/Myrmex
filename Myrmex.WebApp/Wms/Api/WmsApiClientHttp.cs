@@ -38,6 +38,19 @@ internal static class WmsApiClientHttp
         return await ReadApiResultAsync<T>(response, $"POST '{url}'", cancellationToken);
     }
 
+    public static async Task<ApiResult<T>> PostAsApiResultAsync<T>(
+        this HttpClient httpClient,
+        string url,
+        CancellationToken cancellationToken)
+    {
+        using HttpResponseMessage response = await httpClient.PostAsync(
+            url,
+            content: null,
+            cancellationToken);
+
+        return await ReadApiResultAsync<T>(response, $"POST '{url}'", cancellationToken);
+    }
+
     public static async Task<ApiResult<T>> PutAsApiResultAsync<T>(
         this HttpClient httpClient,
         string url,
