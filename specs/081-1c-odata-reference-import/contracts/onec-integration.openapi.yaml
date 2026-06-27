@@ -87,9 +87,9 @@ paths:
       summary: Import nomenclature as Myrmex SKUs
       description: >-
         Runs synchronously with deterministic offset paging. Units of measure must
-        be imported first so the configured default base-UoM external identity can
-        resolve to an active local UoM. A started import returns HTTP 200 for both
-        complete and incomplete outcomes. No request body.
+        be imported first so each nomenclature ЕдиницаИзмерения_Key can resolve by
+        ExternalRefKey to an active local UoM. A started import returns HTTP 200 for
+        both complete and incomplete outcomes. No request body.
       x-myrmex-actor-required: true
       x-future-authorization-policy: Wms.Integrations.OneC.Import
       responses:
@@ -279,9 +279,11 @@ components:
           type: string
           enum:
             - InvalidSourceRecord
+            - SourceFolder
             - CodeAlreadyExistsWithoutExternalRefKey
             - CodeAlreadyUsedByAnotherRecord
-            - BaseUnitOfMeasureNotFound
+            - BaseUnitOfMeasureExternalRefKeyMissing
+            - BaseUnitOfMeasureNotImported
             - BaseUnitOfMeasureInactive
             - DeletionNotSupported
         message:

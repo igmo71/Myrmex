@@ -14,7 +14,7 @@
 
 ## Decision: Keep Source DTOs and Names Inside the OneC Boundary
 
-**Decision**: Use private/internal DTOs and an OData collection envelope inside `Myrmex.Integrations.OneC.Transport`. DTO properties may retain 1C identifiers such as `Ref_Key`, `DeletionMark`, `Code`, `Description`, and `Артикул`; `Ref_Key` is a `Guid`. `System.Text.Json` attributes make wire names explicit. DTOs are mapped immediately to neutral WMS import items and never returned by API endpoints.
+**Decision**: Use private/internal DTOs and an OData collection envelope inside `Myrmex.Integrations.OneC.Transport`. DTO properties retain the actual 1C identifiers needed by each source: warehouse includes `Ref_Key`, `DeletionMark`, `IsFolder`, optional `Code`, and `Description`; UoM includes `Ref_Key`, `DeletionMark`, `Code`, `Description`, `НаименованиеПолное`, and `МеждународноеСокращение`; nomenclature includes `Ref_Key`, `DeletionMark`, `IsFolder`, `Code`, `Description`, `НаименованиеПолное`, `Артикул`, and nullable `ЕдиницаИзмерения_Key`. `Ref_Key` is a `Guid`; `ЕдиницаИзмерения_Key` is nullable `Guid` so missing and empty values can be classified. `System.Text.Json` attributes make wire names explicit. DTOs are mapped immediately to neutral WMS import items and never returned by API endpoints.
 
 **Rationale**: Exact source naming makes deserialization auditable without contaminating WMS domain language. `Guid` preserves the immutable identity type supplied by 1C.
 
@@ -24,34 +24,35 @@
 - Reuse DTOs as WMS commands or public responses: rejected because it violates both module and transport boundaries.
 - Use dynamic dictionaries for all source records: rejected because required fields would lose compile-time shape and validation clarity.
 
-## Decision: Map Only Semantically Equivalent Fields
+## Decision: Apply Source-Specific Field Mapping
 
-**Decision**: Map `Ref_Key -> ExternalRefKey`, `Code -> Code`, `Description -> Name`, and `DeletionMark -> deletion intent`. Warehouse descriptions, UoM symbols, and SKU descriptions are preserved on update when 1C provides no equivalent value; new records use null for those optional fields. `Артикул` may remain in the source DTO but is not persisted because the current SKU aggregate has no article-number concept.
+**Decision**: Always map `Ref_Key -> ExternalRefKey` and `DeletionMark -> deletion intent`. Trim source codes before WMS normalization. For `Catalog_УпаковкиЕдиницыИзмерения`, use trimmed non-empty `НаименованиеПолное`, otherwise `Description`, as `Name`; use trimmed non-empty `МеждународноеСокращение`, otherwise `Description`, as `Symbol`. For nomenclature, use trimmed non-empty `НаименованиеПолное`, otherwise `Description`, as `Name`; keep `Артикул` transport-only because the current SKU aggregate has no article-number concept. For warehouses, map `Description -> Name`; use a trimmed source `Code` when the publication exposes it, otherwise use uppercase `Ref_Key` in 32-character `N` format as a warehouse-only deterministic code.
 
-**Rationale**: This avoids silently putting article numbers into the semantically different Myrmex description field or overwriting local optional data with absent source data.
+**Rationale**: The samples provide semantically stronger full-name and international-symbol fields. The exact 32-character GUID fallback satisfies the existing warehouse code limit without truncation and remains deterministic. It is not appropriate for SKU or UoM because those source codes are required business data.
 
 **Alternatives considered**:
 
 - Map `Артикул` to `StockKeepingUnit.Description`: rejected as semantic data corruption.
 - Add a new SKU article-number field: rejected because the approved feature specification does not define that WMS concept or its uniqueness/lifecycle rules.
-- Clear optional local fields on every import: rejected because absence from the selected source projection is not deletion intent.
+- Use the warehouse code fallback for UoM or SKU: rejected because only the warehouse publication may omit `Code`; SKU and UoM records without valid codes fail existing WMS validation.
+- Truncate or hash `Ref_Key` into a prefixed warehouse code: rejected because `Ref_Key.ToString("N")` already fits the 32-character limit and preserves the complete identity text.
 
-## Decision: Resolve Required SKU Base UoM by External Identity
+## Decision: Resolve Each SKU Base UoM from `ЕдиницаИзмерения_Key`
 
-**Decision**: Add required configuration `DefaultSkuBaseUnitOfMeasureExternalRefKey`. The OneC mapper supplies this external UoM identity on every neutral SKU item. The WMS SKU import handler resolves it to one active `UnitOfMeasure` by `ExternalRefKey`. Missing or inactive matches fail the affected SKU record. UoM import precedes SKU import in validation guidance.
+**Decision**: Map nullable 1C `ЕдиницаИзмерения_Key` directly to `ImportStockKeepingUnits.Item.BaseUnitOfMeasureExternalRefKey`. The WMS SKU import handler resolves each non-empty key to one active imported `UnitOfMeasure` by `ExternalRefKey`. A missing/null/empty key fails that record as `BaseUnitOfMeasureExternalRefKeyMissing`; an unmatched key fails as `BaseUnitOfMeasureNotImported`; an inactive match fails as `BaseUnitOfMeasureInactive`. Other SKU records in the batch continue. UoM import precedes SKU import in validation guidance.
 
-**Rationale**: Current `StockKeepingUnit` requires an active `BaseUnitOfMeasureId`, while the approved nomenclature projection has no reliable per-record UoM relationship. An external identity remains stable and honors the rule against automatic code linking.
+**Rationale**: The actual nomenclature sample supplies the source relationship needed by the existing SKU invariant. External identity produces the correct per-SKU local relationship without code matching or environment-specific local IDs.
 
 **Alternatives considered**:
 
+- Configure one default UoM for all SKUs: rejected because it discards the actual per-nomenclature relationship and can assign incorrect operational units.
 - Configure a local `BaseUnitOfMeasureId`: rejected because local database identities are environment-specific and expose WMS persistence details in source configuration.
 - Match the base UoM by code: rejected because code matching is explicitly not an identity/linking mechanism.
 - Make `BaseUnitOfMeasureId` optional for imported SKUs: rejected because it breaks the existing SKU invariant and downstream inventory behavior.
-- Guess a 1C UoM field name: rejected because target 1C configurations vary and no exact field was approved.
 
 ## Decision: Explicit OData Queries and Deterministic Offset Paging
 
-**Decision**: Build query parameters explicitly and URL-encode entity/property names. Warehouse and UoM reads use `$format=json`, `$orderby=Ref_Key`, and `$select`. Nomenclature uses those parameters plus `$skip={offset}` and `$top={BatchSize}`. Advance offset by returned count; stop when the page count is below the configured batch size. Default `BatchSize` is 1,000, valid range 1–5,000.
+**Decision**: Build query parameters explicitly and URL-encode entity/property names. Warehouses select `Ref_Key,DeletionMark,IsFolder,Code,Description` when source `Code` is configured as available, or omit `Code` otherwise. UoM uses entity set `Catalog_УпаковкиЕдиницыИзмерения` and selects `Ref_Key,DeletionMark,Code,Description,НаименованиеПолное,МеждународноеСокращение`. Nomenclature selects `Ref_Key,DeletionMark,IsFolder,Code,Description,НаименованиеПолное,Артикул,ЕдиницаИзмерения_Key` plus `$skip={offset}` and `$top={BatchSize}`. All reads use `$format=json` and `$orderby=Ref_Key`. Prefer `$filter=IsFolder eq false` for warehouse and nomenclature when the publication supports it; otherwise omit the filter and skip `IsFolder=true` records with stable reason `SourceFolder`. Advance offset by returned count and stop when page count is below batch size. Default `BatchSize` is 1,000, valid range 1–5,000.
 
 **Rationale**: Stable source-identity ordering is required for repeatable offset paging, while explicit selection bounds transfer and deserialization work. The stop rule handles empty catalogs and exact-multiple final pages.
 
@@ -60,6 +61,7 @@
 - Follow arbitrary server ordering: rejected because `$skip`/`$top` can omit or duplicate records without stable ordering.
 - Load all nomenclature in one request: rejected because the feature must support more than 15,000 records with bounded memory.
 - Add delta tokens or continuation-link infrastructure: rejected because the target contract specifies offset paging and the MVP is manual full import.
+- Require `$filter=IsFolder eq false` on every publication: rejected because compatibility may vary; client-side folder skipping remains the required fallback.
 
 ## Decision: Per-Request Timeout and No Automatic Retry
 
@@ -73,9 +75,20 @@
 - Automatic retry/resilience policies: deferred until target-server behavior and retry budgets are measured.
 - Background continuation after caller cancellation: rejected by the synchronous execution decision.
 
+## Decision: Explicit Publication-Compatibility Options
+
+**Decision**: Keep `UnitsOfMeasureEntitySet` configurable but set/document `Catalog_УпаковкиЕдиницыИзмерения` as the target value. Add `WarehouseCodeAvailable` to decide whether warehouse `$select` includes `Code`; when false or when a returned code is empty, use the warehouse-only GUID code fallback. Add `UseFolderFilter` to prefer `$filter=IsFolder eq false` for warehouse and nomenclature; when false because the publication rejects that filter, fetch `IsFolder` and skip folders client-side. These are deployment configuration only and do not enter WMS commands except through mapped item values.
+
+**Rationale**: Field/filter capability is a property of the target publication. Explicit options keep query construction deterministic and avoid using an OData failure as normal control flow.
+
+**Alternatives considered**:
+
+- Hard-code every publication capability: rejected because warehouse `Code` and folder filtering can differ.
+- Probe and retry failed queries automatically: rejected because compatibility errors become ambiguous and connection testing should identify configuration deliberately.
+
 ## Decision: WMS Owns Neutral Batch Upsert Commands
 
-**Decision**: Add public WMS command shells `ImportWarehouses`, `ImportUnitsOfMeasure`, and `ImportStockKeepingUnits` with nested neutral `Item` records. Keep handlers and EF access internal. Each handler preloads records by source identity and normalized code, applies domain validation/lifecycle rules, and returns a neutral `ReferenceImportBatchResult` with counts and uncapped internal errors.
+**Decision**: Add public WMS command shells `ImportWarehouses`, `ImportUnitsOfMeasure`, and `ImportStockKeepingUnits` with nested neutral `Item` records. Keep handlers and EF access internal. Each handler preloads records by source identity and normalized code, applies domain validation/lifecycle rules, and returns a neutral `ReferenceImportBatchResult` with counts and uncapped internal errors. `IsFolder` never enters WMS items: the OneC mapper holds `SourceFolder` skips as pending mapping outcomes and merges them only after the corresponding WMS source batch completes.
 
 **Rationale**: The integration project needs a compile-time WMS boundary without access to domain entities. Explicit commands match the existing dispatcher and constitution.
 
@@ -87,7 +100,7 @@
 
 ## Decision: Imported Identity, Lifecycle, and Field Ownership
 
-**Decision**: Add nullable `Guid ExternalRefKey` and nullable `DateTimeOffset LastImportedAtUtc` to all three aggregates. A non-deleted valid source record creates or updates by external identity and aligns imported fields plus active state; this reactivates a previously source-deactivated linked record. A deletion-marked linked record is deactivated, an unlinked deletion-marked record is skipped, and no record is physically deleted. Successful unchanged re-imports refresh `LastImportedAtUtc` and count as updated.
+**Decision**: Add nullable `Guid ExternalRefKey` and nullable `DateTimeOffset LastImportedAtUtc` to all three aggregates. For folder-bearing sources, `IsFolder=true` is skipped as `SourceFolder` before upsert. A non-folder, non-deleted valid source record creates or updates by external identity and aligns imported fields plus active state; this reactivates a previously source-deactivated linked record. A deletion-marked linked record is deactivated, an unlinked deletion-marked record is skipped, and no record is physically deleted. Successful unchanged re-imports refresh `LastImportedAtUtc` and count as updated.
 
 **Rationale**: One source is authoritative for fields it imports. Aligning active state makes deletion removal reversible and repeatable. Refreshing the timestamp records successful observation of the source.
 
@@ -123,7 +136,7 @@
 
 ## Decision: Aggregate Counts Only After Batch Commit
 
-**Decision**: `OneCImportService` aggregates a WMS batch result only after the batch command returns committed success. A failed/uncommitted batch and unread later source records contribute no processed/created/updated/skipped/failed counts. The public response sets `IsComplete=false` and adds one operation error. Returned record errors are capped at 50 after total counts are calculated.
+**Decision**: `OneCImportService` aggregates a WMS batch result only after the batch command returns committed success. Pending `SourceFolder` mapping skips from that same source batch are added at the same point. A folder-only source batch completes without WMS mutations. A failed/uncommitted batch, its pending mapping skips, and unread later source records contribute no processed/created/updated/skipped/failed counts. The public response sets `IsComplete=false` and adds one operation error. Returned record errors are capped at 50 after total counts are calculated.
 
 **Rationale**: Public counts remain reconcilable with persisted outcomes and satisfy the clarification decision.
 

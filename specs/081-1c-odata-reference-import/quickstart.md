@@ -24,16 +24,19 @@ Password
 WarehousesEntitySet
 UnitsOfMeasureEntitySet
 NomenclatureEntitySet
+WarehouseCodeAvailable
+UseFolderFilter
 BatchSize
 TimeoutSeconds
-DefaultSkuBaseUnitOfMeasureExternalRefKey
 ```
 
 Expected defaults and validation:
 
 - `BatchSize`: default `1000`, valid `1`–`5000`.
 - `TimeoutSeconds`: default `30`, must be positive.
-- `DefaultSkuBaseUnitOfMeasureExternalRefKey`: the 1C `Ref_Key` of the UoM that all MVP-imported SKUs use as their required base UoM.
+- `UnitsOfMeasureEntitySet`: `Catalog_УпаковкиЕдиницыИзмерения` for the validated target sample.
+- `WarehouseCodeAvailable`: set `true` only when the warehouse entity exposes `Code`; otherwise omit `Code` from `$select` and use the warehouse-only deterministic `Ref_Key` fallback.
+- `UseFolderFilter`: prefer `true` for `$filter=IsFolder eq false`; set `false` only when the target publication does not support the filter, in which case folders are fetched and skipped.
 - One API instance only. The same-type import gate is process-local and is not safe across multiple replicas.
 
 Credentials must come from user secrets, environment variables, deployment secrets, or another secure provider. Do not put credentials in repository files or HTTP request bodies.
@@ -46,9 +49,10 @@ dotnet user-secrets set "Myrmex:Integrations:OneC:BaseUrl" "https://onec.example
 dotnet user-secrets set "Myrmex:Integrations:OneC:Username" "<username>" --project Myrmex.ApiService\Myrmex.ApiService.csproj
 dotnet user-secrets set "Myrmex:Integrations:OneC:Password" "<secret>" --project Myrmex.ApiService\Myrmex.ApiService.csproj
 dotnet user-secrets set "Myrmex:Integrations:OneC:WarehousesEntitySet" "Catalog_Склады" --project Myrmex.ApiService\Myrmex.ApiService.csproj
-dotnet user-secrets set "Myrmex:Integrations:OneC:UnitsOfMeasureEntitySet" "<target-uom-entity-set>" --project Myrmex.ApiService\Myrmex.ApiService.csproj
+dotnet user-secrets set "Myrmex:Integrations:OneC:UnitsOfMeasureEntitySet" "Catalog_УпаковкиЕдиницыИзмерения" --project Myrmex.ApiService\Myrmex.ApiService.csproj
 dotnet user-secrets set "Myrmex:Integrations:OneC:NomenclatureEntitySet" "Catalog_Номенклатура" --project Myrmex.ApiService\Myrmex.ApiService.csproj
-dotnet user-secrets set "Myrmex:Integrations:OneC:DefaultSkuBaseUnitOfMeasureExternalRefKey" "<uom-ref-key-guid>" --project Myrmex.ApiService\Myrmex.ApiService.csproj
+dotnet user-secrets set "Myrmex:Integrations:OneC:WarehouseCodeAvailable" "true" --project Myrmex.ApiService\Myrmex.ApiService.csproj
+dotnet user-secrets set "Myrmex:Integrations:OneC:UseFolderFilter" "true" --project Myrmex.ApiService\Myrmex.ApiService.csproj
 ```
 
 For local use before an auth baseline exists, use the repository's existing development-actor configuration. The feature must not add an authentication scheme or policy implementation.
@@ -58,22 +62,24 @@ For local use before an auth baseline exists, use the repository's existing deve
 Warehouse request shape:
 
 ```text
-<BaseUrl>/<WarehousesEntitySet>?$format=json&$orderby=Ref_Key&$select=Ref_Key,DeletionMark,Code,Description
+<BaseUrl>/<WarehousesEntitySet>?$format=json&$filter=IsFolder eq false&$orderby=Ref_Key&$select=Ref_Key,DeletionMark,IsFolder,Code,Description
 ```
+
+When `WarehouseCodeAvailable=false`, omit `Code` from `$select`. For any unavailable/blank warehouse code, map `Ref_Key.ToString("N").ToUpperInvariant()` as the required 32-character Myrmex warehouse code. Do not use this fallback for UoM or SKU.
 
 UoM request shape:
 
 ```text
-<BaseUrl>/<UnitsOfMeasureEntitySet>?$format=json&$orderby=Ref_Key&$select=Ref_Key,DeletionMark,Code,Description
+<BaseUrl>/Catalog_УпаковкиЕдиницыИзмерения?$format=json&$orderby=Ref_Key&$select=Ref_Key,DeletionMark,Code,Description,НаименованиеПолное,МеждународноеСокращение
 ```
 
 Nomenclature page request shape:
 
 ```text
-<BaseUrl>/<NomenclatureEntitySet>?$format=json&$orderby=Ref_Key&$skip=<offset>&$top=<batch-size>&$select=Ref_Key,DeletionMark,Code,Description
+<BaseUrl>/<NomenclatureEntitySet>?$format=json&$filter=IsFolder eq false&$orderby=Ref_Key&$skip=<offset>&$top=<batch-size>&$select=Ref_Key,DeletionMark,IsFolder,Code,Description,НаименованиеПолное,Артикул,ЕдиницаИзмерения_Key
 ```
 
-If the implemented source DTO deliberately retains `Артикул`, it may be added to `$select`, but it must remain inside the OneC boundary and must not be written into Myrmex `Description`.
+If the target publication rejects `$filter=IsFolder eq false`, set `UseFolderFilter=false`, retain `IsFolder` in `$select`, and verify `IsFolder=true` records are reported as `SourceFolder` skips. `Артикул` remains inside the OneC boundary and must not be written into Myrmex `Description`.
 
 Verify entity-set and field identifiers are URL encoded, credentials do not appear in URLs or logs, and nomenclature offset advances by the number of returned records.
 
@@ -110,10 +116,10 @@ dotnet test Myrmex.Tests\Myrmex.Tests.csproj --filter "FullyQualifiedName~OneC|F
 
 Expected automated coverage:
 
-- WMS import create/update/idempotency, code conflict, deletion/reactivation, invalid record, base-UoM resolution, atomic rollback, and reconciled counts.
+- WMS import create/update/idempotency, code conflict, deletion/reactivation, invalid record, per-SKU external base-UoM resolution, atomic rollback, and reconciled counts.
 - SQL Server metadata and uniqueness for all three filtered external-reference indexes.
-- Exact OData query construction, Unicode DTO names, `Guid Ref_Key` deserialization, empty/exact/multi-page termination, malformed response, timeout, and cancellation.
-- OneC orchestration mapping, error cap, partial committed counts, failed-batch exclusion, and same-type lock behavior.
+- Exact OData query construction, Unicode DTO names, `Guid Ref_Key`/nullable `ЕдиницаИзмерения_Key` deserialization, folder filtering/fallback, optional warehouse code, empty/exact/multi-page termination, malformed response, timeout, and cancellation.
+- OneC orchestration full-name/symbol mapping, deterministic warehouse code fallback, folder skips, error cap, partial committed counts, failed-batch exclusion, and same-type lock behavior.
 - Four route contracts, authenticated-actor check, `409 AlreadyInProgress`, complete/incomplete JSON, and ProblemDetails.
 - WebApp client route selection, successful response parsing, ProblemDetails mapping, and cancellation propagation.
 
@@ -149,7 +155,7 @@ Expected success: `isReady=true` and all three checked reference types. Repeat w
 Invoke-RestMethod -Method Post -Uri "$apiBase/api/integrations/1c/warehouses/import"
 ```
 
-Verify new records are created by source identity, linked records update, local same-code records remain unlinked and are skipped, deletion-marked linked records deactivate, and deletion-marked unlinked records are skipped.
+Verify new records are created by source identity, `IsFolder=true` records are filtered or skipped, `Description` maps to warehouse name, linked records update, local same-code records remain unlinked and are skipped, deletion-marked linked records deactivate, and deletion-marked unlinked records are skipped. Repeat with warehouse `Code` unavailable/blank and verify the code is the uppercase 32-character `Ref_Key` `N` format.
 
 ### Unit-of-measure import
 
@@ -157,7 +163,7 @@ Verify new records are created by source identity, linked records update, local 
 Invoke-RestMethod -Method Post -Uri "$apiBase/api/integrations/1c/uoms/import"
 ```
 
-Verify the configured `DefaultSkuBaseUnitOfMeasureExternalRefKey` now resolves to exactly one active UoM before importing SKUs.
+Verify `Code` is trimmed; non-empty `НаименованиеПолное` wins over `Description` for name; non-empty `МеждународноеСокращение` wins over `Description` for symbol; and imported UoMs retain their source identities for SKU relationship resolution.
 
 ### SKU import
 
@@ -165,7 +171,7 @@ Verify the configured `DefaultSkuBaseUnitOfMeasureExternalRefKey` now resolves t
 Invoke-RestMethod -Method Post -Uri "$apiBase/api/integrations/1c/skus/import"
 ```
 
-Use a source dataset larger than one batch and preferably larger than 15,000 records. Verify stable ascending source-identity paging, all valid source records considered once, required base UoM assigned, and the final page behavior for both partial and exact batch-size totals.
+Use a source dataset larger than one batch and preferably larger than 15,000 records. Verify stable ascending source-identity paging, folder filtering/skips, all valid source records considered once, and each SKU base UoM resolved from its own `ЕдиницаИзмерения_Key`. Verify missing/null/empty keys, not-imported keys, and inactive imported UoMs fail only the affected SKU as `BaseUnitOfMeasureExternalRefKeyMissing`, `BaseUnitOfMeasureNotImported`, or `BaseUnitOfMeasureInactive`. Verify the final page behavior for partial and exact batch-size totals.
 
 ### Idempotent repeat
 
@@ -222,3 +228,5 @@ Confirm implementation did not add:
 - inventory count or manual move behavior changes;
 - 1C DTOs or names in WMS domain/public Myrmex contracts;
 - credentials in repository files, request bodies, responses, or logs.
+- one configured/default UoM applied to every SKU or SKU base-UoM resolution by code.
+- warehouse generated-code fallback applied to UoM or SKU records.
