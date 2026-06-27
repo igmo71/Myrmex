@@ -28,6 +28,10 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
 
     public bool IsActive { get; private set; } = true;
 
+    public Guid? ExternalRefKey { get; private set; }
+
+    public DateTimeOffset? LastImportedAtUtc { get; private set; }
+
     public static DomainValidationResult Create(
         string? code,
         string? name,
@@ -74,6 +78,51 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
         Touch();
         AddDomainEvent(new WarehouseDetailsUpdatedDomainEvent(Id));
 
+        return DomainValidationResult.Valid;
+    }
+
+    public DomainValidationResult ApplyImport(
+        Guid externalRefKey,
+        string? code,
+        string? name,
+        bool isDeletionMarked,
+        DateTimeOffset importedAtUtc)
+    {
+        List<DomainValidationFailure> errors = [];
+
+        if (externalRefKey == Guid.Empty)
+        {
+            errors.Add(DomainValidationFailure.Required<Warehouse>(nameof(ExternalRefKey)));
+        }
+        else if (ExternalRefKey.HasValue && ExternalRefKey.Value != externalRefKey)
+        {
+            errors.Add(DomainValidationFailure.IncorrectState<Warehouse>(nameof(ExternalRefKey)));
+        }
+
+        errors.AddRange(ValidateCreate(code, name, Description).Errors);
+
+        DomainValidationResult validationResult = DomainValidationResult.From(errors);
+        if (!validationResult.IsValid)
+        {
+            return validationResult;
+        }
+
+        ExternalRefKey ??= externalRefKey;
+        Code = DomainText.NormalizeCode(code);
+        Name = DomainText.NormalizeRequiredText(name);
+        LastImportedAtUtc = importedAtUtc;
+
+        if (isDeletionMarked)
+        {
+            Deactivate();
+        }
+        else
+        {
+            Reactivate();
+        }
+
+        Touch();
+        AddDomainEvent(new WarehouseDetailsUpdatedDomainEvent(Id));
         return DomainValidationResult.Valid;
     }
 

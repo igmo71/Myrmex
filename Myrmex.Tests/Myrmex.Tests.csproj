@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Myrmex.AppHost\Myrmex.AppHost.csproj" />
+    <ProjectReference Include="..\src\Myrmex.Integrations\Myrmex.Integrations.csproj" />
     <ProjectReference Include="..\Myrmex.Modules.Wms\Myrmex.Modules.Wms.csproj" />
     <ProjectReference Include="..\Myrmex.WebApp\Myrmex.WebApp.csproj" />
   </ItemGroup>

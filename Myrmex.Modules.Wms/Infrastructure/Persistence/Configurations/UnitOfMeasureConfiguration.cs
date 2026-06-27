@@ -34,6 +34,17 @@ internal sealed class UnitOfMeasureConfiguration : IEntityTypeConfiguration<Unit
         builder.Property(x => x.IsActive)
             .IsRequired();
 
+        builder.Property(x => x.ExternalRefKey)
+            .IsRequired(false);
+
+        builder.HasIndex(x => x.ExternalRefKey)
+            .IsUnique()
+            .HasFilter("[ExternalRefKey] IS NOT NULL")
+            .HasDatabaseName(WmsDatabaseNames.UnitOfMeasureExternalRefKeyUniqueIndex);
+
+        builder.Property(x => x.LastImportedAtUtc)
+            .IsRequired(false);
+
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 

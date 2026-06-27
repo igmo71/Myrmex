@@ -1,5 +1,7 @@
 using System.Security.Claims;
 using Myrmex.AppDispatching;
+using Myrmex.Integrations.OneC;
+using Myrmex.Integrations.OneC.Endpoints;
 using Myrmex.Modules.Wms;
 using Scalar.AspNetCore;
 
@@ -15,6 +17,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 
 builder.Services.AddWmsModule(builder.Configuration);
+builder.Services.AddOneCIntegration(builder.Configuration);
 
 builder.Services.AddMyrmexAppDispatching(typeof(WmsModule).Assembly);
 
@@ -75,6 +78,7 @@ if (app.Environment.IsDevelopment()
 }
 
 app.MapWmsModule();
+app.MapOneCIntegration();
 
 app.Run();
 

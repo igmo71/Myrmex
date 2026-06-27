@@ -4,6 +4,9 @@ namespace Myrmex.Tests.Wms.Catalog.Domain;
 
 public sealed class UnitOfMeasureTests
 {
+    private static readonly Guid ExternalRefKey = Guid.Parse("018f0000-0000-7000-8000-000000000902");
+    private static readonly DateTimeOffset ImportedAtUtc = DateTimeOffset.Parse("2026-06-27T09:00:00Z");
+
     [Fact]
     public void Create_WhenValuesAreValid_NormalizesValuesAndCreatesActiveUom()
     {
@@ -150,6 +153,45 @@ public sealed class UnitOfMeasureTests
         Assert.True(unitOfMeasure.IsActive);
         Assert.Equal(updatedAtUtc, unitOfMeasure.UpdatedAtUtc);
         Assert.Empty(unitOfMeasure.DomainEvents);
+    }
+
+    [Fact]
+    public void ApplyImport_UpdatesDetailsMetadataAndLifecycle()
+    {
+        UnitOfMeasure unitOfMeasure = CreateUnitOfMeasure();
+
+        var deleted = unitOfMeasure.ApplyImport(
+            ExternalRefKey,
+            " pkg ",
+            " Package ",
+            " pc ",
+            isDeletionMarked: true,
+            ImportedAtUtc);
+
+        Assert.True(deleted.IsValid);
+        Assert.Equal(ExternalRefKey, unitOfMeasure.ExternalRefKey);
+        Assert.Equal(ImportedAtUtc, unitOfMeasure.LastImportedAtUtc);
+        Assert.Equal("PKG", unitOfMeasure.Code);
+        Assert.Equal("Package", unitOfMeasure.Name);
+        Assert.Equal("pc", unitOfMeasure.Symbol);
+        Assert.False(unitOfMeasure.IsActive);
+
+        Assert.True(unitOfMeasure.ApplyImport(
+            ExternalRefKey, "PKG", "Package", "pc", false, ImportedAtUtc.AddMinutes(1)).IsValid);
+        Assert.True(unitOfMeasure.IsActive);
+    }
+
+    [Fact]
+    public void ApplyImport_WhenExternalRefKeyChanges_RejectsMutation()
+    {
+        UnitOfMeasure unitOfMeasure = CreateUnitOfMeasure();
+        Assert.True(unitOfMeasure.ApplyImport(ExternalRefKey, "EA", "Each", "ea", false, ImportedAtUtc).IsValid);
+
+        var result = unitOfMeasure.ApplyImport(Guid.NewGuid(), "KG", "Kilogram", "kg", false, ImportedAtUtc);
+
+        Assert.False(result.IsValid);
+        Assert.Equal(ExternalRefKey, unitOfMeasure.ExternalRefKey);
+        Assert.Equal("EA", unitOfMeasure.Code);
     }
 
     private static UnitOfMeasure CreateUnitOfMeasure()

@@ -18,8 +18,8 @@
 
 **Purpose**: Establish the integration project and solution dependency direction without adding runtime behavior.
 
-- [ ] T001 Create the .NET 10 integration adapter project with ASP.NET framework access, references to `Myrmex.Modules.Wms`, `Myrmex.AppDispatching`, `Myrmex.AspNetCore`, `Myrmex.Core`, and `Myrmex.Shared`, and test internals visibility in `src/Myrmex.Integrations/Myrmex.Integrations.csproj` and `src/Myrmex.Integrations/Properties/AssemblyInfo.cs`
-- [ ] T002 Add the integration project to the solution and one-way host/test references without adding a WMS-to-integration reference in `Myrmex.slnx`, `Myrmex.ApiService/Myrmex.ApiService.csproj`, and `Myrmex.Tests/Myrmex.Tests.csproj`
+- [X] T001 Create the .NET 10 integration adapter project with ASP.NET framework access, references to `Myrmex.Modules.Wms`, `Myrmex.AppDispatching`, `Myrmex.AspNetCore`, `Myrmex.Core`, and `Myrmex.Shared`, and test internals visibility in `src/Myrmex.Integrations/Myrmex.Integrations.csproj` and `src/Myrmex.Integrations/Properties/AssemblyInfo.cs`
+- [X] T002 Add the integration project to the solution and one-way host/test references without adding a WMS-to-integration reference in `Myrmex.slnx`, `Myrmex.ApiService/Myrmex.ApiService.csproj`, and `Myrmex.Tests/Myrmex.Tests.csproj`
 
 ---
 
@@ -31,25 +31,25 @@
 
 ### Tests for Foundational Behavior
 
-- [ ] T003 [P] Add warehouse domain tests protecting immutable `ExternalRefKey`, successful `LastImportedAtUtc` updates, imported code/name updates, and source-driven deactivate/reactivate behavior in `Myrmex.Tests/Wms/Topology/Domain/WarehouseTests.cs`
-- [ ] T004 [P] Add UoM domain tests protecting immutable `ExternalRefKey`, successful `LastImportedAtUtc` updates, imported code/name/symbol updates, and source-driven lifecycle behavior in `Myrmex.Tests/Wms/Catalog/Domain/UnitOfMeasureTests.cs`
-- [ ] T005 [P] Add SKU domain tests protecting immutable `ExternalRefKey`, successful `LastImportedAtUtc` updates, imported code/name/base-UoM updates, and source-driven lifecycle behavior in `Myrmex.Tests/Wms/Catalog/Domain/StockKeepingUnitTests.cs`
-- [ ] T006 [P] Add SQL Server model metadata tests for nullable warehouse import columns and filtered unique `ExternalRefKey` index in `Myrmex.Tests/Wms/Topology/Persistence/WarehousePersistenceTests.cs`
-- [ ] T007 [P] Extend SQL Server model metadata tests for nullable UoM import columns and filtered unique `ExternalRefKey` index in `Myrmex.Tests/Wms/Catalog/Persistence/UnitOfMeasurePersistenceTests.cs`
-- [ ] T008 [P] Extend SQL Server model metadata tests for nullable SKU import columns and filtered unique `ExternalRefKey` index while preserving the internal `BaseUnitOfMeasureId` relationship in `Myrmex.Tests/Wms/Catalog/Persistence/StockKeepingUnitPersistenceTests.cs`
+- [X] T003 [P] Add warehouse domain tests protecting immutable `ExternalRefKey`, successful `LastImportedAtUtc` updates, imported code/name updates, and source-driven deactivate/reactivate behavior in `Myrmex.Tests/Wms/Topology/Domain/WarehouseTests.cs`
+- [X] T004 [P] Add UoM domain tests protecting immutable `ExternalRefKey`, successful `LastImportedAtUtc` updates, imported code/name/symbol updates, and source-driven lifecycle behavior in `Myrmex.Tests/Wms/Catalog/Domain/UnitOfMeasureTests.cs`
+- [X] T005 [P] Add SKU domain tests protecting immutable `ExternalRefKey`, successful `LastImportedAtUtc` updates, imported code/name/base-UoM updates, and source-driven lifecycle behavior in `Myrmex.Tests/Wms/Catalog/Domain/StockKeepingUnitTests.cs`
+- [X] T006 [P] Add SQL Server model metadata tests for nullable warehouse import columns and filtered unique `ExternalRefKey` index in `Myrmex.Tests/Wms/Topology/Persistence/WarehousePersistenceTests.cs`
+- [X] T007 [P] Extend SQL Server model metadata tests for nullable UoM import columns and filtered unique `ExternalRefKey` index in `Myrmex.Tests/Wms/Catalog/Persistence/UnitOfMeasurePersistenceTests.cs`
+- [X] T008 [P] Extend SQL Server model metadata tests for nullable SKU import columns and filtered unique `ExternalRefKey` index while preserving the internal `BaseUnitOfMeasureId` relationship in `Myrmex.Tests/Wms/Catalog/Persistence/StockKeepingUnitPersistenceTests.cs`
 
 ### Foundational Implementation
 
-- [ ] T009 [P] Add `ExternalRefKey`, `LastImportedAtUtc`, and domain methods for imported detail/lifecycle application without exposing 1C names in `Myrmex.Modules.Wms/Topology/Domain/Warehouses/Warehouse.cs`
-- [ ] T010 [P] Add `ExternalRefKey`, `LastImportedAtUtc`, and domain methods for imported detail/lifecycle application without exposing 1C names in `Myrmex.Modules.Wms/Catalog/Domain/UnitsOfMeasure/UnitOfMeasure.cs`
-- [ ] T011 [P] Add `ExternalRefKey`, `LastImportedAtUtc`, and domain methods for imported detail/base-UoM/lifecycle application while keeping Myrmex `Id` and `BaseUnitOfMeasureId` internal in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnit.cs`
-- [ ] T012 Add explicit external-reference index names for warehouses, UoMs, and SKUs in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs`
-- [ ] T013 [P] Configure nullable warehouse import fields and unique filtered `[ExternalRefKey] IS NOT NULL` index in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/WarehouseConfiguration.cs`
-- [ ] T014 [P] Configure nullable UoM import fields and unique filtered `[ExternalRefKey] IS NOT NULL` index in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/UnitOfMeasureConfiguration.cs`
-- [ ] T015 [P] Configure nullable SKU import fields and unique filtered `[ExternalRefKey] IS NOT NULL` index without changing the required base-UoM foreign key in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/StockKeepingUnitConfiguration.cs`
-- [ ] T016 Extend unique-constraint error mapping for the three external-reference indexes while preserving existing code-conflict mappings in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsPersistenceExceptionMapper.cs`
-- [ ] T017 [P] Define neutral committed-batch counts and stable record-error types with no OData names in `Myrmex.Modules.Wms/Catalog/Features/Imports/ReferenceImportBatchResult.cs`
-- [ ] T018 [P] Add BCL-only public connection/import response, operation-error, and record-error contracts in `Myrmex.Shared/Integrations/OneC/OneCConnectionTestResponse.cs`, `Myrmex.Shared/Integrations/OneC/OneCImportResponse.cs`, `Myrmex.Shared/Integrations/OneC/OneCImportOperationError.cs`, and `Myrmex.Shared/Integrations/OneC/OneCImportRecordError.cs`
+- [X] T009 [P] Add `ExternalRefKey`, `LastImportedAtUtc`, and domain methods for imported detail/lifecycle application without exposing 1C names in `Myrmex.Modules.Wms/Topology/Domain/Warehouses/Warehouse.cs`
+- [X] T010 [P] Add `ExternalRefKey`, `LastImportedAtUtc`, and domain methods for imported detail/lifecycle application without exposing 1C names in `Myrmex.Modules.Wms/Catalog/Domain/UnitsOfMeasure/UnitOfMeasure.cs`
+- [X] T011 [P] Add `ExternalRefKey`, `LastImportedAtUtc`, and domain methods for imported detail/base-UoM/lifecycle application while keeping Myrmex `Id` and `BaseUnitOfMeasureId` internal in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnit.cs`
+- [X] T012 Add explicit external-reference index names for warehouses, UoMs, and SKUs in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs`
+- [X] T013 [P] Configure nullable warehouse import fields and unique filtered `[ExternalRefKey] IS NOT NULL` index in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/WarehouseConfiguration.cs`
+- [X] T014 [P] Configure nullable UoM import fields and unique filtered `[ExternalRefKey] IS NOT NULL` index in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/UnitOfMeasureConfiguration.cs`
+- [X] T015 [P] Configure nullable SKU import fields and unique filtered `[ExternalRefKey] IS NOT NULL` index without changing the required base-UoM foreign key in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/StockKeepingUnitConfiguration.cs`
+- [X] T016 Extend unique-constraint error mapping for the three external-reference indexes while preserving existing code-conflict mappings in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsPersistenceExceptionMapper.cs`
+- [X] T017 [P] Define neutral committed-batch counts and stable record-error types with no OData names in `Myrmex.Modules.Wms/Catalog/Features/Imports/ReferenceImportBatchResult.cs`
+- [X] T018 [P] Add BCL-only public connection/import response, operation-error, and record-error contracts in `Myrmex.Shared/Integrations/OneC/OneCConnectionTestResponse.cs`, `Myrmex.Shared/Integrations/OneC/OneCImportResponse.cs`, `Myrmex.Shared/Integrations/OneC/OneCImportOperationError.cs`, and `Myrmex.Shared/Integrations/OneC/OneCImportRecordError.cs`
 
 **Checkpoint**: WMS entities and shared contracts can represent imported identity safely, while 1C DTOs remain absent from WMS and public contracts.
 
@@ -63,21 +63,21 @@
 
 ### Tests for User Story 1
 
-- [ ] T019 [P] [US1] Add transport tests protecting configuration validation, Basic-auth header handling without secret leakage, cancellation, timeout, malformed envelope handling, and one-record checks for all configured entity sets in `Myrmex.Tests/Integrations/OneC/Client/OneCODataClientTests.cs`
-- [ ] T020 [P] [US1] Add focused endpoint tests protecting the connection-test route, no-body POST binding, authenticated-actor requirement, success serialization, and safe ProblemDetails statuses/codes in `Myrmex.Tests/Integrations/OneC/Endpoints/OneCEndpointTests.cs`
-- [ ] T021 [P] [US1] Add WebApp client tests protecting the connection-test URL, cancellation propagation, shared response parsing, and existing ProblemDetails-to-`ApiResult` mapping in `Myrmex.Tests/Integrations/OneC/Web/OneCIntegrationApiClientTests.cs`
+- [X] T019 [P] [US1] Add transport tests protecting configuration validation, Basic-auth header handling without secret leakage, cancellation, timeout, malformed envelope handling, and one-record checks for all configured entity sets in `Myrmex.Tests/Integrations/OneC/Client/OneCODataClientTests.cs`
+- [X] T020 [P] [US1] Add focused endpoint tests protecting the connection-test route, no-body POST binding, authenticated-actor requirement, success serialization, and safe ProblemDetails statuses/codes in `Myrmex.Tests/Integrations/OneC/Endpoints/OneCEndpointTests.cs`
+- [X] T021 [P] [US1] Add WebApp client tests protecting the connection-test URL, cancellation propagation, shared response parsing, and existing ProblemDetails-to-`ApiResult` mapping in `Myrmex.Tests/Integrations/OneC/Web/OneCIntegrationApiClientTests.cs`
 
 ### Implementation for User Story 1
 
-- [ ] T022 [P] [US1] Implement `OneCOptions` with secure connection settings, `Catalog_УпаковкиЕдиницыИзмерения` as the documented UoM entity-set value, `WarehouseCodeAvailable`, `UseFolderFilter`, batch limits, and timeout defaults—without any default SKU UoM option—in `src/Myrmex.Integrations/OneC/Configuration/OneCOptions.cs`
-- [ ] T023 [P] [US1] Implement the internal OData `value` envelope and categorized safe transport failure types in `src/Myrmex.Integrations/OneC/Transport/OneCODataCollectionResponse.cs` and `src/Myrmex.Integrations/OneC/Transport/OneCTransportException.cs`
-- [ ] T024 [US1] Implement the typed HTTP client foundation, secure credential header, per-request timeout/cancellation, envelope parsing, and required-entity-set connection probes in `src/Myrmex.Integrations/OneC/Transport/OneCODataClient.cs`
-- [ ] T025 [US1] Register OneC options, typed HTTP client, `TimeProvider`, and integration services while keeping secrets out of repository configuration in `src/Myrmex.Integrations/OneC/OneCIntegrationModule.cs` and `Myrmex.ApiService/appsettings.json`
-- [ ] T026 [US1] Implement the `/api/integrations/1c/connection/test` endpoint with existing actor checks and connection error-to-ProblemDetails mapping in `src/Myrmex.Integrations/OneC/Endpoints/OneCEndpoints.cs`
-- [ ] T027 [US1] Register and map the OneC integration module without adding authentication/authorization baseline services in `Myrmex.ApiService/Program.cs`
-- [ ] T028 [US1] Implement the typed WebApp connection-test call using shared contracts and existing `ApiResult<T>` HTTP helpers in `Myrmex.WebApp/Integrations/OneC/OneCIntegrationApiClient.cs`
-- [ ] T029 [US1] Register `OneCIntegrationApiClient` with the existing API service-discovery base address in `Myrmex.WebApp/Program.cs`
-- [ ] T030 [US1] Add `Интеграции → 1С` navigation and a Russian connection-test page with synchronous progress and safe success/error rendering in `Myrmex.WebApp/Components/Layout/NavMenu.razor` and `Myrmex.WebApp/Components/Pages/Integrations/OneC/Index.razor`
+- [X] T022 [P] [US1] Implement `OneCOptions` with secure connection settings, `Catalog_УпаковкиЕдиницыИзмерения` as the documented UoM entity-set value, `WarehouseCodeAvailable`, `UseFolderFilter`, batch limits, and timeout defaults—without any default SKU UoM option—in `src/Myrmex.Integrations/OneC/Configuration/OneCOptions.cs`
+- [X] T023 [P] [US1] Implement the internal OData `value` envelope and categorized safe transport failure types in `src/Myrmex.Integrations/OneC/Transport/OneCODataCollectionResponse.cs` and `src/Myrmex.Integrations/OneC/Transport/OneCTransportException.cs`
+- [X] T024 [US1] Implement the typed HTTP client foundation, secure credential header, per-request timeout/cancellation, envelope parsing, and required-entity-set connection probes in `src/Myrmex.Integrations/OneC/Transport/OneCODataClient.cs`
+- [X] T025 [US1] Register OneC options, typed HTTP client, `TimeProvider`, and integration services while keeping secrets out of repository configuration in `src/Myrmex.Integrations/OneC/OneCIntegrationModule.cs` and `Myrmex.ApiService/appsettings.json`
+- [X] T026 [US1] Implement the `/api/integrations/1c/connection/test` endpoint with existing actor checks and connection error-to-ProblemDetails mapping in `src/Myrmex.Integrations/OneC/Endpoints/OneCEndpoints.cs`
+- [X] T027 [US1] Register and map the OneC integration module without adding authentication/authorization baseline services in `Myrmex.ApiService/Program.cs`
+- [X] T028 [US1] Implement the typed WebApp connection-test call using shared contracts and existing `ApiResult<T>` HTTP helpers in `Myrmex.WebApp/Integrations/OneC/OneCIntegrationApiClient.cs`
+- [X] T029 [US1] Register `OneCIntegrationApiClient` with the existing API service-discovery base address in `Myrmex.WebApp/Program.cs`
+- [X] T030 [US1] Add `Интеграции → 1С` navigation and a Russian connection-test page with synchronous progress and safe success/error rendering in `Myrmex.WebApp/Components/Layout/NavMenu.razor` and `Myrmex.WebApp/Components/Pages/Integrations/OneC/Index.razor`
 
 **Checkpoint**: User Story 1 is independently usable as a connection/readiness diagnostic without any reference mutation.
 

@@ -8,6 +8,23 @@ namespace Myrmex.Tests.Wms.Catalog.Persistence;
 public sealed class UnitOfMeasurePersistenceTests
 {
     [Fact]
+    public async Task Model_HasNullableImportMetadataAndFilteredUniqueExternalRefKeyIndex()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        var entityType = testDbContext.DbContext.Model.FindEntityType(typeof(UnitOfMeasure));
+
+        Assert.NotNull(entityType);
+        Assert.True(entityType.FindProperty(nameof(UnitOfMeasure.ExternalRefKey))!.IsNullable);
+        Assert.True(entityType.FindProperty(nameof(UnitOfMeasure.LastImportedAtUtc))!.IsNullable);
+
+        var index = Assert.Single(entityType.GetIndexes(), candidate =>
+            candidate.GetDatabaseName() == WmsDatabaseNames.UnitOfMeasureExternalRefKeyUniqueIndex);
+        Assert.True(index.IsUnique);
+        Assert.Equal("[ExternalRefKey] IS NOT NULL", index.GetFilter());
+        Assert.Equal([nameof(UnitOfMeasure.ExternalRefKey)], index.Properties.Select(x => x.Name).ToArray());
+    }
+
+    [Fact]
     public async Task Model_HasRequiredFieldsAndNullableOptionalFields()
     {
         // Arrange

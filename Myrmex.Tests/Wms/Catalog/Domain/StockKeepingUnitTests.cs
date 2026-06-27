@@ -5,6 +5,9 @@ namespace Myrmex.Tests.Wms.Catalog.Domain;
 public sealed class StockKeepingUnitTests
 {
     private static readonly Guid BaseUnitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000111");
+    private static readonly Guid OtherBaseUnitOfMeasureId = Guid.Parse("018f0000-0000-7000-8000-000000000112");
+    private static readonly Guid ExternalRefKey = Guid.Parse("018f0000-0000-7000-8000-000000000903");
+    private static readonly DateTimeOffset ImportedAtUtc = DateTimeOffset.Parse("2026-06-27T09:00:00Z");
 
     [Fact]
     public void Create_WhenValuesAreValid_NormalizesValuesAndCreatesActiveSku()
@@ -157,6 +160,49 @@ public sealed class StockKeepingUnitTests
         Assert.True(stockKeepingUnit.IsActive);
         Assert.Equal(updatedAtUtc, stockKeepingUnit.UpdatedAtUtc);
         Assert.Empty(stockKeepingUnit.DomainEvents);
+    }
+
+    [Fact]
+    public void ApplyImport_UpdatesDetailsBaseUnitMetadataAndLifecycle()
+    {
+        StockKeepingUnit stockKeepingUnit = CreateStockKeepingUnit();
+
+        var deleted = stockKeepingUnit.ApplyImport(
+            ExternalRefKey,
+            " item-002 ",
+            " Imported Widget ",
+            OtherBaseUnitOfMeasureId,
+            isDeletionMarked: true,
+            ImportedAtUtc);
+
+        Assert.True(deleted.IsValid);
+        Assert.Equal(ExternalRefKey, stockKeepingUnit.ExternalRefKey);
+        Assert.Equal(ImportedAtUtc, stockKeepingUnit.LastImportedAtUtc);
+        Assert.Equal("ITEM-002", stockKeepingUnit.Code);
+        Assert.Equal("Imported Widget", stockKeepingUnit.Name);
+        Assert.Equal(OtherBaseUnitOfMeasureId, stockKeepingUnit.BaseUnitOfMeasureId);
+        Assert.False(stockKeepingUnit.IsActive);
+
+        Assert.True(stockKeepingUnit.ApplyImport(
+            ExternalRefKey, "ITEM-002", "Imported Widget", OtherBaseUnitOfMeasureId,
+            false, ImportedAtUtc.AddMinutes(1)).IsValid);
+        Assert.True(stockKeepingUnit.IsActive);
+    }
+
+    [Fact]
+    public void ApplyImport_WhenExternalRefKeyChanges_RejectsMutation()
+    {
+        StockKeepingUnit stockKeepingUnit = CreateStockKeepingUnit();
+        Assert.True(stockKeepingUnit.ApplyImport(
+            ExternalRefKey, "ITEM-001", "Widget", BaseUnitOfMeasureId, false, ImportedAtUtc).IsValid);
+
+        var result = stockKeepingUnit.ApplyImport(
+            Guid.NewGuid(), "ITEM-002", "Other", OtherBaseUnitOfMeasureId, false, ImportedAtUtc);
+
+        Assert.False(result.IsValid);
+        Assert.Equal(ExternalRefKey, stockKeepingUnit.ExternalRefKey);
+        Assert.Equal("ITEM-001", stockKeepingUnit.Code);
+        Assert.Equal(BaseUnitOfMeasureId, stockKeepingUnit.BaseUnitOfMeasureId);
     }
 
     private static StockKeepingUnit CreateStockKeepingUnit()

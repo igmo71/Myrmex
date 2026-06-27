@@ -28,6 +28,57 @@ internal sealed class UnitOfMeasure : AggregateRoot, IActivatable
 
     public bool IsActive { get; private set; } = true;
 
+    public Guid? ExternalRefKey { get; private set; }
+
+    public DateTimeOffset? LastImportedAtUtc { get; private set; }
+
+    public DomainValidationResult ApplyImport(
+        Guid externalRefKey,
+        string? code,
+        string? name,
+        string? symbol,
+        bool isDeletionMarked,
+        DateTimeOffset importedAtUtc)
+    {
+        List<DomainValidationFailure> errors = [];
+
+        if (externalRefKey == Guid.Empty)
+        {
+            errors.Add(DomainValidationFailure.Required<UnitOfMeasure>(nameof(ExternalRefKey)));
+        }
+        else if (ExternalRefKey.HasValue && ExternalRefKey.Value != externalRefKey)
+        {
+            errors.Add(DomainValidationFailure.IncorrectState<UnitOfMeasure>(nameof(ExternalRefKey)));
+        }
+
+        errors.AddRange(ValidateCreate(code, name, symbol).Errors);
+
+        DomainValidationResult validationResult = DomainValidationResult.From(errors);
+        if (!validationResult.IsValid)
+        {
+            return validationResult;
+        }
+
+        ExternalRefKey ??= externalRefKey;
+        Code = DomainText.NormalizeCode(code);
+        Name = DomainText.NormalizeRequiredText(name);
+        Symbol = DomainText.NormalizeOptionalText(symbol);
+        LastImportedAtUtc = importedAtUtc;
+
+        if (isDeletionMarked)
+        {
+            Deactivate();
+        }
+        else
+        {
+            Reactivate();
+        }
+
+        Touch();
+        AddDomainEvent(new UnitOfMeasureDetailsUpdatedDomainEvent(Id));
+        return DomainValidationResult.Valid;
+    }
+
     public DomainValidationResult UpdateDetails(
         string? name,
         string? symbol)
