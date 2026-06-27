@@ -143,6 +143,50 @@ public sealed class ImportStockKeepingUnitsHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_WhenExternalIdentityIsImportedAgain_UpdatesWithoutCreatingDuplicate()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        Guid unitExternalRefKey = Guid.NewGuid();
+        UnitOfMeasure unit = CreateUnit("EA", "Each", unitExternalRefKey);
+        testDbContext.DbContext.UnitsOfMeasure.Add(unit);
+        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        ImportStockKeepingUnits.Handler handler = new(
+            testDbContext.DbContext,
+            new RecordingDomainEventDispatcher());
+        Guid externalRefKey = Guid.NewGuid();
+        DateTimeOffset repeatedAtUtc = ImportedAtUtc.AddMinutes(10);
+
+        ServiceResult<ReferenceImportBatchResult> first = await handler.HandleAsync(
+            new ImportStockKeepingUnits.Command(
+                [new(externalRefKey, "SKU-1", "SKU 1", unitExternalRefKey, false, ImportedAtUtc)]),
+            TestContext.Current.CancellationToken);
+        Guid internalId = await testDbContext.DbContext.StockKeepingUnits
+            .Where(sku => sku.ExternalRefKey == externalRefKey)
+            .Select(sku => sku.Id)
+            .SingleAsync(TestContext.Current.CancellationToken);
+
+        ServiceResult<ReferenceImportBatchResult> repeated = await handler.HandleAsync(
+            new ImportStockKeepingUnits.Command(
+                [new(externalRefKey, "SKU-2", "SKU 2", unitExternalRefKey, false, repeatedAtUtc)]),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(first.IsSuccess);
+        Assert.Equal(1, first.Value.Created);
+        Assert.True(repeated.IsSuccess);
+        Assert.Equal(0, repeated.Value.Created);
+        Assert.Equal(1, repeated.Value.Updated);
+        StockKeepingUnit saved = await testDbContext.DbContext.StockKeepingUnits.SingleAsync(
+            sku => sku.ExternalRefKey == externalRefKey,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(internalId, saved.Id);
+        Assert.Equal(externalRefKey, saved.ExternalRefKey);
+        Assert.Equal("SKU-2", saved.Code);
+        Assert.Equal("SKU 2", saved.Name);
+        Assert.Equal(unit.Id, saved.BaseUnitOfMeasureId);
+        Assert.Equal(repeatedAtUtc, saved.LastImportedAtUtc);
+    }
+
+    [Fact]
     public async Task HandleAsync_WhenEventDispatchFails_RollsBackWholeBatch()
     {
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();

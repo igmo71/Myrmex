@@ -19,6 +19,7 @@ public static class OneCIntegrationModule
         {
             client.Timeout = Timeout.InfiniteTimeSpan;
         });
+        services.AddSingleton<OneCImportGate>();
         services.AddScoped<IOneCImportService, OneCImportService>();
         return services;
     }

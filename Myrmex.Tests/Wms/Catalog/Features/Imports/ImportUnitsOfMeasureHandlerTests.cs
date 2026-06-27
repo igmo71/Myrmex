@@ -114,6 +114,46 @@ public sealed class ImportUnitsOfMeasureHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_WhenExternalIdentityIsImportedAgain_UpdatesWithoutCreatingDuplicate()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        ImportUnitsOfMeasure.Handler handler = new(
+            testDbContext.DbContext,
+            new RecordingDomainEventDispatcher());
+        Guid externalRefKey = Guid.NewGuid();
+        DateTimeOffset repeatedAtUtc = ImportedAtUtc.AddMinutes(10);
+
+        ServiceResult<ReferenceImportBatchResult> first = await handler.HandleAsync(
+            new ImportUnitsOfMeasure.Command(
+                [new(externalRefKey, "EA", "Each", "ea", false, ImportedAtUtc)]),
+            TestContext.Current.CancellationToken);
+        Guid internalId = await testDbContext.DbContext.UnitsOfMeasure
+            .Where(unit => unit.ExternalRefKey == externalRefKey)
+            .Select(unit => unit.Id)
+            .SingleAsync(TestContext.Current.CancellationToken);
+
+        ServiceResult<ReferenceImportBatchResult> repeated = await handler.HandleAsync(
+            new ImportUnitsOfMeasure.Command(
+                [new(externalRefKey, "PCS", "Pieces", "pc", false, repeatedAtUtc)]),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(first.IsSuccess);
+        Assert.Equal(1, first.Value.Created);
+        Assert.True(repeated.IsSuccess);
+        Assert.Equal(0, repeated.Value.Created);
+        Assert.Equal(1, repeated.Value.Updated);
+        UnitOfMeasure saved = await testDbContext.DbContext.UnitsOfMeasure.SingleAsync(
+            unit => unit.ExternalRefKey == externalRefKey,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(internalId, saved.Id);
+        Assert.Equal(externalRefKey, saved.ExternalRefKey);
+        Assert.Equal("PCS", saved.Code);
+        Assert.Equal("Pieces", saved.Name);
+        Assert.Equal("pc", saved.Symbol);
+        Assert.Equal(repeatedAtUtc, saved.LastImportedAtUtc);
+    }
+
+    [Fact]
     public async Task HandleAsync_WhenEventDispatchFails_RollsBackWholeBatch()
     {
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();

@@ -212,6 +212,34 @@ public sealed class OneCEndpointTests
         Assert.Equal("BaseUnitOfMeasureExternalRefKeyMissing", Assert.Single(payload!.Errors).Reason);
     }
 
+    [Fact]
+    public async Task ImportRoutes_WhenSkuImportIsAlreadyRunning_Returns409WithoutBlockingWarehouseImport()
+    {
+        SelectiveConflictImportService importService = new();
+        await using WebApplication app = CreateApp(
+            new StubOneCODataClient(),
+            authenticated: true,
+            importService: importService);
+        await app.StartAsync(TestContext.Current.CancellationToken);
+        using HttpClient httpClient = CreateClient(app);
+
+        using HttpResponseMessage conflictResponse = await httpClient.PostAsync(
+            "/api/integrations/1c/skus/import",
+            content: null,
+            TestContext.Current.CancellationToken);
+        using HttpResponseMessage warehouseResponse = await httpClient.PostAsync(
+            "/api/integrations/1c/warehouses/import",
+            content: null,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Conflict, conflictResponse.StatusCode);
+        ProblemDetails? problem = await conflictResponse.Content.ReadFromJsonAsync<ProblemDetails>(
+            TestContext.Current.CancellationToken);
+        Assert.Equal("OneCImport.AlreadyInProgress", problem?.Extensions["code"]?.ToString());
+        warehouseResponse.EnsureSuccessStatusCode();
+        Assert.Equal(1, importService.WarehouseCallCount);
+    }
+
     private static WebApplication CreateApp(
         IOneCODataClient client,
         bool authenticated,
@@ -300,6 +328,23 @@ public sealed class OneCEndpointTests
                 ? Task.FromResult(_response!)
                 : Task.FromException<OneCImportResponse>(_exception);
         }
+    }
+
+    private sealed class SelectiveConflictImportService : IOneCImportService
+    {
+        public int WarehouseCallCount { get; private set; }
+
+        public Task<OneCImportResponse> ImportWarehousesAsync(CancellationToken cancellationToken)
+        {
+            WarehouseCallCount++;
+            return Task.FromResult(CreateImportResponse("warehouses"));
+        }
+
+        public Task<OneCImportResponse> ImportUnitsOfMeasureAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(CreateImportResponse("uoms"));
+
+        public Task<OneCImportResponse> ImportStockKeepingUnitsAsync(CancellationToken cancellationToken) =>
+            Task.FromException<OneCImportResponse>(new OneCImportAlreadyInProgressException("skus"));
     }
 
     private static OneCImportResponse CreateImportResponse(string referenceType) => new(

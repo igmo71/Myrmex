@@ -13,6 +13,7 @@ internal sealed class OneCImportService(
     IOneCODataClient oDataClient,
     ICommandDispatcher commandDispatcher,
     IOptions<OneCOptions> options,
+    OneCImportGate importGate,
     TimeProvider timeProvider) : IOneCImportService
 {
     private const int MaximumReturnedErrors = 50;
@@ -20,6 +21,7 @@ internal sealed class OneCImportService(
     public async Task<OneCImportResponse> ImportWarehousesAsync(
         CancellationToken cancellationToken)
     {
+        using IDisposable lease = importGate.Acquire(OneCImportGate.Warehouses);
         oDataClient.ValidateConfiguration();
         DateTimeOffset startedAtUtc = timeProvider.GetUtcNow();
 
@@ -95,6 +97,7 @@ internal sealed class OneCImportService(
     public async Task<OneCImportResponse> ImportUnitsOfMeasureAsync(
         CancellationToken cancellationToken)
     {
+        using IDisposable lease = importGate.Acquire(OneCImportGate.UnitsOfMeasure);
         oDataClient.ValidateConfiguration();
         DateTimeOffset startedAtUtc = timeProvider.GetUtcNow();
 
@@ -158,6 +161,7 @@ internal sealed class OneCImportService(
     public async Task<OneCImportResponse> ImportStockKeepingUnitsAsync(
         CancellationToken cancellationToken)
     {
+        using IDisposable lease = importGate.Acquire(OneCImportGate.StockKeepingUnits);
         oDataClient.ValidateConfiguration();
         DateTimeOffset startedAtUtc = timeProvider.GetUtcNow();
         int processed = 0;

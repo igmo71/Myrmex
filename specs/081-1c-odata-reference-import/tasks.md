@@ -150,15 +150,15 @@
 
 ### Tests for User Story 4
 
-- [ ] T058 [P] [US4] Add repeat-import regression tests proving identity-based updates, immutable `ExternalRefKey`, refreshed `LastImportedAtUtc`, no duplicate creation, and no code-based linking across `Myrmex.Tests/Wms/Topology/Features/Imports/ImportWarehousesHandlerTests.cs`, `Myrmex.Tests/Wms/Catalog/Features/Imports/ImportUnitsOfMeasureHandlerTests.cs`, and `Myrmex.Tests/Wms/Catalog/Features/Imports/ImportStockKeepingUnitsHandlerTests.cs`
-- [ ] T059 [P] [US4] Extend orchestration tests for zero-timeout same-type rejection, different-type concurrency, gate release in `finally`, retained committed batches, and idempotent retry after partial failure in `Myrmex.Tests/Integrations/OneC/Imports/OneCImportServiceTests.cs`
-- [ ] T060 [P] [US4] Extend endpoint tests for `409 OneCImport.AlreadyInProgress` and unaffected different-reference-type requests in `Myrmex.Tests/Integrations/OneC/Endpoints/OneCEndpointTests.cs`
+- [X] T058 [P] [US4] Add repeat-import regression tests proving identity-based updates, immutable `ExternalRefKey`, refreshed `LastImportedAtUtc`, no duplicate creation, and no code-based linking across `Myrmex.Tests/Wms/Topology/Features/Imports/ImportWarehousesHandlerTests.cs`, `Myrmex.Tests/Wms/Catalog/Features/Imports/ImportUnitsOfMeasureHandlerTests.cs`, and `Myrmex.Tests/Wms/Catalog/Features/Imports/ImportStockKeepingUnitsHandlerTests.cs`
+- [X] T059 [P] [US4] Extend orchestration tests for zero-timeout same-type rejection, different-type concurrency, gate release in `finally`, retained committed batches, and idempotent retry after partial failure in `Myrmex.Tests/Integrations/OneC/Imports/OneCImportServiceTests.cs`
+- [X] T060 [P] [US4] Extend endpoint tests for `409 OneCImport.AlreadyInProgress` and unaffected different-reference-type requests in `Myrmex.Tests/Integrations/OneC/Endpoints/OneCEndpointTests.cs`
 
 ### Implementation for User Story 4
 
-- [ ] T061 [P] [US4] Implement and register the singleton three-key, non-waiting, process-local import gate with disposable/finally-safe release semantics in `Myrmex.Integrations/OneC/Imports/OneCImportGate.cs` and `Myrmex.Integrations/OneC/OneCIntegrationModule.cs`
-- [ ] T062 [US4] Apply the gate to all three import paths, preserve prior committed-batch counts on later failure, and return the stable already-running conflict without adding queues, polling, jobs, or distributed locking in `Myrmex.Integrations/OneC/Imports/OneCImportService.cs` and `Myrmex.Integrations/OneC/Endpoints/OneCEndpoints.cs`
-- [ ] T063 [US4] Disable only the running action, preserve the latest completed result, and show already-running/incomplete feedback without persistent history in `Myrmex.WebApp/Components/Pages/Integrations/OneC/Index.razor`
+- [X] T061 [P] [US4] Implement and register the singleton three-key, non-waiting, process-local import gate with disposable/finally-safe release semantics in `Myrmex.Integrations/OneC/Imports/OneCImportGate.cs` and `Myrmex.Integrations/OneC/OneCIntegrationModule.cs`
+- [X] T062 [US4] Apply the gate to all three import paths, preserve prior committed-batch counts on later failure, and return the stable already-running conflict without adding queues, polling, jobs, or distributed locking in `Myrmex.Integrations/OneC/Imports/OneCImportService.cs` and `Myrmex.Integrations/OneC/Endpoints/OneCEndpoints.cs`
+- [X] T063 [US4] Disable only the running action, preserve the latest completed result, and show already-running/incomplete feedback without persistent history in `Myrmex.WebApp/Components/Pages/Integrations/OneC/Index.razor`
 
 **Checkpoint**: All four user stories work together, and reruns remain safe under the documented single-API-instance assumption.
 

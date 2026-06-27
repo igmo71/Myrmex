@@ -307,10 +307,108 @@ public sealed class OneCImportServiceTests
         Assert.Equal(50, response.Errors.Count);
     }
 
+    [Fact]
+    public async Task ImportStockKeepingUnitsAsync_RejectsSameTypeWithoutWaiting_AllowsOtherTypes_AndReleasesGate()
+    {
+        TaskCompletionSource<bool> started = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<bool> release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        StubODataClient source = new()
+        {
+            NomenclatureReadStarted = started,
+            NomenclatureReadRelease = release.Task
+        };
+        OneCImportGate gate = new();
+        RecordingDispatcher dispatcher = new(new ReferenceImportBatchResult(0, 0, 0, 0, 0, []));
+        OneCImportService service = CreateService(source, dispatcher, importGate: gate);
+
+        Task<OneCImportResponse> running = service.ImportStockKeepingUnitsAsync(
+            TestContext.Current.CancellationToken);
+        await started.Task.WaitAsync(TestContext.Current.CancellationToken);
+        using CancellationTokenSource duplicateCancellation = new();
+        duplicateCancellation.Cancel();
+
+        await Assert.ThrowsAsync<OneCImportAlreadyInProgressException>(() =>
+            service.ImportStockKeepingUnitsAsync(duplicateCancellation.Token));
+        Assert.Equal(1, source.NomenclatureReadCount);
+
+        OneCImportResponse otherType = await service.ImportWarehousesAsync(
+            TestContext.Current.CancellationToken);
+        Assert.True(otherType.IsComplete);
+
+        release.SetResult(true);
+        Assert.True((await running).IsComplete);
+        Assert.True((await service.ImportStockKeepingUnitsAsync(
+            TestContext.Current.CancellationToken)).IsComplete);
+        Assert.Equal(2, source.NomenclatureReadCount);
+    }
+
+    [Fact]
+    public async Task ImportStockKeepingUnitsAsync_WhenCancelled_ReleasesGateInFinally()
+    {
+        TaskCompletionSource<bool> started = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource<bool> release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        StubODataClient source = new()
+        {
+            NomenclatureReadStarted = started,
+            NomenclatureReadRelease = release.Task
+        };
+        OneCImportService service = CreateService(
+            source,
+            new RecordingDispatcher(new ReferenceImportBatchResult(0, 0, 0, 0, 0, [])),
+            importGate: new OneCImportGate());
+        using CancellationTokenSource cancellation = new();
+
+        Task<OneCImportResponse> running = service.ImportStockKeepingUnitsAsync(cancellation.Token);
+        await started.Task.WaitAsync(TestContext.Current.CancellationToken);
+        cancellation.Cancel();
+
+        OneCImportResponse cancelled = await running;
+        Assert.False(cancelled.IsComplete);
+        Assert.Equal("Cancelled", cancelled.OperationError?.Reason);
+
+        release.SetResult(true);
+        OneCImportResponse retry = await service.ImportStockKeepingUnitsAsync(
+            TestContext.Current.CancellationToken);
+        Assert.True(retry.IsComplete);
+        Assert.Equal(2, source.NomenclatureReadCount);
+    }
+
+    [Fact]
+    public async Task ImportStockKeepingUnitsAsync_RetryAfterPartialFailureRevisitsCommittedIdentityWithoutDuplicate()
+    {
+        Guid firstExternalRefKey = Guid.NewGuid();
+        Guid secondExternalRefKey = Guid.NewGuid();
+        StubODataClient source = new()
+        {
+            NomenclaturePages =
+            [
+                [Nomenclature("SKU-1", firstExternalRefKey)],
+                [Nomenclature("SKU-2", secondExternalRefKey)]
+            ]
+        };
+        IdempotentSkuDispatcher dispatcher = new(failOnceOnCall: 2);
+        OneCImportService service = CreateService(source, dispatcher);
+
+        OneCImportResponse partial = await service.ImportStockKeepingUnitsAsync(
+            TestContext.Current.CancellationToken);
+        OneCImportResponse retry = await service.ImportStockKeepingUnitsAsync(
+            TestContext.Current.CancellationToken);
+
+        Assert.False(partial.IsComplete);
+        Assert.Equal(1, partial.Processed);
+        Assert.Equal(1, partial.Created);
+        Assert.True(retry.IsComplete);
+        Assert.Equal(2, retry.Processed);
+        Assert.Equal(1, retry.Created);
+        Assert.Equal(1, retry.Updated);
+        Assert.Equal(2, dispatcher.ExternalRefKeys.Count);
+    }
+
     private static OneCImportService CreateService(
         StubODataClient source,
         ICommandDispatcher dispatcher,
-        bool warehouseCodeAvailable = true)
+        bool warehouseCodeAvailable = true,
+        OneCImportGate? importGate = null)
     {
         OneCOptions options = new()
         {
@@ -323,16 +421,26 @@ public sealed class OneCImportServiceTests
             NomenclatureEntitySet = "Catalog_Номенклатура",
             WarehouseCodeAvailable = warehouseCodeAvailable
         };
-        return new OneCImportService(source, dispatcher, Options.Create(options), new FixedTimeProvider(Now));
+        return new OneCImportService(
+            source,
+            dispatcher,
+            Options.Create(options),
+            importGate ?? new OneCImportGate(),
+            new FixedTimeProvider(Now));
     }
 
     private sealed class StubODataClient : IOneCODataClient
     {
+        private int _nomenclatureReadCount;
+
         public IReadOnlyList<Catalog_Склады> Warehouses { get; init; } = [];
         public IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения> UnitsOfMeasure { get; init; } = [];
         public IReadOnlyList<IReadOnlyList<Catalog_Номенклатура>> NomenclaturePages { get; init; } = [];
         public Exception? ExceptionAfterPages { get; init; }
         public Action? AfterPages { get; init; }
+        public TaskCompletionSource<bool>? NomenclatureReadStarted { get; init; }
+        public Task? NomenclatureReadRelease { get; init; }
+        public int NomenclatureReadCount => Volatile.Read(ref _nomenclatureReadCount);
 
         public void ValidateConfiguration() { }
         public Task TestConnectionAsync(CancellationToken cancellationToken) => Task.CompletedTask;
@@ -343,6 +451,13 @@ public sealed class OneCImportServiceTests
         public async IAsyncEnumerable<IReadOnlyList<Catalog_Номенклатура>> ReadNomenclaturePagesAsync(
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
+            Interlocked.Increment(ref _nomenclatureReadCount);
+            NomenclatureReadStarted?.TrySetResult(true);
+            if (NomenclatureReadRelease is not null)
+            {
+                await NomenclatureReadRelease.WaitAsync(cancellationToken);
+            }
+
             foreach (IReadOnlyList<Catalog_Номенклатура> page in NomenclaturePages)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -394,6 +509,63 @@ public sealed class OneCImportServiceTests
         Description = code,
         ЕдиницаИзмерения_Key = Guid.NewGuid()
     };
+
+    private static Catalog_Номенклатура Nomenclature(string code, Guid externalRefKey) => new()
+    {
+        Ref_Key = externalRefKey,
+        Code = code,
+        Description = code,
+        ЕдиницаИзмерения_Key = Guid.NewGuid()
+    };
+
+    private sealed class IdempotentSkuDispatcher(int failOnceOnCall) : ICommandDispatcher
+    {
+        private int _callCount;
+        private bool _hasFailed;
+
+        public HashSet<Guid> ExternalRefKeys { get; } = [];
+
+        public Task<TResult> DispatchAsync<TCommand, TResult>(
+            TCommand command,
+            CancellationToken cancellationToken = default)
+            where TCommand : ICommand<TResult>
+            where TResult : IServiceResult
+        {
+            ImportStockKeepingUnits.Command skuCommand = Assert.IsType<ImportStockKeepingUnits.Command>(command);
+            _callCount++;
+            if (!_hasFailed && _callCount == failOnceOnCall)
+            {
+                _hasFailed = true;
+                ServiceResult<ReferenceImportBatchResult> failure = ServiceResult<ReferenceImportBatchResult>.Fail(
+                    ServiceError.Failure<IdempotentSkuDispatcher>("Commit failed."));
+                return Task.FromResult((TResult)(object)failure);
+            }
+
+            int created = 0;
+            int updated = 0;
+            foreach (ImportStockKeepingUnits.Item item in skuCommand.Items)
+            {
+                if (ExternalRefKeys.Add(item.ExternalRefKey))
+                {
+                    created++;
+                }
+                else
+                {
+                    updated++;
+                }
+            }
+
+            ServiceResult<ReferenceImportBatchResult> success = ServiceResult<ReferenceImportBatchResult>.Success(
+                new ReferenceImportBatchResult(
+                    skuCommand.Items.Count,
+                    created,
+                    updated,
+                    Skipped: 0,
+                    Failed: 0,
+                    Errors: []));
+            return Task.FromResult((TResult)(object)success);
+        }
+    }
 
     private sealed class RecordingDispatcher : ICommandDispatcher
     {

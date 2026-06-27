@@ -142,6 +142,11 @@
 
     private async Task ImportWarehousesAsync()
     {
+        if (_isWarehouseImporting)
+        {
+            return;
+        }
+
         _isWarehouseImporting = true;
         try
         {
@@ -155,6 +160,11 @@
 
     private async Task ImportUnitsOfMeasureAsync()
     {
+        if (_isUomImporting)
+        {
+            return;
+        }
+
         _isUomImporting = true;
         try
         {
@@ -168,6 +178,11 @@
 
     private async Task ImportStockKeepingUnitsAsync()
     {
+        if (_isSkuImporting)
+        {
+            return;
+        }
+
         _isSkuImporting = true;
         try
         {
@@ -193,7 +208,9 @@
             }
             else
             {
-                _importErrorMessage = result.Error?.Message ?? "Не удалось выполнить импорт из 1С.";
+                _importErrorMessage = IsAlreadyInProgress(result.Error)
+                    ? "Импорт этого справочника уже выполняется."
+                    : result.Error?.Message ?? "Не удалось выполнить импорт из 1С.";
             }
         }
         catch (Exception)
@@ -201,6 +218,11 @@
             _importErrorMessage = "Не удалось связаться с API для импорта из 1С.";
         }
     }
+
+    private static bool IsAlreadyInProgress(ApiError? error) =>
+        error?.Status == 409 &&
+        error.Extensions.TryGetValue("code", out string? code) &&
+        string.Equals(code, "OneCImport.AlreadyInProgress", StringComparison.Ordinal);
 
     private static string ReferenceTypeLabel(string referenceType) => referenceType switch
     {

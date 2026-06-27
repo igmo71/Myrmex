@@ -79,6 +79,10 @@ public static class OneCEndpoints
         {
             return TypedResults.Ok(await import(cancellationToken));
         }
+        catch (OneCImportAlreadyInProgressException exception)
+        {
+            return CreateAlreadyInProgressProblem(exception);
+        }
         catch (OneCTransportException exception)
         {
             return CreateProblem(exception);
@@ -137,6 +141,25 @@ public static class OneCEndpoints
             Detail = exception.Message
         };
         details.Extensions["code"] = code;
+
+        return TypedResults.Json(
+            details,
+            statusCode: status,
+            contentType: "application/problem+json");
+    }
+
+    private static IResult CreateAlreadyInProgressProblem(
+        OneCImportAlreadyInProgressException exception)
+    {
+        const int status = StatusCodes.Status409Conflict;
+        ProblemDetails details = new()
+        {
+            Type = $"https://httpstatuses.com/{status}",
+            Title = "1С import already in progress",
+            Status = status,
+            Detail = exception.Message
+        };
+        details.Extensions["code"] = "OneCImport.AlreadyInProgress";
 
         return TypedResults.Json(
             details,
