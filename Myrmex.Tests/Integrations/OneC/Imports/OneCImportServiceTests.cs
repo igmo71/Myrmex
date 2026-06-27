@@ -1,4 +1,6 @@
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Myrmex.AppDispatching.CommandDispatching;
 using Myrmex.Core.Application;
 using Myrmex.Core.Results;
@@ -7,6 +9,7 @@ using Myrmex.Integrations.OneC.Imports;
 using Myrmex.Integrations.OneC.Transport;
 using Myrmex.Modules.Wms.Catalog.Features.Imports;
 using Myrmex.Modules.Wms.Topology.Features.Imports;
+using Myrmex.Shared.Integrations.OneC;
 using System.Runtime.CompilerServices;
 
 namespace Myrmex.Tests.Integrations.OneC.Imports;
@@ -308,6 +311,79 @@ public sealed class OneCImportServiceTests
     }
 
     [Fact]
+    public async Task ImportWarehousesAsync_WhenSourceFails_DoesNotExposeCredentialsInOperationOrLogState()
+    {
+        const string username = "credential-user-sentinel";
+        const string password = "credential-password-sentinel";
+        StubODataClient source = new()
+        {
+            WarehouseException = new OneCTransportException(
+                OneCTransportFailureReason.SourceUnavailable,
+                $"Unsafe upstream detail containing {username} and {password}.")
+        };
+        RecordingLogger<OneCImportService> logger = new();
+        OneCImportService service = CreateService(
+            source,
+            new RecordingDispatcher(new ReferenceImportBatchResult(0, 0, 0, 0, 0, [])),
+            logger: logger,
+            username: username,
+            password: password);
+
+        OneCImportResponse response = await service.ImportWarehousesAsync(
+            TestContext.Current.CancellationToken);
+
+        Assert.False(response.IsComplete);
+        OneCImportOperationError operationError = Assert.IsType<OneCImportOperationError>(response.OperationError);
+        Assert.Equal("SourceUnavailable", operationError.Reason);
+        Assert.DoesNotContain(username, operationError.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(password, operationError.Message, StringComparison.Ordinal);
+        string structuredState = logger.StructuredState;
+        Assert.DoesNotContain(username, structuredState, StringComparison.Ordinal);
+        Assert.DoesNotContain(password, structuredState, StringComparison.Ordinal);
+        Assert.Contains("ReferenceType=warehouses", structuredState, StringComparison.Ordinal);
+        Assert.Contains("FailureCategory=SourceUnavailable", structuredState, StringComparison.Ordinal);
+        Assert.Contains("Processed=0", structuredState, StringComparison.Ordinal);
+        Assert.Contains("DurationMilliseconds=", structuredState, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ImportWarehousesAsync_LogsCompletionCountsWithoutSourcePayload()
+    {
+        const string sourcePayload = "source-payload-sentinel";
+        StubODataClient source = new()
+        {
+            Warehouses =
+            [
+                new Catalog_Склады
+                {
+                    Ref_Key = Guid.NewGuid(),
+                    Code = "LOG-WH",
+                    Description = sourcePayload
+                }
+            ]
+        };
+        RecordingLogger<OneCImportService> logger = new();
+        OneCImportService service = CreateService(
+            source,
+            new RecordingDispatcher(new ReferenceImportBatchResult(1, 1, 0, 0, 0, [])),
+            logger: logger);
+
+        OneCImportResponse response = await service.ImportWarehousesAsync(
+            TestContext.Current.CancellationToken);
+
+        Assert.True(response.IsComplete);
+        string structuredState = logger.StructuredState;
+        Assert.Contains("ReferenceType=warehouses", structuredState, StringComparison.Ordinal);
+        Assert.Contains("Processed=1", structuredState, StringComparison.Ordinal);
+        Assert.Contains("Created=1", structuredState, StringComparison.Ordinal);
+        Assert.Contains("Updated=0", structuredState, StringComparison.Ordinal);
+        Assert.Contains("Skipped=0", structuredState, StringComparison.Ordinal);
+        Assert.Contains("Failed=0", structuredState, StringComparison.Ordinal);
+        Assert.DoesNotContain(sourcePayload, structuredState, StringComparison.Ordinal);
+        Assert.DoesNotContain("LOG-WH", structuredState, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ImportStockKeepingUnitsAsync_RejectsSameTypeWithoutWaiting_AllowsOtherTypes_AndReleasesGate()
     {
         TaskCompletionSource<bool> started = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -408,14 +484,17 @@ public sealed class OneCImportServiceTests
         StubODataClient source,
         ICommandDispatcher dispatcher,
         bool warehouseCodeAvailable = true,
-        OneCImportGate? importGate = null)
+        OneCImportGate? importGate = null,
+        ILogger<OneCImportService>? logger = null,
+        string username = "operator",
+        string password = "secret")
     {
         OneCOptions options = new()
         {
             Enabled = true,
             BaseUrl = "https://onec.example.test/odata/",
-            Username = "operator",
-            Password = "secret",
+            Username = username,
+            Password = password,
             WarehousesEntitySet = "Catalog_Склады",
             UnitsOfMeasureEntitySet = OneCOptions.DefaultUnitsOfMeasureEntitySet,
             NomenclatureEntitySet = "Catalog_Номенклатура",
@@ -426,7 +505,8 @@ public sealed class OneCImportServiceTests
             dispatcher,
             Options.Create(options),
             importGate ?? new OneCImportGate(),
-            new FixedTimeProvider(Now));
+            new FixedTimeProvider(Now),
+            logger ?? NullLogger<OneCImportService>.Instance);
     }
 
     private sealed class StubODataClient : IOneCODataClient
@@ -436,6 +516,7 @@ public sealed class OneCImportServiceTests
         public IReadOnlyList<Catalog_Склады> Warehouses { get; init; } = [];
         public IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения> UnitsOfMeasure { get; init; } = [];
         public IReadOnlyList<IReadOnlyList<Catalog_Номенклатура>> NomenclaturePages { get; init; } = [];
+        public Exception? WarehouseException { get; init; }
         public Exception? ExceptionAfterPages { get; init; }
         public Action? AfterPages { get; init; }
         public TaskCompletionSource<bool>? NomenclatureReadStarted { get; init; }
@@ -445,7 +526,9 @@ public sealed class OneCImportServiceTests
         public void ValidateConfiguration() { }
         public Task TestConnectionAsync(CancellationToken cancellationToken) => Task.CompletedTask;
         public Task<IReadOnlyList<Catalog_Склады>> ReadWarehousesAsync(CancellationToken cancellationToken) =>
-            Task.FromResult(Warehouses);
+            WarehouseException is null
+                ? Task.FromResult(Warehouses)
+                : Task.FromException<IReadOnlyList<Catalog_Склады>>(WarehouseException);
         public Task<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>> ReadUnitsOfMeasureAsync(CancellationToken cancellationToken) =>
             Task.FromResult(UnitsOfMeasure);
         public async IAsyncEnumerable<IReadOnlyList<Catalog_Номенклатура>> ReadNomenclaturePagesAsync(
@@ -607,5 +690,31 @@ public sealed class OneCImportServiceTests
     private sealed class FixedTimeProvider(DateTimeOffset value) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => value;
+    }
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        private readonly List<IReadOnlyDictionary<string, object?>> _entries = [];
+
+        public string StructuredState => string.Join(
+            "|",
+            _entries.SelectMany(entry => entry.Select(property => $"{property.Key}={property.Value}")));
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            if (state is IEnumerable<KeyValuePair<string, object?>> properties)
+            {
+                _entries.Add(properties.ToDictionary(property => property.Key, property => property.Value));
+            }
+        }
     }
 }

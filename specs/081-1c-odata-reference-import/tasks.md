@@ -168,13 +168,13 @@
 
 **Purpose**: Complete operational diagnostics, scope checks, and developer-controlled handoff without executing prohibited commands.
 
-- [ ] T064 [P] Add tests proving credentials never appear in transport exception messages, operation errors, or structured log state in `Myrmex.Tests/Integrations/OneC/Client/OneCODataClientTests.cs` and `Myrmex.Tests/Integrations/OneC/Imports/OneCImportServiceTests.cs`
-- [ ] T065 Add structured connection/import completion, duration, reference type, counts, and failure-category logs without credentials or source payloads in `Myrmex.Integrations/OneC/Transport/OneCODataClient.cs` and `Myrmex.Integrations/OneC/Imports/OneCImportService.cs`
-- [ ] T066 [P] Verify public contracts match `specs/081-1c-odata-reference-import/contracts/onec-integration.openapi.yaml` and update only documented contract drift in `Myrmex.Shared/Integrations/OneC/` and `specs/081-1c-odata-reference-import/contracts/onec-integration.openapi.yaml`
-- [ ] T067 Review the implementation against source mapping, single-instance locking, and non-goals; record any approved validation-note corrections in `specs/081-1c-odata-reference-import/quickstart.md`
-- [ ] T068 Stop before EF migration generation/application and hand the developer the reviewed commands and expected `AddOneCExternalReferenceMetadata` artifacts documented in `specs/081-1c-odata-reference-import/quickstart.md`
-- [ ] T069 Stop before build/test/startup/database/Docker/infrastructure execution and hand the developer the recommended validation commands from `specs/081-1c-odata-reference-import/quickstart.md`
-- [ ] T070 Hand off the developer-controlled API/UI smoke scenarios for connection, warehouses, `Catalog_УпаковкиЕдиницыИзмерения`, per-SKU `ЕдиницаИзмерения_Key`, partial failure, concurrency, and rerun behavior in `specs/081-1c-odata-reference-import/quickstart.md`
+- [X] T064 [P] Add tests proving credentials never appear in transport exception messages, operation errors, or structured log state in `Myrmex.Tests/Integrations/OneC/Client/OneCODataClientTests.cs` and `Myrmex.Tests/Integrations/OneC/Imports/OneCImportServiceTests.cs`
+- [X] T065 Add structured connection/import completion, duration, reference type, counts, and failure-category logs without credentials or source payloads in `Myrmex.Integrations/OneC/Transport/OneCODataClient.cs` and `Myrmex.Integrations/OneC/Imports/OneCImportService.cs`
+- [X] T066 [P] Verify public contracts match `specs/081-1c-odata-reference-import/contracts/onec-integration.openapi.yaml` and update only documented contract drift in `Myrmex.Shared/Integrations/OneC/` and `specs/081-1c-odata-reference-import/contracts/onec-integration.openapi.yaml`
+- [X] T067 Review the implementation against source mapping, single-instance locking, and non-goals; record any approved validation-note corrections in `specs/081-1c-odata-reference-import/quickstart.md`
+- [X] T068 Stop before EF migration generation/application and hand the developer the reviewed existing `AddIntegrations` artifacts and database-application command documented in `specs/081-1c-odata-reference-import/quickstart.md`
+- [X] T069 Stop before build/test/startup/database/Docker/infrastructure execution and hand the developer the recommended validation commands from `specs/081-1c-odata-reference-import/quickstart.md`
+- [X] T070 Hand off the developer-controlled API/UI smoke scenarios for connection, warehouses, `Catalog_УпаковкиЕдиницыИзмерения`, per-SKU `ЕдиницаИзмерения_Key`, partial failure, concurrency, and rerun behavior in `specs/081-1c-odata-reference-import/quickstart.md`
 
 ---
 

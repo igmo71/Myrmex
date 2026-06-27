@@ -1,5 +1,7 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Myrmex.Integrations.OneC.Configuration;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
@@ -14,21 +16,63 @@ internal sealed class OneCODataClient : IOneCODataClient
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
     private readonly HttpClient _httpClient;
     private readonly IOptions<OneCOptions> _options;
+    private readonly ILogger<OneCODataClient> _logger;
 
-    public OneCODataClient(HttpClient httpClient, IOptions<OneCOptions> options)
+    public OneCODataClient(
+        HttpClient httpClient,
+        IOptions<OneCOptions> options,
+        ILogger<OneCODataClient> logger)
     {
         _httpClient = httpClient;
         _options = options;
+        _logger = logger;
     }
 
     public async Task TestConnectionAsync(CancellationToken cancellationToken)
     {
-        OneCOptions options = _options.Value;
-        Uri baseUri = ValidateAndGetBaseUri(options);
+        long startedTimestamp = Stopwatch.GetTimestamp();
+        try
+        {
+            OneCOptions options = _options.Value;
+            Uri baseUri = ValidateAndGetBaseUri(options);
 
-        await ProbeEntitySetAsync(baseUri, options.WarehousesEntitySet!, options, cancellationToken);
-        await ProbeEntitySetAsync(baseUri, options.UnitsOfMeasureEntitySet, options, cancellationToken);
-        await ProbeEntitySetAsync(baseUri, options.NomenclatureEntitySet!, options, cancellationToken);
+            await ProbeEntitySetAsync(baseUri, options.WarehousesEntitySet!, options, cancellationToken);
+            await ProbeEntitySetAsync(baseUri, options.UnitsOfMeasureEntitySet, options, cancellationToken);
+            await ProbeEntitySetAsync(baseUri, options.NomenclatureEntitySet!, options, cancellationToken);
+
+            _logger.LogInformation(
+                "1С connection check completed for {ReferenceType} in {DurationMilliseconds} ms across {CheckedReferenceTypeCount} reference types.",
+                "all",
+                ElapsedMilliseconds(startedTimestamp),
+                3);
+        }
+        catch (OneCTransportException exception)
+        {
+            _logger.LogWarning(
+                "1С connection check failed for {ReferenceType} in {DurationMilliseconds} ms with category {FailureCategory}.",
+                "all",
+                ElapsedMilliseconds(startedTimestamp),
+                exception.Reason.ToString());
+            throw;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning(
+                "1С connection check failed for {ReferenceType} in {DurationMilliseconds} ms with category {FailureCategory}.",
+                "all",
+                ElapsedMilliseconds(startedTimestamp),
+                "Cancelled");
+            throw;
+        }
+        catch (Exception)
+        {
+            _logger.LogWarning(
+                "1С connection check failed for {ReferenceType} in {DurationMilliseconds} ms with category {FailureCategory}.",
+                "all",
+                ElapsedMilliseconds(startedTimestamp),
+                "Unexpected");
+            throw;
+        }
     }
 
     public void ValidateConfiguration()
@@ -275,6 +319,9 @@ internal sealed class OneCODataClient : IOneCODataClient
             : baseUri.AbsoluteUri + "/";
         return new Uri(normalized, UriKind.Absolute);
     }
+
+    private static double ElapsedMilliseconds(long startedTimestamp) =>
+        Math.Round(Stopwatch.GetElapsedTime(startedTimestamp).TotalMilliseconds, 3);
 
     private sealed class ReferenceProbe
     {

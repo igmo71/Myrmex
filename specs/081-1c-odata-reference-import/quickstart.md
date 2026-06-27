@@ -1,6 +1,6 @@
 # Quickstart: Validate 1C OData Reference Import MVP
 
-This guide is for implementation review and developer-controlled validation. Planning did not run any build, test, migration, database, application, Docker, or infrastructure command.
+This guide is for implementation review and developer-controlled validation. This Spec Kit planning/implementation workflow did not run any build, test, migration generation/application, database update, application startup, Docker, or infrastructure command. Existing developer-generated migration artifacts are reviewed below.
 
 ## 1. Review the Design Artifacts
 
@@ -85,14 +85,21 @@ Verify entity-set and field identifiers are URL encoded, credentials do not appe
 
 ## 4. Developer-Controlled Schema Migration
 
-Implementation requires one WMS migration for nullable import metadata and three filtered unique indexes. A developer may run these commands after reviewing the entity and configuration changes:
+The repository already contains the developer-generated migration artifacts for nullable import metadata and the three filtered unique indexes:
+
+- `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/20260627153117_AddIntegrations.cs`
+- `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/20260627153117_AddIntegrations.Designer.cs`
+- updated `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/WmsDbContextModelSnapshot.cs`
+
+Static review confirms that `AddIntegrations` contains the six nullable metadata columns and the three required filtered unique indexes. Do not generate a second migration on top of these artifacts. Migration generation and application were not run during this implementation workflow.
+
+After reviewing the existing migration and selecting the intended database, a developer may apply it with:
 
 ```powershell
-dotnet ef migrations add AddOneCExternalReferenceMetadata --project Myrmex.Modules.Wms\Myrmex.Modules.Wms.csproj --startup-project Myrmex.ApiService\Myrmex.ApiService.csproj --context WmsDbContext --output-dir Infrastructure\Persistence\Migrations
 dotnet ef database update --project Myrmex.Modules.Wms\Myrmex.Modules.Wms.csproj --startup-project Myrmex.ApiService\Myrmex.ApiService.csproj --context WmsDbContext
 ```
 
-Review the generated migration before applying it. It must:
+Before applying it, confirm that the migration:
 
 - add nullable `ExternalRefKey` and `LastImportedAtUtc` to `wms.warehouses`, `wms.units_of_measure`, and `wms.stock_keeping_units`;
 - add three unique filtered indexes for non-null `ExternalRefKey`;
@@ -114,12 +121,15 @@ Optional focused test run:
 dotnet test Myrmex.Tests\Myrmex.Tests.csproj --filter "FullyQualifiedName~OneC|FullyQualifiedName~Features.Imports"
 ```
 
+These commands were handed off but not executed by the implementation workflow. Run them before application startup or database application, and resolve any failure before continuing.
+
 Expected automated coverage:
 
 - WMS import create/update/idempotency, code conflict, deletion/reactivation, invalid record, per-SKU external base-UoM resolution, atomic rollback, and reconciled counts.
 - SQL Server metadata and uniqueness for all three filtered external-reference indexes.
 - Exact OData query construction, Unicode DTO names, `Guid Ref_Key`/nullable `ЕдиницаИзмерения_Key` deserialization, folder filtering/fallback, optional warehouse code, empty/exact/multi-page termination, malformed response, timeout, and cancellation.
 - OneC orchestration full-name/symbol mapping, deterministic warehouse code fallback, folder skips, error cap, partial committed counts, failed-batch exclusion, and same-type lock behavior.
+- Credential-safe transport/import failures and structured connection/import logs containing duration, reference type, aggregate counts, and failure category without credentials or source payloads.
 - Four route contracts, authenticated-actor check, `409 AlreadyInProgress`, complete/incomplete JSON, and ProblemDetails.
 - WebApp client route selection, successful response parsing, ProblemDetails mapping, and cancellation propagation.
 
@@ -232,3 +242,16 @@ Confirm implementation did not add:
 - credentials in repository files, request bodies, responses, or logs.
 - one configured/default UoM applied to every SKU or SKU base-UoM resolution by code.
 - warehouse generated-code fallback applied to UoM or SKU records.
+
+## 10. Implementation Review Record (2026-06-28)
+
+Static implementation review confirmed:
+
+- 1C DTOs and source field names remain inside `Myrmex.Integrations.OneC`; WMS commands use neutral names.
+- Warehouse, UoM, and SKU source mapping matches the reviewed samples, including per-SKU `ЕдиницаИзмерения_Key` resolution only through UoM `ExternalRefKey`.
+- The same-type gate uses non-waiting process-local acquisition and therefore requires exactly one `Myrmex.ApiService` instance; distributed safety is not claimed.
+- No background execution, polling, queues, persistent import history, `ExternalSystem`, default SKU UoM, code-based SKU UoM resolution, auth baseline, full localization, or inventory-accounting refactor was introduced.
+- Shared response records and all four routes match `contracts/onec-integration.openapi.yaml`; the configuration-error example was corrected to the implemented stable code `OneC.ConfigurationInvalid`.
+- The existing `AddIntegrations` migration artifacts match the required metadata/index scope and must be reviewed and applied only through the developer-controlled commands above.
+
+Developer smoke validation remains required after build, tests, configuration, and database application. Execute the API scenarios in section 7 and the WebApp scenarios in section 8, including connection failures, all three imports, more-than-one-page SKU data, per-SKU UoM failures, deletion marks, partial failure, same-type `409`, different-type concurrency, error cap, and idempotent reruns.

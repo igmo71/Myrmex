@@ -1,5 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Myrmex.Integrations.OneC.Configuration;
 using Myrmex.Integrations.OneC.Transport;
@@ -15,13 +17,14 @@ public sealed class OneCODataClientTests
     {
         List<Uri> requests = [];
         AuthenticationHeaderValue? authorization = null;
+        RecordingLogger<OneCODataClient> logger = new();
         using HttpClient httpClient = new(new StubHttpMessageHandler(request =>
         {
             requests.Add(request.RequestUri!);
             authorization = request.Headers.Authorization;
             return Success();
         }));
-        OneCODataClient client = CreateClient(httpClient);
+        OneCODataClient client = CreateClient(httpClient, logger: logger);
 
         await client.TestConnectionAsync(TestContext.Current.CancellationToken);
 
@@ -36,6 +39,12 @@ public sealed class OneCODataClientTests
         });
         Assert.Equal("Basic", authorization?.Scheme);
         Assert.Equal(Convert.ToBase64String("operator:secret"u8.ToArray()), authorization?.Parameter);
+        Assert.Contains("ReferenceType=all", logger.StructuredState, StringComparison.Ordinal);
+        Assert.Contains("CheckedReferenceTypeCount=3", logger.StructuredState, StringComparison.Ordinal);
+        Assert.Contains("DurationMilliseconds=", logger.StructuredState, StringComparison.Ordinal);
+        Assert.DoesNotContain("operator", logger.StructuredState, StringComparison.Ordinal);
+        Assert.DoesNotContain("secret", logger.StructuredState, StringComparison.Ordinal);
+        Assert.DoesNotContain("onec.example.test", logger.StructuredState, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -66,6 +75,36 @@ public sealed class OneCODataClientTests
         Assert.Equal(OneCTransportFailureReason.InvalidConfiguration, exception.Reason);
         Assert.DoesNotContain("secret", exception.ToString(), StringComparison.OrdinalIgnoreCase);
         Assert.Equal(0, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task TestConnectionAsync_WhenAuthenticationFails_DoesNotLogOrExposeCredentials()
+    {
+        const string username = "credential-user-sentinel";
+        const string password = "credential-password-sentinel";
+        RecordingLogger<OneCODataClient> logger = new();
+        using HttpClient httpClient = new(new StubHttpMessageHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.Unauthorized)));
+        OneCODataClient client = CreateClient(
+            httpClient,
+            options =>
+            {
+                options.Username = username;
+                options.Password = password;
+            },
+            logger);
+
+        OneCTransportException exception = await Assert.ThrowsAsync<OneCTransportException>(() =>
+            client.TestConnectionAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal(OneCTransportFailureReason.AuthenticationFailed, exception.Reason);
+        Assert.DoesNotContain(username, exception.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain(password, exception.ToString(), StringComparison.Ordinal);
+        string structuredState = logger.StructuredState;
+        Assert.DoesNotContain(username, structuredState, StringComparison.Ordinal);
+        Assert.DoesNotContain(password, structuredState, StringComparison.Ordinal);
+        Assert.Contains("FailureCategory=AuthenticationFailed", structuredState, StringComparison.Ordinal);
+        Assert.Contains("DurationMilliseconds=", structuredState, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -348,7 +387,10 @@ public sealed class OneCODataClientTests
         Assert.Equal(2, handler.CallCount);
     }
 
-    private static OneCODataClient CreateClient(HttpClient httpClient, Action<OneCOptions>? configure = null)
+    private static OneCODataClient CreateClient(
+        HttpClient httpClient,
+        Action<OneCOptions>? configure = null,
+        ILogger<OneCODataClient>? logger = null)
     {
         OneCOptions options = new()
         {
@@ -361,7 +403,10 @@ public sealed class OneCODataClientTests
             NomenclatureEntitySet = "Catalog_Nomenclature"
         };
         configure?.Invoke(options);
-        return new OneCODataClient(httpClient, Options.Create(options));
+        return new OneCODataClient(
+            httpClient,
+            Options.Create(options),
+            logger ?? NullLogger<OneCODataClient>.Instance);
     }
 
     private static HttpResponseMessage Success() => new(HttpStatusCode.OK)
@@ -403,6 +448,32 @@ public sealed class OneCODataClientTests
         {
             CallCount++;
             return _handler(request, cancellationToken);
+        }
+    }
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        private readonly List<IReadOnlyDictionary<string, object?>> _entries = [];
+
+        public string StructuredState => string.Join(
+            "|",
+            _entries.SelectMany(entry => entry.Select(property => $"{property.Key}={property.Value}")));
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            if (state is IEnumerable<KeyValuePair<string, object?>> properties)
+            {
+                _entries.Add(properties.ToDictionary(property => property.Key, property => property.Value));
+            }
         }
     }
 }

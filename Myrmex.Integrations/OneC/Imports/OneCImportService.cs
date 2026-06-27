@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Myrmex.AppDispatching.CommandDispatching;
 using Myrmex.Core.Results;
@@ -6,6 +7,7 @@ using Myrmex.Integrations.OneC.Transport;
 using Myrmex.Modules.Wms.Catalog.Features.Imports;
 using Myrmex.Modules.Wms.Topology.Features.Imports;
 using Myrmex.Shared.Integrations.OneC;
+using System.Diagnostics;
 
 namespace Myrmex.Integrations.OneC.Imports;
 
@@ -14,15 +16,20 @@ internal sealed class OneCImportService(
     ICommandDispatcher commandDispatcher,
     IOptions<OneCOptions> options,
     OneCImportGate importGate,
-    TimeProvider timeProvider) : IOneCImportService
+    TimeProvider timeProvider,
+    ILogger<OneCImportService> logger) : IOneCImportService
 {
     private const int MaximumReturnedErrors = 50;
 
-    public async Task<OneCImportResponse> ImportWarehousesAsync(
+    public Task<OneCImportResponse> ImportWarehousesAsync(CancellationToken cancellationToken) =>
+        RunImportAsync(
+            OneCImportGate.Warehouses,
+            ImportWarehousesCoreAsync,
+            cancellationToken);
+
+    private async Task<OneCImportResponse> ImportWarehousesCoreAsync(
         CancellationToken cancellationToken)
     {
-        using IDisposable lease = importGate.Acquire(OneCImportGate.Warehouses);
-        oDataClient.ValidateConfiguration();
         DateTimeOffset startedAtUtc = timeProvider.GetUtcNow();
 
         try
@@ -85,7 +92,11 @@ internal sealed class OneCImportService(
         }
         catch (OneCTransportException exception)
         {
-            return Incomplete("warehouses", startedAtUtc, OperationReason(exception.Reason), exception.Message);
+            return Incomplete(
+                "warehouses",
+                startedAtUtc,
+                OperationReason(exception.Reason),
+                OperationMessage(exception.Reason));
         }
         catch (Exception)
         {
@@ -94,11 +105,15 @@ internal sealed class OneCImportService(
         }
     }
 
-    public async Task<OneCImportResponse> ImportUnitsOfMeasureAsync(
+    public Task<OneCImportResponse> ImportUnitsOfMeasureAsync(CancellationToken cancellationToken) =>
+        RunImportAsync(
+            OneCImportGate.UnitsOfMeasure,
+            ImportUnitsOfMeasureCoreAsync,
+            cancellationToken);
+
+    private async Task<OneCImportResponse> ImportUnitsOfMeasureCoreAsync(
         CancellationToken cancellationToken)
     {
-        using IDisposable lease = importGate.Acquire(OneCImportGate.UnitsOfMeasure);
-        oDataClient.ValidateConfiguration();
         DateTimeOffset startedAtUtc = timeProvider.GetUtcNow();
 
         try
@@ -149,7 +164,11 @@ internal sealed class OneCImportService(
         }
         catch (OneCTransportException exception)
         {
-            return Incomplete("uoms", startedAtUtc, OperationReason(exception.Reason), exception.Message);
+            return Incomplete(
+                "uoms",
+                startedAtUtc,
+                OperationReason(exception.Reason),
+                OperationMessage(exception.Reason));
         }
         catch (Exception)
         {
@@ -158,11 +177,15 @@ internal sealed class OneCImportService(
         }
     }
 
-    public async Task<OneCImportResponse> ImportStockKeepingUnitsAsync(
+    public Task<OneCImportResponse> ImportStockKeepingUnitsAsync(CancellationToken cancellationToken) =>
+        RunImportAsync(
+            OneCImportGate.StockKeepingUnits,
+            ImportStockKeepingUnitsCoreAsync,
+            cancellationToken);
+
+    private async Task<OneCImportResponse> ImportStockKeepingUnitsCoreAsync(
         CancellationToken cancellationToken)
     {
-        using IDisposable lease = importGate.Acquire(OneCImportGate.StockKeepingUnits);
-        oDataClient.ValidateConfiguration();
         DateTimeOffset startedAtUtc = timeProvider.GetUtcNow();
         int processed = 0;
         int created = 0;
@@ -256,7 +279,10 @@ internal sealed class OneCImportService(
         catch (OneCTransportException exception)
         {
             return Incomplete(
-                "skus", startedAtUtc, OperationReason(exception.Reason), exception.Message,
+                "skus",
+                startedAtUtc,
+                OperationReason(exception.Reason),
+                OperationMessage(exception.Reason),
                 processed, created, updated, skipped, failed, errors);
         }
         catch (Exception)
@@ -267,6 +293,80 @@ internal sealed class OneCImportService(
                 processed, created, updated, skipped, failed, errors);
         }
     }
+
+    private async Task<OneCImportResponse> RunImportAsync(
+        string referenceType,
+        Func<CancellationToken, Task<OneCImportResponse>> import,
+        CancellationToken cancellationToken)
+    {
+        long startedTimestamp = Stopwatch.GetTimestamp();
+        try
+        {
+            using IDisposable lease = importGate.Acquire(referenceType);
+            oDataClient.ValidateConfiguration();
+            OneCImportResponse response = await import(cancellationToken);
+            LogImportResult(response, ElapsedMilliseconds(startedTimestamp));
+            return response;
+        }
+        catch (OneCImportAlreadyInProgressException)
+        {
+            LogRejectedImport(referenceType, "AlreadyInProgress", startedTimestamp);
+            throw;
+        }
+        catch (OneCTransportException exception)
+        {
+            LogRejectedImport(referenceType, exception.Reason.ToString(), startedTimestamp);
+            throw;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            LogRejectedImport(referenceType, "Cancelled", startedTimestamp);
+            throw;
+        }
+        catch (Exception)
+        {
+            LogRejectedImport(referenceType, "Unexpected", startedTimestamp);
+            throw;
+        }
+    }
+
+    private void LogImportResult(OneCImportResponse response, double durationMilliseconds)
+    {
+        if (response.IsComplete)
+        {
+            logger.LogInformation(
+                "1С import completed for {ReferenceType} in {DurationMilliseconds} ms. Processed: {Processed}; Created: {Created}; Updated: {Updated}; Skipped: {Skipped}; Failed: {Failed}.",
+                response.ReferenceType,
+                durationMilliseconds,
+                response.Processed,
+                response.Created,
+                response.Updated,
+                response.Skipped,
+                response.Failed);
+            return;
+        }
+
+        logger.LogWarning(
+            "1С import incomplete for {ReferenceType} in {DurationMilliseconds} ms with category {FailureCategory}. Processed: {Processed}; Created: {Created}; Updated: {Updated}; Skipped: {Skipped}; Failed: {Failed}.",
+            response.ReferenceType,
+            durationMilliseconds,
+            response.OperationError?.Reason ?? "Unknown",
+            response.Processed,
+            response.Created,
+            response.Updated,
+            response.Skipped,
+            response.Failed);
+    }
+
+    private void LogRejectedImport(
+        string referenceType,
+        string failureCategory,
+        long startedTimestamp) =>
+        logger.LogWarning(
+            "1С import rejected for {ReferenceType} in {DurationMilliseconds} ms with category {FailureCategory}.",
+            referenceType,
+            ElapsedMilliseconds(startedTimestamp),
+            failureCategory);
 
     private string WarehouseCode(Catalog_Склады record)
     {
@@ -392,4 +492,20 @@ internal sealed class OneCImportService(
         OneCTransportFailureReason.Timeout => "Timeout",
         _ => "SourceUnavailable"
     };
+
+    private static string OperationMessage(OneCTransportFailureReason reason) => reason switch
+    {
+        OneCTransportFailureReason.AuthenticationFailed =>
+            "1С rejected the configured credentials.",
+        OneCTransportFailureReason.EntitySetUnavailable =>
+            "A configured 1С entity set is unavailable.",
+        OneCTransportFailureReason.MalformedResponse =>
+            "The 1С OData service returned an invalid response.",
+        OneCTransportFailureReason.Timeout =>
+            "The 1С OData request timed out.",
+        _ => "The 1С OData service is unavailable."
+    };
+
+    private static double ElapsedMilliseconds(long startedTimestamp) =>
+        Math.Round(Stopwatch.GetElapsedTime(startedTimestamp).TotalMilliseconds, 3);
 }

@@ -125,7 +125,7 @@ components:
                 title: Bad Request
                 status: 400
                 detail: 1C integration is disabled.
-                code: OneC.Configuration.Disabled
+                code: OneC.ConfigurationInvalid
     UnauthorizedProblem:
       description: No authenticated Myrmex actor is available.
       content:

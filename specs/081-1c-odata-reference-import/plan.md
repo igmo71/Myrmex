@@ -94,7 +94,7 @@ Myrmex.Modules.Wms/
 │   └── Features/Imports/ImportWarehouses.cs
 └── Infrastructure/Persistence/
     ├── Configurations/{Warehouse,UnitOfMeasure,StockKeepingUnit}Configuration.cs
-    ├── Migrations/*_AddOneCExternalReferenceMetadata.cs
+    ├── Migrations/*_AddIntegrations.cs
     ├── WmsDatabaseNames.cs
     └── WmsDbContext.cs
 
@@ -170,8 +170,8 @@ Tasks must not add scheduled/background execution, polling, persistent job/impor
 
 Build, test, startup, migration generation/application, database updates, Docker, and infrastructure commands were not run during planning. `quickstart.md` lists commands for a developer to run after implementation. The required schema change is expected to produce:
 
-- `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/*_AddOneCExternalReferenceMetadata.cs`
-- `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/*_AddOneCExternalReferenceMetadata.Designer.cs`
+- `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/*_AddIntegrations.cs`
+- `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/*_AddIntegrations.Designer.cs`
 - an updated `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/WmsDbContextModelSnapshot.cs`
 
 ## Post-Design Constitution Check
