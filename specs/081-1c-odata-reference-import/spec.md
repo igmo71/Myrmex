@@ -8,6 +8,16 @@
 
 **Input**: User description: `StakeholderDocs\081 1C OData Reference Import MVP.md`
 
+## Clarifications
+
+### Session 2026-06-27
+
+- Q: What persistence behavior applies when a connection-level failure occurs after one or more import batches complete? → A: Commit each completed batch; retain it if a later batch fails and report the import as incomplete.
+- Q: What happens when a second import of the same reference type is triggered while one is already running? → A: Reject the second import with an "already in progress" result.
+- Q: Does an import run synchronously or as a background job? → A: Keep the request active until completion, cancellation, or timeout, then return the final or incomplete summary.
+- Q: How are deletion-marked records handled when they are unlinked or cannot be inactivated? → A: Skip an unlinked record; fail a linked record that cannot be inactivated and leave it unchanged.
+- Q: Which records contribute to summary counts when an import stops with an uncommitted failed batch? → A: Count only records from completed committed batches and report an operation-level incomplete error.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Verify the 1C Connection (Priority: P1)
@@ -39,9 +49,11 @@ An authorized user separately imports warehouses and units of measure from 1C so
 
 1. **Given** 1C contains a warehouse or unit of measure not previously imported and its code is available, **When** the corresponding import runs, **Then** Myrmex creates a reference record linked to the 1C identity.
 2. **Given** a warehouse or unit of measure was previously imported, **When** changed source data is imported, **Then** Myrmex updates that same record without creating a duplicate.
-3. **Given** a source record is marked for deletion, **When** it is imported, **Then** Myrmex makes the corresponding record inactive where that lifecycle is supported and does not physically delete it.
+3. **Given** a linked source record is marked for deletion and its Myrmex reference type supports inactivity, **When** it is imported, **Then** Myrmex makes the corresponding record inactive and does not physically delete it.
 4. **Given** a local record already uses the same code but is not linked to the source identity, **When** the conflicting source record is imported, **Then** Myrmex skips it, preserves the local record, and reports the conflict.
 5. **Given** the import completes with successful and unsuccessful records, **When** the result is displayed, **Then** the user sees processed, created, updated, skipped, and failed counts plus available error details.
+6. **Given** a deletion-marked source record has no linked Myrmex record, **When** it is imported, **Then** Myrmex skips it without creating a record and reports the reason.
+7. **Given** a deletion-marked source record is linked but its Myrmex reference type cannot represent inactivity, **When** it is imported, **Then** Myrmex fails that record, leaves the local record unchanged, and continues processing other records.
 
 ---
 
@@ -86,10 +98,10 @@ An authorized user repeats any reference import after source data changes, confi
 - A page is empty, the final page is exactly the configured batch size, or source data changes while a multi-batch import is running.
 - A source record has an empty or invalid identity, code, description, or other required value.
 - Multiple source records share a code, or a source code conflicts with an existing local record that has no source identity.
-- A deletion-marked source record has never been imported, or the corresponding Myrmex reference type does not support an inactive state.
+- A deletion-marked source record has never been imported, in which case it is skipped, or its linked Myrmex reference type does not support inactivity, in which case it fails without changing the local record.
 - More record-level errors occur than can reasonably be shown in one response.
 - An unauthorized user attempts to test the connection or trigger an import.
-- Two users attempt the same reference import concurrently.
+- If two users attempt the same reference import concurrently, the later attempt is rejected with an "already in progress" result; imports of other reference types are unaffected.
 
 ## Requirements *(mandatory)*
 
@@ -107,15 +119,18 @@ An authorized user repeats any reference import after source data changes, confi
 - **FR-010**: When an incoming source identity is already linked, the system MUST update that linked record even when other imported values have changed.
 - **FR-011**: When an incoming source identity is not linked and its code is unused, the system MUST create a new linked record.
 - **FR-012**: When an incoming source identity is not linked but its code belongs to a local record with no source identity, the system MUST preserve the local record, skip the incoming record, and report a code conflict; it MUST NOT infer a link from code alone.
-- **FR-013**: When a previously linked source record is marked for deletion, the system MUST make the corresponding Myrmex record inactive where that reference type supports inactivity and MUST NOT physically delete it.
+- **FR-013**: When a source record is marked for deletion, the system MUST inactivate its linked Myrmex record when that reference type supports inactivity; MUST skip and report an unlinked source record without creating it; and MUST fail and report a linked record whose reference type cannot represent inactivity while leaving that local record unchanged. Import MUST NOT physically delete a Myrmex record.
 - **FR-014**: A safely isolated record-level validation or conflict failure MUST NOT prevent other valid records in the same import from being processed.
-- **FR-015**: A connection-level, authentication, source-compatibility, malformed-response, or unrecoverable paging failure MUST fail the affected import and clearly identify why complete processing could not continue.
+- **FR-015**: Each completed batch MUST be committed atomically. A connection-level, authentication, source-compatibility, malformed-response, or unrecoverable paging failure MUST leave earlier completed batches committed, leave the failed batch uncommitted, and report the affected import as incomplete so it can be retried safely.
 - **FR-016**: Each import result MUST report the reference type, start and completion times, processed, created, updated, skipped, and failed counts, plus bounded record-level error details containing available source identity, code, reason, and user-readable message.
 - **FR-017**: Returned record-level error details MUST be limited to the first 50 errors while summary counts continue to reflect all processed errors.
 - **FR-018**: The integration page MUST display Russian labels for connection testing, the three separate imports, summary counts, and visible error details, while broader application localization remains outside scope.
 - **FR-019**: The integration page MUST display the result of the most recently completed action in the current page session.
 - **FR-020**: All connection tests and imports MUST require the existing authorization mechanism appropriate for WMS integration operations; the feature MUST NOT introduce a new authentication baseline.
 - **FR-021**: 1C-specific field names, collection names, and transport representations MUST remain within the 1C integration boundary and MUST NOT appear in WMS domain entities or public Myrmex business contracts.
+- **FR-022**: The system MUST allow no more than one running import per reference type. A later attempt for that same type MUST be rejected immediately with an "already in progress" result, without affecting a running import or imports of other reference types.
+- **FR-023**: Each import MUST run synchronously while the initiating request remains active. The integration page MUST show that the selected import is in progress and, on completion, cancellation, or timeout, display the resulting complete or incomplete summary; durable or transient background-job tracking is outside scope.
+- **FR-024**: When an import is incomplete, its record counts MUST include only completed committed batches. Records from the uncommitted failed batch MUST NOT contribute to processed, created, updated, skipped, or failed counts, and an operation-level error MUST identify why the import ended early.
 
 ### Domain Rules *(mandatory when feature changes domain behavior)*
 
@@ -123,9 +138,9 @@ An authorized user repeats any reference import after source data changes, confi
 - **DR-002**: The source identity, not the mutable business code, determines whether an imported record is created or updated.
 - **DR-003**: An existing unlinked local record cannot become linked to 1C through automatic code matching.
 - **DR-004**: Re-importing the same source record cannot create another linked record for that source identity.
-- **DR-005**: Source deletion intent results only in supported inactivation; imports never physically delete Myrmex reference records.
+- **DR-005**: Source deletion intent results only in supported inactivation. An unlinked deletion-marked record cannot create a Myrmex reference, unsupported inactivation cannot change the linked local record, and imports never physically delete Myrmex reference records.
 - **DR-006**: A record's latest-import time changes only when that record is imported successfully.
-- **DR-007**: Summary counts MUST reconcile so that processed equals created plus updated plus skipped plus failed for every completed import.
+- **DR-007**: Summary counts MUST reconcile so that processed equals created plus updated plus skipped plus failed for every complete or incomplete import, using only records from completed committed batches.
 
 ### Contract and Boundary Requirements *(mandatory when feature exposes API, client, or UI behavior)*
 
@@ -141,7 +156,7 @@ An authorized user repeats any reference import after source data changes, confi
 - **OE-001**: The system MUST return clear, non-secret-bearing user errors for disabled or incomplete configuration, authentication failure, source unavailability, timeout, missing collections, incompatible ordering, malformed responses, invalid records, local code conflicts, and partial failures.
 - **OE-002**: The system MUST provide operational diagnostics for connection attempts and imports, including reference type, start and completion, outcome, processed totals, and failure category, without recording credentials.
 - **OE-003**: Record-level errors MUST use stable reason categories so support personnel can distinguish conflicts, invalid data, and source or processing failures.
-- **OE-004**: When an operation stops before all source records are considered, its result and diagnostics MUST make the incomplete state explicit and MUST NOT present partial counts as a fully successful import.
+- **OE-004**: When an operation stops before all source records are considered, its result and diagnostics MUST make the incomplete state explicit, identify the operation-level failure, scope record counts to completed committed batches, and MUST NOT present partial counts as a fully successful import.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -184,5 +199,5 @@ An authorized user repeats any reference import after source data changes, confi
 - The closest existing authorization mechanism will protect the actions if the preferred integration-specific policy is not yet available.
 - Existing Myrmex warehouse, unit-of-measure, and SKU validation rules remain authoritative for imported data.
 - Myrmex and the 1C publication remain reasonably stable during one manual import; if source changes prevent deterministic completion, the operation reports an incomplete failure and can be repeated.
-- Import actions are expected to be serialized per reference type; concurrent duplicate imports do not create duplicate source links.
+- Import actions are serialized per reference type by rejecting a duplicate same-type attempt while an import is running.
 - The target deployment supplies secure network access and valid 1C credentials outside repository-managed configuration files.
