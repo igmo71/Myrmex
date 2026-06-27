@@ -29,6 +29,10 @@ public static class OneCEndpoints
             .WithName("ImportOneCUnitsOfMeasure")
             .WithSummary("Import units of measure from 1С");
 
+        group.MapPost("/skus/import", ImportStockKeepingUnitsAsync)
+            .WithName("ImportOneCStockKeepingUnits")
+            .WithSummary("Import nomenclature from 1С as SKUs");
+
         return endpoints;
     }
 
@@ -48,6 +52,15 @@ public static class OneCEndpoints
         ImportAsync(
             httpContext,
             importService.ImportUnitsOfMeasureAsync,
+            cancellationToken);
+
+    private static Task<IResult> ImportStockKeepingUnitsAsync(
+        HttpContext httpContext,
+        IOneCImportService importService,
+        CancellationToken cancellationToken) =>
+        ImportAsync(
+            httpContext,
+            importService.ImportStockKeepingUnitsAsync,
             cancellationToken);
 
     private static async Task<IResult> ImportAsync(

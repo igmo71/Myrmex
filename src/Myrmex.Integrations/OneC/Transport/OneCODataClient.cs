@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Myrmex.Integrations.OneC.Configuration;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -81,6 +82,50 @@ internal sealed class OneCODataClient : IOneCODataClient
             parameters,
             options,
             cancellationToken);
+    }
+
+    public async IAsyncEnumerable<IReadOnlyList<Catalog_Номенклатура>> ReadNomenclaturePagesAsync(
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        OneCOptions options = _options.Value;
+        Uri baseUri = ValidateAndGetBaseUri(options);
+        int offset = 0;
+
+        while (true)
+        {
+            List<KeyValuePair<string, string>> parameters =
+            [
+                new("$format", "json"),
+                new("$select", "Ref_Key,DeletionMark,IsFolder,Code,Description,НаименованиеПолное,Артикул,ЕдиницаИзмерения_Key"),
+                new("$orderby", "Ref_Key"),
+                new("$skip", offset.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                new("$top", options.BatchSize.ToString(System.Globalization.CultureInfo.InvariantCulture))
+            ];
+            if (options.UseFolderFilter)
+            {
+                parameters.Add(new("$filter", "IsFolder eq false"));
+            }
+
+            IReadOnlyList<Catalog_Номенклатура> page = await ReadCollectionAsync<Catalog_Номенклатура>(
+                baseUri,
+                options.NomenclatureEntitySet!,
+                parameters,
+                options,
+                cancellationToken);
+
+            if (page.Count == 0)
+            {
+                yield break;
+            }
+
+            yield return page;
+
+            offset = checked(offset + page.Count);
+            if (page.Count < options.BatchSize)
+            {
+                yield break;
+            }
+        }
     }
 
     private async Task ProbeEntitySetAsync(

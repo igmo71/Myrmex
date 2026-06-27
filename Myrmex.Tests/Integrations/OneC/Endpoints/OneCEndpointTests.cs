@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -86,6 +87,7 @@ public sealed class OneCEndpointTests
     [Theory]
     [InlineData("/api/integrations/1c/warehouses/import", "warehouses", true)]
     [InlineData("/api/integrations/1c/uoms/import", "uoms", false)]
+    [InlineData("/api/integrations/1c/skus/import", "skus", true)]
     public async Task ImportRoutes_WhenStarted_ReturnCompleteOrIncompleteResponse(
         string route,
         string referenceType,
@@ -169,6 +171,47 @@ public sealed class OneCEndpointTests
         Assert.Equal(0, importService.CallCount);
     }
 
+    [Fact]
+    public async Task ImportSkuRoute_SerializesStableBaseUnitRecordReason()
+    {
+        OneCImportResponse expected = new(
+            "skus",
+            IsComplete: true,
+            Processed: 1,
+            Created: 0,
+            Updated: 0,
+            Skipped: 0,
+            Failed: 1,
+            StartedAtUtc: CheckedAtUtc,
+            CompletedAtUtc: CheckedAtUtc,
+            OperationError: null,
+            Errors:
+            [
+                new OneCImportRecordError(
+                    Guid.NewGuid(),
+                    "SKU-1",
+                    "BaseUnitOfMeasureExternalRefKeyMissing",
+                    "Base unit is required.")
+            ]);
+        StubImportService importService = new(expected);
+        await using WebApplication app = CreateApp(
+            new StubOneCODataClient(),
+            authenticated: true,
+            importService: importService);
+        await app.StartAsync(TestContext.Current.CancellationToken);
+
+        using HttpClient httpClient = CreateClient(app);
+        using HttpResponseMessage response = await httpClient.PostAsync(
+            "/api/integrations/1c/skus/import",
+            null,
+            TestContext.Current.CancellationToken);
+
+        response.EnsureSuccessStatusCode();
+        OneCImportResponse? payload = await response.Content.ReadFromJsonAsync<OneCImportResponse>(
+            TestContext.Current.CancellationToken);
+        Assert.Equal("BaseUnitOfMeasureExternalRefKeyMissing", Assert.Single(payload!.Errors).Reason);
+    }
+
     private static WebApplication CreateApp(
         IOneCODataClient client,
         bool authenticated,
@@ -227,6 +270,13 @@ public sealed class OneCEndpointTests
         public Task<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>> ReadUnitsOfMeasureAsync(
             CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>>([]);
+
+        public async IAsyncEnumerable<IReadOnlyList<Catalog_Номенклатура>> ReadNomenclaturePagesAsync(
+            [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            await Task.CompletedTask;
+            yield break;
+        }
     }
 
     private sealed class StubImportService : IOneCImportService
@@ -241,6 +291,7 @@ public sealed class OneCEndpointTests
 
         public Task<OneCImportResponse> ImportWarehousesAsync(CancellationToken cancellationToken) => Complete();
         public Task<OneCImportResponse> ImportUnitsOfMeasureAsync(CancellationToken cancellationToken) => Complete();
+        public Task<OneCImportResponse> ImportStockKeepingUnitsAsync(CancellationToken cancellationToken) => Complete();
 
         private Task<OneCImportResponse> Complete()
         {

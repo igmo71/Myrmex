@@ -11,4 +11,7 @@ internal interface IOneCODataClient
 
     Task<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>> ReadUnitsOfMeasureAsync(
         CancellationToken cancellationToken);
+
+    IAsyncEnumerable<IReadOnlyList<Catalog_Номенклатура>> ReadNomenclaturePagesAsync(
+        CancellationToken cancellationToken);
 }

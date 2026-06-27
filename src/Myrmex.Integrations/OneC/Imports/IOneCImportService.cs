@@ -7,4 +7,6 @@ internal interface IOneCImportService
     Task<OneCImportResponse> ImportWarehousesAsync(CancellationToken cancellationToken);
 
     Task<OneCImportResponse> ImportUnitsOfMeasureAsync(CancellationToken cancellationToken);
+
+    Task<OneCImportResponse> ImportStockKeepingUnitsAsync(CancellationToken cancellationToken);
 }

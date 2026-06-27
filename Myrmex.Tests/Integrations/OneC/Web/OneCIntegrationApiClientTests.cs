@@ -75,6 +75,7 @@ public sealed class OneCIntegrationApiClientTests
     [Theory]
     [InlineData("warehouses", "/api/integrations/1c/warehouses/import")]
     [InlineData("uoms", "/api/integrations/1c/uoms/import")]
+    [InlineData("skus", "/api/integrations/1c/skus/import")]
     public async Task ImportAsync_PostsSeparateNoBodyRouteAndParsesSharedSummary(
         string referenceType,
         string expectedRoute)
@@ -99,9 +100,12 @@ public sealed class OneCIntegrationApiClientTests
         })) { BaseAddress = new Uri("https://api.example.test") };
         OneCIntegrationApiClient client = new(httpClient);
 
-        var result = referenceType == "warehouses"
-            ? await client.ImportWarehousesAsync(TestContext.Current.CancellationToken)
-            : await client.ImportUnitsOfMeasureAsync(TestContext.Current.CancellationToken);
+        var result = referenceType switch
+        {
+            "warehouses" => await client.ImportWarehousesAsync(TestContext.Current.CancellationToken),
+            "uoms" => await client.ImportUnitsOfMeasureAsync(TestContext.Current.CancellationToken),
+            _ => await client.ImportStockKeepingUnitsAsync(TestContext.Current.CancellationToken)
+        };
 
         Assert.True(result.IsSuccess);
         Assert.Equal(3, result.Value?.Processed);
@@ -128,6 +132,42 @@ public sealed class OneCIntegrationApiClientTests
         Assert.True(result.IsFailure);
         Assert.Equal("The 1С integration configuration is invalid.", result.Error?.Message);
         Assert.Equal("OneC.ConfigurationInvalid", result.Error?.Extensions["code"]);
+    }
+
+    [Fact]
+    public async Task ImportStockKeepingUnitsAsync_PreservesStableRecordErrors()
+    {
+        OneCImportResponse expected = new(
+            "skus", true, 1, 0, 0, 0, 1,
+            DateTimeOffset.Parse("2026-06-27T12:00:00Z"),
+            DateTimeOffset.Parse("2026-06-27T12:01:00Z"),
+            null,
+            [new OneCImportRecordError(null, "SKU-1", "BaseUnitOfMeasureNotImported", "Not imported.")]);
+        using HttpClient httpClient = new(new StubHttpMessageHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(expected) }))
+        { BaseAddress = new Uri("https://api.example.test") };
+        OneCIntegrationApiClient client = new(httpClient);
+
+        var result = await client.ImportStockKeepingUnitsAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("BaseUnitOfMeasureNotImported", Assert.Single(result.Value!.Errors).Reason);
+    }
+
+    [Fact]
+    public async Task ImportStockKeepingUnitsAsync_PropagatesCancellation()
+    {
+        using HttpClient httpClient = new(new AsyncStubHttpMessageHandler(async cancellationToken =>
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        })) { BaseAddress = new Uri("https://api.example.test") };
+        OneCIntegrationApiClient client = new(httpClient);
+        using CancellationTokenSource cancellation = new();
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            client.ImportStockKeepingUnitsAsync(cancellation.Token));
     }
 
     private sealed class StubHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> handler)

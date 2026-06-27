@@ -222,6 +222,132 @@ public sealed class OneCODataClientTests
             client.ReadWarehousesAsync(cancellation.Token));
     }
 
+    [Fact]
+    public async Task ReadNomenclaturePagesAsync_UsesExactStablePagingQueryAndDeserializesUomKey()
+    {
+        Uri? requestUri = null;
+        Guid unitKey = Guid.NewGuid();
+        using HttpClient httpClient = new(new StubHttpMessageHandler(request =>
+        {
+            requestUri = request.RequestUri;
+            return JsonResponse(new
+            {
+                value = new[]
+                {
+                    new Dictionary<string, object?>
+                    {
+                        ["Ref_Key"] = RefKey,
+                        ["DeletionMark"] = false,
+                        ["IsFolder"] = false,
+                        ["Code"] = "SKU-1",
+                        ["Description"] = "Товар",
+                        ["НаименованиеПолное"] = "Товар полный",
+                        ["Артикул"] = "ART-1",
+                        ["ЕдиницаИзмерения_Key"] = unitKey
+                    }
+                }
+            });
+        }));
+        OneCODataClient client = CreateClient(httpClient, options => options.BatchSize = 2);
+
+        List<IReadOnlyList<Catalog_Номенклатура>> pages = [];
+        await foreach (IReadOnlyList<Catalog_Номенклатура> page in
+            client.ReadNomenclaturePagesAsync(TestContext.Current.CancellationToken))
+        {
+            pages.Add(page);
+        }
+
+        string query = Uri.UnescapeDataString(requestUri!.Query);
+        Assert.Contains(
+            "$select=Ref_Key,DeletionMark,IsFolder,Code,Description,НаименованиеПолное,Артикул,ЕдиницаИзмерения_Key",
+            query,
+            StringComparison.Ordinal);
+        Assert.Contains("$orderby=Ref_Key", query, StringComparison.Ordinal);
+        Assert.Contains("$skip=0", query, StringComparison.Ordinal);
+        Assert.Contains("$top=2", query, StringComparison.Ordinal);
+        Assert.Contains("$filter=IsFolder eq false", query, StringComparison.Ordinal);
+        Catalog_Номенклатура record = Assert.Single(Assert.Single(pages));
+        Assert.Equal(unitKey, record.ЕдиницаИзмерения_Key);
+        Assert.Equal("ART-1", record.Артикул);
+    }
+
+    [Fact]
+    public async Task ReadNomenclaturePagesAsync_WhenFirstPageIsEmpty_TerminatesWithoutYielding()
+    {
+        var handler = new StubHttpMessageHandler(_ => JsonResponse(new { value = Array.Empty<object>() }));
+        using HttpClient httpClient = new(handler);
+        OneCODataClient client = CreateClient(httpClient, options => options.BatchSize = 2);
+        int pageCount = 0;
+
+        await foreach (IReadOnlyList<Catalog_Номенклатура> _ in
+            client.ReadNomenclaturePagesAsync(TestContext.Current.CancellationToken))
+        {
+            pageCount++;
+        }
+
+        Assert.Equal(0, pageCount);
+        Assert.Equal(1, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task ReadNomenclaturePagesAsync_AdvancesByReturnedCountAndHandlesExactAndPartialPages()
+    {
+        Queue<IReadOnlyList<object>> responses = new(
+        [
+            [NomenclatureRecord(Guid.NewGuid()), NomenclatureRecord(Guid.NewGuid())],
+            [NomenclatureRecord(Guid.NewGuid()), NomenclatureRecord(Guid.NewGuid())],
+            [NomenclatureRecord(Guid.NewGuid())]
+        ]);
+        List<string> queries = [];
+        using HttpClient httpClient = new(new StubHttpMessageHandler(request =>
+        {
+            queries.Add(Uri.UnescapeDataString(request.RequestUri!.Query));
+            return JsonResponse(new { value = responses.Dequeue() });
+        }));
+        OneCODataClient client = CreateClient(httpClient, options =>
+        {
+            options.BatchSize = 2;
+            options.UseFolderFilter = false;
+        });
+        List<int> pageSizes = [];
+
+        await foreach (IReadOnlyList<Catalog_Номенклатура> page in
+            client.ReadNomenclaturePagesAsync(TestContext.Current.CancellationToken))
+        {
+            pageSizes.Add(page.Count);
+        }
+
+        Assert.Equal([2, 2, 1], pageSizes);
+        Assert.Contains("$skip=0", queries[0], StringComparison.Ordinal);
+        Assert.Contains("$skip=2", queries[1], StringComparison.Ordinal);
+        Assert.Contains("$skip=4", queries[2], StringComparison.Ordinal);
+        Assert.All(queries, query => Assert.DoesNotContain("$filter", query, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ReadNomenclaturePagesAsync_WhenTotalIsExactBatchSize_RequestsEmptyTerminalPage()
+    {
+        Queue<IReadOnlyList<object>> responses = new(
+        [
+            [NomenclatureRecord(Guid.NewGuid()), NomenclatureRecord(Guid.NewGuid())],
+            []
+        ]);
+        var handler = new StubHttpMessageHandler(_ =>
+            JsonResponse(new { value = responses.Dequeue() }));
+        using HttpClient httpClient = new(handler);
+        OneCODataClient client = CreateClient(httpClient, options => options.BatchSize = 2);
+        List<int> pageSizes = [];
+
+        await foreach (IReadOnlyList<Catalog_Номенклатура> page in
+            client.ReadNomenclaturePagesAsync(TestContext.Current.CancellationToken))
+        {
+            pageSizes.Add(page.Count);
+        }
+
+        Assert.Equal([2], pageSizes);
+        Assert.Equal(2, handler.CallCount);
+    }
+
     private static OneCODataClient CreateClient(HttpClient httpClient, Action<OneCOptions>? configure = null)
     {
         OneCOptions options = new()
@@ -246,6 +372,15 @@ public sealed class OneCODataClientTests
     private static HttpResponseMessage JsonResponse<T>(T value) => new(HttpStatusCode.OK)
     {
         Content = JsonContent.Create(value)
+    };
+
+    private static object NomenclatureRecord(Guid refKey) => new
+    {
+        Ref_Key = refKey,
+        DeletionMark = false,
+        IsFolder = false,
+        Code = refKey.ToString("N"),
+        Description = "Item"
     };
 
     private sealed class StubHttpMessageHandler : HttpMessageHandler

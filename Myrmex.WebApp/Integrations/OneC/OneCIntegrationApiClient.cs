@@ -24,4 +24,10 @@ public sealed class OneCIntegrationApiClient(HttpClient httpClient)
         httpClient.PostAsApiResultAsync<OneCImportResponse>(
             "/api/integrations/1c/uoms/import",
             cancellationToken);
+
+    public Task<ApiResult<OneCImportResponse>> ImportStockKeepingUnitsAsync(
+        CancellationToken cancellationToken = default) =>
+        httpClient.PostAsApiResultAsync<OneCImportResponse>(
+            "/api/integrations/1c/skus/import",
+            cancellationToken);
 }

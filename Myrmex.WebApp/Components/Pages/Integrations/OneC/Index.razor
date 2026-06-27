@@ -45,6 +45,12 @@
                    OnClick="ImportUnitsOfMeasureAsync">
             @(IsUomImporting ? "Импорт единиц измерения..." : "Импортировать единицы измерения")
         </MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Secondary"
+                   Disabled="@IsSkuImporting"
+                   OnClick="ImportStockKeepingUnitsAsync">
+            @(IsSkuImporting ? "Импорт номенклатуры..." : "Импортировать номенклатуру")
+        </MudButton>
     </MudStack>
 
     @if (!string.IsNullOrWhiteSpace(_importErrorMessage))
@@ -99,10 +105,12 @@
     private string? _errorMessage;
     private bool _isWarehouseImporting;
     private bool _isUomImporting;
+    private bool _isSkuImporting;
     private OneCImportResponse? _importResponse;
     private string? _importErrorMessage;
     private bool IsWarehouseImporting => _isWarehouseImporting;
     private bool IsUomImporting => _isUomImporting;
+    private bool IsSkuImporting => _isSkuImporting;
 
     private async Task TestConnectionAsync()
     {
@@ -158,6 +166,19 @@
         }
     }
 
+    private async Task ImportStockKeepingUnitsAsync()
+    {
+        _isSkuImporting = true;
+        try
+        {
+            await ImportAsync(ApiClient.ImportStockKeepingUnitsAsync);
+        }
+        finally
+        {
+            _isSkuImporting = false;
+        }
+    }
+
     private async Task ImportAsync(
         Func<CancellationToken, Task<ApiResult<OneCImportResponse>>> import)
     {
@@ -185,6 +206,7 @@
     {
         "warehouses" => "Склады",
         "uoms" => "Единицы измерения",
+        "skus" => "Номенклатура / SKU",
         _ => referenceType
     };
 }

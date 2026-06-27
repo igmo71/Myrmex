@@ -155,6 +155,115 @@ internal sealed class OneCImportService(
         }
     }
 
+    public async Task<OneCImportResponse> ImportStockKeepingUnitsAsync(
+        CancellationToken cancellationToken)
+    {
+        oDataClient.ValidateConfiguration();
+        DateTimeOffset startedAtUtc = timeProvider.GetUtcNow();
+        int processed = 0;
+        int created = 0;
+        int updated = 0;
+        int skipped = 0;
+        int failed = 0;
+        List<OneCImportRecordError> errors = [];
+
+        try
+        {
+            await foreach (IReadOnlyList<Catalog_Номенклатура> sourcePage in
+                oDataClient.ReadNomenclaturePagesAsync(cancellationToken))
+            {
+                DateTimeOffset importedAtUtc = timeProvider.GetUtcNow();
+                List<OneCImportRecordError> pendingFolderErrors = sourcePage
+                    .Where(record => record.IsFolder)
+                    .Select(record => new OneCImportRecordError(
+                        record.Ref_Key == Guid.Empty ? null : record.Ref_Key,
+                        record.Code?.Trim(),
+                        ReferenceImportRecordErrorReasons.SourceFolder,
+                        "The 1С nomenclature record is a folder/group and was skipped."))
+                    .ToList();
+                List<ImportStockKeepingUnits.Item> items = sourcePage
+                    .Where(record => !record.IsFolder)
+                    .Select(record => new ImportStockKeepingUnits.Item(
+                        record.Ref_Key,
+                        record.Code?.Trim(),
+                        FirstNonEmpty(record.НаименованиеПолное, record.Description),
+                        record.ЕдиницаИзмерения_Key,
+                        record.DeletionMark,
+                        importedAtUtc))
+                    .ToList();
+
+                if (items.Count == 0)
+                {
+                    processed += pendingFolderErrors.Count;
+                    skipped += pendingFolderErrors.Count;
+                    AppendErrors(errors, pendingFolderErrors);
+                    continue;
+                }
+
+                ServiceResult<ReferenceImportBatchResult> result = await commandDispatcher
+                    .DispatchAsync<ImportStockKeepingUnits.Command, ServiceResult<ReferenceImportBatchResult>>(
+                        new ImportStockKeepingUnits.Command(items),
+                        cancellationToken);
+
+                if (!result.IsSuccess)
+                {
+                    return Incomplete(
+                        "skus",
+                        startedAtUtc,
+                        "BatchCommitFailed",
+                        "The SKU import batch could not be committed.",
+                        processed,
+                        created,
+                        updated,
+                        skipped,
+                        failed,
+                        errors);
+                }
+
+                processed += result.Value.Processed + pendingFolderErrors.Count;
+                created += result.Value.Created;
+                updated += result.Value.Updated;
+                skipped += result.Value.Skipped + pendingFolderErrors.Count;
+                failed += result.Value.Failed;
+                AppendErrors(errors, pendingFolderErrors);
+                AppendErrors(errors, result.Value.Errors.Select(error => new OneCImportRecordError(
+                    error.ExternalRefKey,
+                    error.Code,
+                    error.Reason,
+                    error.Message)));
+            }
+
+            return Complete(
+                "skus",
+                startedAtUtc,
+                processed,
+                created,
+                updated,
+                skipped,
+                failed,
+                errors);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return Incomplete(
+                "skus", startedAtUtc, "Cancelled", "The SKU import was cancelled.",
+                processed, created, updated, skipped, failed, errors);
+        }
+        catch (OneCTransportException exception)
+        {
+            return Incomplete(
+                "skus", startedAtUtc, OperationReason(exception.Reason), exception.Message,
+                processed, created, updated, skipped, failed, errors);
+        }
+        catch (Exception)
+        {
+            return Incomplete(
+                "skus", startedAtUtc, "BatchCommitFailed",
+                "The SKU import batch could not be committed.",
+                processed, created, updated, skipped, failed, errors);
+        }
+    }
+
     private string WarehouseCode(Catalog_Склады record)
     {
         string? sourceCode = options.Value.WarehouseCodeAvailable
@@ -230,6 +339,40 @@ internal sealed class OneCImportService(
             CompletedAtUtc: timeProvider.GetUtcNow(),
             OperationError: new OneCImportOperationError(reason, message),
             Errors: []);
+
+    private OneCImportResponse Incomplete(
+        string referenceType,
+        DateTimeOffset startedAtUtc,
+        string reason,
+        string message,
+        int processed,
+        int created,
+        int updated,
+        int skipped,
+        int failed,
+        IReadOnlyList<OneCImportRecordError> errors) =>
+        new(
+            ReferenceType: referenceType,
+            IsComplete: false,
+            Processed: processed,
+            Created: created,
+            Updated: updated,
+            Skipped: skipped,
+            Failed: failed,
+            StartedAtUtc: startedAtUtc,
+            CompletedAtUtc: timeProvider.GetUtcNow(),
+            OperationError: new OneCImportOperationError(reason, message),
+            Errors: errors.Take(MaximumReturnedErrors).ToArray());
+
+    private static void AppendErrors(
+        ICollection<OneCImportRecordError> target,
+        IEnumerable<OneCImportRecordError> source)
+    {
+        foreach (OneCImportRecordError error in source.Take(MaximumReturnedErrors - target.Count))
+        {
+            target.Add(error);
+        }
+    }
 
     private static string? FirstNonEmpty(string? preferred, string? fallback)
     {
