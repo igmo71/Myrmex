@@ -6,6 +6,7 @@ using Myrmex.AspNetCore.Results;
 using Myrmex.AspNetCore.Security;
 using Myrmex.Core.Results;
 using Myrmex.Integrations.OneC.Transport;
+using Myrmex.Integrations.OneC.Imports;
 using Myrmex.Shared.Integrations.OneC;
 
 namespace Myrmex.Integrations.OneC.Endpoints;
@@ -14,12 +15,61 @@ public static class OneCEndpoints
 {
     public static IEndpointRouteBuilder MapOneCIntegration(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGroup("/api/integrations/1c")
-            .MapPost("/connection/test", TestConnectionAsync)
+        RouteGroupBuilder group = endpoints.MapGroup("/api/integrations/1c");
+
+        group.MapPost("/connection/test", TestConnectionAsync)
             .WithName("TestOneCConnection")
             .WithSummary("Verify the 1С OData connection");
 
+        group.MapPost("/warehouses/import", ImportWarehousesAsync)
+            .WithName("ImportOneCWarehouses")
+            .WithSummary("Import warehouses from 1С");
+
+        group.MapPost("/uoms/import", ImportUnitsOfMeasureAsync)
+            .WithName("ImportOneCUnitsOfMeasure")
+            .WithSummary("Import units of measure from 1С");
+
         return endpoints;
+    }
+
+    private static Task<IResult> ImportWarehousesAsync(
+        HttpContext httpContext,
+        IOneCImportService importService,
+        CancellationToken cancellationToken) =>
+        ImportAsync(
+            httpContext,
+            importService.ImportWarehousesAsync,
+            cancellationToken);
+
+    private static Task<IResult> ImportUnitsOfMeasureAsync(
+        HttpContext httpContext,
+        IOneCImportService importService,
+        CancellationToken cancellationToken) =>
+        ImportAsync(
+            httpContext,
+            importService.ImportUnitsOfMeasureAsync,
+            cancellationToken);
+
+    private static async Task<IResult> ImportAsync(
+        HttpContext httpContext,
+        Func<CancellationToken, Task<OneCImportResponse>> import,
+        CancellationToken cancellationToken)
+    {
+        if (httpContext.GetActorId() is null)
+        {
+            return ServiceResult<OneCImportResponse>
+                .Fail(ServiceError.Unauthorized())
+                .ToHttpResult();
+        }
+
+        try
+        {
+            return TypedResults.Ok(await import(cancellationToken));
+        }
+        catch (OneCTransportException exception)
+        {
+            return CreateProblem(exception);
+        }
     }
 
     private static async Task<IResult> TestConnectionAsync(

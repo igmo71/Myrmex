@@ -30,13 +30,95 @@ internal sealed class OneCODataClient : IOneCODataClient
         await ProbeEntitySetAsync(baseUri, options.NomenclatureEntitySet!, options, cancellationToken);
     }
 
+    public void ValidateConfiguration()
+    {
+        _ = ValidateAndGetBaseUri(_options.Value);
+    }
+
+    public Task<IReadOnlyList<Catalog_Склады>> ReadWarehousesAsync(
+        CancellationToken cancellationToken)
+    {
+        OneCOptions options = _options.Value;
+        Uri baseUri = ValidateAndGetBaseUri(options);
+        string select = options.WarehouseCodeAvailable
+            ? "Ref_Key,DeletionMark,IsFolder,Code,Description"
+            : "Ref_Key,DeletionMark,IsFolder,Description";
+
+        List<KeyValuePair<string, string>> parameters =
+        [
+            new("$format", "json"),
+            new("$select", select),
+            new("$orderby", "Ref_Key")
+        ];
+        if (options.UseFolderFilter)
+        {
+            parameters.Add(new("$filter", "IsFolder eq false"));
+        }
+
+        return ReadCollectionAsync<Catalog_Склады>(
+            baseUri,
+            options.WarehousesEntitySet!,
+            parameters,
+            options,
+            cancellationToken);
+    }
+
+    public Task<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>> ReadUnitsOfMeasureAsync(
+        CancellationToken cancellationToken)
+    {
+        OneCOptions options = _options.Value;
+        Uri baseUri = ValidateAndGetBaseUri(options);
+        KeyValuePair<string, string>[] parameters =
+        [
+            new("$format", "json"),
+            new("$select", "Ref_Key,DeletionMark,Code,Description,НаименованиеПолное,МеждународноеСокращение"),
+            new("$orderby", "Ref_Key")
+        ];
+
+        return ReadCollectionAsync<Catalog_УпаковкиЕдиницыИзмерения>(
+            baseUri,
+            options.UnitsOfMeasureEntitySet,
+            parameters,
+            options,
+            cancellationToken);
+    }
+
     private async Task ProbeEntitySetAsync(
         Uri baseUri,
         string entitySet,
         OneCOptions options,
         CancellationToken cancellationToken)
     {
-        string relativeUrl = $"{Uri.EscapeDataString(entitySet)}?$format=json&$top=1&$orderby=Ref_Key&$select=Ref_Key";
+        IReadOnlyList<ReferenceProbe> items = await ReadCollectionAsync<ReferenceProbe>(
+            baseUri,
+            entitySet,
+            [
+                new("$format", "json"),
+                new("$top", "1"),
+                new("$orderby", "Ref_Key"),
+                new("$select", "Ref_Key")
+            ],
+            options,
+            cancellationToken);
+
+        if (items.Any(item => item.Ref_Key == Guid.Empty))
+        {
+            throw new OneCTransportException(
+                OneCTransportFailureReason.MalformedResponse,
+                "The 1С OData service returned an invalid collection envelope.");
+        }
+    }
+
+    private async Task<IReadOnlyList<T>> ReadCollectionAsync<T>(
+        Uri baseUri,
+        string entitySet,
+        IEnumerable<KeyValuePair<string, string>> parameters,
+        OneCOptions options,
+        CancellationToken cancellationToken)
+    {
+        string query = string.Join("&", parameters.Select(parameter =>
+            $"{parameter.Key}={Uri.EscapeDataString(parameter.Value)}"));
+        string relativeUrl = $"{Uri.EscapeDataString(entitySet)}?{query}";
         using HttpRequestMessage request = new(HttpMethod.Get, new Uri(baseUri, relativeUrl));
         string credentials = Convert.ToBase64String(
             Encoding.UTF8.GetBytes($"{options.Username}:{options.Password}"));
@@ -75,10 +157,10 @@ internal sealed class OneCODataClient : IOneCODataClient
             }
 
             await using Stream content = await response.Content.ReadAsStreamAsync(timeout.Token);
-            OneCODataCollectionResponse<ReferenceProbe>? envelope;
+            OneCODataCollectionResponse<T>? envelope;
             try
             {
-                envelope = await JsonSerializer.DeserializeAsync<OneCODataCollectionResponse<ReferenceProbe>>(
+                envelope = await JsonSerializer.DeserializeAsync<OneCODataCollectionResponse<T>>(
                     content,
                     SerializerOptions,
                     timeout.Token);
@@ -91,12 +173,14 @@ internal sealed class OneCODataClient : IOneCODataClient
                     exception);
             }
 
-            if (envelope?.Value is null || envelope.Value.Any(item => item.Ref_Key == Guid.Empty))
+            if (envelope?.Value is null)
             {
                 throw new OneCTransportException(
                     OneCTransportFailureReason.MalformedResponse,
                     "The 1С OData service returned an invalid collection envelope.");
             }
+
+            return envelope.Value;
         }
         catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {

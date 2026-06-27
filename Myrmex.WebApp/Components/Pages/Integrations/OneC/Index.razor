@@ -29,12 +29,80 @@
     {
         <MudAlert Severity="Severity.Error" Class="mt-4">@_errorMessage</MudAlert>
     }
+
+    <MudDivider Class="my-6" />
+    <MudText Typo="Typo.h5" GutterBottom="true">Импорт справочников</MudText>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Secondary"
+                   Disabled="@IsWarehouseImporting"
+                   OnClick="ImportWarehousesAsync">
+            @(IsWarehouseImporting ? "Импорт складов..." : "Импортировать склады")
+        </MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Secondary"
+                   Disabled="@IsUomImporting"
+                   OnClick="ImportUnitsOfMeasureAsync">
+            @(IsUomImporting ? "Импорт единиц измерения..." : "Импортировать единицы измерения")
+        </MudButton>
+    </MudStack>
+
+    @if (!string.IsNullOrWhiteSpace(_importErrorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-4">@_importErrorMessage</MudAlert>
+    }
+
+    @if (_importResponse is not null)
+    {
+        <MudAlert Severity="@(_importResponse.IsComplete ? Severity.Success : Severity.Warning)" Class="mt-4">
+            @(_importResponse.IsComplete ? "Импорт завершён." : "Импорт завершён не полностью.")
+        </MudAlert>
+        <MudPaper Class="pa-4 mt-3" Elevation="1">
+            <MudText><b>Тип:</b> @ReferenceTypeLabel(_importResponse.ReferenceType)</MudText>
+            <MudText>
+                Обработано: @_importResponse.Processed; создано: @_importResponse.Created;
+                обновлено: @_importResponse.Updated; пропущено: @_importResponse.Skipped;
+                ошибок: @_importResponse.Failed.
+            </MudText>
+            @if (_importResponse.OperationError is not null)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3">
+                    @_importResponse.OperationError.Message (@_importResponse.OperationError.Reason)
+                </MudAlert>
+            }
+            @if (_importResponse.Errors.Count > 0)
+            {
+                <MudText Typo="Typo.h6" Class="mt-4">Ошибки и пропуски (не более 50)</MudText>
+                <table class="mud-table-root mt-2">
+                    <thead>
+                        <tr><th>Код</th><th>Причина</th><th>Сообщение</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (OneCImportRecordError error in _importResponse.Errors)
+                        {
+                            <tr>
+                                <td>@(error.Code ?? "—")</td>
+                                <td>@error.Reason</td>
+                                <td>@error.Message</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </MudPaper>
+    }
 </MudContainer>
 
 @code {
     private bool _isChecking;
     private OneCConnectionTestResponse? _response;
     private string? _errorMessage;
+    private bool _isWarehouseImporting;
+    private bool _isUomImporting;
+    private OneCImportResponse? _importResponse;
+    private string? _importErrorMessage;
+    private bool IsWarehouseImporting => _isWarehouseImporting;
+    private bool IsUomImporting => _isUomImporting;
 
     private async Task TestConnectionAsync()
     {
@@ -63,4 +131,60 @@
             _isChecking = false;
         }
     }
+
+    private async Task ImportWarehousesAsync()
+    {
+        _isWarehouseImporting = true;
+        try
+        {
+            await ImportAsync(ApiClient.ImportWarehousesAsync);
+        }
+        finally
+        {
+            _isWarehouseImporting = false;
+        }
+    }
+
+    private async Task ImportUnitsOfMeasureAsync()
+    {
+        _isUomImporting = true;
+        try
+        {
+            await ImportAsync(ApiClient.ImportUnitsOfMeasureAsync);
+        }
+        finally
+        {
+            _isUomImporting = false;
+        }
+    }
+
+    private async Task ImportAsync(
+        Func<CancellationToken, Task<ApiResult<OneCImportResponse>>> import)
+    {
+        _importErrorMessage = null;
+
+        try
+        {
+            ApiResult<OneCImportResponse> result = await import(CancellationToken.None);
+            if (result.IsSuccess)
+            {
+                _importResponse = result.Value;
+            }
+            else
+            {
+                _importErrorMessage = result.Error?.Message ?? "Не удалось выполнить импорт из 1С.";
+            }
+        }
+        catch (Exception)
+        {
+            _importErrorMessage = "Не удалось связаться с API для импорта из 1С.";
+        }
+    }
+
+    private static string ReferenceTypeLabel(string referenceType) => referenceType switch
+    {
+        "warehouses" => "Склады",
+        "uoms" => "Единицы измерения",
+        _ => referenceType
+    };
 }

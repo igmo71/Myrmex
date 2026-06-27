@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Myrmex.Integrations.OneC.Configuration;
+using Myrmex.Integrations.OneC.Imports;
 using Myrmex.Integrations.OneC.Transport;
 
 namespace Myrmex.Integrations.OneC;
@@ -18,6 +19,7 @@ public static class OneCIntegrationModule
         {
             client.Timeout = Timeout.InfiniteTimeSpan;
         });
+        services.AddScoped<IOneCImportService, OneCImportService>();
         return services;
     }
 }
