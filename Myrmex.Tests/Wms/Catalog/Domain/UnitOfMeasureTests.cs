@@ -162,23 +162,27 @@ public sealed class UnitOfMeasureTests
 
         var deleted = unitOfMeasure.ApplyImport(
             ExternalRefKey,
-            " pkg ",
-            " Package ",
-            " pc ",
+            code: null,
+            name: null,
+            symbol: new string('x', UnitOfMeasure.MaxSymbolLength + 1),
             isDeletionMarked: true,
             ImportedAtUtc);
 
         Assert.True(deleted.IsValid);
         Assert.Equal(ExternalRefKey, unitOfMeasure.ExternalRefKey);
         Assert.Equal(ImportedAtUtc, unitOfMeasure.LastImportedAtUtc);
-        Assert.Equal("PKG", unitOfMeasure.Code);
-        Assert.Equal("Package", unitOfMeasure.Name);
-        Assert.Equal("pc", unitOfMeasure.Symbol);
+        Assert.Equal("EA", unitOfMeasure.Code);
+        Assert.Equal("Each", unitOfMeasure.Name);
+        Assert.Null(unitOfMeasure.Symbol);
         Assert.False(unitOfMeasure.IsActive);
 
         Assert.True(unitOfMeasure.ApplyImport(
             ExternalRefKey, "PKG", "Package", "pc", false, ImportedAtUtc.AddMinutes(1)).IsValid);
         Assert.True(unitOfMeasure.IsActive);
+        Assert.Equal("PKG", unitOfMeasure.Code);
+        Assert.Equal("Package", unitOfMeasure.Name);
+        Assert.Equal("pc", unitOfMeasure.Symbol);
+        Assert.Equal(ImportedAtUtc.AddMinutes(1), unitOfMeasure.LastImportedAtUtc);
     }
 
     [Fact]

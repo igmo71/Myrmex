@@ -35,16 +35,15 @@ public sealed class ImportWarehousesHandlerTests
                 new(linkedKey, " linked ", "Linked Warehouse", false, ImportedAtUtc),
                 new(createdKey, createdKey.ToString("N").ToUpperInvariant(), "Generated Code", false, ImportedAtUtc),
                 new(Guid.NewGuid(), "local", "Must not link", false, ImportedAtUtc),
-                new(Guid.NewGuid(), "DELETED", "Deleted", true, ImportedAtUtc),
                 new(Guid.NewGuid(), "INVALID", null, false, ImportedAtUtc)
             ]),
             TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(5, result.Value.Processed);
+        Assert.Equal(4, result.Value.Processed);
         Assert.Equal(1, result.Value.Created);
         Assert.Equal(1, result.Value.Updated);
-        Assert.Equal(2, result.Value.Skipped);
+        Assert.Equal(1, result.Value.Skipped);
         Assert.Equal(1, result.Value.Failed);
         Assert.True(result.Value.HasConsistentCounts);
         Assert.Contains(result.Value.Errors, error =>
@@ -65,7 +64,31 @@ public sealed class ImportWarehousesHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_WhenLinkedRecordIsDeletionMarked_DeactivatesIt()
+    public async Task HandleAsync_WhenUnlinkedRecordIsDeletionMarked_SkipsAndReportsIt()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        Guid externalRefKey = Guid.NewGuid();
+        ImportWarehouses.Handler handler = new(testDbContext.DbContext, new RecordingDomainEventDispatcher());
+
+        ServiceResult<ReferenceImportBatchResult> result = await handler.HandleAsync(
+            new ImportWarehouses.Command(
+                [new(externalRefKey, null, null, true, ImportedAtUtc)]),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value.Processed);
+        Assert.Equal(0, result.Value.Created);
+        Assert.Equal(1, result.Value.Skipped);
+        ReferenceImportRecordError error = Assert.Single(result.Value.Errors);
+        Assert.Equal(externalRefKey, error.ExternalRefKey);
+        Assert.Equal(ReferenceImportRecordErrorReasons.SourceRecordDeletionMarked, error.Reason);
+        Assert.False(await testDbContext.DbContext.Warehouses.AnyAsync(
+            x => x.ExternalRefKey == externalRefKey,
+            TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenLinkedDeletionMarkedFieldsAreInvalid_DeactivatesWithoutUpdatingDetails()
     {
         await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
         Guid externalRefKey = Guid.NewGuid();
@@ -74,18 +97,25 @@ public sealed class ImportWarehousesHandlerTests
         await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
         testDbContext.DbContext.ChangeTracker.Clear();
         ImportWarehouses.Handler handler = new(testDbContext.DbContext, new RecordingDomainEventDispatcher());
+        DateTimeOffset deletionImportedAtUtc = ImportedAtUtc.AddMinutes(5);
 
         ServiceResult<ReferenceImportBatchResult> result = await handler.HandleAsync(
             new ImportWarehouses.Command(
-                [new(externalRefKey, "WH", "Warehouse", true, ImportedAtUtc)]),
+                [new(externalRefKey, null, null, true, ImportedAtUtc)]),
             TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value.Processed);
         Assert.Equal(1, result.Value.Updated);
+        Assert.Equal(0, result.Value.Failed);
+        Assert.Empty(result.Value.Errors);
         Warehouse saved = await testDbContext.DbContext.Warehouses.SingleAsync(
             x => x.ExternalRefKey == externalRefKey,
             TestContext.Current.CancellationToken);
         Assert.False(saved.IsActive);
+        Assert.Equal("WH", saved.Code);
+        Assert.Equal("Warehouse", saved.Name);
+        Assert.Equal(deletionImportedAtUtc, saved.LastImportedAtUtc);
     }
 
     [Fact]

@@ -280,6 +280,7 @@ components:
           enum:
             - InvalidSourceRecord
             - SourceFolder
+            - SourceRecordDeletionMarked
             - CodeAlreadyExistsWithoutExternalRefKey
             - CodeAlreadyUsedByAnotherRecord
             - BaseUnitOfMeasureExternalRefKeyMissing

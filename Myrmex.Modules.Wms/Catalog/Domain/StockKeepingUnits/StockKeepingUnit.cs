@@ -60,9 +60,28 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
             errors.Add(DomainValidationFailure.IncorrectState<StockKeepingUnit>(nameof(ExternalRefKey)));
         }
 
-        errors.AddRange(ValidateCreate(code, name, Description, baseUnitOfMeasureId).Errors);
-
         DomainValidationResult validationResult = DomainValidationResult.From(errors);
+        if (!validationResult.IsValid)
+        {
+            return validationResult;
+        }
+
+        if (isDeletionMarked)
+        {
+            ExternalRefKey ??= externalRefKey;
+            LastImportedAtUtc = importedAtUtc;
+            if (IsActive)
+            {
+                Deactivate();
+            }
+            else
+            {
+                Touch();
+            }
+            return DomainValidationResult.Valid;
+        }
+
+        validationResult = ValidateCreate(code, name, Description, baseUnitOfMeasureId);
         if (!validationResult.IsValid)
         {
             return validationResult;
@@ -73,15 +92,7 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
         Name = DomainText.NormalizeRequiredText(name);
         BaseUnitOfMeasureId = baseUnitOfMeasureId!.Value;
         LastImportedAtUtc = importedAtUtc;
-
-        if (isDeletionMarked)
-        {
-            Deactivate();
-        }
-        else
-        {
-            Reactivate();
-        }
+        Reactivate();
 
         Touch();
         AddDomainEvent(new StockKeepingUnitDetailsUpdatedDomainEvent(Id));

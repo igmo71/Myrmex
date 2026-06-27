@@ -21,6 +21,7 @@ public static class ReferenceImportRecordErrorReasons
 {
     public const string InvalidSourceRecord = nameof(InvalidSourceRecord);
     public const string SourceFolder = nameof(SourceFolder);
+    public const string SourceRecordDeletionMarked = nameof(SourceRecordDeletionMarked);
     public const string CodeAlreadyExistsWithoutExternalRefKey = nameof(CodeAlreadyExistsWithoutExternalRefKey);
     public const string CodeAlreadyUsedByAnotherRecord = nameof(CodeAlreadyUsedByAnotherRecord);
     public const string BaseUnitOfMeasureExternalRefKeyMissing = nameof(BaseUnitOfMeasureExternalRefKeyMissing);

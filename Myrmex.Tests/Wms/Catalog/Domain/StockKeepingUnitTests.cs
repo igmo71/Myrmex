@@ -169,24 +169,28 @@ public sealed class StockKeepingUnitTests
 
         var deleted = stockKeepingUnit.ApplyImport(
             ExternalRefKey,
-            " item-002 ",
-            " Imported Widget ",
-            OtherBaseUnitOfMeasureId,
+            code: null,
+            name: null,
+            baseUnitOfMeasureId: null,
             isDeletionMarked: true,
             ImportedAtUtc);
 
         Assert.True(deleted.IsValid);
         Assert.Equal(ExternalRefKey, stockKeepingUnit.ExternalRefKey);
         Assert.Equal(ImportedAtUtc, stockKeepingUnit.LastImportedAtUtc);
-        Assert.Equal("ITEM-002", stockKeepingUnit.Code);
-        Assert.Equal("Imported Widget", stockKeepingUnit.Name);
-        Assert.Equal(OtherBaseUnitOfMeasureId, stockKeepingUnit.BaseUnitOfMeasureId);
+        Assert.Equal("ITEM-001", stockKeepingUnit.Code);
+        Assert.Equal("Widget", stockKeepingUnit.Name);
+        Assert.Equal(BaseUnitOfMeasureId, stockKeepingUnit.BaseUnitOfMeasureId);
         Assert.False(stockKeepingUnit.IsActive);
 
         Assert.True(stockKeepingUnit.ApplyImport(
             ExternalRefKey, "ITEM-002", "Imported Widget", OtherBaseUnitOfMeasureId,
             false, ImportedAtUtc.AddMinutes(1)).IsValid);
         Assert.True(stockKeepingUnit.IsActive);
+        Assert.Equal("ITEM-002", stockKeepingUnit.Code);
+        Assert.Equal("Imported Widget", stockKeepingUnit.Name);
+        Assert.Equal(OtherBaseUnitOfMeasureId, stockKeepingUnit.BaseUnitOfMeasureId);
+        Assert.Equal(ImportedAtUtc.AddMinutes(1), stockKeepingUnit.LastImportedAtUtc);
     }
 
     [Fact]

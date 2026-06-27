@@ -78,16 +78,17 @@ public sealed class WarehouseTests
 
         var deleted = warehouse.ApplyImport(
             ExternalRefKey,
-            " imported ",
-            " Imported Warehouse ",
+            code: null,
+            name: null,
             isDeletionMarked: true,
             ImportedAtUtc);
 
         Assert.True(deleted.IsValid);
         Assert.Equal(ExternalRefKey, warehouse.ExternalRefKey);
         Assert.Equal(ImportedAtUtc, warehouse.LastImportedAtUtc);
-        Assert.Equal("IMPORTED", warehouse.Code);
-        Assert.Equal("Imported Warehouse", warehouse.Name);
+        Assert.Equal("MAIN", warehouse.Code);
+        Assert.Equal("Main Warehouse", warehouse.Name);
+        Assert.Equal("Local description", warehouse.Description);
         Assert.False(warehouse.IsActive);
 
         var active = warehouse.ApplyImport(
@@ -99,6 +100,9 @@ public sealed class WarehouseTests
 
         Assert.True(active.IsValid);
         Assert.True(warehouse.IsActive);
+        Assert.Equal("IMPORTED", warehouse.Code);
+        Assert.Equal("Imported Warehouse", warehouse.Name);
+        Assert.Equal(ImportedAtUtc.AddMinutes(1), warehouse.LastImportedAtUtc);
     }
 
     [Fact]

@@ -155,7 +155,7 @@ Expected success: `isReady=true` and all three checked reference types. Repeat w
 Invoke-RestMethod -Method Post -Uri "$apiBase/api/integrations/1c/warehouses/import"
 ```
 
-Verify new records are created by source identity, `IsFolder=true` records are filtered or skipped, `Description` maps to warehouse name, linked records update, local same-code records remain unlinked and are skipped, deletion-marked linked records deactivate, and deletion-marked unlinked records are skipped. Repeat with warehouse `Code` unavailable/blank and verify the code is the uppercase 32-character `Ref_Key` `N` format.
+Verify new records are created by source identity, `IsFolder=true` records are filtered or skipped, `Description` maps to warehouse name, linked records update, and local same-code records remain unlinked and are skipped. Verify deletion-marked linked records deactivate and refresh `LastImportedAtUtc` even when their source code/name is invalid, without changing existing details. Verify deletion-marked unlinked records are skipped and reported as `SourceRecordDeletionMarked`. Repeat with warehouse `Code` unavailable/blank and verify the code is the uppercase 32-character `Ref_Key` `N` format.
 
 ### Unit-of-measure import
 
@@ -163,7 +163,7 @@ Verify new records are created by source identity, `IsFolder=true` records are f
 Invoke-RestMethod -Method Post -Uri "$apiBase/api/integrations/1c/uoms/import"
 ```
 
-Verify `Code` is trimmed; non-empty `НаименованиеПолное` wins over `Description` for name; non-empty `МеждународноеСокращение` wins over `Description` for symbol; and imported UoMs retain their source identities for SKU relationship resolution.
+Verify `Code` is trimmed; non-empty `НаименованиеПолное` wins over `Description` for name; non-empty `МеждународноеСокращение` wins over `Description` for symbol; and imported UoMs retain their source identities for SKU relationship resolution. Verify deletion-marked linked UoMs deactivate and refresh `LastImportedAtUtc` without validating or changing code/name/symbol, while unlinked deletion-marked UoMs are skipped as `SourceRecordDeletionMarked`.
 
 ### SKU import
 
@@ -172,6 +172,8 @@ Invoke-RestMethod -Method Post -Uri "$apiBase/api/integrations/1c/skus/import"
 ```
 
 Use a source dataset larger than one batch and preferably larger than 15,000 records. Verify stable ascending source-identity paging, folder filtering/skips, all valid source records considered once, and each SKU base UoM resolved from its own `ЕдиницаИзмерения_Key`. Verify missing/null/empty keys, not-imported keys, and inactive imported UoMs fail only the affected SKU as `BaseUnitOfMeasureExternalRefKeyMissing`, `BaseUnitOfMeasureNotImported`, or `BaseUnitOfMeasureInactive`. Verify the final page behavior for partial and exact batch-size totals.
+
+Apply the same deletion semantics: a linked deletion-marked SKU deactivates and refreshes `LastImportedAtUtc` without validating or applying source detail/base-UoM fields; an unlinked deletion-marked SKU is skipped as `SourceRecordDeletionMarked`.
 
 ### Idempotent repeat
 

@@ -135,6 +135,26 @@ public static class ImportWarehouses
 
                 if (byExternalRefKey.TryGetValue(item.ExternalRefKey, out Warehouse? linked))
                 {
+                    if (item.IsDeletionMarked)
+                    {
+                        DomainValidationResult deletionResult = linked.ApplyImport(
+                            item.ExternalRefKey,
+                            item.Code,
+                            item.Name,
+                            isDeletionMarked: true,
+                            item.ImportedAtUtc);
+                        if (!deletionResult.IsValid)
+                        {
+                            failed++;
+                            errors.Add(Error(item, ReferenceImportRecordErrorReasons.InvalidSourceRecord,
+                                ValidationMessage(deletionResult)));
+                            continue;
+                        }
+
+                        updated++;
+                        continue;
+                    }
+
                     if (byCode.TryGetValue(normalizedCode, out Warehouse? codeOwner) && codeOwner.Id != linked.Id)
                     {
                         skipped++;
@@ -166,6 +186,8 @@ public static class ImportWarehouses
                 if (item.IsDeletionMarked)
                 {
                     skipped++;
+                    errors.Add(Error(item, ReferenceImportRecordErrorReasons.SourceRecordDeletionMarked,
+                        "The deletion-marked source warehouse has no linked Myrmex record and was skipped."));
                     continue;
                 }
 

@@ -135,6 +135,27 @@ public static class ImportUnitsOfMeasure
 
                 if (byExternalRefKey.TryGetValue(item.ExternalRefKey, out UnitOfMeasure? linked))
                 {
+                    if (item.IsDeletionMarked)
+                    {
+                        DomainValidationResult deletionResult = linked.ApplyImport(
+                            item.ExternalRefKey,
+                            item.Code,
+                            item.Name,
+                            item.Symbol,
+                            isDeletionMarked: true,
+                            item.ImportedAtUtc);
+                        if (!deletionResult.IsValid)
+                        {
+                            failed++;
+                            errors.Add(Error(item, ReferenceImportRecordErrorReasons.InvalidSourceRecord,
+                                ValidationMessage(deletionResult)));
+                            continue;
+                        }
+
+                        updated++;
+                        continue;
+                    }
+
                     if (byCode.TryGetValue(normalizedCode, out UnitOfMeasure? codeOwner) && codeOwner.Id != linked.Id)
                     {
                         skipped++;
@@ -167,6 +188,8 @@ public static class ImportUnitsOfMeasure
                 if (item.IsDeletionMarked)
                 {
                     skipped++;
+                    errors.Add(Error(item, ReferenceImportRecordErrorReasons.SourceRecordDeletionMarked,
+                        "The deletion-marked source unit of measure has no linked Myrmex record and was skipped."));
                     continue;
                 }
 

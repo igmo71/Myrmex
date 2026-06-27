@@ -51,9 +51,28 @@ internal sealed class UnitOfMeasure : AggregateRoot, IActivatable
             errors.Add(DomainValidationFailure.IncorrectState<UnitOfMeasure>(nameof(ExternalRefKey)));
         }
 
-        errors.AddRange(ValidateCreate(code, name, symbol).Errors);
-
         DomainValidationResult validationResult = DomainValidationResult.From(errors);
+        if (!validationResult.IsValid)
+        {
+            return validationResult;
+        }
+
+        if (isDeletionMarked)
+        {
+            ExternalRefKey ??= externalRefKey;
+            LastImportedAtUtc = importedAtUtc;
+            if (IsActive)
+            {
+                Deactivate();
+            }
+            else
+            {
+                Touch();
+            }
+            return DomainValidationResult.Valid;
+        }
+
+        validationResult = ValidateCreate(code, name, symbol);
         if (!validationResult.IsValid)
         {
             return validationResult;
@@ -64,15 +83,7 @@ internal sealed class UnitOfMeasure : AggregateRoot, IActivatable
         Name = DomainText.NormalizeRequiredText(name);
         Symbol = DomainText.NormalizeOptionalText(symbol);
         LastImportedAtUtc = importedAtUtc;
-
-        if (isDeletionMarked)
-        {
-            Deactivate();
-        }
-        else
-        {
-            Reactivate();
-        }
+        Reactivate();
 
         Touch();
         AddDomainEvent(new UnitOfMeasureDetailsUpdatedDomainEvent(Id));

@@ -100,7 +100,7 @@
 
 ## Decision: Imported Identity, Lifecycle, and Field Ownership
 
-**Decision**: Add nullable `Guid ExternalRefKey` and nullable `DateTimeOffset LastImportedAtUtc` to all three aggregates. For folder-bearing sources, `IsFolder=true` is skipped as `SourceFolder` before upsert. A non-folder, non-deleted valid source record creates or updates by external identity and aligns imported fields plus active state; this reactivates a previously source-deactivated linked record. A deletion-marked linked record is deactivated, an unlinked deletion-marked record is skipped, and no record is physically deleted. Successful unchanged re-imports refresh `LastImportedAtUtc` and count as updated.
+**Decision**: Add nullable `Guid ExternalRefKey` and nullable `DateTimeOffset LastImportedAtUtc` to all three aggregates. For folder-bearing sources, `IsFolder=true` is skipped as `SourceFolder` before upsert. A non-folder, non-deleted valid source record creates or updates by external identity and aligns imported fields plus active state; this reactivates a previously source-deactivated linked record. A deletion-marked linked record is deactivated and refreshes `LastImportedAtUtc` without validating or applying source code/name/symbol/base-UoM fields. An unlinked deletion-marked record is skipped and reported as `SourceRecordDeletionMarked`, and no record is physically deleted. Successful unchanged re-imports refresh `LastImportedAtUtc` and count as updated.
 
 **Rationale**: One source is authoritative for fields it imports. Aligning active state makes deletion removal reversible and repeatable. Refreshing the timestamp records successful observation of the source.
 

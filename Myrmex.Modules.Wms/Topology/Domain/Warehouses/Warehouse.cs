@@ -99,9 +99,28 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
             errors.Add(DomainValidationFailure.IncorrectState<Warehouse>(nameof(ExternalRefKey)));
         }
 
-        errors.AddRange(ValidateCreate(code, name, Description).Errors);
-
         DomainValidationResult validationResult = DomainValidationResult.From(errors);
+        if (!validationResult.IsValid)
+        {
+            return validationResult;
+        }
+
+        if (isDeletionMarked)
+        {
+            ExternalRefKey ??= externalRefKey;
+            LastImportedAtUtc = importedAtUtc;
+            if (IsActive)
+            {
+                Deactivate();
+            }
+            else
+            {
+                Touch();
+            }
+            return DomainValidationResult.Valid;
+        }
+
+        validationResult = ValidateCreate(code, name, Description);
         if (!validationResult.IsValid)
         {
             return validationResult;
@@ -111,15 +130,7 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
         Code = DomainText.NormalizeCode(code);
         Name = DomainText.NormalizeRequiredText(name);
         LastImportedAtUtc = importedAtUtc;
-
-        if (isDeletionMarked)
-        {
-            Deactivate();
-        }
-        else
-        {
-            Reactivate();
-        }
+        Reactivate();
 
         Touch();
         AddDomainEvent(new WarehouseDetailsUpdatedDomainEvent(Id));

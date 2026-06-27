@@ -78,10 +78,10 @@ For each reference type, normalize and validate source values using existing WMS
 
 1. For warehouse/nomenclature source records, `IsFolder=true` is a `SourceFolder` skip before WMS upsert mapping. When the source supports `$filter=IsFolder eq false`, the source excludes these records instead.
 2. Empty `ExternalRefKey` is a record failure.
-3. Trim source `Code`. Warehouse alone uses `ExternalRefKey.ToString("N").ToUpperInvariant()` when source code is unavailable/empty. UoM and SKU empty codes fail validation.
-4. For SKU, validate nullable `BaseUnitOfMeasureExternalRefKey`: null/empty fails as `BaseUnitOfMeasureExternalRefKeyMissing`, no imported UoM match fails as `BaseUnitOfMeasureNotImported`, and an inactive match fails as `BaseUnitOfMeasureInactive`.
+3. For non-deletion-marked records, trim source `Code`. Warehouse alone uses `ExternalRefKey.ToString("N").ToUpperInvariant()` when source code is unavailable/empty. UoM and SKU empty codes fail validation. Linked deletion-marked records bypass code/detail validation and preserve existing values.
+4. For non-deletion-marked SKU records, validate nullable `BaseUnitOfMeasureExternalRefKey`: null/empty fails as `BaseUnitOfMeasureExternalRefKeyMissing`, no imported UoM match fails as `BaseUnitOfMeasureNotImported`, and an inactive match fails as `BaseUnitOfMeasureInactive`. Linked deletion-marked SKUs bypass base-UoM resolution and preserve the existing relationship.
 5. If a record with the same `ExternalRefKey` exists, that record is the update target.
-6. If no identity match exists and `DeletionMark=true`, skip without creating.
+6. If no identity match exists and `DeletionMark=true`, skip without creating and report `SourceRecordDeletionMarked`.
 7. If no identity match exists and normalized `Code` belongs to any local record, skip as `CodeAlreadyExistsWithoutExternalRefKey`; do not attach the local record.
 8. Otherwise create a new linked record through the existing domain factory and set import metadata.
 9. For an identity match, if the incoming normalized code belongs to another record, skip as a code conflict and leave the linked record unchanged.
@@ -98,10 +98,10 @@ The three current entity types all implement `IActivatable`. The generic `Deleti
 |---|---|---|---|
 | Any | `IsFolder=true` from warehouse/nomenclature without source filtering | No WMS item or entity mutation | Skipped (`SourceFolder`) |
 | No linked record | Valid, `DeletionMark=false`, unused code | Create active linked record | Created |
-| No linked record | `DeletionMark=true` | No record created | Skipped |
+| No linked record | `DeletionMark=true` | No record created | Skipped (`SourceRecordDeletionMarked`) |
 | No linked record | Valid, code already used locally | Local record unchanged | Skipped |
 | Linked active/inactive record | Valid, `DeletionMark=false`, no code conflict | Apply source fields, ensure active, refresh import time | Updated |
-| Linked active/inactive record | `DeletionMark=true`, inactivity supported | Ensure inactive, refresh import time | Updated |
+| Linked active/inactive record | `DeletionMark=true`, inactivity supported | Preserve source-owned details, bypass their validation, ensure inactive, refresh import time | Updated |
 | Linked record | Invalid values or code collision with another record | Record unchanged | Failed or Skipped according to stable reason |
 | Linked record | Inactivity unsupported | Record unchanged | Failed |
 | Any SKU state | Missing/empty, not-imported, or inactive `ЕдиницаИзмерения_Key` | SKU unchanged/not created; other records continue | Failed with stable base-UoM reason |
@@ -218,6 +218,7 @@ Stable record reasons include:
 
 - `InvalidSourceRecord`
 - `SourceFolder`
+- `SourceRecordDeletionMarked`
 - `CodeAlreadyExistsWithoutExternalRefKey`
 - `CodeAlreadyUsedByAnotherRecord`
 - `BaseUnitOfMeasureExternalRefKeyMissing`
@@ -225,7 +226,7 @@ Stable record reasons include:
 - `BaseUnitOfMeasureInactive`
 - `DeletionNotSupported`
 
-`SourceFolder` is produced by the OneC mapping layer before a neutral WMS item is created. Other reasons are produced by WMS validation/upsert. The orchestrator merges both sources into the public error list only after the corresponding source batch completes successfully; a later WMS batch failure discards that batch's pending folder skips along with all other uncommitted-batch counts.
+`SourceFolder` is produced by the OneC mapping layer before a neutral WMS item is created. `SourceRecordDeletionMarked` is produced by WMS when deletion intent has no linked record. Other reasons are produced by WMS validation/upsert. The orchestrator merges both sources into the public error list only after the corresponding source batch completes successfully; a later WMS batch failure discards that batch's pending folder skips along with all other uncommitted-batch counts.
 
 ## Public API Response Models
 
