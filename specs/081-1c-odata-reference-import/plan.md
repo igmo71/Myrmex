@@ -8,7 +8,7 @@
 
 ## Summary
 
-Add a manually triggered, synchronous, one-way 1C OData integration for connection testing and separate warehouse, unit-of-measure, and nomenclature/SKU imports. A new `src/Myrmex.Integrations/Myrmex.Integrations.csproj` project owns all `Myrmex.Integrations.OneC` transport concerns and maps 1C DTOs into public neutral WMS batch commands. WMS owns validation, source identity, conflict handling, lifecycle changes, atomic batch persistence, and idempotent upsert behavior.
+Add a manually triggered, synchronous, one-way 1C OData integration for connection testing and separate warehouse, unit-of-measure, and nomenclature/SKU imports. A new `Myrmex.Integrations/Myrmex.Integrations.csproj` project owns all `Myrmex.Integrations.OneC` transport concerns and maps 1C DTOs into public neutral WMS batch commands. WMS owns validation, source identity, conflict handling, lifecycle changes, atomic batch persistence, and idempotent upsert behavior.
 
 Imported `Warehouse`, `UnitOfMeasure`, and `StockKeepingUnit` records gain nullable `ExternalRefKey` and `LastImportedAtUtc` metadata plus filtered unique source-identity indexes. UoMs come from `Catalog_УпаковкиЕдиницыИзмерения`; each SKU carries its own `ЕдиницаИзмерения_Key`, which WMS resolves to an active imported UoM by `ExternalRefKey`. Nomenclature is read in stable `Ref_Key` order with `$select`, `$top`, and `$skip`. Each accepted WMS batch commits atomically; earlier batches remain committed after a later failure and only committed-batch counts are returned. Same-type imports use a non-waiting process-local gate, so the MVP assumes one `Myrmex.ApiService` instance and defers distributed locking.
 
@@ -63,7 +63,7 @@ specs/081-1c-odata-reference-import/
 
 ### Source Code (repository root)
 ```text
-src/Myrmex.Integrations/
+Myrmex.Integrations/
 ├── Myrmex.Integrations.csproj
 ├── OneC/
 │   ├── Configuration/OneCOptions.cs
@@ -130,7 +130,7 @@ Myrmex.Tests/
 Myrmex.slnx
 ```
 
-**Structure Decision**: Add exactly one integration adapter project at the required `src/Myrmex.Integrations` path. The adapter contains integration-owned endpoints but delegates every WMS mutation to public neutral WMS commands. `Myrmex.ApiService` references and registers the adapter; `Myrmex.WebApp` depends only on shared transport records. Existing WMS reference screens and inventory handlers stay in place.
+**Structure Decision**: Add exactly one integration adapter project at the required `Myrmex.Integrations` path. The adapter contains integration-owned endpoints but delegates every WMS mutation to public neutral WMS commands. `Myrmex.ApiService` references and registers the adapter; `Myrmex.WebApp` depends only on shared transport records. Existing WMS reference screens and inventory handlers stay in place.
 
 ## Architectural Design Notes
 

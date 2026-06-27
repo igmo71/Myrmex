@@ -10,7 +10,7 @@ This guide is for implementation review and developer-controlled validation. Pla
 - Data and transaction model: `specs/081-1c-odata-reference-import/data-model.md`
 - HTTP contract: `specs/081-1c-odata-reference-import/contracts/onec-integration.openapi.yaml`
 
-Confirm there are no `NEEDS CLARIFICATION` markers and no integration implementation outside `src/Myrmex.Integrations/Myrmex.Integrations.csproj` except registration, shared transport records, WMS-owned import behavior, WebApp UI/client, tests, and migration artifacts.
+Confirm there are no `NEEDS CLARIFICATION` markers and no integration implementation outside `Myrmex.Integrations/Myrmex.Integrations.csproj` except registration, shared transport records, WMS-owned import behavior, WebApp UI/client, tests, and migration artifacts.
 
 ## 2. Configuration Prerequisites
 

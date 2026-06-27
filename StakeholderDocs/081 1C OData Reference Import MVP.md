@@ -122,7 +122,7 @@ Expected outcomes:
 Create a separate integration project:
 
 ```text
-src/Myrmex.Integrations/Myrmex.Integrations.csproj
+Myrmex.Integrations/Myrmex.Integrations.csproj
 ```
 
 The project must contain integration adapters and transport-specific DTOs.

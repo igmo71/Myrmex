@@ -2,7 +2,7 @@
 
 ## Decision: Separate OneC Integration Adapter Project
 
-**Decision**: Create `src/Myrmex.Integrations/Myrmex.Integrations.csproj` targeting .NET 10. Put all integration code under `Myrmex.Integrations.OneC`. Reference `Myrmex.Modules.Wms`, `Myrmex.AppDispatching`, `Myrmex.AspNetCore`, `Myrmex.Core`, and `Myrmex.Shared` only where their public types are used. Add the project to `Myrmex.slnx`; reference it from `Myrmex.ApiService` and `Myrmex.Tests`.
+**Decision**: Create `Myrmex.Integrations/Myrmex.Integrations.csproj` targeting .NET 10. Put all integration code under `Myrmex.Integrations.OneC`. Reference `Myrmex.Modules.Wms`, `Myrmex.AppDispatching`, `Myrmex.AspNetCore`, `Myrmex.Core`, and `Myrmex.Shared` only where their public types are used. Add the project to `Myrmex.slnx`; reference it from `Myrmex.ApiService` and `Myrmex.Tests`.
 
 **Rationale**: This enforces the required one-way adapter dependency while leaving WMS independent of 1C and keeping the integration inside the modular monolith.
 

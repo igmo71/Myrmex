@@ -18,7 +18,7 @@
 
 **Purpose**: Establish the integration project and solution dependency direction without adding runtime behavior.
 
-- [X] T001 Create the .NET 10 integration adapter project with ASP.NET framework access, references to `Myrmex.Modules.Wms`, `Myrmex.AppDispatching`, `Myrmex.AspNetCore`, `Myrmex.Core`, and `Myrmex.Shared`, and test internals visibility in `src/Myrmex.Integrations/Myrmex.Integrations.csproj` and `src/Myrmex.Integrations/Properties/AssemblyInfo.cs`
+- [X] T001 Create the .NET 10 integration adapter project with ASP.NET framework access, references to `Myrmex.Modules.Wms`, `Myrmex.AppDispatching`, `Myrmex.AspNetCore`, `Myrmex.Core`, and `Myrmex.Shared`, and test internals visibility in `Myrmex.Integrations/Myrmex.Integrations.csproj` and `Myrmex.Integrations/Properties/AssemblyInfo.cs`
 - [X] T002 Add the integration project to the solution and one-way host/test references without adding a WMS-to-integration reference in `Myrmex.slnx`, `Myrmex.ApiService/Myrmex.ApiService.csproj`, and `Myrmex.Tests/Myrmex.Tests.csproj`
 
 ---
@@ -69,11 +69,11 @@
 
 ### Implementation for User Story 1
 
-- [X] T022 [P] [US1] Implement `OneCOptions` with secure connection settings, `Catalog_УпаковкиЕдиницыИзмерения` as the documented UoM entity-set value, `WarehouseCodeAvailable`, `UseFolderFilter`, batch limits, and timeout defaults—without any default SKU UoM option—in `src/Myrmex.Integrations/OneC/Configuration/OneCOptions.cs`
-- [X] T023 [P] [US1] Implement the internal OData `value` envelope and categorized safe transport failure types in `src/Myrmex.Integrations/OneC/Transport/OneCODataCollectionResponse.cs` and `src/Myrmex.Integrations/OneC/Transport/OneCTransportException.cs`
-- [X] T024 [US1] Implement the typed HTTP client foundation, secure credential header, per-request timeout/cancellation, envelope parsing, and required-entity-set connection probes in `src/Myrmex.Integrations/OneC/Transport/OneCODataClient.cs`
-- [X] T025 [US1] Register OneC options, typed HTTP client, `TimeProvider`, and integration services while keeping secrets out of repository configuration in `src/Myrmex.Integrations/OneC/OneCIntegrationModule.cs` and `Myrmex.ApiService/appsettings.json`
-- [X] T026 [US1] Implement the `/api/integrations/1c/connection/test` endpoint with existing actor checks and connection error-to-ProblemDetails mapping in `src/Myrmex.Integrations/OneC/Endpoints/OneCEndpoints.cs`
+- [X] T022 [P] [US1] Implement `OneCOptions` with secure connection settings, `Catalog_УпаковкиЕдиницыИзмерения` as the documented UoM entity-set value, `WarehouseCodeAvailable`, `UseFolderFilter`, batch limits, and timeout defaults—without any default SKU UoM option—in `Myrmex.Integrations/OneC/Configuration/OneCOptions.cs`
+- [X] T023 [P] [US1] Implement the internal OData `value` envelope and categorized safe transport failure types in `Myrmex.Integrations/OneC/Transport/OneCODataCollectionResponse.cs` and `Myrmex.Integrations/OneC/Transport/OneCTransportException.cs`
+- [X] T024 [US1] Implement the typed HTTP client foundation, secure credential header, per-request timeout/cancellation, envelope parsing, and required-entity-set connection probes in `Myrmex.Integrations/OneC/Transport/OneCODataClient.cs`
+- [X] T025 [US1] Register OneC options, typed HTTP client, `TimeProvider`, and integration services while keeping secrets out of repository configuration in `Myrmex.Integrations/OneC/OneCIntegrationModule.cs` and `Myrmex.ApiService/appsettings.json`
+- [X] T026 [US1] Implement the `/api/integrations/1c/connection/test` endpoint with existing actor checks and connection error-to-ProblemDetails mapping in `Myrmex.Integrations/OneC/Endpoints/OneCEndpoints.cs`
 - [X] T027 [US1] Register and map the OneC integration module without adding authentication/authorization baseline services in `Myrmex.ApiService/Program.cs`
 - [X] T028 [US1] Implement the typed WebApp connection-test call using shared contracts and existing `ApiResult<T>` HTTP helpers in `Myrmex.WebApp/Integrations/OneC/OneCIntegrationApiClient.cs`
 - [X] T029 [US1] Register `OneCIntegrationApiClient` with the existing API service-discovery base address in `Myrmex.WebApp/Program.cs`
@@ -100,13 +100,13 @@
 
 ### Implementation for User Story 2
 
-- [X] T037 [P] [US2] Implement the internal warehouse DTO with `Guid Ref_Key`, `DeletionMark`, `IsFolder`, optional `Code`, and `Description` in `src/Myrmex.Integrations/OneC/Transport/Catalog_Склады.cs`
-- [X] T038 [P] [US2] Implement the internal `Catalog_УпаковкиЕдиницыИзмерения` DTO with `Guid Ref_Key`, `DeletionMark`, `Code`, `Description`, `НаименованиеПолное`, and `МеждународноеСокращение` in `src/Myrmex.Integrations/OneC/Transport/Catalog_УпаковкиЕдиницыИзмерения.cs`
+- [X] T037 [P] [US2] Implement the internal warehouse DTO with `Guid Ref_Key`, `DeletionMark`, `IsFolder`, optional `Code`, and `Description` in `Myrmex.Integrations/OneC/Transport/Catalog_Склады.cs`
+- [X] T038 [P] [US2] Implement the internal `Catalog_УпаковкиЕдиницыИзмерения` DTO with `Guid Ref_Key`, `DeletionMark`, `Code`, `Description`, `НаименованиеПолное`, and `МеждународноеСокращение` in `Myrmex.Integrations/OneC/Transport/Catalog_УпаковкиЕдиницыИзмерения.cs`
 - [X] T039 [P] [US2] Implement neutral warehouse import items and a WMS-owned batch handler with identity/code preloads, validation, lifecycle alignment, explicit transaction, one save/event-dispatch unit, and committed results in `Myrmex.Modules.Wms/Topology/Features/Imports/ImportWarehouses.cs`
 - [X] T040 [P] [US2] Implement neutral UoM import items and a WMS-owned batch handler with identity/code preloads, validation, lifecycle alignment, explicit transaction, one save/event-dispatch unit, and committed results in `Myrmex.Modules.Wms/Catalog/Features/Imports/ImportUnitsOfMeasure.cs`
-- [X] T041 [US2] Implement separate warehouse/UoM source reads with exact `$select` fields, optional folder filter, optional warehouse `Code`, deterministic ordering, and typed DTO parsing in `src/Myrmex.Integrations/OneC/Transport/OneCODataClient.cs`
-- [X] T042 [US2] Implement and register warehouse/UoM source-to-neutral mapping, folder-only batch completion, WMS dispatch, committed-count aggregation, and the 50-error cap in `src/Myrmex.Integrations/OneC/Imports/OneCImportService.cs` and `src/Myrmex.Integrations/OneC/OneCIntegrationModule.cs`
-- [X] T043 [US2] Add synchronous warehouse and UoM import endpoints under `/api/integrations/1c` with actor checks and complete/incomplete result mapping in `src/Myrmex.Integrations/OneC/Endpoints/OneCEndpoints.cs`
+- [X] T041 [US2] Implement separate warehouse/UoM source reads with exact `$select` fields, optional folder filter, optional warehouse `Code`, deterministic ordering, and typed DTO parsing in `Myrmex.Integrations/OneC/Transport/OneCODataClient.cs`
+- [X] T042 [US2] Implement and register warehouse/UoM source-to-neutral mapping, folder-only batch completion, WMS dispatch, committed-count aggregation, and the 50-error cap in `Myrmex.Integrations/OneC/Imports/OneCImportService.cs` and `Myrmex.Integrations/OneC/OneCIntegrationModule.cs`
+- [X] T043 [US2] Add synchronous warehouse and UoM import endpoints under `/api/integrations/1c` with actor checks and complete/incomplete result mapping in `Myrmex.Integrations/OneC/Endpoints/OneCEndpoints.cs`
 - [X] T044 [US2] Add warehouse and UoM import methods to the typed WebApp client in `Myrmex.WebApp/Integrations/OneC/OneCIntegrationApiClient.cs`
 - [X] T045 [US2] Add separate Russian warehouse/UoM actions, in-progress state, latest summary, operation error, counts, and capped record-error rendering in `Myrmex.WebApp/Components/Pages/Integrations/OneC/Index.razor`
 
@@ -130,11 +130,11 @@
 
 ### Implementation for User Story 3
 
-- [X] T051 [P] [US3] Implement the internal nomenclature DTO with `Guid Ref_Key`, `DeletionMark`, `IsFolder`, `Code`, `Description`, `НаименованиеПолное`, transport-only `Артикул`, and nullable `Guid ЕдиницаИзмерения_Key` in `src/Myrmex.Integrations/OneC/Transport/Catalog_Номенклатура.cs`
+- [X] T051 [P] [US3] Implement the internal nomenclature DTO with `Guid Ref_Key`, `DeletionMark`, `IsFolder`, `Code`, `Description`, `НаименованиеПолное`, transport-only `Артикул`, and nullable `Guid ЕдиницаИзмерения_Key` in `Myrmex.Integrations/OneC/Transport/Catalog_Номенклатура.cs`
 - [X] T052 [US3] Implement neutral SKU import items with nullable `BaseUnitOfMeasureExternalRefKey` and a WMS handler that resolves active imported UoMs only by `ExternalRefKey`, never by code, skips/reports unlinked deletion-marked records as `SourceRecordDeletionMarked`, deactivates linked deletion-marked records without detail/base-UoM validation or updates, and preserves internal Myrmex IDs and atomic batch results in `Myrmex.Modules.Wms/Catalog/Features/Imports/ImportStockKeepingUnits.cs`
-- [X] T053 [US3] Implement deterministic nomenclature paging with exact `$select`, optional folder filter, `$orderby=Ref_Key`, `$skip`, `$top`, returned-count offset advancement, and final-page termination in `src/Myrmex.Integrations/OneC/Transport/OneCODataClient.cs`
-- [X] T054 [US3] Implement nomenclature folder handling, source-to-SKU-item mapping of `ЕдиницаИзмерения_Key`, paged WMS dispatch, committed-batch aggregation, incomplete operation errors, and failed-batch exclusion in `src/Myrmex.Integrations/OneC/Imports/OneCImportService.cs`
-- [X] T055 [US3] Add the synchronous SKU import endpoint under `/api/integrations/1c/skus/import` in `src/Myrmex.Integrations/OneC/Endpoints/OneCEndpoints.cs`
+- [X] T053 [US3] Implement deterministic nomenclature paging with exact `$select`, optional folder filter, `$orderby=Ref_Key`, `$skip`, `$top`, returned-count offset advancement, and final-page termination in `Myrmex.Integrations/OneC/Transport/OneCODataClient.cs`
+- [X] T054 [US3] Implement nomenclature folder handling, source-to-SKU-item mapping of `ЕдиницаИзмерения_Key`, paged WMS dispatch, committed-batch aggregation, incomplete operation errors, and failed-batch exclusion in `Myrmex.Integrations/OneC/Imports/OneCImportService.cs`
+- [X] T055 [US3] Add the synchronous SKU import endpoint under `/api/integrations/1c/skus/import` in `Myrmex.Integrations/OneC/Endpoints/OneCEndpoints.cs`
 - [X] T056 [US3] Add SKU import support to the typed WebApp client in `Myrmex.WebApp/Integrations/OneC/OneCIntegrationApiClient.cs`
 - [X] T057 [US3] Add the Russian nomenclature action and multi-batch complete/incomplete result display to `Myrmex.WebApp/Components/Pages/Integrations/OneC/Index.razor`
 
@@ -156,8 +156,8 @@
 
 ### Implementation for User Story 4
 
-- [ ] T061 [P] [US4] Implement and register the singleton three-key, non-waiting, process-local import gate with disposable/finally-safe release semantics in `src/Myrmex.Integrations/OneC/Imports/OneCImportGate.cs` and `src/Myrmex.Integrations/OneC/OneCIntegrationModule.cs`
-- [ ] T062 [US4] Apply the gate to all three import paths, preserve prior committed-batch counts on later failure, and return the stable already-running conflict without adding queues, polling, jobs, or distributed locking in `src/Myrmex.Integrations/OneC/Imports/OneCImportService.cs` and `src/Myrmex.Integrations/OneC/Endpoints/OneCEndpoints.cs`
+- [ ] T061 [P] [US4] Implement and register the singleton three-key, non-waiting, process-local import gate with disposable/finally-safe release semantics in `Myrmex.Integrations/OneC/Imports/OneCImportGate.cs` and `Myrmex.Integrations/OneC/OneCIntegrationModule.cs`
+- [ ] T062 [US4] Apply the gate to all three import paths, preserve prior committed-batch counts on later failure, and return the stable already-running conflict without adding queues, polling, jobs, or distributed locking in `Myrmex.Integrations/OneC/Imports/OneCImportService.cs` and `Myrmex.Integrations/OneC/Endpoints/OneCEndpoints.cs`
 - [ ] T063 [US4] Disable only the running action, preserve the latest completed result, and show already-running/incomplete feedback without persistent history in `Myrmex.WebApp/Components/Pages/Integrations/OneC/Index.razor`
 
 **Checkpoint**: All four user stories work together, and reruns remain safe under the documented single-API-instance assumption.
@@ -169,7 +169,7 @@
 **Purpose**: Complete operational diagnostics, scope checks, and developer-controlled handoff without executing prohibited commands.
 
 - [ ] T064 [P] Add tests proving credentials never appear in transport exception messages, operation errors, or structured log state in `Myrmex.Tests/Integrations/OneC/Client/OneCODataClientTests.cs` and `Myrmex.Tests/Integrations/OneC/Imports/OneCImportServiceTests.cs`
-- [ ] T065 Add structured connection/import completion, duration, reference type, counts, and failure-category logs without credentials or source payloads in `src/Myrmex.Integrations/OneC/Transport/OneCODataClient.cs` and `src/Myrmex.Integrations/OneC/Imports/OneCImportService.cs`
+- [ ] T065 Add structured connection/import completion, duration, reference type, counts, and failure-category logs without credentials or source payloads in `Myrmex.Integrations/OneC/Transport/OneCODataClient.cs` and `Myrmex.Integrations/OneC/Imports/OneCImportService.cs`
 - [ ] T066 [P] Verify public contracts match `specs/081-1c-odata-reference-import/contracts/onec-integration.openapi.yaml` and update only documented contract drift in `Myrmex.Shared/Integrations/OneC/` and `specs/081-1c-odata-reference-import/contracts/onec-integration.openapi.yaml`
 - [ ] T067 Review the implementation against source mapping, single-instance locking, and non-goals; record any approved validation-note corrections in `specs/081-1c-odata-reference-import/quickstart.md`
 - [ ] T068 Stop before EF migration generation/application and hand the developer the reviewed commands and expected `AddOneCExternalReferenceMetadata` artifacts documented in `specs/081-1c-odata-reference-import/quickstart.md`
