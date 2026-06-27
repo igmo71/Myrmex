@@ -1,7 +1,8 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Http.Json;
 using Myrmex.Shared.Integrations.OneC;
 using Myrmex.WebApp.Integrations.OneC;
+using System.Net.Http.Json;
 
 namespace Myrmex.Tests.Integrations.OneC.Web;
 
@@ -19,7 +20,8 @@ public sealed class OneCIntegrationApiClientTests
         {
             captured = request;
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = JsonContent.Create(expected) };
-        })) { BaseAddress = new Uri("https://api.example.test") };
+        }))
+        { BaseAddress = new Uri("https://api.example.test") };
         OneCIntegrationApiClient client = new(httpClient);
 
         var result = await client.TestConnectionAsync(TestContext.Current.CancellationToken);
@@ -60,7 +62,8 @@ public sealed class OneCIntegrationApiClientTests
         {
             await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
             return new HttpResponseMessage(HttpStatusCode.OK);
-        })) { BaseAddress = new Uri("https://api.example.test") };
+        }))
+        { BaseAddress = new Uri("https://api.example.test") };
         OneCIntegrationApiClient client = new(httpClient);
         using CancellationTokenSource cancellation = new();
         cancellation.Cancel();

@@ -1,10 +1,10 @@
+using Microsoft.Extensions.Options;
+using Myrmex.Integrations.OneC.Configuration;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.Extensions.Options;
-using Myrmex.Integrations.OneC.Configuration;
 
 namespace Myrmex.Integrations.OneC.Transport;
 
@@ -141,7 +141,7 @@ internal sealed class OneCODataClient : IOneCODataClient
                 "The 1С integration configuration is incomplete or invalid.");
         }
 
-        string normalized = baseUri!.AbsoluteUri.EndsWith('/', StringComparison.Ordinal)
+        string normalized = baseUri!.AbsoluteUri.EndsWith('/')
             ? baseUri.AbsoluteUri
             : baseUri.AbsoluteUri + "/";
         return new Uri(normalized, UriKind.Absolute);
