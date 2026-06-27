@@ -101,7 +101,7 @@ public sealed class ImportWarehousesHandlerTests
 
         ServiceResult<ReferenceImportBatchResult> result = await handler.HandleAsync(
             new ImportWarehouses.Command(
-                [new(externalRefKey, null, null, true, ImportedAtUtc)]),
+                [new(externalRefKey, null, null, true, deletionImportedAtUtc)]),
             TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
