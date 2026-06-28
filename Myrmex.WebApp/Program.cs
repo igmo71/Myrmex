@@ -1,12 +1,18 @@
 using MudBlazor.Services;
+using MudBlazor.Translations;
 using Myrmex.WebApp;
 using Myrmex.WebApp.Components;
 using Myrmex.WebApp.Integrations.OneC;
 using Myrmex.WebApp.Wms.Catalog;
 using Myrmex.WebApp.Wms.Inventory;
 using Myrmex.WebApp.Wms.Topology;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("ru-RU");
+CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("ru-RU");
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
@@ -49,6 +55,7 @@ builder.Services.AddHttpClient<OneCIntegrationApiClient>(client =>
 
 // Add MudBlazor services
 builder.Services.AddMudServices();
+builder.Services.AddMudTranslations();
 
 var app = builder.Build();
 
