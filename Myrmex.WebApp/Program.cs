@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Localization;
 using MudBlazor.Services;
 using MudBlazor.Translations;
 using Myrmex.WebApp;
@@ -10,9 +11,14 @@ using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("ru-RU");
 CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("ru-RU");
+
+CultureInfo[] supportedCultures =
+[
+    new("ru-RU"),
+    new("en-US")
+];
 
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
@@ -21,6 +27,14 @@ builder.AddRedisOutputCache("cache");
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    options.DefaultRequestCulture = new RequestCulture("ru-RU");
+    options.SupportedCultures = supportedCultures;
+    options.SupportedUICultures = supportedCultures;
+});
 
 builder.Services.AddHttpClient<WeatherApiClient>(client =>
 {
@@ -69,6 +83,8 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 
 app.UseHttpsRedirection();
+
+app.UseRequestLocalization();
 
 app.UseAntiforgery();
 

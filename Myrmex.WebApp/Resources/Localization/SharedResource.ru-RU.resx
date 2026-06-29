@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Shell.UnhandledError" xml:space="preserve"><value>Произошла непредвиденная ошибка.</value></data>
+  <data name="Shell.Reload" xml:space="preserve"><value>Перезагрузить</value></data>
+  <data name="Nav.Home" xml:space="preserve"><value>Главная</value></data>
+  <data name="Nav.Wms" xml:space="preserve"><value>WMS</value></data>
+  <data name="Nav.Topology" xml:space="preserve"><value>Топология</value></data>
+  <data name="Nav.Warehouses" xml:space="preserve"><value>Склады</value></data>
+  <data name="Nav.Zones" xml:space="preserve"><value>Зоны</value></data>
+  <data name="Nav.StorageLocations" xml:space="preserve"><value>Ячейки хранения</value></data>
+  <data name="Nav.Catalog" xml:space="preserve"><value>Справочники</value></data>
+  <data name="Nav.Skus" xml:space="preserve"><value>SKU</value></data>
+  <data name="Nav.UnitsOfMeasure" xml:space="preserve"><value>Единицы измерения</value></data>
+  <data name="Nav.Inventory" xml:space="preserve"><value>Запасы</value></data>
+  <data name="Nav.InventoryBalances" xml:space="preserve"><value>Остатки</value></data>
+  <data name="Nav.InventoryLedger" xml:space="preserve"><value>Журнал движений</value></data>
+  <data name="Nav.InventoryTransfers" xml:space="preserve"><value>Перемещения</value></data>
+  <data name="Nav.InventoryCounts" xml:space="preserve"><value>Инвентаризации</value></data>
+  <data name="Nav.Integrations" xml:space="preserve"><value>Интеграции</value></data>
+  <data name="Home.PageTitle" xml:space="preserve"><value>Myrmex</value></data>
+  <data name="Home.Heading" xml:space="preserve"><value>Myrmex</value></data>
+  <data name="Home.Subtitle" xml:space="preserve"><value>Рабочий прототип WMS-платформы.</value></data>
+  <data name="Home.About.Title" xml:space="preserve"><value>О проекте</value></data>
+  <data name="Home.About.Platform" xml:space="preserve"><value>Myrmex разрабатывается как модульная система управления складскими операциями. В текущей версии уже заложена основа для работы со складами, ячейками, SKU, единицами измерения, остатками и базовыми движениями товара.</value></data>
+  <data name="Home.About.Movements" xml:space="preserve"><value>Поддерживаются внутрискладские перемещения между ячейками, в том числе сценарии перемещения через промежуточную тележку и прямого перемещения без нее. Эти механизмы формируют основу для дальнейших операций приемки, размещения, отбора и контроля остатков.</value></data>
+  <data name="Home.About.OneC" xml:space="preserve"><value>Отдельное направление — интеграция с 1С. Справочники складов, единиц измерения и номенклатуры импортируются через OData с сохранением связи по внешнему ключу 1С. Внутренняя модель Myrmex при этом остается независимой от внешних идентификаторов.</value></data>
+  <data name="Home.ReferenceData.Title" xml:space="preserve"><value>Справочники</value></data>
+  <data name="Home.ReferenceData.Description" xml:space="preserve"><value>Склады, ячейки, единицы измерения и SKU используются как базовые данные для складских операций и учета.</value></data>
+  <data name="Home.Inventory.Title" xml:space="preserve"><value>Остатки</value></data>
+  <data name="Home.Inventory.Description" xml:space="preserve"><value>Остатки отражают текущее наличие товара по складам, ячейкам и SKU и служат основой для контроля доступного количества.</value></data>
+  <data name="Home.Movements.Title" xml:space="preserve"><value>Движения</value></data>
+  <data name="Home.Movements.Description" xml:space="preserve"><value>Базовые складские движения уже поддерживают перемещение товара, включая сценарии через тележку и прямое перемещение между ячейками.</value></data>
+  <data name="Home.OneC.Title" xml:space="preserve"><value>Интеграция с 1С</value></data>
+  <data name="Home.OneC.Description" xml:space="preserve"><value>Импорт справочных данных выполняется через OData с привязкой к внешнему ключу 1С и сохранением внутренней идентичности Myrmex.</value></data>
+  <data name="Home.Roadmap.Title" xml:space="preserve"><value>Ближайшее развитие</value></data>
+  <data name="Home.Roadmap.Description" xml:space="preserve"><value>Следующие этапы — развитие приемки, LPN, размещения, уточнение складских процессов и подготовка интерфейсов для оператора. Цель ближайших шагов — постепенно связать справочники, остатки и движения в полноценные рабочие сценарии WMS.</value></data>
+  <data name="OneC.PageTitle" xml:space="preserve"><value>Интеграция с 1С</value></data>
+  <data name="OneC.Heading" xml:space="preserve"><value>Интеграция с 1С</value></data>
+  <data name="OneC.Connection.Description" xml:space="preserve"><value>Проверка доступности публикации OData.</value></data>
+  <data name="OneC.Connection.Check" xml:space="preserve"><value>Проверить подключение</value></data>
+  <data name="OneC.Connection.Checking" xml:space="preserve"><value>Проверка...</value></data>
+  <data name="OneC.Connection.Ready" xml:space="preserve"><value>Подключение готово. Проверено: {0}.</value></data>
+  <data name="OneC.Connection.Error" xml:space="preserve"><value>Не удалось проверить подключение к 1С.</value></data>
+  <data name="OneC.Connection.ApiUnavailable" xml:space="preserve"><value>Не удалось связаться с API для проверки подключения к 1С.</value></data>
+  <data name="OneC.Import.Title" xml:space="preserve"><value>Импорт справочников</value></data>
+  <data name="OneC.Import.Warehouses.Action" xml:space="preserve"><value>Импортировать склады</value></data>
+  <data name="OneC.Import.Warehouses.InProgress" xml:space="preserve"><value>Импорт складов...</value></data>
+  <data name="OneC.Import.UnitsOfMeasure.Action" xml:space="preserve"><value>Импортировать единицы измерения</value></data>
+  <data name="OneC.Import.UnitsOfMeasure.InProgress" xml:space="preserve"><value>Импорт единиц измерения...</value></data>
+  <data name="OneC.Import.Skus.Action" xml:space="preserve"><value>Импортировать номенклатуру</value></data>
+  <data name="OneC.Import.Skus.InProgress" xml:space="preserve"><value>Импорт номенклатуры...</value></data>
+  <data name="OneC.Import.Complete" xml:space="preserve"><value>Импорт завершён.</value></data>
+  <data name="OneC.Import.Incomplete" xml:space="preserve"><value>Импорт завершён не полностью.</value></data>
+  <data name="OneC.Import.ReferenceType" xml:space="preserve"><value>Тип</value></data>
+  <data name="OneC.Import.RecordErrors.Title" xml:space="preserve"><value>Ошибки и пропуски (не более 50)</value></data>
+  <data name="OneC.Import.AlreadyInProgress" xml:space="preserve"><value>Импорт этого справочника уже выполняется.</value></data>
+  <data name="OneC.Import.Error" xml:space="preserve"><value>Не удалось выполнить импорт из 1С.</value></data>
+  <data name="OneC.Import.ApiUnavailable" xml:space="preserve"><value>Не удалось связаться с API для импорта из 1С.</value></data>
+  <data name="ReferenceType.Warehouses" xml:space="preserve"><value>Склады</value></data>
+  <data name="ReferenceType.UnitsOfMeasure" xml:space="preserve"><value>Единицы измерения</value></data>
+  <data name="ReferenceType.Skus" xml:space="preserve"><value>Номенклатура / SKU</value></data>
+  <data name="Common.Loading" xml:space="preserve"><value>Загрузка...</value></data>
+  <data name="Common.Error" xml:space="preserve"><value>Ошибка</value></data>
+  <data name="Common.Processed" xml:space="preserve"><value>Обработано</value></data>
+  <data name="Common.Created" xml:space="preserve"><value>Создано</value></data>
+  <data name="Common.Updated" xml:space="preserve"><value>Обновлено</value></data>
+  <data name="Common.Skipped" xml:space="preserve"><value>Пропущено</value></data>
+  <data name="Common.Failed" xml:space="preserve"><value>Ошибок</value></data>
+  <data name="Common.Import" xml:space="preserve"><value>Импорт</value></data>
+  <data name="Common.Code" xml:space="preserve"><value>Код</value></data>
+  <data name="Common.Reason" xml:space="preserve"><value>Причина</value></data>
+  <data name="Common.Message" xml:space="preserve"><value>Сообщение</value></data>
+</root>

@@ -3,25 +3,26 @@
 @using Myrmex.Shared.Integrations.OneC
 @using Myrmex.WebApp.Integrations.OneC
 @inject OneCIntegrationApiClient ApiClient
+@inject IStringLocalizer<SharedResource> Localizer
 
-<PageTitle>Интеграция с 1С</PageTitle>
+<PageTitle>@Localizer["OneC.PageTitle"]</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
-    <MudText Typo="Typo.h4" GutterBottom="true">Интеграция с 1С</MudText>
+    <MudText Typo="Typo.h4" GutterBottom="true">@Localizer["OneC.Heading"]</MudText>
     <MudText Class="mb-4">
-        Проверка доступности публикации OData.
+        @Localizer["OneC.Connection.Description"]
     </MudText>
     <MudStack Row="true" Spacing="2">
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    Disabled="@_isChecking"
                    OnClick="TestConnectionAsync">
-            @(_isChecking ? "Проверка..." : "Проверить подключение")
+            @(Localizer[_isChecking ? "OneC.Connection.Checking" : "OneC.Connection.Check"])
         </MudButton>
         @if (_response is not null)
         {
             <MudAlert Severity="Severity.Success" Class="mt-4">
-                Подключение готово. Проверено: @_response.CheckedAtUtc.ToLocalTime().ToString("g").
+                @Localizer["OneC.Connection.Ready", _response.CheckedAtUtc.ToLocalTime().ToString("g")]
             </MudAlert>
         }
         else if (!string.IsNullOrWhiteSpace(_errorMessage))
@@ -30,7 +31,7 @@
         }
     </MudStack>
     <MudDivider Class="my-6" />
-    <MudText Typo="Typo.h5" GutterBottom="true">Импорт справочников</MudText>
+    <MudText Typo="Typo.h5" GutterBottom="true">@Localizer["OneC.Import.Title"]</MudText>
     <MudStack Row="true" Spacing="2">
         <MudStack Row="false" Spacing="2">
             <MudButton Variant="Variant.Filled"
@@ -38,19 +39,19 @@
                        Disabled="@IsWarehouseImporting"
                        OnClick="ImportWarehousesAsync"
                        Class="mt-3">
-                @(IsWarehouseImporting ? "Импорт складов..." : "Склады")
+                @(Localizer[IsWarehouseImporting ? "OneC.Import.Warehouses.InProgress" : "OneC.Import.Warehouses.Action"])
             </MudButton>
             <MudButton Variant="Variant.Filled"
                        Color="Color.Secondary"
                        Disabled="@IsUomImporting"
                        OnClick="ImportUnitsOfMeasureAsync">
-                @(IsUomImporting ? "Импорт единиц измерения..." : "Единицы измерения")
+                @(Localizer[IsUomImporting ? "OneC.Import.UnitsOfMeasure.InProgress" : "OneC.Import.UnitsOfMeasure.Action"])
             </MudButton>
             <MudButton Variant="Variant.Filled"
                        Color="Color.Secondary"
                        Disabled="@IsSkuImporting"
                        OnClick="ImportStockKeepingUnitsAsync">
-                @(IsSkuImporting ? "Импорт номенклатуры..." : "Номенклатура")
+                @(Localizer[IsSkuImporting ? "OneC.Import.Skus.InProgress" : "OneC.Import.Skus.Action"])
                 @if (IsSkuImporting)
                 {
                     <MudProgressCircular Color="Color.Default" Size="Size.Small" Indeterminate="true" Class="ml-3" />
@@ -65,14 +66,16 @@
             @if (_importResponse is not null)
             {
                 <MudAlert Severity="@(_importResponse.IsComplete ? Severity.Success : Severity.Warning)" Class="mt-3">
-                    @(_importResponse.IsComplete ? "Импорт завершён." : "Импорт завершён не полностью.")
+                    @(Localizer[_importResponse.IsComplete ? "OneC.Import.Complete" : "OneC.Import.Incomplete"])
                 </MudAlert>
                 <MudPaper Class="pa-2 mt-2" Elevation="1">
-                    <MudText><b>Тип:</b> @ReferenceTypeLabel(_importResponse.ReferenceType)</MudText>
+                    <MudText><b>@Localizer["OneC.Import.ReferenceType"]:</b> @ReferenceTypeLabel(_importResponse.ReferenceType)</MudText>
                     <MudText>
-                        Обработано: @_importResponse.Processed; создано: @_importResponse.Created;
-                        обновлено: @_importResponse.Updated; пропущено: @_importResponse.Skipped;
-                        ошибок: @_importResponse.Failed.
+                        @Localizer["Common.Processed"]: @_importResponse.Processed;
+                        @Localizer["Common.Created"]: @_importResponse.Created;
+                        @Localizer["Common.Updated"]: @_importResponse.Updated;
+                        @Localizer["Common.Skipped"]: @_importResponse.Skipped;
+                        @Localizer["Common.Failed"]: @_importResponse.Failed.
                     </MudText>
                     @if (_importResponse.OperationError is not null)
                     {
@@ -82,10 +85,14 @@
                     }
                     @if (_importResponse.Errors.Count > 0)
                     {
-                        <MudText Typo="Typo.h6" Class="mt-4">Ошибки и пропуски (не более 50)</MudText>
+                        <MudText Typo="Typo.h6" Class="mt-4">@Localizer["OneC.Import.RecordErrors.Title"]</MudText>
                         <table class="mud-table-root mt-2">
                             <thead>
-                                <tr><th>Код</th><th>Причина</th><th>Сообщение</th></tr>
+                                <tr>
+                                    <th>@Localizer["Common.Code"]</th>
+                                    <th>@Localizer["Common.Reason"]</th>
+                                    <th>@Localizer["Common.Message"]</th>
+                                </tr>
                             </thead>
                             <tbody>
                                 @foreach (OneCImportRecordError error in _importResponse.Errors)
@@ -136,12 +143,12 @@
             }
             else
             {
-                _errorMessage = result.Error?.Message ?? "Не удалось проверить подключение к 1С.";
+                _errorMessage = result.Error?.Message ?? Localizer["OneC.Connection.Error"];
             }
         }
         catch (Exception)
         {
-            _errorMessage = "Не удалось связаться с API для проверки подключения к 1С.";
+            _errorMessage = Localizer["OneC.Connection.ApiUnavailable"];
         }
         finally
         {
@@ -218,13 +225,13 @@
             else
             {
                 _importErrorMessage = IsAlreadyInProgress(result.Error)
-                    ? "Импорт этого справочника уже выполняется."
-                    : result.Error?.Message ?? "Не удалось выполнить импорт из 1С.";
+                    ? Localizer["OneC.Import.AlreadyInProgress"]
+                    : result.Error?.Message ?? Localizer["OneC.Import.Error"];
             }
         }
         catch (Exception)
         {
-            _importErrorMessage = "Не удалось связаться с API для импорта из 1С.";
+            _importErrorMessage = Localizer["OneC.Import.ApiUnavailable"];
         }
     }
 
@@ -233,11 +240,11 @@
         error.Extensions.TryGetValue("code", out string? code) &&
         string.Equals(code, "OneCImport.AlreadyInProgress", StringComparison.Ordinal);
 
-    private static string ReferenceTypeLabel(string referenceType) => referenceType switch
+    private string ReferenceTypeLabel(string referenceType) => referenceType switch
     {
-        "warehouses" => "Склады",
-        "uoms" => "Единицы измерения",
-        "skus" => "Номенклатура / SKU",
+        "warehouses" => Localizer["ReferenceType.Warehouses"],
+        "uoms" => Localizer["ReferenceType.UnitsOfMeasure"],
+        "skus" => Localizer["ReferenceType.Skus"],
         _ => referenceType
     };
 }

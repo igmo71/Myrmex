@@ -1,75 +1,77 @@
-﻿<MudNavMenu>
+@inject IStringLocalizer<SharedResource> Localizer
+
+<MudNavMenu>
 	<MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">
-		Home
+		@Localizer["Nav.Home"]
 	</MudNavLink>	
 
-	<MudNavGroup Title="WMS"
+	<MudNavGroup Title="@(Localizer["Nav.Wms"])"
 				 Icon="@Icons.Material.Filled.Warehouse"
 				 Expanded="true">
 
-		<MudNavGroup Title="Topology"
+		<MudNavGroup Title="@(Localizer["Nav.Topology"])"
 					 Icon="@Icons.Material.Filled.AccountTree"
 					 Expanded="true">
 
 			<MudNavLink Href="wms/topology/warehouses"
 						Match="NavLinkMatch.Prefix"
 						Icon="@Icons.Material.Filled.Warehouse">
-				Warehouses
+				@Localizer["Nav.Warehouses"]
 			</MudNavLink>
 
 			<MudNavLink Href="wms/topology/zones"
 						Match="NavLinkMatch.Prefix"
 						Icon="@Icons.Material.Filled.AccountTree">
-				Zones
+				@Localizer["Nav.Zones"]
 			</MudNavLink>
 
 			<MudNavLink Href="wms/topology/locations"
 						Match="NavLinkMatch.Prefix"
 						Icon="@Icons.Material.Filled.LocationOn">
-				Storage Locations
+				@Localizer["Nav.StorageLocations"]
 			</MudNavLink>
 		</MudNavGroup>
-		<MudNavGroup Title="Catalog"
+		<MudNavGroup Title="@(Localizer["Nav.Catalog"])"
 					 Icon="@Icons.Material.Filled.Category"
 					 Expanded="true">
 			<MudNavLink Href="wms/catalog/skus"
 						Match="NavLinkMatch.Prefix"
 						Icon="@Icons.Material.Filled.Inventory2">
-				SKUs
+				@Localizer["Nav.Skus"]
 			</MudNavLink>
 			<MudNavLink Href="wms/catalog/uoms"
 						Match="NavLinkMatch.Prefix"
 						Icon="@Icons.Material.Filled.Straighten">
-				UoMs
+				@Localizer["Nav.UnitsOfMeasure"]
 			</MudNavLink>
 		</MudNavGroup>
-		<MudNavGroup Title="Inventory"
+		<MudNavGroup Title="@(Localizer["Nav.Inventory"])"
 					 Icon="@Icons.Material.Filled.Inventory2"
 					 Expanded="true">
 			<MudNavLink Href="wms/inventory/balances"
 						Match="NavLinkMatch.Prefix"
 						Icon="@Icons.Material.Filled.Inventory2">
-				Inventory Balances
+				@Localizer["Nav.InventoryBalances"]
 			</MudNavLink>
 			<MudNavLink Href="wms/inventory/ledger"
 						Match="NavLinkMatch.Prefix"
 						Icon="@Icons.Material.Filled.History">
-				Inventory Ledger
+				@Localizer["Nav.InventoryLedger"]
 			</MudNavLink>
 			<MudNavLink Href="wms/inventory/transfers"
 						Match="NavLinkMatch.Prefix"
 						Icon="@Icons.Material.Filled.SyncAlt">
-				Inventory Transfers
+				@Localizer["Nav.InventoryTransfers"]
 			</MudNavLink>
 			<MudNavLink Href="wms/inventory/counts"
 						Match="NavLinkMatch.Prefix"
 						Icon="@Icons.Material.Filled.FactCheck">
-				Inventory Counts
+				@Localizer["Nav.InventoryCounts"]
 			</MudNavLink>
 		</MudNavGroup>
 	</MudNavGroup>
 
-	<MudNavGroup Title="Интеграции"
+	<MudNavGroup Title="@(Localizer["Nav.Integrations"])"
 				 Icon="@Icons.Material.Filled.Sync"
 				 Expanded="true">
 		<MudNavLink Href="integrations/1c"
