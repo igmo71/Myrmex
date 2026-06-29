@@ -1,21 +1,22 @@
 @page "/wms/inventory/counts"
+@inject IStringLocalizer<SharedResource> Localizer
 
-<PageTitle>Inventory Counts</PageTitle>
+<PageTitle>@Localizer["InventoryCount.PageTitle"]</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
     <MudStack Spacing="3">
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
             <div>
-                <MudText Typo="Typo.h5">Inventory Counts</MudText>
+                <MudText Typo="Typo.h5">@Localizer["InventoryCount.Heading"]</MudText>
                 <MudText Typo="Typo.body2" Color="Color.Secondary">
-                    Monitor active counts and review permanent count history.
+                    @Localizer["InventoryCount.Description"]
                 </MudText>
             </div>
             <MudButton Color="Color.Primary"
                        Variant="Variant.Filled"
                        StartIcon="@Icons.Material.Filled.Add"
                        OnClick="CreateAsync">
-                Create count
+                @Localizer["InventoryCount.Create"]
             </MudButton>
         </MudStack>
 

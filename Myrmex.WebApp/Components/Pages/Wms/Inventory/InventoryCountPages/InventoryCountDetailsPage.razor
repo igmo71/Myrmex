@@ -3,8 +3,9 @@
 @using Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryLedgerPages
 @inject WmsInventoryApiClient WmsInventoryApiClient
 @inject IDialogService DialogService
+@inject IStringLocalizer<SharedResource> Localizer
 
-<PageTitle>Inventory Count</PageTitle>
+<PageTitle>@Localizer["InventoryCount.DetailsPageTitle"]</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
     @if (_isLoading)
@@ -20,7 +21,7 @@
         <MudStack Spacing="3">
             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                 <div>
-                    <MudText Typo="Typo.h5">Inventory Count</MudText>
+                    <MudText Typo="Typo.h5">@Localizer["InventoryCount.DetailsHeading"]</MudText>
                     <MudText Typo="Typo.body2" Color="Color.Secondary">
                         @_count.Warehouse.Code - @_count.Warehouse.Name
                     </MudText>
@@ -33,19 +34,19 @@
                                    StartIcon="@Icons.Material.Filled.Add"
                                    OnClick="OpenAddLineAsync"
                                    Disabled="_isLifecycleSaving">
-                            Add line
+                            @Localizer["InventoryCount.AddLine"]
                         </MudButton>
                         <MudButton Color="Color.Success"
                                    Variant="Variant.Filled"
                                    OnClick="CompleteCountAsync"
                                    Disabled="@(!CanCompleteCount || _isLifecycleSaving)">
-                            Complete
+                            @Localizer["Common.Complete"]
                         </MudButton>
                         <MudButton Color="Color.Error"
                                    Variant="Variant.Outlined"
                                    OnClick="CancelCountAsync"
                                    Disabled="_isLifecycleSaving">
-                            Cancel
+                            @Localizer["Common.Cancel"]
                         </MudButton>
                     </MudStack>
                 }
@@ -59,38 +60,36 @@
             <MudPaper Class="pa-4" Outlined="true">
                 <MudGrid>
                     <MudItem xs="12" md="3">
-                        <MudText Typo="Typo.caption">Status</MudText>
+                        <MudText Typo="Typo.caption">@Localizer["Common.Status"]</MudText>
                         <MudText>@_count.Status</MudText>
                     </MudItem>
                     <MudItem xs="12" md="3">
-                        <MudText Typo="Typo.caption">Created</MudText>
+                        <MudText Typo="Typo.caption">@Localizer["Common.Created"]</MudText>
                         <MudText>@_count.CreatedAtUtc.ToLocalTime().ToString("g")</MudText>
                     </MudItem>
                     <MudItem xs="12" md="3">
-                        <MudText Typo="Typo.caption">Created by</MudText>
+                        <MudText Typo="Typo.caption">@Localizer["Common.CreatedBy"]</MudText>
                         <MudText>@_count.CreatedByActorId</MudText>
                     </MudItem>
                     <MudItem xs="12" md="3">
-                        <MudText Typo="Typo.caption">Reason</MudText>
+                        <MudText Typo="Typo.caption">@Localizer["Common.Reason"]</MudText>
                         <MudText>@(_count.Reason ?? "—")</MudText>
                     </MudItem>
                     @if (_count.CompletedAtUtc.HasValue)
                     {
                         <MudItem xs="12" md="6">
-                            <MudText Typo="Typo.caption">Completed</MudText>
+                            <MudText Typo="Typo.caption">@Localizer["Common.Completed"]</MudText>
                             <MudText>
-                                @_count.CompletedAtUtc.Value.ToLocalTime().ToString("g")
-                                by @_count.CompletedByActorId
+                                @Localizer["InventoryCount.TimestampByActor", _count.CompletedAtUtc.Value.ToLocalTime().ToString("g"), _count.CompletedByActorId]
                             </MudText>
                         </MudItem>
                     }
                     @if (_count.CancelledAtUtc.HasValue)
                     {
                         <MudItem xs="12" md="6">
-                            <MudText Typo="Typo.caption">Cancelled</MudText>
+                            <MudText Typo="Typo.caption">@Localizer["Common.Cancelled"]</MudText>
                             <MudText>
-                                @_count.CancelledAtUtc.Value.ToLocalTime().ToString("g")
-                                by @_count.CancelledByActorId
+                                @Localizer["InventoryCount.TimestampByActor", _count.CancelledAtUtc.Value.ToLocalTime().ToString("g"), _count.CancelledByActorId]
                             </MudText>
                         </MudItem>
                     }
@@ -99,15 +98,15 @@
 
             <MudTable Items="_count.Lines" Dense="true" Hover="true" Bordered="true">
                 <HeaderContent>
-                    <MudTh>SKU</MudTh>
-                    <MudTh>Location</MudTh>
-                    <MudTh>System quantity</MudTh>
-                    <MudTh>Counted quantity</MudTh>
-                    <MudTh>Variance</MudTh>
-                    <MudTh>Status</MudTh>
-                    <MudTh>Count evidence</MudTh>
-                    <MudTh>Apply evidence</MudTh>
-                    <MudTh>Actions</MudTh>
+                    <MudTh>@Localizer["Common.Sku"]</MudTh>
+                    <MudTh>@Localizer["Common.Location"]</MudTh>
+                    <MudTh>@Localizer["InventoryCount.SystemQuantity"]</MudTh>
+                    <MudTh>@Localizer["InventoryBalance.CountedQuantity"]</MudTh>
+                    <MudTh>@Localizer["InventoryCount.Variance"]</MudTh>
+                    <MudTh>@Localizer["Common.Status"]</MudTh>
+                    <MudTh>@Localizer["InventoryCount.CountEvidence"]</MudTh>
+                    <MudTh>@Localizer["InventoryCount.ApplyEvidence"]</MudTh>
+                    <MudTh>@Localizer["Common.Actions"]</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd>
@@ -149,19 +148,19 @@
                             <MudButton Size="Size.Small"
                                        Variant="Variant.Text"
                                        OnClick="@(() => OpenTransactionAsync(context.AppliedInventoryTransactionId.Value))">
-                                View adjustment
+                                @Localizer["InventoryCount.ViewAdjustment"]
                             </MudButton>
                         }
                         @if (context.SupersedesInventoryCountLineId.HasValue)
                         {
                             <MudText Typo="Typo.caption">
-                                Replaces @context.SupersedesInventoryCountLineId
+                                @Localizer["InventoryCount.Replaces", context.SupersedesInventoryCountLineId]
                             </MudText>
                         }
                         @if (context.ReplacementInventoryCountLineId.HasValue)
                         {
                             <MudText Typo="Typo.caption">
-                                Replaced by @context.ReplacementInventoryCountLineId
+                                @Localizer["InventoryCount.ReplacedBy", context.ReplacementInventoryCountLineId]
                             </MudText>
                         }
                     </MudTd>
@@ -173,8 +172,8 @@
                                        Variant="Variant.Text"
                                        OnClick="@(() => OpenRecordCountAsync(context))">
                                 @(context.Status == InventoryCountLineStatusDetails.Counted
-                                    ? "Edit count"
-                                    : "Enter count")
+                                    ? Localizer["InventoryCount.EditCount"]
+                                    : Localizer["InventoryCount.EnterCount"])
                             </MudButton>
                         }
                         @if (CanModifyCount &&
@@ -184,7 +183,7 @@
                                        Color="Color.Success"
                                        Variant="Variant.Text"
                                        OnClick="@(() => ApplyLineAsync(context))">
-                                Apply
+                                @Localizer["Common.Apply"]
                             </MudButton>
                         }
                         @if (CanModifyCount &&
@@ -194,7 +193,7 @@
                                        Color="Color.Warning"
                                        Variant="Variant.Text"
                                        OnClick="@(() => SupersedeLineAsync(context))">
-                                Supersede
+                                @Localizer["InventoryCount.Supersede"]
                             </MudButton>
                         }
                         @if (CanModifyCount &&
@@ -204,13 +203,13 @@
                                        Color="Color.Error"
                                        Variant="Variant.Text"
                                        OnClick="@(() => RemoveLineAsync(context))">
-                                Remove
+                                @Localizer["Common.Remove"]
                             </MudButton>
                         }
                     </MudTd>
                 </RowTemplate>
                 <NoRecordsContent>
-                    <MudText>No count lines have been added.</MudText>
+                    <MudText>@Localizer["InventoryCount.NoLines"]</MudText>
                 </NoRecordsContent>
             </MudTable>
         </MudStack>
@@ -276,7 +275,7 @@
             [nameof(AddInventoryCountLineDialog.Count)] = _count
         };
         IDialogReference dialog = await DialogService.ShowAsync<AddInventoryCountLineDialog>(
-            "Add count line",
+            Localizer["InventoryCount.AddLineTitle"],
             parameters,
             new DialogOptions { CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.Medium });
         DialogResult? result = await dialog.Result;
@@ -304,8 +303,8 @@
         };
         IDialogReference dialog = await DialogService.ShowAsync<RecordInventoryCountLineDialog>(
             countLine.Status == InventoryCountLineStatusDetails.Counted
-                ? "Edit physical count"
-                : "Enter physical count",
+                ? Localizer["InventoryCount.EditPhysicalCount"]
+                : Localizer["InventoryCount.EnterPhysicalCount"],
             parameters,
             new DialogOptions
             {
@@ -324,7 +323,7 @@
         {
             _count = updated;
             _errorMessage = null;
-            _actionMessage = "Physical count recorded.";
+            _actionMessage = Localizer["InventoryCount.PhysicalCountRecorded"];
             return;
         }
 
@@ -332,8 +331,7 @@
             outcome == RecordInventoryCountLineDialog.StaleResult)
         {
             await LoadAsync();
-            _actionMessage =
-                "The count line changed before it was saved. Details were refreshed.";
+            _actionMessage = Localizer["InventoryCount.LineChangedRefresh"];
         }
     }
 
@@ -345,10 +343,10 @@
         }
 
         bool? confirmed = await DialogService.ShowMessageBoxAsync(
-            "Remove count line",
-            $"Remove Pending line {line.Sku.Code} at {line.StorageLocation.Code}?",
-            yesText: "Remove",
-            cancelText: "Cancel");
+            Localizer["InventoryCount.RemoveLineTitle"],
+            Localizer["InventoryCount.RemoveLinePrompt", line.Sku.Code, line.StorageLocation.Code],
+            yesText: Localizer["Common.Remove"],
+            cancelText: Localizer["Common.Cancel"]);
 
         if (confirmed != true)
         {
@@ -363,7 +361,7 @@
 
         if (result.IsFailure || result.Value is null)
         {
-            _errorMessage = result.Error?.Message ?? "Removing the count line failed.";
+            _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.RemoveLineError"];
             return;
         }
 
@@ -379,12 +377,12 @@
         }
 
         bool? confirmed = await DialogService.ShowMessageBoxAsync(
-            "Apply count result",
+            Localizer["InventoryCount.ApplyResultTitle"],
             line.VarianceQuantity == 0
-                ? "Confirm this physical count with no inventory movement?"
-                : $"Apply variance {line.VarianceQuantity:+0.####;-0.####;0} and set inventory to {line.CountedQuantity:0.####}?",
-            yesText: "Apply",
-            cancelText: "Cancel");
+                ? Localizer["InventoryCount.ApplyZeroVariancePrompt"]
+                : Localizer["InventoryCount.ApplyVariancePrompt", $"{line.VarianceQuantity:+0.####;-0.####;0}", $"{line.CountedQuantity:0.####}"],
+            yesText: Localizer["Common.Apply"],
+            cancelText: Localizer["Common.Cancel"]);
         if (confirmed != true)
         {
             return;
@@ -399,25 +397,25 @@
         {
             await LoadAsync();
             _actionMessage = result.Error?.Status == 409
-                ? "Inventory or count state changed. Details were refreshed; supersede a Conflict line to continue."
+                ? Localizer["InventoryCount.ApplyConflictRefresh"]
                 : null;
             _errorMessage = result.Error?.Status == 409
                 ? null
-                : result.Error?.Message ?? "Applying the count result failed.";
+                : result.Error?.Message ?? Localizer["InventoryCount.ApplyError"];
             return;
         }
 
         if (result.Value is null)
         {
-            _errorMessage = "The operation completed without returning count details.";
+            _errorMessage = Localizer["InventoryCount.MissingResult"];
             return;
         }
 
         _count = result.Value;
         InventoryCountLineDetails applied = _count.Lines.Single(x => x.Id == line.Id);
         _actionMessage = applied.AppliedInventoryTransactionId.HasValue
-            ? $"Inventory adjusted to {applied.CountedQuantity:0.####}. Adjustment transaction {applied.AppliedInventoryTransactionId} was created."
-            : "Count confirmed with zero variance; no inventory transaction was created.";
+            ? Localizer["InventoryCount.InventoryAdjusted", $"{applied.CountedQuantity:0.####}", applied.AppliedInventoryTransactionId]
+            : Localizer["InventoryCount.ZeroVarianceConfirmed"];
         _errorMessage = null;
     }
 
@@ -429,10 +427,10 @@
         }
 
         bool? confirmed = await DialogService.ShowMessageBoxAsync(
-            "Supersede conflict",
-            "Keep this conflict as history and create a fresh Pending line from current inventory?",
-            yesText: "Supersede",
-            cancelText: "Cancel");
+            Localizer["InventoryCount.SupersedeTitle"],
+            Localizer["InventoryCount.SupersedePrompt"],
+            yesText: Localizer["InventoryCount.Supersede"],
+            cancelText: Localizer["Common.Cancel"]);
         if (confirmed != true)
         {
             return;
@@ -446,15 +444,14 @@
         if (result.IsFailure || result.Value is null)
         {
             await LoadAsync();
-            _errorMessage = result.Error?.Message ?? "Superseding the conflict failed.";
+            _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.SupersedeError"];
             return;
         }
 
         _count = result.Value;
         InventoryCountLineDetails replacement = _count.Lines.Single(
             x => x.SupersedesInventoryCountLineId == line.Id);
-        _actionMessage =
-            $"Conflict preserved and fresh Pending line created with system quantity {replacement.SystemQuantity:0.####}.";
+        _actionMessage = Localizer["InventoryCount.Superseded", $"{replacement.SystemQuantity:0.####}"];
         _errorMessage = null;
     }
 
@@ -469,7 +466,7 @@
                 [nameof(InventoryTransactionDetailsDialog.Transaction)] = transaction
             };
             await DialogService.ShowAsync<InventoryTransactionDetailsDialog>(
-                "Inventory transaction",
+                Localizer["InventoryCount.InventoryTransactionTitle"],
                 parameters,
                 new DialogOptions
                 {
@@ -492,10 +489,10 @@
         }
 
         bool? confirmed = await DialogService.ShowMessageBoxAsync(
-            "Complete inventory count",
-            "Complete this count? All current lines are Applied and the count will become read-only.",
-            yesText: "Complete",
-            cancelText: "Cancel");
+            Localizer["InventoryCount.CompleteTitle"],
+            Localizer["InventoryCount.CompletePrompt"],
+            yesText: Localizer["Common.Complete"],
+            cancelText: Localizer["Common.Cancel"]);
         if (confirmed != true)
         {
             return;
@@ -511,12 +508,12 @@
             if (result.IsFailure || result.Value is null)
             {
                 await LoadAsync();
-                _errorMessage = result.Error?.Message ?? "Completing the count failed.";
+                _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.CompleteError"];
                 return;
             }
 
             _count = result.Value;
-            _actionMessage = "Inventory count completed and is now read-only.";
+            _actionMessage = Localizer["InventoryCount.CompletedReadOnly"];
             _errorMessage = null;
         }
         finally
@@ -533,13 +530,13 @@
         }
 
         string message = HasAppliedAdjustments
-            ? "Cancel this count? Already Applied inventory adjustments remain effective. The count will become read-only."
-            : "Cancel this count? The count will become read-only.";
+            ? Localizer["InventoryCount.CancelAppliedPrompt"]
+            : Localizer["InventoryCount.CancelPrompt"];
         bool? confirmed = await DialogService.ShowMessageBoxAsync(
-            "Cancel inventory count",
+            Localizer["InventoryCount.CancelTitle"],
             message,
-            yesText: "Cancel count",
-            cancelText: "Keep open");
+            yesText: Localizer["InventoryCount.CancelCount"],
+            cancelText: Localizer["InventoryCount.KeepOpen"]);
         if (confirmed != true)
         {
             return;
@@ -555,14 +552,14 @@
             if (result.IsFailure || result.Value is null)
             {
                 await LoadAsync();
-                _errorMessage = result.Error?.Message ?? "Cancelling the count failed.";
+                _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.CancelError"];
                 return;
             }
 
             _count = result.Value;
             _actionMessage = HasAppliedAdjustments
-                ? "Inventory count cancelled. Previously Applied adjustments remain effective."
-                : "Inventory count cancelled.";
+                ? Localizer["InventoryCount.CancelledAppliedEffective"]
+                : Localizer["InventoryCount.Cancelled"];
             _errorMessage = null;
         }
         finally

@@ -1,10 +1,11 @@
 @using Myrmex.Shared.Wms.Inventory
 @using Myrmex.Shared.Wms.Topology
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudPaper Class="pa-4">
     <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
         <MudSelect T="Guid?"
-                   Label="Warehouse"
+                   Label="@Localizer["Common.Warehouse"]"
                    Variant="Variant.Outlined"
                    Margin="Margin.Dense"
                    Clearable="true"
@@ -21,7 +22,7 @@
             }
         </MudSelect>
         <MudSelect T="string"
-                   Label="Status"
+                   Label="@Localizer["Common.Status"]"
                    Variant="Variant.Outlined"
                    Margin="Margin.Dense"
                    Clearable="true"
@@ -29,12 +30,12 @@
                    ValueChanged="OnStatusChanged"
                    HelperText="&#160;"
                    Class="min-width-220">
-            <MudSelectItem T="string" Value="@InventoryCountStatusDetails.Draft">Draft</MudSelectItem>
-            <MudSelectItem T="string" Value="@InventoryCountStatusDetails.InProgress">In progress</MudSelectItem>
-            <MudSelectItem T="string" Value="@InventoryCountStatusDetails.Completed">Completed</MudSelectItem>
-            <MudSelectItem T="string" Value="@InventoryCountStatusDetails.Cancelled">Cancelled</MudSelectItem>
+            <MudSelectItem T="string" Value="@InventoryCountStatusDetails.Draft">@Localizer["InventoryCount.Draft"]</MudSelectItem>
+            <MudSelectItem T="string" Value="@InventoryCountStatusDetails.InProgress">@Localizer["Common.InProgress"]</MudSelectItem>
+            <MudSelectItem T="string" Value="@InventoryCountStatusDetails.Completed">@Localizer["Common.Completed"]</MudSelectItem>
+            <MudSelectItem T="string" Value="@InventoryCountStatusDetails.Cancelled">@Localizer["Common.Cancelled"]</MudSelectItem>
         </MudSelect>
-        <MudDatePicker Label="Created from"
+        <MudDatePicker Label="@Localizer["Common.CreatedFrom"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Date="CreatedFrom"
@@ -42,7 +43,7 @@
                        Clearable="true"
                        HelperText="&#160;"
                        Class="min-width-220" />
-        <MudDatePicker Label="Created to"
+        <MudDatePicker Label="@Localizer["Common.CreatedTo"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Date="CreatedTo"
@@ -53,7 +54,7 @@
         <MudButton Variant="Variant.Outlined"
                    StartIcon="@Icons.Material.Filled.Refresh"
                    OnClick="OnReloadRequested">
-            Refresh
+            @Localizer["Common.Refresh"]
         </MudButton>
     </MudStack>
 </MudPaper>

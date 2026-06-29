@@ -1,6 +1,7 @@
 @using MudBlazor
 @using Microsoft.AspNetCore.Components
 @using Myrmex.WebApp.Wms.Catalog
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDataGrid T="UnitOfMeasureDetails"
              Items="UnitsOfMeasure"
@@ -12,30 +13,30 @@
              SortMode="SortMode.Multiple"
              Filterable="false">
     <Columns>
-        <PropertyColumn Property="x => x.Code" Title="Code" />
-        <PropertyColumn Property="x => x.Name" Title="Name" />
+        <PropertyColumn Property="x => x.Code" Title="@Localizer["Common.Code"]" />
+        <PropertyColumn Property="x => x.Name" Title="@Localizer["Common.Name"]" />
 
-        <TemplateColumn Title="Symbol" Sortable="false" Filterable="false">
+        <TemplateColumn Title="@Localizer["UnitOfMeasure.Symbol"]" Sortable="false" Filterable="false">
             <CellTemplate>
                 @context.Item.Symbol
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Active"
+        <TemplateColumn Title="@Localizer["Common.Active"]"
                         Sortable="false"
                         Filterable="false"
                         CellClass="d-flex justify-center">
             <CellTemplate>
                 @if (context.Item.IsActive)
                 {
-                    <MudTooltip Text="Active">
+                    <MudTooltip Text="@Localizer["Common.Active"]">
                         <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
                                  Color="Color.Success" />
                     </MudTooltip>
                 }
                 else
                 {
-                    <MudTooltip Text="Inactive">
+                    <MudTooltip Text="@Localizer["Common.Inactive"]">
                         <MudIcon Icon="@Icons.Material.Filled.Cancel"
                                  Color="Color.Error" />
                     </MudTooltip>
@@ -43,19 +44,19 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Created UTC" Sortable="false" Filterable="false">
+        <TemplateColumn Title="@Localizer["Common.CreatedUtc"]" Sortable="false" Filterable="false">
             <CellTemplate>
                 @context.Item.CreatedAtUtc
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Updated UTC" Sortable="false" Filterable="false">
+        <TemplateColumn Title="@Localizer["Common.UpdatedUtc"]" Sortable="false" Filterable="false">
             <CellTemplate>
                 @context.Item.UpdatedAtUtc
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+        <TemplateColumn Title="@Localizer["Common.Actions"]" Sortable="false" Filterable="false">
             <CellTemplate>
                 <MudMenu Icon="@Icons.Material.Filled.MoreVert"
                          Size="Size.Small"
@@ -65,7 +66,7 @@
 
                     <MudMenuItem Icon="@Icons.Material.Filled.Edit"
                                  OnClick="@(() => EditRequested.InvokeAsync(context.Item))">
-                        Edit
+                        @Localizer["Common.Edit"]
                     </MudMenuItem>
 
                     @if (context.Item.IsActive)
@@ -73,7 +74,7 @@
                         <MudMenuItem Icon="@Icons.Material.Filled.Block"
                                      IconColor="Color.Error"
                                      OnClick="@(() => DeactivateRequested.InvokeAsync(context.Item))">
-                            Deactivate
+                            @Localizer["Common.Deactivate"]
                         </MudMenuItem>
                     }
                     else
@@ -81,7 +82,7 @@
                         <MudMenuItem Icon="@Icons.Material.Filled.Restore"
                                      IconColor="Color.Success"
                                      OnClick="@(() => ReactivateRequested.InvokeAsync(context.Item))">
-                            Reactivate
+                            @Localizer["Common.Reactivate"]
                         </MudMenuItem>
                     }
                 </MudMenu>

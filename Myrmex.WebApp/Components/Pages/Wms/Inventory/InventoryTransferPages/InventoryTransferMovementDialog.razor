@@ -1,6 +1,7 @@
 @using System.Globalization
 @using Myrmex.Shared.Wms.Inventory
 @using Myrmex.WebApp.Wms.Api
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDialog>
     <TitleContent>
@@ -11,7 +12,7 @@
         <MudForm @ref="_form">
             <MudStack Spacing="3">
                 <MudTextField T="string"
-                              Label="SKU"
+                              Label="@Localizer["Common.Sku"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Value="@SkuDisplay"
@@ -37,7 +38,7 @@
                 </MudGrid>
 
                 <MudNumericField T="decimal"
-                                 Label="Remaining quantity"
+                                 Label="@Localizer["InventoryTransfer.RemainingQuantity"]"
                                  Value="@RemainingQuantity"
                                  Disabled="true"
                                  Culture="@QuantityCulture"
@@ -50,7 +51,7 @@
                                  Min="@(0.0001m)"
                                  Max="@RemainingQuantity"
                                  Required="true"
-                                 RequiredError="Move quantity is required."
+                                 RequiredError="@Localizer["InventoryTransfer.MoveQuantityRequired"]"
                                  Culture="@QuantityCulture"
                                  Format="0.####"
                                  InputMode="@(InputMode.@decimal)"
@@ -69,7 +70,7 @@
     <DialogActions>
         <MudButton OnClick="Cancel"
                    Disabled="_isSaving">
-            Cancel
+            @Localizer["Common.Cancel"]
         </MudButton>
 
         <MudButton Color="Color.Primary"
@@ -103,7 +104,7 @@
     [Inject]
     private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = null!;
 
-    private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
+    private static CultureInfo QuantityCulture => CultureInfo.CurrentCulture;
 
     private MudForm? _form;
     private decimal _quantity;
@@ -126,9 +127,9 @@
 
     private string SkuDisplay => $"{Line.Sku.Code} - {Line.Sku.Name}";
 
-    private string FromLabel => IsPlace ? "Transit" : "Source";
+    private string FromLabel => IsPlace ? Localizer["InventoryTransfer.Transit"] : Localizer["Common.Source"];
 
-    private string ToLabel => IsPick ? "Transit" : "Destination";
+    private string ToLabel => IsPick ? Localizer["InventoryTransfer.Transit"] : Localizer["Common.Destination"];
 
     private string FromDisplay => IsPlace
         ? TransitDisplay
@@ -143,22 +144,22 @@
         : $"{Transfer.TransitStorageLocation.Code} - {Transfer.TransitStorageLocation.Name}";
 
     private string DialogTitle => IsPick
-        ? "Pick transfer line"
+        ? Localizer["InventoryTransfer.PickLineTitle"]
         : IsPlace
-            ? "Place transfer line"
-            : "Move transfer line";
+            ? Localizer["InventoryTransfer.PlaceLineTitle"]
+            : Localizer["InventoryTransfer.MoveLineTitle"];
 
     private string QuantityLabel => IsPick
-        ? "Pick quantity"
+        ? Localizer["InventoryTransfer.PickQuantity"]
         : IsPlace
-            ? "Place quantity"
-            : "Move quantity";
+            ? Localizer["InventoryTransfer.PlaceQuantity"]
+            : Localizer["InventoryTransfer.MoveQuantity"];
 
     private string ActionButtonText => IsPick
-        ? "Pick"
+        ? Localizer["InventoryTransfer.Pick"]
         : IsPlace
-            ? "Place"
-            : "Move";
+            ? Localizer["InventoryTransfer.Place"]
+            : Localizer["Common.Move"];
 
     protected override void OnInitialized()
     {
@@ -181,7 +182,7 @@
 
         if (_quantity <= 0 || _quantity > RemainingQuantity)
         {
-            _errorMessage = $"{ActionButtonText} quantity must be greater than zero and no more than the remaining quantity.";
+            _errorMessage = Localizer["InventoryTransfer.MovementQuantityRange", ActionButtonText];
             return;
         }
 
@@ -194,13 +195,13 @@
 
             if (result.IsFailure)
             {
-                _errorMessage = result.Error?.Message ?? "Transfer movement failed.";
+                _errorMessage = result.Error?.Message ?? Localizer["InventoryTransfer.MovementError"];
                 return;
             }
 
             if (result.Value is null)
             {
-                _errorMessage = "The operation completed without returning transfer details.";
+                _errorMessage = Localizer["InventoryTransfer.MissingResult"];
                 return;
             }
 

@@ -1,5 +1,6 @@
 @using System.Globalization
 @using Myrmex.Shared.Wms.Inventory
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDataGrid T="InventoryLedgerEntryDetails"
              @ref="_dataGrid"
@@ -11,7 +12,7 @@
              SortMode="SortMode.Single"
              Filterable="false">
     <Columns>
-        <TemplateColumn Title="Occurred UTC"
+        <TemplateColumn Title="@Localizer["InventoryLedger.OccurredUtc"]"
                         Tag="@InventoryLedgerSortBy.OccurredAtUtc"
                         SortBy="@(entry => entry.OccurredAtUtc)"
                         Sortable="true">
@@ -20,7 +21,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Type"
+        <TemplateColumn Title="@Localizer["Common.Type"]"
                         Tag="@InventoryLedgerSortBy.TransactionType"
                         SortBy="@(entry => entry.TransactionType)"
                         Sortable="true">
@@ -29,7 +30,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="SKU"
+        <TemplateColumn Title="@Localizer["Common.Sku"]"
                         Tag="@InventoryLedgerSortBy.SkuCode"
                         SortBy="@(entry => entry.Sku.Code)"
                         Sortable="true">
@@ -41,7 +42,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Warehouse"
+        <TemplateColumn Title="@Localizer["Common.Warehouse"]"
                         Tag="@InventoryLedgerSortBy.WarehouseCode"
                         SortBy="@(entry => entry.StorageLocation.Warehouse.Code)"
                         Sortable="true">
@@ -53,7 +54,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Storage location"
+        <TemplateColumn Title="@Localizer["Common.StorageLocation"]"
                         Tag="@InventoryLedgerSortBy.StorageLocationCode"
                         SortBy="@(entry => entry.StorageLocation.Code)"
                         Sortable="true">
@@ -65,7 +66,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Before"
+        <TemplateColumn Title="@Localizer["InventoryLedger.Before"]"
                         Tag="@InventoryLedgerSortBy.BalanceBefore"
                         SortBy="@(entry => entry.BalanceBefore)"
                         Sortable="true">
@@ -74,7 +75,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Delta"
+        <TemplateColumn Title="@Localizer["InventoryLedger.Delta"]"
                         Tag="@InventoryLedgerSortBy.QuantityDelta"
                         SortBy="@(entry => entry.QuantityDelta)"
                         Sortable="true">
@@ -83,7 +84,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="After"
+        <TemplateColumn Title="@Localizer["InventoryLedger.After"]"
                         Tag="@InventoryLedgerSortBy.BalanceAfter"
                         SortBy="@(entry => entry.BalanceAfter)"
                         Sortable="true">
@@ -92,7 +93,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Reason"
+        <TemplateColumn Title="@Localizer["Common.Reason"]"
                         Tag="@InventoryLedgerSortBy.Reason"
                         SortBy="@(entry => entry.Reason)"
                         Sortable="true">
@@ -103,20 +104,20 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Actions"
+        <TemplateColumn Title="@Localizer["Common.Actions"]"
                         Sortable="false">
             <CellTemplate>
                 <MudIconButton Icon="@Icons.Material.Filled.Visibility"
                                Size="Size.Small"
                                Color="Color.Primary"
-                               Title="View transaction details"
+                               Title="@Localizer["InventoryLedger.ViewTransactionDetails"]"
                                OnClick="@(() => DetailsRequested.InvokeAsync(context.Item))" />
             </CellTemplate>
         </TemplateColumn>
     </Columns>
 
     <NoRecordsContent>
-        <MudText>No inventory ledger entries match the current filters.</MudText>
+        <MudText>@Localizer["InventoryLedger.NoMatches"]</MudText>
     </NoRecordsContent>
 
     <PagerContent>
@@ -134,7 +135,7 @@
     private MudDataGrid<InventoryLedgerEntryDetails>? _dataGrid;
 
     private static readonly int[] PageSizeOptions = [10, 25, 50, 100];
-    private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
+    private static CultureInfo QuantityCulture => CultureInfo.CurrentCulture;
 
     private Task<GridData<InventoryLedgerEntryDetails>> LoadServerDataAsync(
         GridState<InventoryLedgerEntryDetails> state,

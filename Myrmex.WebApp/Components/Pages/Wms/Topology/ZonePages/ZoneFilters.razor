@@ -1,10 +1,11 @@
 ﻿@using MudBlazor
 @using Myrmex.WebApp.Wms.Topology
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudPaper Class="pa-4">
     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
         <MudSelect T="Guid?"
-                   Label="Warehouse"
+                   Label="@Localizer["Common.Warehouse"]"
                    Variant="Variant.Outlined"
                    Margin="Margin.Dense"
                    Clearable="true"
@@ -21,7 +22,7 @@
         </MudSelect>
 
         <MudTextField T="string"
-                      Label="Search"
+                      Label="@Localizer["Common.Search"]"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
                       Clearable="true"
@@ -32,7 +33,7 @@
                       Class="flex-grow-1" />
 
         <MudSwitch T="bool"
-                   Label="Include inactive"
+                   Label="@Localizer["Common.IncludeInactive"]"
                    Color="Color.Primary"
                    Value="IncludeInactive"
                    ValueChanged="OnIncludeInactiveChanged" />

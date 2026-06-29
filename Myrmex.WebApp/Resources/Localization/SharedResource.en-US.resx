@@ -74,4 +74,310 @@
   <data name="Common.Code" xml:space="preserve"><value>Code</value></data>
   <data name="Common.Reason" xml:space="preserve"><value>Reason</value></data>
   <data name="Common.Message" xml:space="preserve"><value>Message</value></data>
+  <data name="Common.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Common.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Common.Adjust" xml:space="preserve"><value>Adjust</value></data>
+  <data name="Common.All" xml:space="preserve"><value>All</value></data>
+  <data name="Common.Apply" xml:space="preserve"><value>Apply</value></data>
+  <data name="Common.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Common.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Common.Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="Common.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Common.CodeRequired" xml:space="preserve"><value>Code is required.</value></data>
+  <data name="Common.Comment" xml:space="preserve"><value>Comment</value></data>
+  <data name="Common.Complete" xml:space="preserve"><value>Complete</value></data>
+  <data name="Common.Completed" xml:space="preserve"><value>Completed</value></data>
+  <data name="Common.Create" xml:space="preserve"><value>Create</value></data>
+  <data name="Common.CreatedBy" xml:space="preserve"><value>Created by</value></data>
+  <data name="Common.CreatedFrom" xml:space="preserve"><value>Created from</value></data>
+  <data name="Common.CreatedStatus" xml:space="preserve"><value>Created</value></data>
+  <data name="Common.CreatedTo" xml:space="preserve"><value>Created to</value></data>
+  <data name="Common.CreatedUtc" xml:space="preserve"><value>Created UTC</value></data>
+  <data name="Common.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="Common.Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Common.Destination" xml:space="preserve"><value>Destination</value></data>
+  <data name="Common.Done" xml:space="preserve"><value>Done</value></data>
+  <data name="Common.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Common.From" xml:space="preserve"><value>From</value></data>
+  <data name="Common.History" xml:space="preserve"><value>History</value></data>
+  <data name="Common.Inactive" xml:space="preserve"><value>Inactive</value></data>
+  <data name="Common.IncludeInactive" xml:space="preserve"><value>Include inactive</value></data>
+  <data name="Common.InProgress" xml:space="preserve"><value>In progress</value></data>
+  <data name="Common.Location" xml:space="preserve"><value>Location</value></data>
+  <data name="Common.Move" xml:space="preserve"><value>Move</value></data>
+  <data name="Common.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Common.NameRequired" xml:space="preserve"><value>Name is required.</value></data>
+  <data name="Common.Quantity" xml:space="preserve"><value>Quantity</value></data>
+  <data name="Common.QuantityRequired" xml:space="preserve"><value>Quantity is required.</value></data>
+  <data name="Common.Reactivate" xml:space="preserve"><value>Reactivate</value></data>
+  <data name="Common.ReasonRequired" xml:space="preserve"><value>Reason is required.</value></data>
+  <data name="Common.Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Common.Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Common.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Common.Search" xml:space="preserve"><value>Search</value></data>
+  <data name="Common.SelectWarehouseFirst" xml:space="preserve"><value>Select a warehouse first.</value></data>
+  <data name="Common.SelectZoneFirst" xml:space="preserve"><value>Select a zone first.</value></data>
+  <data name="Common.Sku" xml:space="preserve"><value>SKU</value></data>
+  <data name="Common.SkuRequired" xml:space="preserve"><value>SKU is required.</value></data>
+  <data name="Common.Source" xml:space="preserve"><value>Source</value></data>
+  <data name="Common.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Common.StorageLocation" xml:space="preserve"><value>Storage location</value></data>
+  <data name="Common.StorageLocationRequired" xml:space="preserve"><value>Storage location is required.</value></data>
+  <data name="Common.To" xml:space="preserve"><value>To</value></data>
+  <data name="Common.Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Common.UpdatedUtc" xml:space="preserve"><value>Updated UTC</value></data>
+  <data name="Common.Warehouse" xml:space="preserve"><value>Warehouse</value></data>
+  <data name="Common.WarehouseRequired" xml:space="preserve"><value>Warehouse is required.</value></data>
+  <data name="Common.Zone" xml:space="preserve"><value>Zone</value></data>
+  <data name="InventoryBalance.AdjustConcurrencyConflict" xml:space="preserve"><value>Inventory balance changed. Close this dialog, review the refreshed balances, and adjust again if needed.</value></data>
+  <data name="InventoryBalance.Adjusted" xml:space="preserve"><value>Inventory balance adjusted.</value></data>
+  <data name="InventoryBalance.AdjustError" xml:space="preserve"><value>Inventory balance adjustment failed.</value></data>
+  <data name="InventoryBalance.AdjustTitle" xml:space="preserve"><value>Adjust inventory balance</value></data>
+  <data name="InventoryBalance.CountedQuantity" xml:space="preserve"><value>Counted quantity</value></data>
+  <data name="InventoryBalance.CountedQuantityNonNegative" xml:space="preserve"><value>Counted quantity must be greater than or equal to zero.</value></data>
+  <data name="InventoryBalance.CountedQuantityRequired" xml:space="preserve"><value>Counted quantity is required.</value></data>
+  <data name="InventoryBalance.Created" xml:space="preserve"><value>Inventory balance created.</value></data>
+  <data name="InventoryBalance.CreatedMayBeHidden" xml:space="preserve"><value>Inventory balance created. Active filters may hide the new balance.</value></data>
+  <data name="InventoryBalance.CurrentQuantity" xml:space="preserve"><value>Current quantity</value></data>
+  <data name="InventoryBalance.Description" xml:space="preserve"><value>Current SKU quantities by warehouse and storage location.</value></data>
+  <data name="InventoryBalance.DestinationLocation" xml:space="preserve"><value>Destination location</value></data>
+  <data name="InventoryBalance.DestinationLocationRequired" xml:space="preserve"><value>Destination location is required.</value></data>
+  <data name="InventoryBalance.Heading" xml:space="preserve"><value>Inventory Balances</value></data>
+  <data name="InventoryBalance.InitialCount" xml:space="preserve"><value>Initial count</value></data>
+  <data name="InventoryBalance.InitialCountConcurrencyConflict" xml:space="preserve"><value>Inventory balance changed. Close this dialog, review the refreshed balances, and start the initial count again if needed.</value></data>
+  <data name="InventoryBalance.InitialCountError" xml:space="preserve"><value>Initial count failed.</value></data>
+  <data name="InventoryBalance.MissingResult" xml:space="preserve"><value>The operation completed without returning inventory balance details.</value></data>
+  <data name="InventoryBalance.MoveConcurrencyConflict" xml:space="preserve"><value>Inventory changed while the move was being saved. Close this dialog, review the refreshed balances, and retry.</value></data>
+  <data name="InventoryBalance.Moved" xml:space="preserve"><value>Inventory moved.</value></data>
+  <data name="InventoryBalance.MovedQuantity" xml:space="preserve"><value>Moved quantity</value></data>
+  <data name="InventoryBalance.MoveError" xml:space="preserve"><value>Inventory move failed.</value></data>
+  <data name="InventoryBalance.MoveMissingResult" xml:space="preserve"><value>The operation completed without returning inventory move details.</value></data>
+  <data name="InventoryBalance.MoveQuantityRange" xml:space="preserve"><value>Quantity must be greater than zero and no greater than the current source quantity.</value></data>
+  <data name="InventoryBalance.MoveSucceeded" xml:space="preserve"><value>Inventory moved successfully.</value></data>
+  <data name="InventoryBalance.MoveTitle" xml:space="preserve"><value>Move inventory</value></data>
+  <data name="InventoryBalance.NoEligibleDestinations" xml:space="preserve"><value>No eligible destination locations found.</value></data>
+  <data name="InventoryBalance.NoMatches" xml:space="preserve"><value>No inventory balances match the current filters.</value></data>
+  <data name="InventoryBalance.PageTitle" xml:space="preserve"><value>WMS Inventory Balances</value></data>
+  <data name="InventoryBalance.QuantityToMove" xml:space="preserve"><value>Quantity to move</value></data>
+  <data name="InventoryBalance.SelectSkuForBaseUnit" xml:space="preserve"><value>Select a SKU to view the base UoM.</value></data>
+  <data name="InventoryBalance.SourceLocation" xml:space="preserve"><value>Source location</value></data>
+  <data name="InventoryCount.AddLine" xml:space="preserve"><value>Add line</value></data>
+  <data name="InventoryCount.AddLineError" xml:space="preserve"><value>Adding the count line failed.</value></data>
+  <data name="InventoryCount.AddLineTitle" xml:space="preserve"><value>Add count line</value></data>
+  <data name="InventoryCount.Applied" xml:space="preserve"><value>Applied</value></data>
+  <data name="InventoryCount.ApplyConflictRefresh" xml:space="preserve"><value>Inventory or count state changed. Details were refreshed; supersede a Conflict line to continue.</value></data>
+  <data name="InventoryCount.ApplyError" xml:space="preserve"><value>Applying the count result failed.</value></data>
+  <data name="InventoryCount.ApplyEvidence" xml:space="preserve"><value>Apply evidence</value></data>
+  <data name="InventoryCount.ApplyResultTitle" xml:space="preserve"><value>Apply count result</value></data>
+  <data name="InventoryCount.ApplyVariancePrompt" xml:space="preserve"><value>Apply variance {0} and set inventory to {1}?</value></data>
+  <data name="InventoryCount.ApplyZeroVariancePrompt" xml:space="preserve"><value>Confirm this physical count with no inventory movement?</value></data>
+  <data name="InventoryCount.CancelAppliedPrompt" xml:space="preserve"><value>Cancel this count? Already Applied inventory adjustments remain effective. The count will become read-only.</value></data>
+  <data name="InventoryCount.CancelCount" xml:space="preserve"><value>Cancel count</value></data>
+  <data name="InventoryCount.CancelError" xml:space="preserve"><value>Cancelling the count failed.</value></data>
+  <data name="InventoryCount.Cancelled" xml:space="preserve"><value>Inventory count cancelled.</value></data>
+  <data name="InventoryCount.CancelledAppliedEffective" xml:space="preserve"><value>Inventory count cancelled. Previously Applied adjustments remain effective.</value></data>
+  <data name="InventoryCount.CancelPrompt" xml:space="preserve"><value>Cancel this count? The count will become read-only.</value></data>
+  <data name="InventoryCount.CancelTitle" xml:space="preserve"><value>Cancel inventory count</value></data>
+  <data name="InventoryCount.CompletedReadOnly" xml:space="preserve"><value>Inventory count completed and is now read-only.</value></data>
+  <data name="InventoryCount.CompleteError" xml:space="preserve"><value>Completing the count failed.</value></data>
+  <data name="InventoryCount.CompletePrompt" xml:space="preserve"><value>Complete this count? All current lines are Applied and the count will become read-only.</value></data>
+  <data name="InventoryCount.CompleteTitle" xml:space="preserve"><value>Complete inventory count</value></data>
+  <data name="InventoryCount.Conflict" xml:space="preserve"><value>Conflict</value></data>
+  <data name="InventoryCount.CountedQuantityNonNegative" xml:space="preserve"><value>Counted quantity must be non-negative.</value></data>
+  <data name="InventoryCount.CountEvidence" xml:space="preserve"><value>Count evidence</value></data>
+  <data name="InventoryCount.Create" xml:space="preserve"><value>Create count</value></data>
+  <data name="InventoryCount.CreateError" xml:space="preserve"><value>Inventory count creation failed.</value></data>
+  <data name="InventoryCount.CreateTitle" xml:space="preserve"><value>Create inventory count</value></data>
+  <data name="InventoryCount.CurrentLines" xml:space="preserve"><value>Current lines</value></data>
+  <data name="InventoryCount.Description" xml:space="preserve"><value>Monitor active counts and review permanent count history.</value></data>
+  <data name="InventoryCount.DetailsHeading" xml:space="preserve"><value>Inventory Count</value></data>
+  <data name="InventoryCount.DetailsPageTitle" xml:space="preserve"><value>Inventory Count</value></data>
+  <data name="InventoryCount.Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="InventoryCount.EditCount" xml:space="preserve"><value>Edit count</value></data>
+  <data name="InventoryCount.EditPhysicalCount" xml:space="preserve"><value>Edit physical count</value></data>
+  <data name="InventoryCount.EnterCount" xml:space="preserve"><value>Enter count</value></data>
+  <data name="InventoryCount.EnterPhysicalCount" xml:space="preserve"><value>Enter physical count</value></data>
+  <data name="InventoryCount.Heading" xml:space="preserve"><value>Inventory Counts</value></data>
+  <data name="InventoryCount.InventoryAdjusted" xml:space="preserve"><value>Inventory adjusted to {0}. Adjustment transaction {1} was created.</value></data>
+  <data name="InventoryCount.InventoryTransactionTitle" xml:space="preserve"><value>Inventory transaction</value></data>
+  <data name="InventoryCount.KeepOpen" xml:space="preserve"><value>Keep open</value></data>
+  <data name="InventoryCount.LineChangedRefresh" xml:space="preserve"><value>The count line changed before it was saved. Details were refreshed.</value></data>
+  <data name="InventoryCount.MissingResult" xml:space="preserve"><value>The operation completed without returning count details.</value></data>
+  <data name="InventoryCount.NoLines" xml:space="preserve"><value>No count lines have been added.</value></data>
+  <data name="InventoryCount.NoMatches" xml:space="preserve"><value>No inventory counts match the current filters.</value></data>
+  <data name="InventoryCount.Open" xml:space="preserve"><value>Open count</value></data>
+  <data name="InventoryCount.PageTitle" xml:space="preserve"><value>Inventory Counts</value></data>
+  <data name="InventoryCount.PhysicalCountRecorded" xml:space="preserve"><value>Physical count recorded.</value></data>
+  <data name="InventoryCount.ReasonOrDescription" xml:space="preserve"><value>Reason or description</value></data>
+  <data name="InventoryCount.RecordError" xml:space="preserve"><value>Recording the count failed.</value></data>
+  <data name="InventoryCount.RemoveLineError" xml:space="preserve"><value>Removing the count line failed.</value></data>
+  <data name="InventoryCount.RemoveLinePrompt" xml:space="preserve"><value>Remove Pending line {0} at {1}?</value></data>
+  <data name="InventoryCount.RemoveLineTitle" xml:space="preserve"><value>Remove count line</value></data>
+  <data name="InventoryCount.ReplacedBy" xml:space="preserve"><value>Replaced by {0}</value></data>
+  <data name="InventoryCount.Replaces" xml:space="preserve"><value>Replaces {0}</value></data>
+  <data name="InventoryCount.SaveCount" xml:space="preserve"><value>Save count</value></data>
+  <data name="InventoryCount.Supersede" xml:space="preserve"><value>Supersede</value></data>
+  <data name="InventoryCount.Superseded" xml:space="preserve"><value>Conflict preserved and fresh Pending line created with system quantity {0}.</value></data>
+  <data name="InventoryCount.SupersedeError" xml:space="preserve"><value>Superseding the conflict failed.</value></data>
+  <data name="InventoryCount.SupersedePrompt" xml:space="preserve"><value>Keep this conflict as history and create a fresh Pending line from current inventory?</value></data>
+  <data name="InventoryCount.SupersedeTitle" xml:space="preserve"><value>Supersede conflict</value></data>
+  <data name="InventoryCount.SystemQuantity" xml:space="preserve"><value>System quantity</value></data>
+  <data name="InventoryCount.TimestampByActor" xml:space="preserve"><value>{0} by {1}</value></data>
+  <data name="InventoryCount.Unresolved" xml:space="preserve"><value>Unresolved</value></data>
+  <data name="InventoryCount.Variance" xml:space="preserve"><value>Variance</value></data>
+  <data name="InventoryCount.View" xml:space="preserve"><value>View count</value></data>
+  <data name="InventoryCount.ViewAdjustment" xml:space="preserve"><value>View adjustment</value></data>
+  <data name="InventoryCount.ZeroVarianceConfirmed" xml:space="preserve"><value>Count confirmed with zero variance; no inventory transaction was created.</value></data>
+  <data name="InventoryLedger.Adjustment" xml:space="preserve"><value>Adjustment</value></data>
+  <data name="InventoryLedger.After" xml:space="preserve"><value>After</value></data>
+  <data name="InventoryLedger.Before" xml:space="preserve"><value>Before</value></data>
+  <data name="InventoryLedger.CorrectRouteFilters" xml:space="preserve"><value>Correct or clear the routed filter state to load Inventory Ledger history.</value></data>
+  <data name="InventoryLedger.Delta" xml:space="preserve"><value>Delta</value></data>
+  <data name="InventoryLedger.Description" xml:space="preserve"><value>Read-only inventory history by ledger entry.</value></data>
+  <data name="InventoryLedger.Heading" xml:space="preserve"><value>Inventory Ledger</value></data>
+  <data name="InventoryLedger.IncludesInactiveSkus" xml:space="preserve"><value>Includes inactive SKUs with history.</value></data>
+  <data name="InventoryLedger.IncludesInactiveWarehouses" xml:space="preserve"><value>Includes inactive warehouses with history.</value></data>
+  <data name="InventoryLedger.InvalidDateRange" xml:space="preserve"><value>Occurred from date must not be later than occurred to date.</value></data>
+  <data name="InventoryLedger.LoadingFilters" xml:space="preserve"><value>Loading inventory ledger filters.</value></data>
+  <data name="InventoryLedger.NoMatches" xml:space="preserve"><value>No inventory ledger entries match the current filters.</value></data>
+  <data name="InventoryLedger.NoTransactionEntries" xml:space="preserve"><value>No ledger entries are attached to this transaction.</value></data>
+  <data name="InventoryLedger.OccurredFrom" xml:space="preserve"><value>Occurred from</value></data>
+  <data name="InventoryLedger.OccurredFromHelper" xml:space="preserve"><value>Starts at 00:00 UTC.</value></data>
+  <data name="InventoryLedger.OccurredTo" xml:space="preserve"><value>Occurred to</value></data>
+  <data name="InventoryLedger.OccurredToHelper" xml:space="preserve"><value>Includes the selected day.</value></data>
+  <data name="InventoryLedger.OccurredUtc" xml:space="preserve"><value>Occurred UTC</value></data>
+  <data name="InventoryLedger.PageTitle" xml:space="preserve"><value>WMS Inventory Ledger</value></data>
+  <data name="InventoryLedger.RouteRestoreError" xml:space="preserve"><value>The routed ledger filters could not be restored: {0}</value></data>
+  <data name="InventoryLedger.RouteWarehouseMismatch" xml:space="preserve"><value>The routed warehouse and storage location do not match. Correct or clear the filters before loading ledger history.</value></data>
+  <data name="InventoryLedger.ScopedToWarehouse" xml:space="preserve"><value>Scoped to the selected warehouse.</value></data>
+  <data name="InventoryLedger.TransactionDetailsTitle" xml:space="preserve"><value>Inventory transaction details</value></data>
+  <data name="InventoryLedger.TransactionId" xml:space="preserve"><value>Transaction ID</value></data>
+  <data name="InventoryLedger.TransactionType" xml:space="preserve"><value>Transaction type</value></data>
+  <data name="InventoryLedger.TransactionTypeHelper" xml:space="preserve"><value>MVP ledger type.</value></data>
+  <data name="InventoryLedger.ViewTransactionDetails" xml:space="preserve"><value>View transaction details</value></data>
+  <data name="InventoryTransfer.Code" xml:space="preserve"><value>Transfer code</value></data>
+  <data name="InventoryTransfer.Created" xml:space="preserve"><value>Inventory transfer created.</value></data>
+  <data name="InventoryTransfer.CreateError" xml:space="preserve"><value>Inventory transfer creation failed.</value></data>
+  <data name="InventoryTransfer.CreateTitle" xml:space="preserve"><value>Create transfer</value></data>
+  <data name="InventoryTransfer.Description" xml:space="preserve"><value>Internal transfer documents.</value></data>
+  <data name="InventoryTransfer.DestinationLocation" xml:space="preserve"><value>Destination location</value></data>
+  <data name="InventoryTransfer.DestinationLocationRequired" xml:space="preserve"><value>Destination location is required.</value></data>
+  <data name="InventoryTransfer.Direct" xml:space="preserve"><value>Direct</value></data>
+  <data name="InventoryTransfer.Heading" xml:space="preserve"><value>Inventory Transfers</value></data>
+  <data name="InventoryTransfer.InternalTransitLocation" xml:space="preserve"><value>Internal transit location</value></data>
+  <data name="InventoryTransfer.InTransit" xml:space="preserve"><value>In transit</value></data>
+  <data name="InventoryTransfer.LineDestinationRequired" xml:space="preserve"><value>Line {0}: destination location is required.</value></data>
+  <data name="InventoryTransfer.LineLocationsMustDiffer" xml:space="preserve"><value>Line {0}: source and destination must be different.</value></data>
+  <data name="InventoryTransfer.LineNumber" xml:space="preserve"><value>Line {0}</value></data>
+  <data name="InventoryTransfer.LineQuantityPositive" xml:space="preserve"><value>Line {0}: requested quantity must be greater than zero.</value></data>
+  <data name="InventoryTransfer.LineRequired" xml:space="preserve"><value>At least one transfer line is required.</value></data>
+  <data name="InventoryTransfer.Lines" xml:space="preserve"><value>Lines</value></data>
+  <data name="InventoryTransfer.LineSkuRequired" xml:space="preserve"><value>Line {0}: SKU is required.</value></data>
+  <data name="InventoryTransfer.LineSourceRequired" xml:space="preserve"><value>Line {0}: source location is required.</value></data>
+  <data name="InventoryTransfer.Meaning" xml:space="preserve"><value>Meaning</value></data>
+  <data name="InventoryTransfer.MissingResult" xml:space="preserve"><value>The operation completed without returning transfer details.</value></data>
+  <data name="InventoryTransfer.Moved" xml:space="preserve"><value>Moved</value></data>
+  <data name="InventoryTransfer.MoveLineTitle" xml:space="preserve"><value>Move transfer line</value></data>
+  <data name="InventoryTransfer.MovementError" xml:space="preserve"><value>Transfer movement failed.</value></data>
+  <data name="InventoryTransfer.MovementHistory" xml:space="preserve"><value>Movement history</value></data>
+  <data name="InventoryTransfer.MovementQuantityRange" xml:space="preserve"><value>{0} quantity must be greater than zero and no more than the remaining quantity.</value></data>
+  <data name="InventoryTransfer.MoveQuantity" xml:space="preserve"><value>Move quantity</value></data>
+  <data name="InventoryTransfer.MoveQuantityRequired" xml:space="preserve"><value>Move quantity is required.</value></data>
+  <data name="InventoryTransfer.NoMatches" xml:space="preserve"><value>No transfers match the current filters.</value></data>
+  <data name="InventoryTransfer.NoMovements" xml:space="preserve"><value>No movements recorded.</value></data>
+  <data name="InventoryTransfer.Occurred" xml:space="preserve"><value>Occurred</value></data>
+  <data name="InventoryTransfer.Open" xml:space="preserve"><value>Open transfer</value></data>
+  <data name="InventoryTransfer.PageTitle" xml:space="preserve"><value>WMS Inventory Transfers</value></data>
+  <data name="InventoryTransfer.Pick" xml:space="preserve"><value>Pick</value></data>
+  <data name="InventoryTransfer.Picked" xml:space="preserve"><value>Picked</value></data>
+  <data name="InventoryTransfer.PickLineTitle" xml:space="preserve"><value>Pick transfer line</value></data>
+  <data name="InventoryTransfer.PickQuantity" xml:space="preserve"><value>Pick quantity</value></data>
+  <data name="InventoryTransfer.Place" xml:space="preserve"><value>Place</value></data>
+  <data name="InventoryTransfer.Placed" xml:space="preserve"><value>Placed</value></data>
+  <data name="InventoryTransfer.PlaceLineTitle" xml:space="preserve"><value>Place transfer line</value></data>
+  <data name="InventoryTransfer.PlaceQuantity" xml:space="preserve"><value>Place quantity</value></data>
+  <data name="InventoryTransfer.RemainingPick" xml:space="preserve"><value>Remaining pick</value></data>
+  <data name="InventoryTransfer.RemainingPlace" xml:space="preserve"><value>Remaining place</value></data>
+  <data name="InventoryTransfer.RemainingQuantity" xml:space="preserve"><value>Remaining quantity</value></data>
+  <data name="InventoryTransfer.Requested" xml:space="preserve"><value>Requested</value></data>
+  <data name="InventoryTransfer.RequestedQuantity" xml:space="preserve"><value>Requested quantity</value></data>
+  <data name="InventoryTransfer.RequestedQuantityRequired" xml:space="preserve"><value>Requested quantity is required.</value></data>
+  <data name="InventoryTransfer.SourceLocation" xml:space="preserve"><value>Source location</value></data>
+  <data name="InventoryTransfer.SourceLocationRequired" xml:space="preserve"><value>Source location is required.</value></data>
+  <data name="InventoryTransfer.Transaction" xml:space="preserve"><value>Transaction</value></data>
+  <data name="InventoryTransfer.Transfer" xml:space="preserve"><value>Transfer</value></data>
+  <data name="InventoryTransfer.Transit" xml:space="preserve"><value>Transit</value></data>
+  <data name="InventoryTransfer.View" xml:space="preserve"><value>View transfer</value></data>
+  <data name="Sku.BaseUnitOfMeasure" xml:space="preserve"><value>Base UoM</value></data>
+  <data name="Sku.BaseUnitOfMeasureRequired" xml:space="preserve"><value>Base UoM is required.</value></data>
+  <data name="Sku.Created" xml:space="preserve"><value>SKU created.</value></data>
+  <data name="Sku.CreateTitle" xml:space="preserve"><value>Create SKU</value></data>
+  <data name="Sku.Deactivated" xml:space="preserve"><value>SKU deactivated.</value></data>
+  <data name="Sku.DeactivateError" xml:space="preserve"><value>SKU deactivation failed.</value></data>
+  <data name="Sku.Description" xml:space="preserve"><value>WMS catalog SKU reference data.</value></data>
+  <data name="Sku.EditTitle" xml:space="preserve"><value>Edit SKU</value></data>
+  <data name="Sku.Heading" xml:space="preserve"><value>SKUs</value></data>
+  <data name="Sku.MissingResult" xml:space="preserve"><value>The operation completed without returning SKU details.</value></data>
+  <data name="Sku.NoneFound" xml:space="preserve"><value>No SKUs found.</value></data>
+  <data name="Sku.PageTitle" xml:space="preserve"><value>WMS SKUs</value></data>
+  <data name="Sku.Reactivated" xml:space="preserve"><value>SKU reactivated.</value></data>
+  <data name="Sku.ReactivateError" xml:space="preserve"><value>SKU reactivation failed.</value></data>
+  <data name="Sku.Updated" xml:space="preserve"><value>SKU updated.</value></data>
+  <data name="StorageLocation.Created" xml:space="preserve"><value>Storage location created.</value></data>
+  <data name="StorageLocation.CreateTitle" xml:space="preserve"><value>Create storage location</value></data>
+  <data name="StorageLocation.Deactivated" xml:space="preserve"><value>Storage location deactivated.</value></data>
+  <data name="StorageLocation.DeactivateError" xml:space="preserve"><value>Storage location deactivation failed.</value></data>
+  <data name="StorageLocation.Description" xml:space="preserve"><value>WMS warehouse storage locations.</value></data>
+  <data name="StorageLocation.EditTitle" xml:space="preserve"><value>Edit storage location</value></data>
+  <data name="StorageLocation.Heading" xml:space="preserve"><value>Storage Locations</value></data>
+  <data name="StorageLocation.MissingResult" xml:space="preserve"><value>The operation completed without returning storage location details.</value></data>
+  <data name="StorageLocation.NoneFound" xml:space="preserve"><value>No storage locations found.</value></data>
+  <data name="StorageLocation.NotPickable" xml:space="preserve"><value>Not pickable</value></data>
+  <data name="StorageLocation.PageTitle" xml:space="preserve"><value>WMS Storage Locations</value></data>
+  <data name="StorageLocation.Pickable" xml:space="preserve"><value>Pickable</value></data>
+  <data name="StorageLocation.Reactivated" xml:space="preserve"><value>Storage location reactivated.</value></data>
+  <data name="StorageLocation.ReactivateError" xml:space="preserve"><value>Storage location reactivation failed.</value></data>
+  <data name="StorageLocation.SelectWarehousePrompt" xml:space="preserve"><value>Select a warehouse to view storage locations.</value></data>
+  <data name="StorageLocation.StatusRequired" xml:space="preserve"><value>Storage location status is required.</value></data>
+  <data name="StorageLocation.TypeAndStatusRequired" xml:space="preserve"><value>Type and status are required.</value></data>
+  <data name="StorageLocation.TypeRequired" xml:space="preserve"><value>Storage location type is required.</value></data>
+  <data name="StorageLocation.Updated" xml:space="preserve"><value>Storage location updated.</value></data>
+  <data name="UnitOfMeasure.Created" xml:space="preserve"><value>UoM created.</value></data>
+  <data name="UnitOfMeasure.CreateTitle" xml:space="preserve"><value>Create UoM</value></data>
+  <data name="UnitOfMeasure.Deactivated" xml:space="preserve"><value>UoM deactivated.</value></data>
+  <data name="UnitOfMeasure.DeactivateError" xml:space="preserve"><value>UoM deactivation failed.</value></data>
+  <data name="UnitOfMeasure.Description" xml:space="preserve"><value>WMS catalog unit of measure reference data.</value></data>
+  <data name="UnitOfMeasure.EditTitle" xml:space="preserve"><value>Edit UoM</value></data>
+  <data name="UnitOfMeasure.Heading" xml:space="preserve"><value>UoMs</value></data>
+  <data name="UnitOfMeasure.MissingResult" xml:space="preserve"><value>The operation completed without returning UoM details.</value></data>
+  <data name="UnitOfMeasure.PageTitle" xml:space="preserve"><value>WMS UoMs</value></data>
+  <data name="UnitOfMeasure.Reactivated" xml:space="preserve"><value>UoM reactivated.</value></data>
+  <data name="UnitOfMeasure.ReactivateError" xml:space="preserve"><value>UoM reactivation failed.</value></data>
+  <data name="UnitOfMeasure.Symbol" xml:space="preserve"><value>Symbol</value></data>
+  <data name="UnitOfMeasure.Updated" xml:space="preserve"><value>UoM updated.</value></data>
+  <data name="Warehouse.Created" xml:space="preserve"><value>Warehouse created.</value></data>
+  <data name="Warehouse.CreateTitle" xml:space="preserve"><value>Create warehouse</value></data>
+  <data name="Warehouse.Deactivated" xml:space="preserve"><value>Warehouse deactivated.</value></data>
+  <data name="Warehouse.DeactivateError" xml:space="preserve"><value>Warehouse deactivation failed.</value></data>
+  <data name="Warehouse.Description" xml:space="preserve"><value>WMS topology warehouses.</value></data>
+  <data name="Warehouse.EditTitle" xml:space="preserve"><value>Edit warehouse</value></data>
+  <data name="Warehouse.Heading" xml:space="preserve"><value>Warehouses</value></data>
+  <data name="Warehouse.MissingResult" xml:space="preserve"><value>The operation completed without returning warehouse details.</value></data>
+  <data name="Warehouse.PageTitle" xml:space="preserve"><value>WMS Warehouses</value></data>
+  <data name="Warehouse.Reactivated" xml:space="preserve"><value>Warehouse reactivated.</value></data>
+  <data name="Warehouse.ReactivateError" xml:space="preserve"><value>Warehouse reactivation failed.</value></data>
+  <data name="Warehouse.Updated" xml:space="preserve"><value>Warehouse updated.</value></data>
+  <data name="Zone.Created" xml:space="preserve"><value>Zone created.</value></data>
+  <data name="Zone.CreateTitle" xml:space="preserve"><value>Create zone</value></data>
+  <data name="Zone.Deactivated" xml:space="preserve"><value>Zone deactivated.</value></data>
+  <data name="Zone.DeactivateError" xml:space="preserve"><value>Zone deactivation failed.</value></data>
+  <data name="Zone.Description" xml:space="preserve"><value>WMS warehouse zones.</value></data>
+  <data name="Zone.EditTitle" xml:space="preserve"><value>Edit zone</value></data>
+  <data name="Zone.Heading" xml:space="preserve"><value>Zones</value></data>
+  <data name="Zone.MissingResult" xml:space="preserve"><value>The operation completed without returning zone details.</value></data>
+  <data name="Zone.PageTitle" xml:space="preserve"><value>WMS Zones</value></data>
+  <data name="Zone.Reactivated" xml:space="preserve"><value>Zone reactivated.</value></data>
+  <data name="Zone.ReactivateError" xml:space="preserve"><value>Zone reactivation failed.</value></data>
+  <data name="Zone.SelectWarehousePrompt" xml:space="preserve"><value>Select a warehouse to view zones.</value></data>
+  <data name="Zone.Updated" xml:space="preserve"><value>Zone updated.</value></data>
 </root>

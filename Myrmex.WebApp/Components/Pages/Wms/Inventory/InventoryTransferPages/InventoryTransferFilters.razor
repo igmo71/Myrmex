@@ -1,12 +1,13 @@
 @using Myrmex.Shared.Wms.Catalog
 @using Myrmex.Shared.Wms.Inventory
 @using Myrmex.Shared.Wms.Topology
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudPaper Class="pa-4">
     <MudStack Spacing="2">
         <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
             <MudSelect T="Guid?"
-                       Label="Warehouse"
+                       Label="@Localizer["Common.Warehouse"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Clearable="true"
@@ -24,7 +25,7 @@
             </MudSelect>
 
             <MudSelect T="string"
-                       Label="Status"
+                       Label="@Localizer["Common.Status"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Clearable="true"
@@ -32,13 +33,13 @@
                        ValueChanged="OnStatusChanged"
                        HelperText="&#160;"
                        Class="min-width-220">
-                <MudSelectItem T="string" Value="@InventoryTransferStatusDetails.Created">Created</MudSelectItem>
-                <MudSelectItem T="string" Value="@InventoryTransferStatusDetails.InProgress">In progress</MudSelectItem>
-                <MudSelectItem T="string" Value="@InventoryTransferStatusDetails.Completed">Completed</MudSelectItem>
+                <MudSelectItem T="string" Value="@InventoryTransferStatusDetails.Created">@Localizer["Common.CreatedStatus"]</MudSelectItem>
+                <MudSelectItem T="string" Value="@InventoryTransferStatusDetails.InProgress">@Localizer["Common.InProgress"]</MudSelectItem>
+                <MudSelectItem T="string" Value="@InventoryTransferStatusDetails.Completed">@Localizer["Common.Completed"]</MudSelectItem>
             </MudSelect>
 
             <MudSelect T="bool?"
-                       Label="Transit"
+                       Label="@Localizer["InventoryTransfer.Transit"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Clearable="true"
@@ -46,12 +47,12 @@
                        ValueChanged="OnTransitChanged"
                        HelperText="&#160;"
                        Class="min-width-220">
-                <MudSelectItem T="bool?" Value="@((bool?)true)">Transit</MudSelectItem>
-                <MudSelectItem T="bool?" Value="@((bool?)false)">Direct</MudSelectItem>
+                <MudSelectItem T="bool?" Value="@((bool?)true)">@Localizer["InventoryTransfer.Transit"]</MudSelectItem>
+                <MudSelectItem T="bool?" Value="@((bool?)false)">@Localizer["InventoryTransfer.Direct"]</MudSelectItem>
             </MudSelect>
 
             <MudTextField T="string"
-                          Label="Transfer code"
+                          Label="@Localizer["InventoryTransfer.Code"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Value="TransferCode"
@@ -63,7 +64,7 @@
         </MudStack>
 
         <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
-            <MudDatePicker Label="Created from"
+            <MudDatePicker Label="@Localizer["Common.CreatedFrom"]"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Date="CreatedFrom"
@@ -72,7 +73,7 @@
                            HelperText="&#160;"
                            Class="min-width-220" />
 
-            <MudDatePicker Label="Created to"
+            <MudDatePicker Label="@Localizer["Common.CreatedTo"]"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Date="CreatedTo"
@@ -82,7 +83,7 @@
                            Class="min-width-220" />
 
             <MudAutocomplete T="StockKeepingUnitLookupItem"
-                             Label="SKU"
+                             Label="@Localizer["Common.Sku"]"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Clearable="true"
@@ -103,14 +104,14 @@
                     <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
                 </ItemTemplate>
                 <NoItemsTemplate>
-                    <MudText>No SKUs found.</MudText>
+                    <MudText>@Localizer["Sku.NoneFound"]</MudText>
                 </NoItemsTemplate>
             </MudAutocomplete>
         </MudStack>
 
         <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
             <MudAutocomplete T="StorageLocationLookupItem"
-                             Label="Source location"
+                             Label="@Localizer["InventoryTransfer.SourceLocation"]"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Clearable="true"
@@ -132,12 +133,12 @@
                     <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
                 </ItemTemplate>
                 <NoItemsTemplate>
-                    <MudText>No storage locations found.</MudText>
+                    <MudText>@Localizer["StorageLocation.NoneFound"]</MudText>
                 </NoItemsTemplate>
             </MudAutocomplete>
 
             <MudAutocomplete T="StorageLocationLookupItem"
-                             Label="Destination location"
+                             Label="@Localizer["InventoryTransfer.DestinationLocation"]"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Clearable="true"
@@ -159,14 +160,14 @@
                     <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
                 </ItemTemplate>
                 <NoItemsTemplate>
-                    <MudText>No storage locations found.</MudText>
+                    <MudText>@Localizer["StorageLocation.NoneFound"]</MudText>
                 </NoItemsTemplate>
             </MudAutocomplete>
 
             <MudButton Variant="Variant.Outlined"
                        StartIcon="@Icons.Material.Filled.Refresh"
                        OnClick="OnReloadRequested">
-                Refresh
+                @Localizer["Common.Refresh"]
             </MudButton>
         </MudStack>
     </MudStack>
@@ -245,7 +246,7 @@
     public EventCallback ReloadRequested { get; set; }
 
     private string? StorageLocationHelperText =>
-        SelectedWarehouseId is null ? "Select a warehouse first." : null;
+        SelectedWarehouseId is null ? Localizer["Common.SelectWarehouseFirst"] : null;
 
     private async Task OnWarehouseChanged(Guid? value) => await SelectedWarehouseIdChanged.InvokeAsync(value);
 

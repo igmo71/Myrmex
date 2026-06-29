@@ -1,4 +1,5 @@
 @using Myrmex.Shared.Wms.Inventory
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDataGrid T="InventoryCountListItem"
              @ref="_dataGrid"
@@ -10,7 +11,7 @@
              SortMode="SortMode.Single"
              Filterable="false">
     <Columns>
-        <TemplateColumn Title="Created"
+        <TemplateColumn Title="@Localizer["Common.Created"]"
                         Tag="@InventoryCountSortBy.CreatedAtUtc"
                         SortBy="@(count => count.CreatedAtUtc)"
                         Sortable="true">
@@ -21,7 +22,7 @@
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="Warehouse"
+        <TemplateColumn Title="@Localizer["Common.Warehouse"]"
                         Tag="@InventoryCountSortBy.WarehouseCode"
                         SortBy="@(count => count.Warehouse.Code)"
                         Sortable="true">
@@ -32,11 +33,11 @@
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
-        <PropertyColumn Property="@(count => count.LineCount)" Title="Current lines" Sortable="false" />
-        <PropertyColumn Property="@(count => count.AppliedLineCount)" Title="Applied" Sortable="false" />
-        <PropertyColumn Property="@(count => count.UnresolvedLineCount)" Title="Unresolved" Sortable="false" />
-        <PropertyColumn Property="@(count => count.ConflictLineCount)" Title="Conflict" Sortable="false" />
-        <TemplateColumn Title="Status"
+        <PropertyColumn Property="@(count => count.LineCount)" Title="@Localizer["InventoryCount.CurrentLines"]" Sortable="false" />
+        <PropertyColumn Property="@(count => count.AppliedLineCount)" Title="@Localizer["InventoryCount.Applied"]" Sortable="false" />
+        <PropertyColumn Property="@(count => count.UnresolvedLineCount)" Title="@Localizer["InventoryCount.Unresolved"]" Sortable="false" />
+        <PropertyColumn Property="@(count => count.ConflictLineCount)" Title="@Localizer["InventoryCount.Conflict"]" Sortable="false" />
+        <TemplateColumn Title="@Localizer["Common.Status"]"
                         Tag="@InventoryCountSortBy.Status"
                         SortBy="@(count => count.Status)"
                         Sortable="true">
@@ -60,7 +61,7 @@
                 }
             </CellTemplate>
         </TemplateColumn>
-        <TemplateColumn Title="Actions" Sortable="false">
+        <TemplateColumn Title="@Localizer["Common.Actions"]" Sortable="false">
             <CellTemplate>
                 <MudIconButton Icon="@GetActionIcon(context.Item)"
                                Size="Size.Small"
@@ -71,14 +72,14 @@
                     <MudIconButton Icon="@Icons.Material.Filled.Cancel"
                                    Color="Color.Error"
                                    Size="Size.Small"
-                                   title="Cancel count"
+                                   title="@Localizer["InventoryCount.CancelCount"]"
                                    OnClick="@(() => CancelRequested.InvokeAsync(context.Item))" />
                 }
             </CellTemplate>
         </TemplateColumn>
     </Columns>
     <NoRecordsContent>
-        <MudText>No inventory counts match the current filters.</MudText>
+        <MudText>@Localizer["InventoryCount.NoMatches"]</MudText>
     </NoRecordsContent>
     <PagerContent>
         <MudDataGridPager T="InventoryCountListItem" PageSizeOptions="@PageSizeOptions" />
@@ -173,14 +174,14 @@
         };
     }
 
-    private static string GetActionTitle(InventoryCountListItem count)
+    private string GetActionTitle(InventoryCountListItem count)
     {
         return count.Status switch
         {
-            InventoryCountStatusDetails.Draft => "Open count",
-            InventoryCountStatusDetails.InProgress => "Open count",
-            InventoryCountStatusDetails.Completed => "View count",
-            InventoryCountStatusDetails.Cancelled => "View count",
+            InventoryCountStatusDetails.Draft => Localizer["InventoryCount.Open"],
+            InventoryCountStatusDetails.InProgress => Localizer["InventoryCount.Open"],
+            InventoryCountStatusDetails.Completed => Localizer["InventoryCount.View"],
+            InventoryCountStatusDetails.Cancelled => Localizer["InventoryCount.View"],
             _ => ""
         };
     }

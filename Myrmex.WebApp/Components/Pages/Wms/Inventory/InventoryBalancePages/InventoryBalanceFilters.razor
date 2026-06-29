@@ -1,10 +1,11 @@
 @using Myrmex.Shared.Wms.Catalog
 @using Myrmex.Shared.Wms.Topology
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudPaper Class="pa-4">
     <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
         <MudSelect T="Guid?"
-                   Label="Warehouse"
+                   Label="@Localizer["Common.Warehouse"]"
                    Variant="Variant.Outlined"
                    Margin="Margin.Dense"
                    Clearable="true"
@@ -22,7 +23,7 @@
         </MudSelect>
 
         <MudAutocomplete T="StorageLocationLookupItem"
-                         Label="Storage location"
+                         Label="@Localizer["Common.StorageLocation"]"
                          Variant="Variant.Outlined"
                          Margin="Margin.Dense"
                          Clearable="true"
@@ -45,17 +46,17 @@
                     <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
                     @if (!context.IsActive)
                     {
-                        <MudText Typo="Typo.caption" Color="Color.Warning">Inactive</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Warning">@Localizer["Common.Inactive"]</MudText>
                     }
                 </MudStack>
             </ItemTemplate>
             <NoItemsTemplate>
-                <MudText>No storage locations found.</MudText>
+                <MudText>@Localizer["StorageLocation.NoneFound"]</MudText>
             </NoItemsTemplate>
         </MudAutocomplete>
 
         <MudAutocomplete T="StockKeepingUnitLookupItem"
-                         Label="SKU"
+                         Label="@Localizer["Common.Sku"]"
                          Variant="Variant.Outlined"
                          Margin="Margin.Dense"
                          Clearable="true"
@@ -77,12 +78,12 @@
                     <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
                     @if (!context.IsActive || !context.IsBaseUnitOfMeasureActive)
                     {
-                        <MudText Typo="Typo.caption" Color="Color.Warning">Inactive</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Warning">@Localizer["Common.Inactive"]</MudText>
                     }
                 </MudStack>
             </ItemTemplate>
             <NoItemsTemplate>
-                <MudText>No SKUs found.</MudText>
+                <MudText>@Localizer["Sku.NoneFound"]</MudText>
             </NoItemsTemplate>
         </MudAutocomplete>
     </MudStack>
@@ -122,7 +123,7 @@
         (_, _) => Task.FromResult(Enumerable.Empty<StorageLocationLookupItem>());
 
     private string? StorageLocationHelperText =>
-        SelectedWarehouseId is null ? "Select a warehouse first." : null;
+        SelectedWarehouseId is null ? Localizer["Common.SelectWarehouseFirst"] : null;
 
     private async Task OnWarehouseChanged(Guid? value)
     {

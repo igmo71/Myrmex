@@ -74,4 +74,310 @@
   <data name="Common.Code" xml:space="preserve"><value>Код</value></data>
   <data name="Common.Reason" xml:space="preserve"><value>Причина</value></data>
   <data name="Common.Message" xml:space="preserve"><value>Сообщение</value></data>
+  <data name="Common.Actions" xml:space="preserve"><value>Действия</value></data>
+  <data name="Common.Active" xml:space="preserve"><value>Активен</value></data>
+  <data name="Common.Adjust" xml:space="preserve"><value>Скорректировать</value></data>
+  <data name="Common.All" xml:space="preserve"><value>Все</value></data>
+  <data name="Common.Apply" xml:space="preserve"><value>Применить</value></data>
+  <data name="Common.Cancel" xml:space="preserve"><value>Отмена</value></data>
+  <data name="Common.Cancelled" xml:space="preserve"><value>Отменено</value></data>
+  <data name="Common.Clear" xml:space="preserve"><value>Очистить</value></data>
+  <data name="Common.Close" xml:space="preserve"><value>Закрыть</value></data>
+  <data name="Common.CodeRequired" xml:space="preserve"><value>Укажите код.</value></data>
+  <data name="Common.Comment" xml:space="preserve"><value>Комментарий</value></data>
+  <data name="Common.Complete" xml:space="preserve"><value>Завершить</value></data>
+  <data name="Common.Completed" xml:space="preserve"><value>Завершено</value></data>
+  <data name="Common.Create" xml:space="preserve"><value>Создать</value></data>
+  <data name="Common.CreatedBy" xml:space="preserve"><value>Создал</value></data>
+  <data name="Common.CreatedFrom" xml:space="preserve"><value>Создано с</value></data>
+  <data name="Common.CreatedStatus" xml:space="preserve"><value>Создано</value></data>
+  <data name="Common.CreatedTo" xml:space="preserve"><value>Создано по</value></data>
+  <data name="Common.CreatedUtc" xml:space="preserve"><value>Создано (UTC)</value></data>
+  <data name="Common.Deactivate" xml:space="preserve"><value>Деактивировать</value></data>
+  <data name="Common.Description" xml:space="preserve"><value>Описание</value></data>
+  <data name="Common.Destination" xml:space="preserve"><value>Назначение</value></data>
+  <data name="Common.Done" xml:space="preserve"><value>Готово</value></data>
+  <data name="Common.Edit" xml:space="preserve"><value>Изменить</value></data>
+  <data name="Common.From" xml:space="preserve"><value>Откуда</value></data>
+  <data name="Common.History" xml:space="preserve"><value>История</value></data>
+  <data name="Common.Inactive" xml:space="preserve"><value>Неактивен</value></data>
+  <data name="Common.IncludeInactive" xml:space="preserve"><value>Включая неактивные</value></data>
+  <data name="Common.InProgress" xml:space="preserve"><value>Выполняется</value></data>
+  <data name="Common.Location" xml:space="preserve"><value>Ячейка</value></data>
+  <data name="Common.Move" xml:space="preserve"><value>Переместить</value></data>
+  <data name="Common.Name" xml:space="preserve"><value>Наименование</value></data>
+  <data name="Common.NameRequired" xml:space="preserve"><value>Укажите наименование.</value></data>
+  <data name="Common.Quantity" xml:space="preserve"><value>Количество</value></data>
+  <data name="Common.QuantityRequired" xml:space="preserve"><value>Укажите количество.</value></data>
+  <data name="Common.Reactivate" xml:space="preserve"><value>Активировать</value></data>
+  <data name="Common.ReasonRequired" xml:space="preserve"><value>Укажите причину.</value></data>
+  <data name="Common.Refresh" xml:space="preserve"><value>Обновить</value></data>
+  <data name="Common.Remove" xml:space="preserve"><value>Удалить</value></data>
+  <data name="Common.Save" xml:space="preserve"><value>Сохранить</value></data>
+  <data name="Common.Search" xml:space="preserve"><value>Поиск</value></data>
+  <data name="Common.SelectWarehouseFirst" xml:space="preserve"><value>Сначала выберите склад.</value></data>
+  <data name="Common.SelectZoneFirst" xml:space="preserve"><value>Сначала выберите зону.</value></data>
+  <data name="Common.Sku" xml:space="preserve"><value>SKU</value></data>
+  <data name="Common.SkuRequired" xml:space="preserve"><value>Выберите SKU.</value></data>
+  <data name="Common.Source" xml:space="preserve"><value>Источник</value></data>
+  <data name="Common.Status" xml:space="preserve"><value>Статус</value></data>
+  <data name="Common.StorageLocation" xml:space="preserve"><value>Ячейка хранения</value></data>
+  <data name="Common.StorageLocationRequired" xml:space="preserve"><value>Выберите ячейку хранения.</value></data>
+  <data name="Common.To" xml:space="preserve"><value>Куда</value></data>
+  <data name="Common.Type" xml:space="preserve"><value>Тип</value></data>
+  <data name="Common.UpdatedUtc" xml:space="preserve"><value>Обновлено (UTC)</value></data>
+  <data name="Common.Warehouse" xml:space="preserve"><value>Склад</value></data>
+  <data name="Common.WarehouseRequired" xml:space="preserve"><value>Выберите склад.</value></data>
+  <data name="Common.Zone" xml:space="preserve"><value>Зона</value></data>
+  <data name="InventoryBalance.AdjustConcurrencyConflict" xml:space="preserve"><value>Остаток изменился. Закройте диалог, проверьте обновлённые остатки и при необходимости повторите корректировку.</value></data>
+  <data name="InventoryBalance.Adjusted" xml:space="preserve"><value>Остаток скорректирован.</value></data>
+  <data name="InventoryBalance.AdjustError" xml:space="preserve"><value>Не удалось скорректировать остаток.</value></data>
+  <data name="InventoryBalance.AdjustTitle" xml:space="preserve"><value>Корректировка остатка</value></data>
+  <data name="InventoryBalance.CountedQuantity" xml:space="preserve"><value>Фактическое количество</value></data>
+  <data name="InventoryBalance.CountedQuantityNonNegative" xml:space="preserve"><value>Фактическое количество не может быть отрицательным.</value></data>
+  <data name="InventoryBalance.CountedQuantityRequired" xml:space="preserve"><value>Укажите фактическое количество.</value></data>
+  <data name="InventoryBalance.Created" xml:space="preserve"><value>Остаток создан.</value></data>
+  <data name="InventoryBalance.CreatedMayBeHidden" xml:space="preserve"><value>Остаток создан. Активные фильтры могут скрывать новый остаток.</value></data>
+  <data name="InventoryBalance.CurrentQuantity" xml:space="preserve"><value>Текущее количество</value></data>
+  <data name="InventoryBalance.Description" xml:space="preserve"><value>Текущие количества SKU по складам и ячейкам хранения.</value></data>
+  <data name="InventoryBalance.DestinationLocation" xml:space="preserve"><value>Ячейка назначения</value></data>
+  <data name="InventoryBalance.DestinationLocationRequired" xml:space="preserve"><value>Выберите ячейку назначения.</value></data>
+  <data name="InventoryBalance.Heading" xml:space="preserve"><value>Остатки</value></data>
+  <data name="InventoryBalance.InitialCount" xml:space="preserve"><value>Начальный остаток</value></data>
+  <data name="InventoryBalance.InitialCountConcurrencyConflict" xml:space="preserve"><value>Остаток изменился. Закройте диалог, проверьте обновлённые остатки и при необходимости повторите ввод начального остатка.</value></data>
+  <data name="InventoryBalance.InitialCountError" xml:space="preserve"><value>Не удалось создать начальный остаток.</value></data>
+  <data name="InventoryBalance.MissingResult" xml:space="preserve"><value>Операция завершилась без данных об остатке.</value></data>
+  <data name="InventoryBalance.MoveConcurrencyConflict" xml:space="preserve"><value>Остаток изменился во время сохранения перемещения. Закройте диалог, проверьте обновлённые остатки и повторите попытку.</value></data>
+  <data name="InventoryBalance.Moved" xml:space="preserve"><value>Товар перемещён.</value></data>
+  <data name="InventoryBalance.MovedQuantity" xml:space="preserve"><value>Перемещённое количество</value></data>
+  <data name="InventoryBalance.MoveError" xml:space="preserve"><value>Не удалось переместить товар.</value></data>
+  <data name="InventoryBalance.MoveMissingResult" xml:space="preserve"><value>Операция завершилась без данных о перемещении.</value></data>
+  <data name="InventoryBalance.MoveQuantityRange" xml:space="preserve"><value>Количество должно быть больше нуля и не превышать текущий остаток в исходной ячейке.</value></data>
+  <data name="InventoryBalance.MoveSucceeded" xml:space="preserve"><value>Товар успешно перемещён.</value></data>
+  <data name="InventoryBalance.MoveTitle" xml:space="preserve"><value>Перемещение товара</value></data>
+  <data name="InventoryBalance.NoEligibleDestinations" xml:space="preserve"><value>Подходящие ячейки назначения не найдены.</value></data>
+  <data name="InventoryBalance.NoMatches" xml:space="preserve"><value>Остатки по заданным фильтрам не найдены.</value></data>
+  <data name="InventoryBalance.PageTitle" xml:space="preserve"><value>WMS — Остатки</value></data>
+  <data name="InventoryBalance.QuantityToMove" xml:space="preserve"><value>Количество для перемещения</value></data>
+  <data name="InventoryBalance.SelectSkuForBaseUnit" xml:space="preserve"><value>Выберите SKU, чтобы увидеть базовую единицу измерения.</value></data>
+  <data name="InventoryBalance.SourceLocation" xml:space="preserve"><value>Исходная ячейка</value></data>
+  <data name="InventoryCount.AddLine" xml:space="preserve"><value>Добавить строку</value></data>
+  <data name="InventoryCount.AddLineError" xml:space="preserve"><value>Не удалось добавить строку пересчёта.</value></data>
+  <data name="InventoryCount.AddLineTitle" xml:space="preserve"><value>Добавление строки пересчёта</value></data>
+  <data name="InventoryCount.Applied" xml:space="preserve"><value>Applied</value></data>
+  <data name="InventoryCount.ApplyConflictRefresh" xml:space="preserve"><value>Состояние запасов или пересчёта изменилось. Данные обновлены; для продолжения замените строку Conflict.</value></data>
+  <data name="InventoryCount.ApplyError" xml:space="preserve"><value>Не удалось применить результат пересчёта.</value></data>
+  <data name="InventoryCount.ApplyEvidence" xml:space="preserve"><value>Данные применения</value></data>
+  <data name="InventoryCount.ApplyResultTitle" xml:space="preserve"><value>Применение результата пересчёта</value></data>
+  <data name="InventoryCount.ApplyVariancePrompt" xml:space="preserve"><value>Применить отклонение {0} и установить остаток {1}?</value></data>
+  <data name="InventoryCount.ApplyZeroVariancePrompt" xml:space="preserve"><value>Подтвердить фактическое количество без движения запасов?</value></data>
+  <data name="InventoryCount.CancelAppliedPrompt" xml:space="preserve"><value>Отменить пересчёт? Уже применённые корректировки Applied сохранятся, а пересчёт станет доступен только для чтения.</value></data>
+  <data name="InventoryCount.CancelCount" xml:space="preserve"><value>Отменить пересчёт</value></data>
+  <data name="InventoryCount.CancelError" xml:space="preserve"><value>Не удалось отменить пересчёт.</value></data>
+  <data name="InventoryCount.Cancelled" xml:space="preserve"><value>Пересчёт отменён.</value></data>
+  <data name="InventoryCount.CancelledAppliedEffective" xml:space="preserve"><value>Пересчёт отменён. Ранее применённые корректировки Applied сохраняются.</value></data>
+  <data name="InventoryCount.CancelPrompt" xml:space="preserve"><value>Отменить пересчёт? Пересчёт станет доступен только для чтения.</value></data>
+  <data name="InventoryCount.CancelTitle" xml:space="preserve"><value>Отмена пересчёта</value></data>
+  <data name="InventoryCount.CompletedReadOnly" xml:space="preserve"><value>Пересчёт завершён и теперь доступен только для чтения.</value></data>
+  <data name="InventoryCount.CompleteError" xml:space="preserve"><value>Не удалось завершить пересчёт.</value></data>
+  <data name="InventoryCount.CompletePrompt" xml:space="preserve"><value>Завершить пересчёт? Все текущие строки имеют статус Applied, после чего пересчёт станет доступен только для чтения.</value></data>
+  <data name="InventoryCount.CompleteTitle" xml:space="preserve"><value>Завершение пересчёта</value></data>
+  <data name="InventoryCount.Conflict" xml:space="preserve"><value>Conflict</value></data>
+  <data name="InventoryCount.CountedQuantityNonNegative" xml:space="preserve"><value>Фактическое количество не может быть отрицательным.</value></data>
+  <data name="InventoryCount.CountEvidence" xml:space="preserve"><value>Данные пересчёта</value></data>
+  <data name="InventoryCount.Create" xml:space="preserve"><value>Создать пересчёт</value></data>
+  <data name="InventoryCount.CreateError" xml:space="preserve"><value>Не удалось создать пересчёт.</value></data>
+  <data name="InventoryCount.CreateTitle" xml:space="preserve"><value>Создание пересчёта</value></data>
+  <data name="InventoryCount.CurrentLines" xml:space="preserve"><value>Текущие строки</value></data>
+  <data name="InventoryCount.Description" xml:space="preserve"><value>Контроль активных пересчётов и просмотр постоянной истории.</value></data>
+  <data name="InventoryCount.DetailsHeading" xml:space="preserve"><value>Пересчёт запасов</value></data>
+  <data name="InventoryCount.DetailsPageTitle" xml:space="preserve"><value>Пересчёт запасов</value></data>
+  <data name="InventoryCount.Draft" xml:space="preserve"><value>Черновик</value></data>
+  <data name="InventoryCount.EditCount" xml:space="preserve"><value>Изменить количество</value></data>
+  <data name="InventoryCount.EditPhysicalCount" xml:space="preserve"><value>Изменение фактического количества</value></data>
+  <data name="InventoryCount.EnterCount" xml:space="preserve"><value>Ввести количество</value></data>
+  <data name="InventoryCount.EnterPhysicalCount" xml:space="preserve"><value>Ввод фактического количества</value></data>
+  <data name="InventoryCount.Heading" xml:space="preserve"><value>Пересчёты запасов</value></data>
+  <data name="InventoryCount.InventoryAdjusted" xml:space="preserve"><value>Остаток установлен в {0}. Создана транзакция корректировки {1}.</value></data>
+  <data name="InventoryCount.InventoryTransactionTitle" xml:space="preserve"><value>Транзакция запасов</value></data>
+  <data name="InventoryCount.KeepOpen" xml:space="preserve"><value>Оставить открытым</value></data>
+  <data name="InventoryCount.LineChangedRefresh" xml:space="preserve"><value>Строка пересчёта изменилась до сохранения. Данные обновлены.</value></data>
+  <data name="InventoryCount.MissingResult" xml:space="preserve"><value>Операция завершилась без данных о пересчёте.</value></data>
+  <data name="InventoryCount.NoLines" xml:space="preserve"><value>Строки пересчёта ещё не добавлены.</value></data>
+  <data name="InventoryCount.NoMatches" xml:space="preserve"><value>Пересчёты по заданным фильтрам не найдены.</value></data>
+  <data name="InventoryCount.Open" xml:space="preserve"><value>Открыть пересчёт</value></data>
+  <data name="InventoryCount.PageTitle" xml:space="preserve"><value>Пересчёты запасов</value></data>
+  <data name="InventoryCount.PhysicalCountRecorded" xml:space="preserve"><value>Фактическое количество сохранено.</value></data>
+  <data name="InventoryCount.ReasonOrDescription" xml:space="preserve"><value>Причина или описание</value></data>
+  <data name="InventoryCount.RecordError" xml:space="preserve"><value>Не удалось сохранить фактическое количество.</value></data>
+  <data name="InventoryCount.RemoveLineError" xml:space="preserve"><value>Не удалось удалить строку пересчёта.</value></data>
+  <data name="InventoryCount.RemoveLinePrompt" xml:space="preserve"><value>Удалить строку Pending для SKU {0} в ячейке {1}?</value></data>
+  <data name="InventoryCount.RemoveLineTitle" xml:space="preserve"><value>Удаление строки пересчёта</value></data>
+  <data name="InventoryCount.ReplacedBy" xml:space="preserve"><value>Заменена строкой {0}</value></data>
+  <data name="InventoryCount.Replaces" xml:space="preserve"><value>Заменяет строку {0}</value></data>
+  <data name="InventoryCount.SaveCount" xml:space="preserve"><value>Сохранить количество</value></data>
+  <data name="InventoryCount.Supersede" xml:space="preserve"><value>Заменить</value></data>
+  <data name="InventoryCount.Superseded" xml:space="preserve"><value>Conflict сохранён в истории; создана новая строка Pending с системным количеством {0}.</value></data>
+  <data name="InventoryCount.SupersedeError" xml:space="preserve"><value>Не удалось заменить конфликт.</value></data>
+  <data name="InventoryCount.SupersedePrompt" xml:space="preserve"><value>Сохранить Conflict в истории и создать новую строку Pending из текущего остатка?</value></data>
+  <data name="InventoryCount.SupersedeTitle" xml:space="preserve"><value>Замена конфликта</value></data>
+  <data name="InventoryCount.SystemQuantity" xml:space="preserve"><value>Системное количество</value></data>
+  <data name="InventoryCount.TimestampByActor" xml:space="preserve"><value>{0}, пользователь {1}</value></data>
+  <data name="InventoryCount.Unresolved" xml:space="preserve"><value>Не разрешено</value></data>
+  <data name="InventoryCount.Variance" xml:space="preserve"><value>Отклонение</value></data>
+  <data name="InventoryCount.View" xml:space="preserve"><value>Открыть пересчёт</value></data>
+  <data name="InventoryCount.ViewAdjustment" xml:space="preserve"><value>Открыть корректировку</value></data>
+  <data name="InventoryCount.ZeroVarianceConfirmed" xml:space="preserve"><value>Количество подтверждено без отклонения; транзакция запасов не создана.</value></data>
+  <data name="InventoryLedger.Adjustment" xml:space="preserve"><value>Корректировка</value></data>
+  <data name="InventoryLedger.After" xml:space="preserve"><value>После</value></data>
+  <data name="InventoryLedger.Before" xml:space="preserve"><value>До</value></data>
+  <data name="InventoryLedger.CorrectRouteFilters" xml:space="preserve"><value>Исправьте или очистите фильтры из адреса, чтобы загрузить историю журнала.</value></data>
+  <data name="InventoryLedger.Delta" xml:space="preserve"><value>Изменение</value></data>
+  <data name="InventoryLedger.Description" xml:space="preserve"><value>История запасов по записям журнала в режиме чтения.</value></data>
+  <data name="InventoryLedger.Heading" xml:space="preserve"><value>Журнал движений</value></data>
+  <data name="InventoryLedger.IncludesInactiveSkus" xml:space="preserve"><value>Включает неактивные SKU с историей.</value></data>
+  <data name="InventoryLedger.IncludesInactiveWarehouses" xml:space="preserve"><value>Включает неактивные склады с историей.</value></data>
+  <data name="InventoryLedger.InvalidDateRange" xml:space="preserve"><value>Начальная дата не может быть позже конечной.</value></data>
+  <data name="InventoryLedger.LoadingFilters" xml:space="preserve"><value>Загрузка фильтров журнала движений.</value></data>
+  <data name="InventoryLedger.NoMatches" xml:space="preserve"><value>Записи журнала по заданным фильтрам не найдены.</value></data>
+  <data name="InventoryLedger.NoTransactionEntries" xml:space="preserve"><value>У этой транзакции нет записей журнала.</value></data>
+  <data name="InventoryLedger.OccurredFrom" xml:space="preserve"><value>Произошло с</value></data>
+  <data name="InventoryLedger.OccurredFromHelper" xml:space="preserve"><value>Начало дня — 00:00 UTC.</value></data>
+  <data name="InventoryLedger.OccurredTo" xml:space="preserve"><value>Произошло по</value></data>
+  <data name="InventoryLedger.OccurredToHelper" xml:space="preserve"><value>Включает выбранный день.</value></data>
+  <data name="InventoryLedger.OccurredUtc" xml:space="preserve"><value>Произошло (UTC)</value></data>
+  <data name="InventoryLedger.PageTitle" xml:space="preserve"><value>WMS — Журнал движений</value></data>
+  <data name="InventoryLedger.RouteRestoreError" xml:space="preserve"><value>Не удалось восстановить фильтры журнала из адреса: {0}</value></data>
+  <data name="InventoryLedger.RouteWarehouseMismatch" xml:space="preserve"><value>Склад и ячейка из адреса не соответствуют друг другу. Исправьте или очистите фильтры перед загрузкой истории.</value></data>
+  <data name="InventoryLedger.ScopedToWarehouse" xml:space="preserve"><value>Поиск ограничен выбранным складом.</value></data>
+  <data name="InventoryLedger.TransactionDetailsTitle" xml:space="preserve"><value>Детали транзакции запасов</value></data>
+  <data name="InventoryLedger.TransactionId" xml:space="preserve"><value>Идентификатор транзакции</value></data>
+  <data name="InventoryLedger.TransactionType" xml:space="preserve"><value>Тип транзакции</value></data>
+  <data name="InventoryLedger.TransactionTypeHelper" xml:space="preserve"><value>Тип журнала для MVP.</value></data>
+  <data name="InventoryLedger.ViewTransactionDetails" xml:space="preserve"><value>Открыть детали транзакции</value></data>
+  <data name="InventoryTransfer.Code" xml:space="preserve"><value>Код перемещения</value></data>
+  <data name="InventoryTransfer.Created" xml:space="preserve"><value>Перемещение создано.</value></data>
+  <data name="InventoryTransfer.CreateError" xml:space="preserve"><value>Не удалось создать перемещение.</value></data>
+  <data name="InventoryTransfer.CreateTitle" xml:space="preserve"><value>Создание перемещения</value></data>
+  <data name="InventoryTransfer.Description" xml:space="preserve"><value>Внутренние документы перемещения.</value></data>
+  <data name="InventoryTransfer.DestinationLocation" xml:space="preserve"><value>Ячейка назначения</value></data>
+  <data name="InventoryTransfer.DestinationLocationRequired" xml:space="preserve"><value>Выберите ячейку назначения.</value></data>
+  <data name="InventoryTransfer.Direct" xml:space="preserve"><value>Напрямую</value></data>
+  <data name="InventoryTransfer.Heading" xml:space="preserve"><value>Перемещения запасов</value></data>
+  <data name="InventoryTransfer.InternalTransitLocation" xml:space="preserve"><value>Внутренняя транзитная ячейка</value></data>
+  <data name="InventoryTransfer.InTransit" xml:space="preserve"><value>В транзите</value></data>
+  <data name="InventoryTransfer.LineDestinationRequired" xml:space="preserve"><value>Строка {0}: выберите ячейку назначения.</value></data>
+  <data name="InventoryTransfer.LineLocationsMustDiffer" xml:space="preserve"><value>Строка {0}: исходная ячейка и ячейка назначения должны различаться.</value></data>
+  <data name="InventoryTransfer.LineNumber" xml:space="preserve"><value>Строка {0}</value></data>
+  <data name="InventoryTransfer.LineQuantityPositive" xml:space="preserve"><value>Строка {0}: запрошенное количество должно быть больше нуля.</value></data>
+  <data name="InventoryTransfer.LineRequired" xml:space="preserve"><value>Добавьте хотя бы одну строку перемещения.</value></data>
+  <data name="InventoryTransfer.Lines" xml:space="preserve"><value>Строки</value></data>
+  <data name="InventoryTransfer.LineSkuRequired" xml:space="preserve"><value>Строка {0}: выберите SKU.</value></data>
+  <data name="InventoryTransfer.LineSourceRequired" xml:space="preserve"><value>Строка {0}: выберите исходную ячейку.</value></data>
+  <data name="InventoryTransfer.Meaning" xml:space="preserve"><value>Назначение</value></data>
+  <data name="InventoryTransfer.MissingResult" xml:space="preserve"><value>Операция завершилась без данных о перемещении.</value></data>
+  <data name="InventoryTransfer.Moved" xml:space="preserve"><value>Перемещено</value></data>
+  <data name="InventoryTransfer.MoveLineTitle" xml:space="preserve"><value>Перемещение строки</value></data>
+  <data name="InventoryTransfer.MovementError" xml:space="preserve"><value>Не удалось выполнить движение по перемещению.</value></data>
+  <data name="InventoryTransfer.MovementHistory" xml:space="preserve"><value>История движений</value></data>
+  <data name="InventoryTransfer.MovementQuantityRange" xml:space="preserve"><value>Количество для действия «{0}» должно быть больше нуля и не превышать оставшееся количество.</value></data>
+  <data name="InventoryTransfer.MoveQuantity" xml:space="preserve"><value>Количество перемещения</value></data>
+  <data name="InventoryTransfer.MoveQuantityRequired" xml:space="preserve"><value>Укажите количество перемещения.</value></data>
+  <data name="InventoryTransfer.NoMatches" xml:space="preserve"><value>Перемещения по заданным фильтрам не найдены.</value></data>
+  <data name="InventoryTransfer.NoMovements" xml:space="preserve"><value>Движения ещё не зарегистрированы.</value></data>
+  <data name="InventoryTransfer.Occurred" xml:space="preserve"><value>Произошло</value></data>
+  <data name="InventoryTransfer.Open" xml:space="preserve"><value>Открыть перемещение</value></data>
+  <data name="InventoryTransfer.PageTitle" xml:space="preserve"><value>WMS — Перемещения запасов</value></data>
+  <data name="InventoryTransfer.Pick" xml:space="preserve"><value>Отобрать</value></data>
+  <data name="InventoryTransfer.Picked" xml:space="preserve"><value>Отобрано</value></data>
+  <data name="InventoryTransfer.PickLineTitle" xml:space="preserve"><value>Отбор по строке перемещения</value></data>
+  <data name="InventoryTransfer.PickQuantity" xml:space="preserve"><value>Количество отбора</value></data>
+  <data name="InventoryTransfer.Place" xml:space="preserve"><value>Разместить</value></data>
+  <data name="InventoryTransfer.Placed" xml:space="preserve"><value>Размещено</value></data>
+  <data name="InventoryTransfer.PlaceLineTitle" xml:space="preserve"><value>Размещение по строке перемещения</value></data>
+  <data name="InventoryTransfer.PlaceQuantity" xml:space="preserve"><value>Количество размещения</value></data>
+  <data name="InventoryTransfer.RemainingPick" xml:space="preserve"><value>Осталось отобрать</value></data>
+  <data name="InventoryTransfer.RemainingPlace" xml:space="preserve"><value>Осталось разместить</value></data>
+  <data name="InventoryTransfer.RemainingQuantity" xml:space="preserve"><value>Оставшееся количество</value></data>
+  <data name="InventoryTransfer.Requested" xml:space="preserve"><value>Запрошено</value></data>
+  <data name="InventoryTransfer.RequestedQuantity" xml:space="preserve"><value>Запрошенное количество</value></data>
+  <data name="InventoryTransfer.RequestedQuantityRequired" xml:space="preserve"><value>Укажите запрошенное количество.</value></data>
+  <data name="InventoryTransfer.SourceLocation" xml:space="preserve"><value>Исходная ячейка</value></data>
+  <data name="InventoryTransfer.SourceLocationRequired" xml:space="preserve"><value>Выберите исходную ячейку.</value></data>
+  <data name="InventoryTransfer.Transaction" xml:space="preserve"><value>Транзакция</value></data>
+  <data name="InventoryTransfer.Transfer" xml:space="preserve"><value>Перемещение</value></data>
+  <data name="InventoryTransfer.Transit" xml:space="preserve"><value>Транзит</value></data>
+  <data name="InventoryTransfer.View" xml:space="preserve"><value>Открыть перемещение</value></data>
+  <data name="Sku.BaseUnitOfMeasure" xml:space="preserve"><value>Базовая единица измерения</value></data>
+  <data name="Sku.BaseUnitOfMeasureRequired" xml:space="preserve"><value>Выберите базовую единицу измерения.</value></data>
+  <data name="Sku.Created" xml:space="preserve"><value>SKU создан.</value></data>
+  <data name="Sku.CreateTitle" xml:space="preserve"><value>Создание SKU</value></data>
+  <data name="Sku.Deactivated" xml:space="preserve"><value>SKU деактивирован.</value></data>
+  <data name="Sku.DeactivateError" xml:space="preserve"><value>Не удалось деактивировать SKU.</value></data>
+  <data name="Sku.Description" xml:space="preserve"><value>Справочник SKU каталога WMS.</value></data>
+  <data name="Sku.EditTitle" xml:space="preserve"><value>Изменение SKU</value></data>
+  <data name="Sku.Heading" xml:space="preserve"><value>SKU</value></data>
+  <data name="Sku.MissingResult" xml:space="preserve"><value>Операция завершилась без данных о SKU.</value></data>
+  <data name="Sku.NoneFound" xml:space="preserve"><value>SKU не найдены.</value></data>
+  <data name="Sku.PageTitle" xml:space="preserve"><value>WMS — SKU</value></data>
+  <data name="Sku.Reactivated" xml:space="preserve"><value>SKU активирован.</value></data>
+  <data name="Sku.ReactivateError" xml:space="preserve"><value>Не удалось активировать SKU.</value></data>
+  <data name="Sku.Updated" xml:space="preserve"><value>SKU обновлён.</value></data>
+  <data name="StorageLocation.Created" xml:space="preserve"><value>Ячейка хранения создана.</value></data>
+  <data name="StorageLocation.CreateTitle" xml:space="preserve"><value>Создание ячейки хранения</value></data>
+  <data name="StorageLocation.Deactivated" xml:space="preserve"><value>Ячейка хранения деактивирована.</value></data>
+  <data name="StorageLocation.DeactivateError" xml:space="preserve"><value>Не удалось деактивировать ячейку хранения.</value></data>
+  <data name="StorageLocation.Description" xml:space="preserve"><value>Ячейки хранения складов WMS.</value></data>
+  <data name="StorageLocation.EditTitle" xml:space="preserve"><value>Изменение ячейки хранения</value></data>
+  <data name="StorageLocation.Heading" xml:space="preserve"><value>Ячейки хранения</value></data>
+  <data name="StorageLocation.MissingResult" xml:space="preserve"><value>Операция завершилась без данных о ячейке хранения.</value></data>
+  <data name="StorageLocation.NoneFound" xml:space="preserve"><value>Ячейки хранения не найдены.</value></data>
+  <data name="StorageLocation.NotPickable" xml:space="preserve"><value>Недоступна для отбора</value></data>
+  <data name="StorageLocation.PageTitle" xml:space="preserve"><value>WMS — Ячейки хранения</value></data>
+  <data name="StorageLocation.Pickable" xml:space="preserve"><value>Доступна для отбора</value></data>
+  <data name="StorageLocation.Reactivated" xml:space="preserve"><value>Ячейка хранения активирована.</value></data>
+  <data name="StorageLocation.ReactivateError" xml:space="preserve"><value>Не удалось активировать ячейку хранения.</value></data>
+  <data name="StorageLocation.SelectWarehousePrompt" xml:space="preserve"><value>Выберите склад для просмотра ячеек хранения.</value></data>
+  <data name="StorageLocation.StatusRequired" xml:space="preserve"><value>Выберите статус ячейки хранения.</value></data>
+  <data name="StorageLocation.TypeAndStatusRequired" xml:space="preserve"><value>Укажите тип и статус.</value></data>
+  <data name="StorageLocation.TypeRequired" xml:space="preserve"><value>Выберите тип ячейки хранения.</value></data>
+  <data name="StorageLocation.Updated" xml:space="preserve"><value>Ячейка хранения обновлена.</value></data>
+  <data name="UnitOfMeasure.Created" xml:space="preserve"><value>Единица измерения создана.</value></data>
+  <data name="UnitOfMeasure.CreateTitle" xml:space="preserve"><value>Создание единицы измерения</value></data>
+  <data name="UnitOfMeasure.Deactivated" xml:space="preserve"><value>Единица измерения деактивирована.</value></data>
+  <data name="UnitOfMeasure.DeactivateError" xml:space="preserve"><value>Не удалось деактивировать единицу измерения.</value></data>
+  <data name="UnitOfMeasure.Description" xml:space="preserve"><value>Справочник единиц измерения каталога WMS.</value></data>
+  <data name="UnitOfMeasure.EditTitle" xml:space="preserve"><value>Изменение единицы измерения</value></data>
+  <data name="UnitOfMeasure.Heading" xml:space="preserve"><value>Единицы измерения</value></data>
+  <data name="UnitOfMeasure.MissingResult" xml:space="preserve"><value>Операция завершилась без данных о единице измерения.</value></data>
+  <data name="UnitOfMeasure.PageTitle" xml:space="preserve"><value>WMS — Единицы измерения</value></data>
+  <data name="UnitOfMeasure.Reactivated" xml:space="preserve"><value>Единица измерения активирована.</value></data>
+  <data name="UnitOfMeasure.ReactivateError" xml:space="preserve"><value>Не удалось активировать единицу измерения.</value></data>
+  <data name="UnitOfMeasure.Symbol" xml:space="preserve"><value>Обозначение</value></data>
+  <data name="UnitOfMeasure.Updated" xml:space="preserve"><value>Единица измерения обновлена.</value></data>
+  <data name="Warehouse.Created" xml:space="preserve"><value>Склад создан.</value></data>
+  <data name="Warehouse.CreateTitle" xml:space="preserve"><value>Создание склада</value></data>
+  <data name="Warehouse.Deactivated" xml:space="preserve"><value>Склад деактивирован.</value></data>
+  <data name="Warehouse.DeactivateError" xml:space="preserve"><value>Не удалось деактивировать склад.</value></data>
+  <data name="Warehouse.Description" xml:space="preserve"><value>Склады топологии WMS.</value></data>
+  <data name="Warehouse.EditTitle" xml:space="preserve"><value>Изменение склада</value></data>
+  <data name="Warehouse.Heading" xml:space="preserve"><value>Склады</value></data>
+  <data name="Warehouse.MissingResult" xml:space="preserve"><value>Операция завершилась без данных о складе.</value></data>
+  <data name="Warehouse.PageTitle" xml:space="preserve"><value>WMS — Склады</value></data>
+  <data name="Warehouse.Reactivated" xml:space="preserve"><value>Склад активирован.</value></data>
+  <data name="Warehouse.ReactivateError" xml:space="preserve"><value>Не удалось активировать склад.</value></data>
+  <data name="Warehouse.Updated" xml:space="preserve"><value>Склад обновлён.</value></data>
+  <data name="Zone.Created" xml:space="preserve"><value>Зона создана.</value></data>
+  <data name="Zone.CreateTitle" xml:space="preserve"><value>Создание зоны</value></data>
+  <data name="Zone.Deactivated" xml:space="preserve"><value>Зона деактивирована.</value></data>
+  <data name="Zone.DeactivateError" xml:space="preserve"><value>Не удалось деактивировать зону.</value></data>
+  <data name="Zone.Description" xml:space="preserve"><value>Зоны складов WMS.</value></data>
+  <data name="Zone.EditTitle" xml:space="preserve"><value>Изменение зоны</value></data>
+  <data name="Zone.Heading" xml:space="preserve"><value>Зоны</value></data>
+  <data name="Zone.MissingResult" xml:space="preserve"><value>Операция завершилась без данных о зоне.</value></data>
+  <data name="Zone.PageTitle" xml:space="preserve"><value>WMS — Зоны</value></data>
+  <data name="Zone.Reactivated" xml:space="preserve"><value>Зона активирована.</value></data>
+  <data name="Zone.ReactivateError" xml:space="preserve"><value>Не удалось активировать зону.</value></data>
+  <data name="Zone.SelectWarehousePrompt" xml:space="preserve"><value>Выберите склад для просмотра зон.</value></data>
+  <data name="Zone.Updated" xml:space="preserve"><value>Зона обновлена.</value></data>
 </root>

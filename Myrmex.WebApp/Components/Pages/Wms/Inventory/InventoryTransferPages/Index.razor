@@ -1,7 +1,8 @@
 @page "/wms/inventory/transfers"
 @using Myrmex.Shared.Wms.Inventory
+@inject IStringLocalizer<SharedResource> Localizer
 
-<PageTitle>WMS Inventory Transfers</PageTitle>
+<PageTitle>@Localizer["InventoryTransfer.PageTitle"]</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
     <MudStack Spacing="3">
@@ -9,9 +10,9 @@
                   AlignItems="AlignItems.Center"
                   Justify="Justify.SpaceBetween">
             <div>
-                <MudText Typo="Typo.h5">Inventory Transfers</MudText>
+                <MudText Typo="Typo.h5">@Localizer["InventoryTransfer.Heading"]</MudText>
                 <MudText Typo="Typo.body2" Color="Color.Secondary">
-                    Internal transfer documents.
+                    @Localizer["InventoryTransfer.Description"]
                 </MudText>
             </div>
 
@@ -19,7 +20,7 @@
                        Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.Add"
                        OnClick="OpenCreateTransferAsync">
-                Create transfer
+                @Localizer["InventoryTransfer.CreateTitle"]
             </MudButton>
         </MudStack>
 

@@ -317,13 +317,13 @@ public partial class Index
     {
         if (_selectedWarehouseId is null)
         {
-            Snackbar.Add("Select a warehouse first.", Severity.Warning);
+            Snackbar.Add(Localizer["Common.SelectWarehouseFirst"], Severity.Warning);
             return;
         }
 
         if (_selectedZoneId is null)
         {
-            Snackbar.Add("Select a zone first.", Severity.Warning);
+            Snackbar.Add(Localizer["Common.SelectZoneFirst"], Severity.Warning);
             return;
         }
 
@@ -341,7 +341,7 @@ public partial class Index
         };
 
         IDialogReference dialog = await DialogService.ShowAsync<StorageLocationEditDialog>(
-            "Create storage location",
+            Localizer["StorageLocation.CreateTitle"],
             parameters,
             options);
 
@@ -352,7 +352,7 @@ public partial class Index
             return;
         }
 
-        Snackbar.Add("Storage location created.", Severity.Success);
+        Snackbar.Add(Localizer["StorageLocation.Created"], Severity.Success);
 
         await LoadStorageLocationsAsync();
     }
@@ -374,7 +374,7 @@ public partial class Index
         };
 
         IDialogReference dialog = await DialogService.ShowAsync<StorageLocationEditDialog>(
-            "Edit storage location",
+            Localizer["StorageLocation.EditTitle"],
             parameters,
             options);
 
@@ -385,7 +385,7 @@ public partial class Index
             return;
         }
 
-        Snackbar.Add("Storage location updated.", Severity.Success);
+        Snackbar.Add(Localizer["StorageLocation.Updated"], Severity.Success);
 
         await LoadStorageLocationsAsync();
     }
@@ -399,12 +399,12 @@ public partial class Index
 
             if (result.IsFailure)
             {
-                Snackbar.Add(result.Error?.Message ?? "Storage location deactivation failed.", Severity.Error);
+                Snackbar.Add(result.Error?.Message ?? Localizer["StorageLocation.DeactivateError"], Severity.Error);
 
                 return;
             }
 
-            Snackbar.Add("Storage location deactivated.", Severity.Success);
+            Snackbar.Add(Localizer["StorageLocation.Deactivated"], Severity.Success);
 
             await LoadStorageLocationsAsync();
         }
@@ -423,12 +423,12 @@ public partial class Index
 
             if (result.IsFailure)
             {
-                Snackbar.Add(result.Error?.Message ?? "Storage location reactivation failed.", Severity.Error);
+                Snackbar.Add(result.Error?.Message ?? Localizer["StorageLocation.ReactivateError"], Severity.Error);
 
                 return;
             }
 
-            Snackbar.Add("Storage location reactivated.", Severity.Success);
+            Snackbar.Add(Localizer["StorageLocation.Reactivated"], Severity.Success);
 
             await LoadStorageLocationsAsync();
         }

@@ -3,21 +3,22 @@
 @using Myrmex.Shared.Wms.Catalog
 @using Myrmex.Shared.Wms.Inventory
 @using Myrmex.Shared.Wms.Topology
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">Initial count</MudText>
+        <MudText Typo="Typo.h6">@Localizer["InventoryBalance.InitialCount"]</MudText>
     </TitleContent>
 
     <DialogContent>
         <MudForm @ref="_form">
             <MudStack Spacing="3">
                 <MudAutocomplete T="StockKeepingUnitLookupItem"
-                                 Label="SKU"
+                                 Label="@Localizer["Common.Sku"]"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Required="true"
-                                 RequiredError="SKU is required."
+                                 RequiredError="@Localizer["Common.SkuRequired"]"
                                  Clearable="true"
                                  ShowProgressIndicator="true"
                                  MinCharacters="0"
@@ -34,23 +35,23 @@
                         <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
                     </ItemTemplate>
                     <NoItemsTemplate>
-                        <MudText>No SKUs found.</MudText>
+                        <MudText>@Localizer["Sku.NoneFound"]</MudText>
                     </NoItemsTemplate>
                 </MudAutocomplete>
 
                 <MudTextField T="string"
-                              Label="Base UoM"
+                              Label="@Localizer["Sku.BaseUnitOfMeasure"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Value="@SelectedBaseUnitOfMeasureDisplay"
                               Disabled="true" />
 
                 <MudSelect T="Guid?"
-                           Label="Warehouse"
+                           Label="@Localizer["Common.Warehouse"]"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Required="true"
-                           RequiredError="Warehouse is required."
+                           RequiredError="@Localizer["Common.WarehouseRequired"]"
                            Disabled="_isLoadingWarehouses"
                            Value="_model.WarehouseId"
                            ValueChanged="OnWarehouseChanged">
@@ -63,11 +64,11 @@
                 </MudSelect>
 
                 <MudAutocomplete T="StorageLocationLookupItem"
-                                 Label="Storage location"
+                                 Label="@Localizer["Common.StorageLocation"]"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Required="true"
-                                 RequiredError="Storage location is required."
+                                 RequiredError="@Localizer["Common.StorageLocationRequired"]"
                                  Clearable="true"
                                  ShowProgressIndicator="true"
                                  MinCharacters="0"
@@ -86,28 +87,28 @@
                         <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
                     </ItemTemplate>
                     <NoItemsTemplate>
-                        <MudText>No storage locations found.</MudText>
+                        <MudText>@Localizer["StorageLocation.NoneFound"]</MudText>
                     </NoItemsTemplate>
                 </MudAutocomplete>
 
                 <MudNumericField T="decimal"
-                                 Label="Counted quantity"
+                                 Label="@Localizer["InventoryBalance.CountedQuantity"]"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="0"
                                  Required="true"
-                                 RequiredError="Counted quantity is required."
+                                 RequiredError="@Localizer["InventoryBalance.CountedQuantityRequired"]"
                                  Culture="@QuantityCulture"
                                  Format="0.####"
                                  InputMode="@(InputMode.@decimal)"
                                  @bind-Value="_model.CountedQuantity" />
 
                 <MudTextField T="string"
-                              Label="Reason"
+                              Label="@Localizer["Common.Reason"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Required="true"
-                              RequiredError="Reason is required."
+                              RequiredError="@Localizer["Common.ReasonRequired"]"
                               MaxLength="500"
                               Lines="3"
                               @bind-Value="_model.Reason" />
@@ -125,7 +126,7 @@
     <DialogActions>
         <MudButton OnClick="Cancel"
                    Disabled="_isSaving">
-            Cancel
+            @Localizer["Common.Cancel"]
         </MudButton>
 
         <MudButton Color="Color.Primary"
@@ -138,7 +139,7 @@
                                      Indeterminate="true"
                                      Class="me-2" />
             }
-            Save
+            @Localizer["Common.Save"]
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -165,7 +166,7 @@
     private List<WarehouseDetails> _warehouses = [];
     private StockKeepingUnitLookupItem? _selectedStockKeepingUnit;
     private StorageLocationLookupItem? _selectedStorageLocation;
-    private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
+    private static CultureInfo QuantityCulture => CultureInfo.CurrentCulture;
 
     private bool _isLoadingWarehouses;
     private bool _isSaving;
@@ -174,7 +175,7 @@
     private int _storageLocationSearchVersion;
 
     private string? StorageLocationHelperText =>
-        _model.WarehouseId is null ? "Select a warehouse first." : null;
+        _model.WarehouseId is null ? Localizer["Common.SelectWarehouseFirst"] : null;
 
     private string SelectedBaseUnitOfMeasureDisplay
     {
@@ -182,7 +183,7 @@
         {
             if (_selectedStockKeepingUnit is null)
             {
-                return "Select a SKU to view base UoM.";
+                return Localizer["InventoryBalance.SelectSkuForBaseUnit"];
             }
 
             return string.IsNullOrWhiteSpace(_selectedStockKeepingUnit.BaseUnitOfMeasureSymbol)
@@ -343,31 +344,31 @@
 
         if (_model.StockKeepingUnitId is null)
         {
-            _errorMessage = "SKU is required.";
+            _errorMessage = Localizer["Common.SkuRequired"];
             return;
         }
 
         if (_model.WarehouseId is null)
         {
-            _errorMessage = "Warehouse is required.";
+            _errorMessage = Localizer["Common.WarehouseRequired"];
             return;
         }
 
         if (_model.StorageLocationId is null)
         {
-            _errorMessage = "Storage location is required.";
+            _errorMessage = Localizer["Common.StorageLocationRequired"];
             return;
         }
 
         if (_model.CountedQuantity < 0)
         {
-            _errorMessage = "Counted quantity must be greater than or equal to zero.";
+            _errorMessage = Localizer["InventoryBalance.CountedQuantityNonNegative"];
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_model.Reason))
         {
-            _errorMessage = "Reason is required.";
+            _errorMessage = Localizer["Common.ReasonRequired"];
             return;
         }
 
@@ -391,17 +392,17 @@
                 if (IsConcurrencyConflict(result.Error))
                 {
                     _hasConcurrencyConflict = true;
-                    _errorMessage = "Inventory balance changed. Close this dialog, review the refreshed balances, and start the initial count again if needed.";
+                    _errorMessage = Localizer["InventoryBalance.InitialCountConcurrencyConflict"];
                     return;
                 }
 
-                _errorMessage = result.Error?.Message ?? "Initial count failed.";
+                _errorMessage = result.Error?.Message ?? Localizer["InventoryBalance.InitialCountError"];
                 return;
             }
 
             if (result.Value is null)
             {
-                _errorMessage = "The operation completed without returning inventory balance details.";
+                _errorMessage = Localizer["InventoryBalance.MissingResult"];
                 return;
             }
 

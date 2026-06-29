@@ -1,16 +1,17 @@
 ﻿@page "/wms/topology/warehouses"
 
 @using MudBlazor
+@inject IStringLocalizer<SharedResource> Localizer
 
-<PageTitle>WMS Warehouses</PageTitle>
+<PageTitle>@Localizer["Warehouse.PageTitle"]</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
 	<MudStack Spacing="3">
 		<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
 			<div>
-				<MudText Typo="Typo.h5">Warehouses</MudText>
+				<MudText Typo="Typo.h5">@Localizer["Warehouse.Heading"]</MudText>
 				<MudText Typo="Typo.body2" Color="Color.Secondary">
-					WMS topology warehouses.
+					@Localizer["Warehouse.Description"]
 				</MudText>
 			</div>
 
@@ -20,7 +21,7 @@
 						   StartIcon="@Icons.Material.Filled.Add"
 						   OnClick="CreateWarehouseAsync"
 						   Disabled="_isLoading">
-					Create
+					@Localizer["Common.Create"]
 				</MudButton>
 
 				<MudButton Variant="Variant.Outlined"
@@ -28,7 +29,7 @@
 						   StartIcon="@Icons.Material.Filled.Refresh"
 						   OnClick="ReloadAsync"
 						   Disabled="_isLoading">
-					Refresh
+					@Localizer["Common.Refresh"]
 				</MudButton>
 			</MudStack>
 		</MudStack>

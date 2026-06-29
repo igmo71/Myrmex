@@ -1,5 +1,6 @@
 ﻿@using MudBlazor
 @using Myrmex.WebApp.Wms.Topology
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDialog>
     <TitleContent>
@@ -10,26 +11,26 @@
         <MudForm @ref="_form">
             <MudStack Spacing="3">
                 <MudTextField T="string"
-                              Label="Code"
+                              Label="@Localizer["Common.Code"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Disabled="IsEditMode"
                               Required="true"
-                              RequiredError="Code is required."
+                              RequiredError="@Localizer["Common.CodeRequired"]"
                               MaxLength="32"
                               @bind-Value="_model.Code" />
 
                 <MudTextField T="string"
-                              Label="Name"
+                              Label="@Localizer["Common.Name"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Required="true"
-                              RequiredError="Name is required."
+                              RequiredError="@Localizer["Common.NameRequired"]"
                               MaxLength="200"
                               @bind-Value="_model.Name" />
 
                 <MudTextField T="string"
-                              Label="Description"
+                              Label="@Localizer["Common.Description"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Lines="3"
@@ -49,7 +50,7 @@
     <DialogActions>
         <MudButton OnClick="Cancel"
                    Disabled="_isSaving">
-            Cancel
+            @Localizer["Common.Cancel"]
         </MudButton>
 
         <MudButton Color="Color.Primary"
@@ -62,7 +63,7 @@
                                      Indeterminate="true"
                                      Class="me-2" />
             }
-            Save
+            @Localizer["Common.Save"]
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -87,7 +88,7 @@
 
     private bool IsEditMode => Zone is not null;
 
-    private string Title => IsEditMode ? "Edit zone" : "Create zone";
+    private string Title => IsEditMode ? Localizer["Zone.EditTitle"] : Localizer["Zone.CreateTitle"];
 
     protected override void OnInitialized()
     {
@@ -152,7 +153,7 @@
 
             if (result.Value is null)
             {
-                _errorMessage = "The operation completed without returning zone details.";
+                _errorMessage = Localizer["Zone.MissingResult"];
                 return;
             }
 

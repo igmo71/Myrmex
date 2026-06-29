@@ -1,5 +1,6 @@
 @using Myrmex.Shared.Wms.Inventory
 @inject IDialogService DialogService
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDialog>
     <TitleContent>
@@ -10,31 +11,31 @@
         <MudStack Spacing="3">
             <MudGrid>
                 <MudItem xs="12" md="4">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Status</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@Localizer["Common.Status"]</MudText>
                     <MudText Typo="Typo.body2">@Transfer.Status</MudText>
                 </MudItem>
                 <MudItem xs="12" md="4">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Warehouse</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@Localizer["Common.Warehouse"]</MudText>
                     <MudText Typo="Typo.body2">@Transfer.SourceWarehouse.Code - @Transfer.SourceWarehouse.Name</MudText>
                 </MudItem>
                 <MudItem xs="12" md="4">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Transit</MudText>
-                    <MudText Typo="Typo.body2">@(Transfer.TransitStorageLocation?.Code ?? "Direct")</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@Localizer["InventoryTransfer.Transit"]</MudText>
+                    <MudText Typo="Typo.body2">@(Transfer.TransitStorageLocation?.Code ?? Localizer["InventoryTransfer.Direct"])</MudText>
                 </MudItem>
             </MudGrid>
 
             <MudTable Items="Transfer.Lines" Dense="true" Hover="true">
                 <HeaderContent>
-                    <MudTh>SKU</MudTh>
-                    <MudTh>Source</MudTh>
-                    <MudTh>Destination</MudTh>
-                    <MudTh>Requested</MudTh>
-                    <MudTh>Moved</MudTh>
-                    <MudTh>Picked</MudTh>
-                    <MudTh>Placed</MudTh>
-                    <MudTh>In transit</MudTh>
-                    <MudTh>Remaining pick</MudTh>
-                    <MudTh>Remaining place</MudTh>
+                    <MudTh>@Localizer["Common.Sku"]</MudTh>
+                    <MudTh>@Localizer["Common.Source"]</MudTh>
+                    <MudTh>@Localizer["Common.Destination"]</MudTh>
+                    <MudTh>@Localizer["InventoryTransfer.Requested"]</MudTh>
+                    <MudTh>@Localizer["InventoryTransfer.Moved"]</MudTh>
+                    <MudTh>@Localizer["InventoryTransfer.Picked"]</MudTh>
+                    <MudTh>@Localizer["InventoryTransfer.Placed"]</MudTh>
+                    <MudTh>@Localizer["InventoryTransfer.InTransit"]</MudTh>
+                    <MudTh>@Localizer["InventoryTransfer.RemainingPick"]</MudTh>
+                    <MudTh>@Localizer["InventoryTransfer.RemainingPlace"]</MudTh>
                     <MudTh></MudTh>
                 </HeaderContent>
                 <RowTemplate>
@@ -55,7 +56,7 @@
                                        Color="Color.Primary"
                                        Variant="Variant.Outlined"
                                        OnClick="@(() => OpenMovementDialogAsync(context, InventoryTransferMovementDialog.MoveAction))">
-                                Move
+                                @Localizer["Common.Move"]
                             </MudButton>
                         }
                         @if (CanPick(context))
@@ -64,7 +65,7 @@
                                        Color="Color.Primary"
                                        Variant="Variant.Outlined"
                                        OnClick="@(() => OpenMovementDialogAsync(context, InventoryTransferMovementDialog.PickAction))">
-                                Pick
+                                @Localizer["InventoryTransfer.Pick"]
                             </MudButton>
                         }
                         @if (CanPlace(context))
@@ -73,23 +74,23 @@
                                        Color="Color.Primary"
                                        Variant="Variant.Outlined"
                                        OnClick="@(() => OpenMovementDialogAsync(context, InventoryTransferMovementDialog.PlaceAction))">
-                                Place
+                                @Localizer["InventoryTransfer.Place"]
                             </MudButton>
                         }
                     </MudTd>
                 </RowTemplate>
             </MudTable>
 
-            <MudText Typo="Typo.subtitle1">Movement history</MudText>
+            <MudText Typo="Typo.subtitle1">@Localizer["InventoryTransfer.MovementHistory"]</MudText>
             <MudTable Items="Transfer.Movements" Dense="true" Hover="true">
                 <HeaderContent>
-                    <MudTh>Occurred</MudTh>
-                    <MudTh>Meaning</MudTh>
-                    <MudTh>SKU</MudTh>
-                    <MudTh>From</MudTh>
-                    <MudTh>To</MudTh>
-                    <MudTh>Quantity</MudTh>
-                    <MudTh>Transaction</MudTh>
+                    <MudTh>@Localizer["InventoryTransfer.Occurred"]</MudTh>
+                    <MudTh>@Localizer["InventoryTransfer.Meaning"]</MudTh>
+                    <MudTh>@Localizer["Common.Sku"]</MudTh>
+                    <MudTh>@Localizer["Common.From"]</MudTh>
+                    <MudTh>@Localizer["Common.To"]</MudTh>
+                    <MudTh>@Localizer["Common.Quantity"]</MudTh>
+                    <MudTh>@Localizer["InventoryTransfer.Transaction"]</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd>@context.OccurredAtUtc.ToLocalTime().ToString("g")</MudTd>
@@ -101,14 +102,14 @@
                     <MudTd>@context.InventoryTransactionId</MudTd>
                 </RowTemplate>
                 <NoRecordsContent>
-                    <MudText>No movements recorded.</MudText>
+                    <MudText>@Localizer["InventoryTransfer.NoMovements"]</MudText>
                 </NoRecordsContent>
             </MudTable>
         </MudStack>
     </DialogContent>
 
     <DialogActions>
-        <MudButton OnClick="Close">Close</MudButton>
+        <MudButton OnClick="Close">@Localizer["Common.Close"]</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -166,7 +167,7 @@
         };
 
         IDialogReference dialog = await DialogService.ShowAsync<InventoryTransferMovementDialog>(
-            $"{action} transfer line",
+            MovementDialogTitle(action),
             parameters,
             options);
 
@@ -183,4 +184,11 @@
             await TransferChanged.InvokeAsync(updatedTransfer);
         }
     }
+
+    private string MovementDialogTitle(string action) => action switch
+    {
+        InventoryTransferMovementDialog.PickAction => Localizer["InventoryTransfer.PickLineTitle"],
+        InventoryTransferMovementDialog.PlaceAction => Localizer["InventoryTransfer.PlaceLineTitle"],
+        _ => Localizer["InventoryTransfer.MoveLineTitle"]
+    };
 }

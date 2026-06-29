@@ -1,16 +1,17 @@
 @page "/wms/catalog/skus"
 
 @using MudBlazor
+@inject IStringLocalizer<SharedResource> Localizer
 
-<PageTitle>WMS SKUs</PageTitle>
+<PageTitle>@Localizer["Sku.PageTitle"]</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
     <MudStack Spacing="3">
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
             <div>
-                <MudText Typo="Typo.h5">SKUs</MudText>
+                <MudText Typo="Typo.h5">@Localizer["Sku.Heading"]</MudText>
                 <MudText Typo="Typo.body2" Color="Color.Secondary">
-                    WMS catalog SKU reference data.
+                    @Localizer["Sku.Description"]
                 </MudText>
             </div>
 
@@ -20,7 +21,7 @@
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="CreateSkuAsync"
                            Disabled="_isLoading">
-                    Create
+                    @Localizer["Common.Create"]
                 </MudButton>
 
                 <MudButton Variant="Variant.Outlined"
@@ -28,7 +29,7 @@
                            StartIcon="@Icons.Material.Filled.Refresh"
                            OnClick="ReloadAsync"
                            Disabled="_isLoading">
-                    Refresh
+                    @Localizer["Common.Refresh"]
                 </MudButton>
             </MudStack>
         </MudStack>
