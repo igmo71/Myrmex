@@ -125,9 +125,6 @@
     private bool IsUomImporting => _isUomImporting;
     private bool IsSkuImporting => _isSkuImporting;
 
-    private bool IsImporting =>
-        _isWarehouseImporting || _isUomImporting || _isSkuImporting;
-
     private async Task TestConnectionAsync()
     {
         _isChecking = true;

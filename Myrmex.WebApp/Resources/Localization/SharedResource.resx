@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Shell.UnhandledError" xml:space="preserve"><value>An unexpected error has occurred.</value></data>
+  <data name="Shell.Reload" xml:space="preserve"><value>Reload</value></data>
+  <data name="Nav.Home" xml:space="preserve"><value>Home</value></data>
+  <data name="Nav.Wms" xml:space="preserve"><value>WMS</value></data>
+  <data name="Nav.Topology" xml:space="preserve"><value>Topology</value></data>
+  <data name="Nav.Warehouses" xml:space="preserve"><value>Warehouses</value></data>
+  <data name="Nav.Zones" xml:space="preserve"><value>Zones</value></data>
+  <data name="Nav.StorageLocations" xml:space="preserve"><value>Storage Locations</value></data>
+  <data name="Nav.Catalog" xml:space="preserve"><value>Catalog</value></data>
+  <data name="Nav.Skus" xml:space="preserve"><value>SKUs</value></data>
+  <data name="Nav.UnitsOfMeasure" xml:space="preserve"><value>Units of Measure</value></data>
+  <data name="Nav.Inventory" xml:space="preserve"><value>Inventory</value></data>
+  <data name="Nav.InventoryBalances" xml:space="preserve"><value>Inventory Balances</value></data>
+  <data name="Nav.InventoryLedger" xml:space="preserve"><value>Inventory Ledger</value></data>
+  <data name="Nav.InventoryTransfers" xml:space="preserve"><value>Inventory Transfers</value></data>
+  <data name="Nav.InventoryCounts" xml:space="preserve"><value>Inventory Counts</value></data>
+  <data name="Nav.Integrations" xml:space="preserve"><value>Integrations</value></data>
+  <data name="Home.PageTitle" xml:space="preserve"><value>Myrmex</value></data>
+  <data name="Home.Heading" xml:space="preserve"><value>Myrmex</value></data>
+  <data name="Home.Subtitle" xml:space="preserve"><value>A working WMS platform prototype.</value></data>
+  <data name="Home.About.Title" xml:space="preserve"><value>About the Project</value></data>
+  <data name="Home.About.Platform" xml:space="preserve"><value>Myrmex is being developed as a modular warehouse operations management system. The current version provides a foundation for warehouses, storage locations, SKUs, units of measure, inventory balances, and basic inventory movements.</value></data>
+  <data name="Home.About.Movements" xml:space="preserve"><value>Internal warehouse transfers between storage locations are supported, including movements through an intermediate cart and direct movements without one. These capabilities establish a foundation for receiving, putaway, picking, and inventory control.</value></data>
+  <data name="Home.About.OneC" xml:space="preserve"><value>Integration with 1С is a separate area. Warehouse, unit-of-measure, and nomenclature reference data is imported through OData while retaining the relationship to the external 1С key. The internal Myrmex model remains independent of external identifiers.</value></data>
+  <data name="Home.ReferenceData.Title" xml:space="preserve"><value>Reference Data</value></data>
+  <data name="Home.ReferenceData.Description" xml:space="preserve"><value>Warehouses, storage locations, units of measure, and SKUs provide the base data for warehouse operations and inventory accounting.</value></data>
+  <data name="Home.Inventory.Title" xml:space="preserve"><value>Inventory</value></data>
+  <data name="Home.Inventory.Description" xml:space="preserve"><value>Inventory balances show the current quantity by warehouse, storage location, and SKU and provide the basis for available-quantity control.</value></data>
+  <data name="Home.Movements.Title" xml:space="preserve"><value>Movements</value></data>
+  <data name="Home.Movements.Description" xml:space="preserve"><value>Basic warehouse movements support inventory transfers, including movements through a cart and direct movements between storage locations.</value></data>
+  <data name="Home.OneC.Title" xml:space="preserve"><value>1С Integration</value></data>
+  <data name="Home.OneC.Description" xml:space="preserve"><value>Reference data is imported through OData, linked to the external 1С key, while preserving Myrmex's internal identity.</value></data>
+  <data name="Home.Roadmap.Title" xml:space="preserve"><value>Next Steps</value></data>
+  <data name="Home.Roadmap.Description" xml:space="preserve"><value>The next stages cover receiving, LPNs, putaway, refinement of warehouse processes, and preparation of operator interfaces. The immediate goal is to connect reference data, inventory balances, and movements into complete WMS workflows.</value></data>
+  <data name="OneC.PageTitle" xml:space="preserve"><value>1С Integration</value></data>
+  <data name="OneC.Heading" xml:space="preserve"><value>1С Integration</value></data>
+  <data name="OneC.Connection.Description" xml:space="preserve"><value>Check OData publication availability.</value></data>
+  <data name="OneC.Connection.Check" xml:space="preserve"><value>Test Connection</value></data>
+  <data name="OneC.Connection.Checking" xml:space="preserve"><value>Checking...</value></data>
+  <data name="OneC.Connection.Ready" xml:space="preserve"><value>Connection is ready. Checked: {0}.</value></data>
+  <data name="OneC.Connection.Error" xml:space="preserve"><value>Could not test the 1С connection.</value></data>
+  <data name="OneC.Connection.ApiUnavailable" xml:space="preserve"><value>Could not reach the API to test the 1С connection.</value></data>
+  <data name="OneC.Import.Title" xml:space="preserve"><value>Import Reference Data</value></data>
+  <data name="OneC.Import.Warehouses.Action" xml:space="preserve"><value>Import Warehouses</value></data>
+  <data name="OneC.Import.Warehouses.InProgress" xml:space="preserve"><value>Importing warehouses...</value></data>
+  <data name="OneC.Import.UnitsOfMeasure.Action" xml:space="preserve"><value>Import Units of Measure</value></data>
+  <data name="OneC.Import.UnitsOfMeasure.InProgress" xml:space="preserve"><value>Importing units of measure...</value></data>
+  <data name="OneC.Import.Skus.Action" xml:space="preserve"><value>Import Nomenclature</value></data>
+  <data name="OneC.Import.Skus.InProgress" xml:space="preserve"><value>Importing nomenclature...</value></data>
+  <data name="OneC.Import.Complete" xml:space="preserve"><value>Import completed.</value></data>
+  <data name="OneC.Import.Incomplete" xml:space="preserve"><value>Import completed with incomplete results.</value></data>
+  <data name="OneC.Import.ReferenceType" xml:space="preserve"><value>Type</value></data>
+  <data name="OneC.Import.RecordErrors.Title" xml:space="preserve"><value>Errors and Skips (maximum 50)</value></data>
+  <data name="OneC.Import.AlreadyInProgress" xml:space="preserve"><value>An import of this reference type is already in progress.</value></data>
+  <data name="OneC.Import.Error" xml:space="preserve"><value>Could not import data from 1С.</value></data>
+  <data name="OneC.Import.ApiUnavailable" xml:space="preserve"><value>Could not reach the API to import data from 1С.</value></data>
+  <data name="ReferenceType.Warehouses" xml:space="preserve"><value>Warehouses</value></data>
+  <data name="ReferenceType.UnitsOfMeasure" xml:space="preserve"><value>Units of Measure</value></data>
+  <data name="ReferenceType.Skus" xml:space="preserve"><value>Nomenclature / SKU</value></data>
+  <data name="Common.Loading" xml:space="preserve"><value>Loading...</value></data>
+  <data name="Common.Error" xml:space="preserve"><value>Error</value></data>
+  <data name="Common.Processed" xml:space="preserve"><value>Processed</value></data>
+  <data name="Common.Created" xml:space="preserve"><value>Created</value></data>
+  <data name="Common.Updated" xml:space="preserve"><value>Updated</value></data>
+  <data name="Common.Skipped" xml:space="preserve"><value>Skipped</value></data>
+  <data name="Common.Failed" xml:space="preserve"><value>Failed</value></data>
+  <data name="Common.Import" xml:space="preserve"><value>Import</value></data>
+  <data name="Common.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Common.Reason" xml:space="preserve"><value>Reason</value></data>
+  <data name="Common.Message" xml:space="preserve"><value>Message</value></data>
+</root>
