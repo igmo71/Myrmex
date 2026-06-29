@@ -1,19 +1,20 @@
 @using Myrmex.Shared.Wms.Catalog
 @using Myrmex.Shared.Wms.Topology
 @using System.Globalization
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudPaper Class="pa-4">
     <MudStack Spacing="3">
         <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
             <MudSelect T="Guid?"
-                       Label="Warehouse"
+                       Label="@Localizer["Common.Warehouse"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Clearable="true"
                        Value="SelectedWarehouseId"
                        ValueChanged="OnWarehouseChanged"
                        Disabled="IsLoadingWarehouses"
-                       HelperText="Includes inactive warehouses with history."
+                       HelperText="@Localizer["InventoryLedger.IncludesInactiveWarehouses"]"
                        Class="min-width-300">
                 @foreach (WarehouseDetails warehouse in Warehouses)
                 {
@@ -24,7 +25,7 @@
             </MudSelect>
 
             <MudAutocomplete T="StorageLocationLookupItem"
-                             Label="Storage location"
+                             Label="@Localizer["Common.StorageLocation"]"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Clearable="true"
@@ -47,17 +48,17 @@
                         <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
                         @if (!context.IsActive)
                         {
-                            <MudText Typo="Typo.caption" Color="Color.Warning">Inactive</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Warning">@Localizer["Common.Inactive"]</MudText>
                         }
                     </MudStack>
                 </ItemTemplate>
                 <NoItemsTemplate>
-                    <MudText>No storage locations found.</MudText>
+                    <MudText>@Localizer["StorageLocation.NoneFound"]</MudText>
                 </NoItemsTemplate>
             </MudAutocomplete>
 
             <MudAutocomplete T="StockKeepingUnitLookupItem"
-                             Label="SKU"
+                             Label="@Localizer["Common.Sku"]"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Clearable="true"
@@ -72,54 +73,54 @@
                              ValueChanged="OnStockKeepingUnitChanged"
                              SearchFunc="SearchStockKeepingUnits"
                              ToStringFunc="FormatStockKeepingUnit"
-                             HelperText="Includes inactive SKUs with history."
+                             HelperText="@Localizer["InventoryLedger.IncludesInactiveSkus"]"
                              Class="min-width-300">
                 <ItemTemplate>
                     <MudStack Spacing="0">
                         <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
                         @if (!context.IsActive || !context.IsBaseUnitOfMeasureActive)
                         {
-                            <MudText Typo="Typo.caption" Color="Color.Warning">Inactive</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Warning">@Localizer["Common.Inactive"]</MudText>
                         }
                     </MudStack>
                 </ItemTemplate>
                 <NoItemsTemplate>
-                    <MudText>No SKUs found.</MudText>
+                    <MudText>@Localizer["Sku.NoneFound"]</MudText>
                 </NoItemsTemplate>
             </MudAutocomplete>
         </MudStack>
 
         <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
             <MudSelect T="string"
-                       Label="Transaction type"
+                       Label="@Localizer["InventoryLedger.TransactionType"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Value="SelectedTransactionType"
                        ValueChanged="OnTransactionTypeChanged"
-                       HelperText="MVP ledger type."
+                       HelperText="@Localizer["InventoryLedger.TransactionTypeHelper"]"
                        Class="min-width-300">
-                <MudSelectItem T="string" Value="@AllTransactionTypesValue">All</MudSelectItem>
-                <MudSelectItem T="string" Value="@AdjustmentTransactionType">Adjustment</MudSelectItem>
+                <MudSelectItem T="string" Value="@AllTransactionTypesValue">@Localizer["Common.All"]</MudSelectItem>
+                <MudSelectItem T="string" Value="@AdjustmentTransactionType">@Localizer["InventoryLedger.Adjustment"]</MudSelectItem>
             </MudSelect>
 
-            <MudDatePicker Label="Occurred from"
+            <MudDatePicker Label="@Localizer["InventoryLedger.OccurredFrom"]"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Clearable="true"
                            Date="OccurredFromDate"
                            DateChanged="OnOccurredFromDateChanged"
                            Culture="@CultureInfo.CurrentCulture"
-                           HelperText="Starts at 00:00 UTC."
+                           HelperText="@Localizer["InventoryLedger.OccurredFromHelper"]"
                            Class="min-width-300" />
 
-            <MudDatePicker Label="Occurred to"
+            <MudDatePicker Label="@Localizer["InventoryLedger.OccurredTo"]"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Clearable="true"
                            Date="OccurredToDate"
                            DateChanged="OnOccurredToDateChanged"
                            Culture="@CultureInfo.CurrentCulture"
-                           HelperText="Includes the selected day."
+                           HelperText="@Localizer["InventoryLedger.OccurredToHelper"]"
                            Class="min-width-300" />
 
             <MudButton Variant="Variant.Outlined"
@@ -127,7 +128,7 @@
                        StartIcon="@Icons.Material.Filled.Clear"
                        OnClick="OnClearRequested"
                        Class="mt-2">
-                Clear
+                @Localizer["Common.Clear"]
             </MudButton>
         </MudStack>
     </MudStack>
@@ -191,7 +192,9 @@
     public EventCallback ClearRequested { get; set; }
 
     private string? StorageLocationHelperText =>
-        SelectedWarehouseId is null ? "Select a warehouse first." : "Scoped to the selected warehouse.";
+        SelectedWarehouseId is null
+            ? Localizer["Common.SelectWarehouseFirst"]
+            : Localizer["InventoryLedger.ScopedToWarehouse"];
 
     private Task OnWarehouseChanged(Guid? value) =>
         SelectedWarehouseIdChanged.InvokeAsync(value);

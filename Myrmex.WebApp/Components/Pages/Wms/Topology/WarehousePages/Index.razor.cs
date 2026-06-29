@@ -88,7 +88,7 @@ public partial class Index
         };
 
         IDialogReference dialog = await DialogService
-            .ShowAsync<WarehouseEditDialog>("Create warehouse", options);
+            .ShowAsync<WarehouseEditDialog>(Localizer["Warehouse.CreateTitle"], options);
 
         DialogResult? result = await dialog.Result;
 
@@ -97,7 +97,7 @@ public partial class Index
             return;
         }
 
-        Snackbar.Add("Warehouse created.", Severity.Success);
+        Snackbar.Add(Localizer["Warehouse.Created"], Severity.Success);
 
         await LoadWarehousesAsync();
     }
@@ -117,7 +117,7 @@ public partial class Index
         };
 
         IDialogReference dialog = await DialogService
-            .ShowAsync<WarehouseEditDialog>("Edit warehouse", parameters, options);
+            .ShowAsync<WarehouseEditDialog>(Localizer["Warehouse.EditTitle"], parameters, options);
 
         DialogResult? result = await dialog.Result;
 
@@ -126,7 +126,7 @@ public partial class Index
             return;
         }
 
-        Snackbar.Add("Warehouse updated.", Severity.Success);
+        Snackbar.Add(Localizer["Warehouse.Updated"], Severity.Success);
 
         await LoadWarehousesAsync();
     }
@@ -140,12 +140,12 @@ public partial class Index
 
             if (result.IsFailure)
             {
-                Snackbar.Add(result.Error?.Message ?? "Warehouse deactivation failed.", Severity.Error);
+                Snackbar.Add(result.Error?.Message ?? Localizer["Warehouse.DeactivateError"], Severity.Error);
 
                 return;
             }
 
-            Snackbar.Add("Warehouse deactivated.", Severity.Success);
+            Snackbar.Add(Localizer["Warehouse.Deactivated"], Severity.Success);
 
             await LoadWarehousesAsync();
         }
@@ -164,12 +164,12 @@ public partial class Index
 
             if (result.IsFailure)
             {
-                Snackbar.Add(result.Error?.Message ?? "Warehouse reactivation failed.", Severity.Error);
+                Snackbar.Add(result.Error?.Message ?? Localizer["Warehouse.ReactivateError"], Severity.Error);
 
                 return;
             }
 
-            Snackbar.Add("Warehouse reactivated.", Severity.Success);
+            Snackbar.Add(Localizer["Warehouse.Reactivated"], Severity.Success);
 
             await LoadWarehousesAsync();
         }

@@ -101,7 +101,7 @@ public partial class Index
         };
 
         IDialogReference dialog = await DialogService
-            .ShowAsync<SkuEditDialog>("Create SKU", options);
+            .ShowAsync<SkuEditDialog>(Localizer["Sku.CreateTitle"], options);
 
         DialogResult? result = await dialog.Result;
 
@@ -110,7 +110,7 @@ public partial class Index
             return;
         }
 
-        Snackbar.Add("SKU created.", Severity.Success);
+        Snackbar.Add(Localizer["Sku.Created"], Severity.Success);
 
         await LoadSkusAsync();
     }
@@ -130,7 +130,7 @@ public partial class Index
         };
 
         IDialogReference dialog = await DialogService
-            .ShowAsync<SkuEditDialog>("Edit SKU", parameters, options);
+            .ShowAsync<SkuEditDialog>(Localizer["Sku.EditTitle"], parameters, options);
 
         DialogResult? result = await dialog.Result;
 
@@ -139,7 +139,7 @@ public partial class Index
             return;
         }
 
-        Snackbar.Add("SKU updated.", Severity.Success);
+        Snackbar.Add(Localizer["Sku.Updated"], Severity.Success);
 
         await LoadSkusAsync();
     }
@@ -153,12 +153,12 @@ public partial class Index
 
             if (result.IsFailure)
             {
-                Snackbar.Add(result.Error?.Message ?? "SKU deactivation failed.", Severity.Error);
+                Snackbar.Add(result.Error?.Message ?? Localizer["Sku.DeactivateError"], Severity.Error);
 
                 return;
             }
 
-            Snackbar.Add("SKU deactivated.", Severity.Success);
+            Snackbar.Add(Localizer["Sku.Deactivated"], Severity.Success);
 
             await LoadSkusAsync();
         }
@@ -177,12 +177,12 @@ public partial class Index
 
             if (result.IsFailure)
             {
-                Snackbar.Add(result.Error?.Message ?? "SKU reactivation failed.", Severity.Error);
+                Snackbar.Add(result.Error?.Message ?? Localizer["Sku.ReactivateError"], Severity.Error);
 
                 return;
             }
 
-            Snackbar.Add("SKU reactivated.", Severity.Success);
+            Snackbar.Add(Localizer["Sku.Reactivated"], Severity.Success);
 
             await LoadSkusAsync();
         }

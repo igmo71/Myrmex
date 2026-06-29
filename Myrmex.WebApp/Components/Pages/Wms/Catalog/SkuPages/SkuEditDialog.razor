@@ -2,6 +2,7 @@
 @using Myrmex.Shared.Common
 @using Myrmex.WebApp.Wms.Api
 @using Myrmex.WebApp.Wms.Catalog
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDialog>
     <TitleContent>
@@ -12,26 +13,26 @@
         <MudForm @ref="_form">
             <MudStack Spacing="3">
                 <MudTextField T="string"
-                              Label="Code"
+                              Label="@Localizer["Common.Code"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Disabled="IsEditMode"
                               Required="true"
-                              RequiredError="Code is required."
+                              RequiredError="@Localizer["Common.CodeRequired"]"
                               MaxLength="32"
                               @bind-Value="_model.Code" />
 
                 <MudTextField T="string"
-                              Label="Name"
+                              Label="@Localizer["Common.Name"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Required="true"
-                              RequiredError="Name is required."
+                              RequiredError="@Localizer["Common.NameRequired"]"
                               MaxLength="200"
                               @bind-Value="_model.Name" />
 
                 <MudTextField T="string"
-                              Label="Description"
+                              Label="@Localizer["Common.Description"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Lines="3"
@@ -39,12 +40,12 @@
                               @bind-Value="_model.Description" />
 
                 <MudSelect T="Guid?"
-                           Label="Base UoM"
+                           Label="@Localizer["Sku.BaseUnitOfMeasure"]"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Disabled="_isLoadingUnitsOfMeasure"
                            Required="true"
-                           RequiredError="Base UoM is required."
+                           RequiredError="@Localizer["Sku.BaseUnitOfMeasureRequired"]"
                            @bind-Value="_model.BaseUnitOfMeasureId">
                     @foreach (UnitOfMeasureDetails unitOfMeasure in _unitsOfMeasure)
                     {
@@ -67,7 +68,7 @@
     <DialogActions>
         <MudButton OnClick="Cancel"
                    Disabled="_isSaving">
-            Cancel
+            @Localizer["Common.Cancel"]
         </MudButton>
 
         <MudButton Color="Color.Primary"
@@ -78,7 +79,7 @@
             {
                 <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" />
             }
-            Save
+            @Localizer["Common.Save"]
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -102,7 +103,7 @@
 
     private bool IsEditMode => Sku is not null;
 
-    private string Title => IsEditMode ? "Edit SKU" : "Create SKU";
+    private string Title => IsEditMode ? Localizer["Sku.EditTitle"] : Localizer["Sku.CreateTitle"];
 
     protected override async Task OnInitializedAsync()
     {
@@ -172,7 +173,7 @@
             {
                 if (_model.BaseUnitOfMeasureId is null)
                 {
-                    _errorMessage = "Base UoM is required.";
+                    _errorMessage = Localizer["Sku.BaseUnitOfMeasureRequired"];
                     return;
                 }
 
@@ -188,7 +189,7 @@
             {
                 if (_model.BaseUnitOfMeasureId is null)
                 {
-                    _errorMessage = "Base UoM is required.";
+                    _errorMessage = Localizer["Sku.BaseUnitOfMeasureRequired"];
                     return;
                 }
 
@@ -210,7 +211,7 @@
 
             if (result.Value is null)
             {
-                _errorMessage = "The operation completed without returning SKU details.";
+                _errorMessage = Localizer["Sku.MissingResult"];
                 return;
             }
 

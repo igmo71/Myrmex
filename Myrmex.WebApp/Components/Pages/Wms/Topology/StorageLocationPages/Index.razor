@@ -1,16 +1,17 @@
 ﻿@page "/wms/topology/locations"
 
 @using MudBlazor
+@inject IStringLocalizer<SharedResource> Localizer
 
-<PageTitle>WMS Storage Locations</PageTitle>
+<PageTitle>@Localizer["StorageLocation.PageTitle"]</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
 	<MudStack Spacing="3">
 		<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
 			<div>
-				<MudText Typo="Typo.h5">Storage Locations</MudText>
+				<MudText Typo="Typo.h5">@Localizer["StorageLocation.Heading"]</MudText>
 				<MudText Typo="Typo.body2" Color="Color.Secondary">
-					WMS warehouse storage locations.
+					@Localizer["StorageLocation.Description"]
 				</MudText>
 			</div>
 
@@ -20,7 +21,7 @@
 						   StartIcon="@Icons.Material.Filled.Add"
 						   OnClick="CreateStorageLocationAsync"
 						   Disabled="_isLoading || _selectedWarehouseId is null || _selectedZoneId is null">
-					Create
+					@Localizer["Common.Create"]
 				</MudButton>
 
 				<MudButton Variant="Variant.Outlined"
@@ -28,7 +29,7 @@
 						   StartIcon="@Icons.Material.Filled.Refresh"
 						   OnClick="ReloadAsync"
 						   Disabled="_isLoading">
-					Refresh
+					@Localizer["Common.Refresh"]
 				</MudButton>
 			</MudStack>
 		</MudStack>
@@ -63,7 +64,7 @@
 		@if (_selectedWarehouseId is null)
 		{
 			<MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
-				Select a warehouse to view storage locations.
+				@Localizer["StorageLocation.SelectWarehousePrompt"]
 			</MudAlert>
 		}
 		else

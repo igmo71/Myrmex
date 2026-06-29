@@ -1,10 +1,11 @@
 @using System.Globalization
 @using Myrmex.Shared.Wms.Inventory
 @using Myrmex.Shared.Wms.Topology
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">Move inventory</MudText>
+        <MudText Typo="Typo.h6">@Localizer["InventoryBalance.MoveTitle"]</MudText>
     </TitleContent>
 
     <DialogContent>
@@ -13,46 +14,46 @@
             <MudForm @ref="_form">
                 <MudStack Spacing="3">
                     <MudTextField T="string"
-                                  Label="SKU"
+                                  Label="@Localizer["Common.Sku"]"
                                   Variant="Variant.Outlined"
                                   Margin="Margin.Dense"
                                   Value="@StockKeepingUnitDisplay"
                                   Disabled="true" />
 
                     <MudTextField T="string"
-                                  Label="Warehouse"
+                                  Label="@Localizer["Common.Warehouse"]"
                                   Variant="Variant.Outlined"
                                   Margin="Margin.Dense"
                                   Value="@WarehouseDisplay"
                                   Disabled="true" />
 
                     <MudTextField T="string"
-                                  Label="Source location"
+                                  Label="@Localizer["InventoryBalance.SourceLocation"]"
                                   Variant="Variant.Outlined"
                                   Margin="Margin.Dense"
                                   Value="@SourceStorageLocationDisplay"
                                   Disabled="true" />
 
                     <MudNumericField T="decimal"
-                                     Label="Current quantity"
+                                     Label="@Localizer["InventoryBalance.CurrentQuantity"]"
                                      Value="InventoryBalance.Quantity"
                                      Disabled="true"
                                      Culture="@QuantityCulture"
                                      Format="0.####" />
 
                     <MudTextField T="string"
-                                  Label="Base UoM"
+                                  Label="@Localizer["Sku.BaseUnitOfMeasure"]"
                                   Variant="Variant.Outlined"
                                   Margin="Margin.Dense"
                                   Value="@BaseUnitOfMeasureDisplay"
                                   Disabled="true" />
 
                     <MudAutocomplete T="StorageLocationLookupItem"
-                                     Label="Destination location"
+                                     Label="@Localizer["InventoryBalance.DestinationLocation"]"
                                      Variant="Variant.Outlined"
                                      Margin="Margin.Dense"
                                      Required="true"
-                                     RequiredError="Destination location is required."
+                                     RequiredError="@Localizer["InventoryBalance.DestinationLocationRequired"]"
                                      Clearable="true"
                                      ShowProgressIndicator="true"
                                      MinCharacters="0"
@@ -70,18 +71,18 @@
                             <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
                         </ItemTemplate>
                         <NoItemsTemplate>
-                            <MudText>No eligible destination locations found.</MudText>
+                            <MudText>@Localizer["InventoryBalance.NoEligibleDestinations"]</MudText>
                         </NoItemsTemplate>
                     </MudAutocomplete>
 
                     <MudNumericField T="decimal"
-                                     Label="Quantity to move"
+                                     Label="@Localizer["InventoryBalance.QuantityToMove"]"
                                      Variant="Variant.Outlined"
                                      Margin="Margin.Dense"
                                      Min="@(0.0001m)"
                                      Max="@InventoryBalance.Quantity"
                                      Required="true"
-                                     RequiredError="Quantity is required."
+                                     RequiredError="@Localizer["Common.QuantityRequired"]"
                                      Culture="@QuantityCulture"
                                      Format="0.####"
                                      InputMode="@(InputMode.@decimal)"
@@ -89,11 +90,11 @@
                                      @bind-Value="_quantity" />
 
                     <MudTextField T="string"
-                                  Label="Reason"
+                                  Label="@Localizer["Common.Reason"]"
                                   Variant="Variant.Outlined"
                                   Margin="Margin.Dense"
                                   Required="true"
-                                  RequiredError="Reason is required."
+                                  RequiredError="@Localizer["Common.ReasonRequired"]"
                                   MaxLength="500"
                                   Lines="3"
                                   Disabled="_isSaving || _hasConflict"
@@ -112,21 +113,21 @@
         {
             <MudStack Spacing="3">
                 <MudAlert Severity="Severity.Success" Variant="Variant.Filled">
-                    Inventory moved successfully.
+                    @Localizer["InventoryBalance.MoveSucceeded"]
                 </MudAlert>
 
                 <MudTextField T="string"
-                              Label="Moved quantity"
+                              Label="@Localizer["InventoryBalance.MovedQuantity"]"
                               Value="@FormatQuantity(_result.MovedQuantity)"
                               Disabled="true" />
 
                 <MudTextField T="string"
-                              Label="Source"
+                              Label="@Localizer["Common.Source"]"
                               Value="@FormatBalanceResult(_result.SourceBalance, _result.SourceQuantityBefore, _result.SourceQuantityAfter)"
                               Disabled="true" />
 
                 <MudTextField T="string"
-                              Label="Destination"
+                              Label="@Localizer["Common.Destination"]"
                               Value="@FormatBalanceResult(_result.DestinationBalance, _result.DestinationQuantityBefore, _result.DestinationQuantityAfter)"
                               Disabled="true" />
             </MudStack>
@@ -138,7 +139,7 @@
         {
             <MudButton OnClick="Cancel"
                        Disabled="_isSaving">
-                Close
+                @Localizer["Common.Close"]
             </MudButton>
 
             <MudButton Color="Color.Primary"
@@ -151,7 +152,7 @@
                                          Indeterminate="true"
                                          Class="me-2" />
                 }
-                Move
+                @Localizer["Common.Move"]
             </MudButton>
         }
         else
@@ -159,7 +160,7 @@
             <MudButton Color="Color.Primary"
                        Variant="Variant.Filled"
                        OnClick="Done">
-                Done
+                @Localizer["Common.Done"]
             </MudButton>
         }
     </DialogActions>
@@ -181,7 +182,7 @@
     private WmsTopologyApiClient WmsTopologyApiClient { get; set; } = null!;
 
     private static readonly CultureInfo QuantityCulture =
-        CultureInfo.GetCultureInfo("ru-RU");
+        CultureInfo.CurrentCulture;
 
     private MudForm? _form;
     private StorageLocationLookupItem? _destinationStorageLocation;
@@ -266,20 +267,20 @@
 
         if (_destinationStorageLocation is null)
         {
-            _errorMessage = "Destination location is required.";
+            _errorMessage = Localizer["InventoryBalance.DestinationLocationRequired"];
             return;
         }
 
         if (_quantity <= 0 || _quantity > InventoryBalance.Quantity)
         {
             _errorMessage =
-                "Quantity must be greater than zero and no greater than the current source quantity.";
+                Localizer["InventoryBalance.MoveQuantityRange"];
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_reason))
         {
-            _errorMessage = "Reason is required.";
+            _errorMessage = Localizer["Common.ReasonRequired"];
             return;
         }
 
@@ -305,18 +306,18 @@
                 {
                     _hasConflict = true;
                     _errorMessage =
-                        "Inventory changed while the move was being saved. Close this dialog, review the refreshed balances, and retry.";
+                        Localizer["InventoryBalance.MoveConcurrencyConflict"];
                     return;
                 }
 
-                _errorMessage = result.Error?.Message ?? "Inventory move failed.";
+                _errorMessage = result.Error?.Message ?? Localizer["InventoryBalance.MoveError"];
                 return;
             }
 
             if (result.Value is null)
             {
                 _errorMessage =
-                    "The operation completed without returning inventory move details.";
+                    Localizer["InventoryBalance.MoveMissingResult"];
                 return;
             }
 

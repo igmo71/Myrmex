@@ -241,7 +241,7 @@ public partial class Index
             };
 
             await DialogService.ShowAsync<InventoryTransactionDetailsDialog>(
-                "Inventory transaction details",
+                Localizer["InventoryLedger.TransactionDetailsTitle"],
                 parameters,
                 options);
         }
@@ -325,8 +325,7 @@ public partial class Index
                 routedStorageLocation is not null &&
                 routedStorageLocation.WarehouseId != routeWarehouseId)
             {
-                _routeValidationMessage =
-                    "The routed warehouse and storage location do not match. Correct or clear the filters before loading ledger history.";
+                _routeValidationMessage = Localizer["InventoryLedger.RouteWarehouseMismatch"];
                 _isRouteStateBlockingLedgerRequests = true;
                 return;
             }
@@ -342,8 +341,7 @@ public partial class Index
         }
         catch (Exception exception)
         {
-            _routeValidationMessage =
-                $"The routed ledger filters could not be restored: {exception.Message}";
+            _routeValidationMessage = Localizer["InventoryLedger.RouteRestoreError", exception.Message];
             _isRouteStateBlockingLedgerRequests = true;
         }
     }
@@ -461,7 +459,7 @@ public partial class Index
             _occurredToDate.HasValue &&
             _occurredFromDate.Value.Date > _occurredToDate.Value.Date)
         {
-            validationMessage = "Occurred from date must not be later than occurred to date.";
+            validationMessage = Localizer["InventoryLedger.InvalidDateRange"];
             return false;
         }
 

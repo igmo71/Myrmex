@@ -1,6 +1,7 @@
 @using System.Globalization
 @using Myrmex.Shared.Wms.Inventory
 @using Myrmex.WebApp.Wms.Api
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDialog>
     <TitleContent>
@@ -11,54 +12,54 @@
         <MudForm @ref="_form">
             <MudStack Spacing="3">
                 <MudTextField T="string"
-                              Label="SKU"
+                              Label="@Localizer["Common.Sku"]"
                               Value="@SkuDisplay"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Disabled="true" />
 
                 <MudTextField T="string"
-                              Label="Storage location"
+                              Label="@Localizer["Common.StorageLocation"]"
                               Value="@LocationDisplay"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Disabled="true" />
 
                 <MudNumericField T="decimal"
-                                 Label="System quantity"
+                                 Label="@Localizer["InventoryCount.SystemQuantity"]"
                                  Value="@CountLine.SystemQuantity"
                                  Culture="@QuantityCulture"
                                  Format="0.####"
                                  Disabled="true" />
 
                 <MudTextField T="string"
-                              Label="Base UoM"
+                              Label="@Localizer["Sku.BaseUnitOfMeasure"]"
                               Value="@BaseUomDisplay"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Disabled="true" />
 
                 <MudNumericField T="decimal"
-                                 Label="Counted quantity"
+                                 Label="@Localizer["InventoryBalance.CountedQuantity"]"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="@(0m)"
                                  Required="true"
-                                 RequiredError="Counted quantity is required."
+                                 RequiredError="@Localizer["InventoryBalance.CountedQuantityRequired"]"
                                  Culture="@QuantityCulture"
                                  Format="0.####"
                                  InputMode="@(InputMode.@decimal)"
                                  @bind-Value="_countedQuantity" />
 
                 <MudNumericField T="decimal"
-                                 Label="Variance"
+                                 Label="@Localizer["InventoryCount.Variance"]"
                                  Value="@VarianceQuantity"
                                  Culture="@QuantityCulture"
                                  Format="+0.####;-0.####;0"
                                  Disabled="true" />
 
                 <MudTextField T="string"
-                              Label="Comment"
+                              Label="@Localizer["Common.Comment"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Lines="3"
@@ -74,7 +75,7 @@
     </DialogContent>
 
     <DialogActions>
-        <MudButton OnClick="Cancel" Disabled="_isSaving">Cancel</MudButton>
+        <MudButton OnClick="Cancel" Disabled="_isSaving">@Localizer["Common.Cancel"]</MudButton>
         <MudButton Color="Color.Primary"
                    Variant="Variant.Filled"
                    OnClick="SaveAsync"
@@ -85,7 +86,7 @@
                                      Indeterminate="true"
                                      Class="me-2" />
             }
-            Save count
+            @Localizer["InventoryCount.SaveCount"]
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -93,8 +94,7 @@
 @code {
     public const string StaleResult = "InventoryCountLineStale";
 
-    private static readonly CultureInfo QuantityCulture =
-        CultureInfo.GetCultureInfo("ru-RU");
+    private static CultureInfo QuantityCulture => CultureInfo.CurrentCulture;
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
@@ -116,8 +116,8 @@
 
     private string DialogTitle =>
         CountLine.Status == InventoryCountLineStatusDetails.Counted
-            ? "Edit physical count"
-            : "Enter physical count";
+            ? Localizer["InventoryCount.EditPhysicalCount"]
+            : Localizer["InventoryCount.EnterPhysicalCount"];
 
     private string SkuDisplay => $"{CountLine.Sku.Code} - {CountLine.Sku.Name}";
 
@@ -153,7 +153,7 @@
 
         if (_countedQuantity < 0)
         {
-            _errorMessage = "Counted quantity must be non-negative.";
+            _errorMessage = Localizer["InventoryCount.CountedQuantityNonNegative"];
             return;
         }
 
@@ -179,13 +179,13 @@
                     return;
                 }
 
-                _errorMessage = result.Error?.Message ?? "Recording the count failed.";
+                _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.RecordError"];
                 return;
             }
 
             if (result.Value is null)
             {
-                _errorMessage = "The operation completed without returning count details.";
+                _errorMessage = Localizer["InventoryCount.MissingResult"];
                 return;
             }
 

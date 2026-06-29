@@ -95,7 +95,7 @@ public partial class Index
     private async Task CreateAsync()
     {
         IDialogReference dialog = await DialogService.ShowAsync<CreateInventoryCountDialog>(
-            "Create inventory count",
+            Localizer["InventoryCount.CreateTitle"],
             new DialogOptions { CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.Small });
         DialogResult? result = await dialog.Result;
         if (result is not null &&
@@ -112,10 +112,10 @@ public partial class Index
     private async Task CancelAsync(InventoryCountListItem count)
     {
         bool? confirmed = await DialogService.ShowMessageBoxAsync(
-            "Cancel inventory count",
-            "Cancel this count? Applied adjustments remain effective and the count becomes read-only.",
-            yesText: "Cancel count",
-            cancelText: "Keep open");
+            Localizer["InventoryCount.CancelTitle"],
+            Localizer["InventoryCount.CancelAppliedPrompt"],
+            yesText: Localizer["InventoryCount.CancelCount"],
+            cancelText: Localizer["InventoryCount.KeepOpen"]);
         if (confirmed != true)
         {
             return;
@@ -127,7 +127,7 @@ public partial class Index
                 new ChangeInventoryCountStatusRequest(count.CountVersion));
         if (result.IsFailure)
         {
-            _errorMessage = result.Error?.Message ?? "Cancelling the count failed.";
+            _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.CancelError"];
         }
 
         await ReloadAsync();

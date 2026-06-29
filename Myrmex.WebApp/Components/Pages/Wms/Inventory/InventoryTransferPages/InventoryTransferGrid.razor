@@ -1,4 +1,5 @@
 @using Myrmex.Shared.Wms.Inventory
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDataGrid T="InventoryTransferListItem"
              @ref="_dataGrid"
@@ -10,7 +11,7 @@
              SortMode="SortMode.Single"
              Filterable="false">
     <Columns>
-        <TemplateColumn Title="Transfer"
+        <TemplateColumn Title="@Localizer["InventoryTransfer.Transfer"]"
                         Tag="@InventoryTransferSortBy.Code"
                         SortBy="@(transfer => transfer.Code)"
                         Sortable="true">
@@ -22,7 +23,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Warehouse"
+        <TemplateColumn Title="@Localizer["Common.Warehouse"]"
                         Tag="@InventoryTransferSortBy.WarehouseCode"
                         SortBy="@(transfer => transfer.SourceWarehouse.Code)"
                         Sortable="true">
@@ -34,13 +35,13 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Transit">
+        <TemplateColumn Title="@Localizer["InventoryTransfer.Transit"]">
             <CellTemplate>
-                @(context.Item.TransitStorageLocation?.Code ?? "Direct")
+                @(context.Item.TransitStorageLocation?.Code ?? Localizer["InventoryTransfer.Direct"])
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Requested"
+        <TemplateColumn Title="@Localizer["InventoryTransfer.Requested"]"
                         Tag="@InventoryTransferSortBy.TotalRequestedQuantity"
                         SortBy="@(transfer => transfer.TotalRequestedQuantity)"
                         Sortable="true">
@@ -49,7 +50,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Picked"
+        <TemplateColumn Title="@Localizer["InventoryTransfer.Picked"]"
                         Tag="@InventoryTransferSortBy.TotalPickedQuantity"
                         SortBy="@(transfer => transfer.TotalPickedQuantity)"
                         Sortable="true">
@@ -58,7 +59,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Placed"
+        <TemplateColumn Title="@Localizer["InventoryTransfer.Placed"]"
                         Tag="@InventoryTransferSortBy.TotalPlacedQuantity"
                         SortBy="@(transfer => transfer.TotalPlacedQuantity)"
                         Sortable="true">
@@ -67,7 +68,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="In transit"
+        <TemplateColumn Title="@Localizer["InventoryTransfer.InTransit"]"
                         Tag="@InventoryTransferSortBy.TotalInTransitQuantity"
                         SortBy="@(transfer => transfer.TotalInTransitQuantity)"
                         Sortable="true">
@@ -76,7 +77,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Status"
+        <TemplateColumn Title="@Localizer["Common.Status"]"
                         Tag="@InventoryTransferSortBy.Status"
                         SortBy="@(transfer => transfer.Status)"
                         Sortable="true">
@@ -89,7 +90,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Actions" Sortable="false">
+        <TemplateColumn Title="@Localizer["Common.Actions"]" Sortable="false">
             <CellTemplate>
                 <MudIconButton Icon="@GetActionIcon(context.Item)"
                                Size="Size.Small"
@@ -100,7 +101,7 @@
     </Columns>
 
     <NoRecordsContent>
-        <MudText>No transfers match the current filters.</MudText>
+        <MudText>@Localizer["InventoryTransfer.NoMatches"]</MudText>
     </NoRecordsContent>
 
     <PagerContent>
@@ -193,10 +194,10 @@
             : Icons.Material.Filled.Edit;
     }
 
-    private static string GetActionTitle(InventoryTransferListItem transfer)
+    private string GetActionTitle(InventoryTransferListItem transfer)
     {
         return transfer.Status == InventoryTransferStatusDetails.Completed
-            ? "View transfer"
-            : "Open transfer";
+            ? Localizer["InventoryTransfer.View"]
+            : Localizer["InventoryTransfer.Open"];
     }
 }

@@ -1,39 +1,40 @@
 @using System.Globalization
 @using Myrmex.Shared.Wms.Inventory
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">Inventory transaction details</MudText>
+        <MudText Typo="Typo.h6">@Localizer["InventoryLedger.TransactionDetailsTitle"]</MudText>
     </TitleContent>
 
     <DialogContent>
         <MudStack Spacing="3">
             <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="6">
                 <MudStack Spacing="0">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Transaction ID</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@Localizer["InventoryLedger.TransactionId"]</MudText>
                     <MudText Typo="Typo.body2">@Transaction.Id</MudText>
                 </MudStack>
 
                 <MudStack Spacing="0">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Transaction type</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@Localizer["InventoryLedger.TransactionType"]</MudText>
                     <MudText Typo="Typo.body2">@Transaction.TransactionType</MudText>
                 </MudStack>
             </MudStack>
 
             <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="6">
                 <MudStack Spacing="0">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Occurred UTC</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@Localizer["InventoryLedger.OccurredUtc"]</MudText>
                     <MudText Typo="Typo.body2">@FormatTimestamp(Transaction.OccurredAtUtc)</MudText>
                 </MudStack>
 
                 <MudStack Spacing="0">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">Created UTC</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@Localizer["Common.CreatedUtc"]</MudText>
                     <MudText Typo="Typo.body2">@FormatTimestamp(Transaction.CreatedAtUtc)</MudText>
                 </MudStack>
             </MudStack>
 
             <MudStack Spacing="0">
-                <MudText Typo="Typo.caption" Color="Color.Secondary">Reason</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@Localizer["Common.Reason"]</MudText>
                 <MudText Typo="Typo.body2">@Transaction.Reason</MudText>
             </MudStack>
 
@@ -44,38 +45,38 @@
                       Bordered="true"
                       Striped="true">
                 <HeaderContent>
-                    <MudTh>SKU</MudTh>
-                    <MudTh>Warehouse</MudTh>
-                    <MudTh>Storage location</MudTh>
-                    <MudTh>Before</MudTh>
-                    <MudTh>Delta</MudTh>
-                    <MudTh>After</MudTh>
+                    <MudTh>@Localizer["Common.Sku"]</MudTh>
+                    <MudTh>@Localizer["Common.Warehouse"]</MudTh>
+                    <MudTh>@Localizer["Common.StorageLocation"]</MudTh>
+                    <MudTh>@Localizer["InventoryLedger.Before"]</MudTh>
+                    <MudTh>@Localizer["InventoryLedger.Delta"]</MudTh>
+                    <MudTh>@Localizer["InventoryLedger.After"]</MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd DataLabel="SKU">
+                    <MudTd DataLabel="@Localizer["Common.Sku"]">
                         <MudText Typo="Typo.body2">@context.Sku.Code</MudText>
                         <MudText Typo="Typo.caption" Color="Color.Secondary">
                             @context.Sku.Name - @GetBaseUnitOfMeasureDisplay(context)
                         </MudText>
                     </MudTd>
-                    <MudTd DataLabel="Warehouse">
+                    <MudTd DataLabel="@Localizer["Common.Warehouse"]">
                         <MudText Typo="Typo.body2">@context.StorageLocation.Warehouse.Code</MudText>
                         <MudText Typo="Typo.caption" Color="Color.Secondary">
                             @context.StorageLocation.Warehouse.Name
                         </MudText>
                     </MudTd>
-                    <MudTd DataLabel="Storage location">
+                    <MudTd DataLabel="@Localizer["Common.StorageLocation"]">
                         <MudText Typo="Typo.body2">@context.StorageLocation.Code</MudText>
                         <MudText Typo="Typo.caption" Color="Color.Secondary">
                             @context.StorageLocation.Name
                         </MudText>
                     </MudTd>
-                    <MudTd DataLabel="Before">@FormatQuantity(context.BalanceBefore)</MudTd>
-                    <MudTd DataLabel="Delta">@FormatSignedQuantity(context.QuantityDelta)</MudTd>
-                    <MudTd DataLabel="After">@FormatQuantity(context.BalanceAfter)</MudTd>
+                    <MudTd DataLabel="@Localizer["InventoryLedger.Before"]">@FormatQuantity(context.BalanceBefore)</MudTd>
+                    <MudTd DataLabel="@Localizer["InventoryLedger.Delta"]">@FormatSignedQuantity(context.QuantityDelta)</MudTd>
+                    <MudTd DataLabel="@Localizer["InventoryLedger.After"]">@FormatQuantity(context.BalanceAfter)</MudTd>
                 </RowTemplate>
                 <NoRecordsContent>
-                    <MudText>No ledger entries are attached to this transaction.</MudText>
+                    <MudText>@Localizer["InventoryLedger.NoTransactionEntries"]</MudText>
                 </NoRecordsContent>
             </MudTable>
         </MudStack>
@@ -85,7 +86,7 @@
         <MudButton Color="Color.Primary"
                    Variant="Variant.Filled"
                    OnClick="Close">
-            Close
+            @Localizer["Common.Close"]
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -97,7 +98,7 @@
     [Parameter]
     public InventoryTransactionDetails Transaction { get; set; } = null!;
 
-    private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
+    private static CultureInfo QuantityCulture => CultureInfo.CurrentCulture;
 
     private void Close()
     {

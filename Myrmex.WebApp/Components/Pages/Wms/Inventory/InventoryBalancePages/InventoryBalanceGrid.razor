@@ -1,4 +1,5 @@
 @using Myrmex.Shared.Wms.Inventory
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDataGrid T="InventoryBalanceDetails"
              @ref="_dataGrid"
@@ -10,7 +11,7 @@
              SortMode="SortMode.Single"
              Filterable="false">
     <Columns>
-        <TemplateColumn Title="SKU"
+        <TemplateColumn Title="@Localizer["Common.Sku"]"
                         Tag="@InventoryBalanceSortBy.SkuCode"
                         SortBy="@(balance => balance.Sku.Code)"
                         Sortable="true">
@@ -24,7 +25,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Warehouse"
+        <TemplateColumn Title="@Localizer["Common.Warehouse"]"
                         Tag="@InventoryBalanceSortBy.WarehouseCode"
                         SortBy="@(balance => balance.StorageLocation.Warehouse.Code)"
                         Sortable="true">
@@ -38,7 +39,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Storage location"
+        <TemplateColumn Title="@Localizer["Common.StorageLocation"]"
                         Tag="@InventoryBalanceSortBy.StorageLocationCode"
                         SortBy="@(balance => balance.StorageLocation.Code)"
                         Sortable="true">
@@ -52,7 +53,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Quantity"
+        <TemplateColumn Title="@Localizer["Common.Quantity"]"
                         Tag="@InventoryBalanceSortBy.Quantity"
                         SortBy="@(balance => balance.Quantity)"
                         Sortable="true">
@@ -61,7 +62,7 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Actions"
+        <TemplateColumn Title="@Localizer["Common.Actions"]"
                         Sortable="false">
             <CellTemplate>
                 <MudMenu Icon="@Icons.Material.Filled.MoreVert"
@@ -71,15 +72,15 @@
                          TransformOrigin="Origin.TopRight">
                     <MudMenuItem Icon="@Icons.Material.Filled.History"
                                  OnClick="@(() => HistoryRequested.InvokeAsync(context.Item))">
-                        History
+                        @Localizer["Common.History"]
                     </MudMenuItem>
                     <MudMenuItem Icon="@Icons.Material.Filled.Edit"
                                  OnClick="@(() => AdjustRequested.InvokeAsync(context.Item))">
-                        Adjust
+                        @Localizer["Common.Adjust"]
                     </MudMenuItem>
                     <MudMenuItem Icon="@Icons.Material.Filled.MoveDown"
                                  OnClick="@(() => MoveRequested.InvokeAsync(context.Item))">
-                        Move
+                        @Localizer["Common.Move"]
                     </MudMenuItem>
                 </MudMenu>
             </CellTemplate>
@@ -87,7 +88,7 @@
     </Columns>
 
     <NoRecordsContent>
-        <MudText>No inventory balances match the current filters.</MudText>
+        <MudText>@Localizer["InventoryBalance.NoMatches"]</MudText>
     </NoRecordsContent>
 
     <PagerContent>

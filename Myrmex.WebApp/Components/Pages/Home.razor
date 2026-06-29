@@ -1,86 +1,74 @@
 ﻿@page "/"
+@inject IStringLocalizer<SharedResource> Localizer
 
-<PageTitle>Myrmex</PageTitle>
+<PageTitle>@Localizer["Home.PageTitle"]</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
-    <MudText Typo="Typo.h4" GutterBottom="true">Myrmex</MudText>
+    <MudText Typo="Typo.h4" GutterBottom="true">@Localizer["Home.Heading"]</MudText>
 
     <MudText Typo="Typo.subtitle1" Class="mb-4">
-        Рабочий прототип WMS-платформы.
+        @Localizer["Home.Subtitle"]
     </MudText>
 
     <MudPaper Class="pa-4" Elevation="1">
-        <MudText Typo="Typo.h6" GutterBottom="true">О проекте</MudText>
+        <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Home.About.Title"]</MudText>
 
         <MudText Class="mb-3">
-            Myrmex разрабатывается как модульная система управления складскими операциями.
-            В текущей версии уже заложена основа для работы со складами, ячейками,
-            SKU, единицами измерения, остатками и базовыми движениями товара.
+            @Localizer["Home.About.Platform"]
         </MudText>
 
         <MudText Class="mb-3">
-            Поддерживаются внутрискладские перемещения между ячейками, в том числе
-            сценарии перемещения через промежуточную тележку и прямого перемещения без нее.
-            Эти механизмы формируют основу для дальнейших операций приемки, размещения,
-            отбора и контроля остатков.
+            @Localizer["Home.About.Movements"]
         </MudText>
 
         <MudText>
-            Отдельное направление — интеграция с 1С. Справочники складов, единиц измерения
-            и номенклатуры импортируются через OData с сохранением связи по внешнему ключу 1С.
-            Внутренняя модель Myrmex при этом остается независимой от внешних идентификаторов.
+            @Localizer["Home.About.OneC"]
         </MudText>
     </MudPaper>
 
     <MudGrid Class="mt-4">
         <MudItem xs="12" md="3">
             <MudPaper Class="pa-4 h-100" Elevation="1">
-                <MudText Typo="Typo.h6" GutterBottom="true">Справочники</MudText>
+                <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Home.ReferenceData.Title"]</MudText>
                 <MudText>
-                    Склады, ячейки, единицы измерения и SKU используются как базовые данные
-                    для складских операций и учета.
+                    @Localizer["Home.ReferenceData.Description"]
                 </MudText>
             </MudPaper>
         </MudItem>
 
         <MudItem xs="12" md="3">
             <MudPaper Class="pa-4 h-100" Elevation="1">
-                <MudText Typo="Typo.h6" GutterBottom="true">Остатки</MudText>
+                <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Home.Inventory.Title"]</MudText>
                 <MudText>
-                    Остатки отражают текущее наличие товара по складам, ячейкам и SKU
-                    и служат основой для контроля доступного количества.
+                    @Localizer["Home.Inventory.Description"]
                 </MudText>
             </MudPaper>
         </MudItem>
 
         <MudItem xs="12" md="3">
             <MudPaper Class="pa-4 h-100" Elevation="1">
-                <MudText Typo="Typo.h6" GutterBottom="true">Движения</MudText>
+                <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Home.Movements.Title"]</MudText>
                 <MudText>
-                    Базовые складские движения уже поддерживают перемещение товара,
-                    включая сценарии через тележку и прямое перемещение между ячейками.
+                    @Localizer["Home.Movements.Description"]
                 </MudText>
             </MudPaper>
         </MudItem>
 
         <MudItem xs="12" md="3">
             <MudPaper Class="pa-4 h-100" Elevation="1">
-                <MudText Typo="Typo.h6" GutterBottom="true">Интеграция с 1С</MudText>
+                <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Home.OneC.Title"]</MudText>
                 <MudText>
-                    Импорт справочных данных выполняется через OData с привязкой
-                    к внешнему ключу 1С и сохранением внутренней идентичности Myrmex.
+                    @Localizer["Home.OneC.Description"]
                 </MudText>
             </MudPaper>
         </MudItem>
     </MudGrid>
 
     <MudPaper Class="pa-4 mt-4" Elevation="1">
-        <MudText Typo="Typo.h6" GutterBottom="true">Ближайшее развитие</MudText>
+        <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Home.Roadmap.Title"]</MudText>
 
         <MudText>
-            Следующие этапы — развитие приемки, LPN, размещения, уточнение складских процессов
-            и подготовка интерфейсов для оператора. Цель ближайших шагов — постепенно связать
-            справочники, остатки и движения в полноценные рабочие сценарии WMS.
+            @Localizer["Home.Roadmap.Description"]
         </MudText>
     </MudPaper>
 </MudContainer>

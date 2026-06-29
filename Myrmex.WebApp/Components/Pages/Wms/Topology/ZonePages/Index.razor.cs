@@ -162,7 +162,7 @@ public partial class Index
     {
         if (_selectedWarehouseId is null)
         {
-            Snackbar.Add("Select a warehouse first.", Severity.Warning);
+            Snackbar.Add(Localizer["Common.SelectWarehouseFirst"], Severity.Warning);
             return;
         }
 
@@ -178,7 +178,7 @@ public partial class Index
             FullWidth = true
         };
 
-        IDialogReference dialog = await DialogService.ShowAsync<ZoneEditDialog>("Create zone", parameters, options);
+        IDialogReference dialog = await DialogService.ShowAsync<ZoneEditDialog>(Localizer["Zone.CreateTitle"], parameters, options);
 
         DialogResult? result = await dialog.Result;
 
@@ -187,7 +187,7 @@ public partial class Index
             return;
         }
 
-        Snackbar.Add("Zone created.", Severity.Success);
+        Snackbar.Add(Localizer["Zone.Created"], Severity.Success);
 
         await LoadZonesAsync();
     }
@@ -207,7 +207,7 @@ public partial class Index
             FullWidth = true
         };
 
-        IDialogReference dialog = await DialogService.ShowAsync<ZoneEditDialog>("Edit zone", parameters, options);
+        IDialogReference dialog = await DialogService.ShowAsync<ZoneEditDialog>(Localizer["Zone.EditTitle"], parameters, options);
 
         DialogResult? result = await dialog.Result;
 
@@ -216,7 +216,7 @@ public partial class Index
             return;
         }
 
-        Snackbar.Add("Zone updated.", Severity.Success);
+        Snackbar.Add(Localizer["Zone.Updated"], Severity.Success);
 
         await LoadZonesAsync();
     }
@@ -230,12 +230,12 @@ public partial class Index
 
             if (result.IsFailure)
             {
-                Snackbar.Add(result.Error?.Message ?? "Zone deactivation failed.", Severity.Error);
+                Snackbar.Add(result.Error?.Message ?? Localizer["Zone.DeactivateError"], Severity.Error);
 
                 return;
             }
 
-            Snackbar.Add("Zone deactivated.", Severity.Success);
+            Snackbar.Add(Localizer["Zone.Deactivated"], Severity.Success);
 
             await LoadZonesAsync();
         }
@@ -254,12 +254,12 @@ public partial class Index
 
             if (result.IsFailure)
             {
-                Snackbar.Add(result.Error?.Message ?? "Zone reactivation failed.", Severity.Error);
+                Snackbar.Add(result.Error?.Message ?? Localizer["Zone.ReactivateError"], Severity.Error);
 
                 return;
             }
 
-            Snackbar.Add("Zone reactivated.", Severity.Success);
+            Snackbar.Add(Localizer["Zone.Reactivated"], Severity.Success);
 
             await LoadZonesAsync();
         }

@@ -86,7 +86,7 @@ public partial class Index
         };
 
         IDialogReference dialog = await DialogService
-            .ShowAsync<UomEditDialog>("Create UoM", options);
+            .ShowAsync<UomEditDialog>(Localizer["UnitOfMeasure.CreateTitle"], options);
 
         DialogResult? result = await dialog.Result;
 
@@ -95,7 +95,7 @@ public partial class Index
             return;
         }
 
-        Snackbar.Add("UoM created.", Severity.Success);
+        Snackbar.Add(Localizer["UnitOfMeasure.Created"], Severity.Success);
 
         await LoadUnitsOfMeasureAsync();
     }
@@ -115,7 +115,7 @@ public partial class Index
         };
 
         IDialogReference dialog = await DialogService
-            .ShowAsync<UomEditDialog>("Edit UoM", parameters, options);
+            .ShowAsync<UomEditDialog>(Localizer["UnitOfMeasure.EditTitle"], parameters, options);
 
         DialogResult? result = await dialog.Result;
 
@@ -124,7 +124,7 @@ public partial class Index
             return;
         }
 
-        Snackbar.Add("UoM updated.", Severity.Success);
+        Snackbar.Add(Localizer["UnitOfMeasure.Updated"], Severity.Success);
 
         await LoadUnitsOfMeasureAsync();
     }
@@ -138,12 +138,12 @@ public partial class Index
 
             if (result.IsFailure)
             {
-                Snackbar.Add(result.Error?.Message ?? "UoM deactivation failed.", Severity.Error);
+                Snackbar.Add(result.Error?.Message ?? Localizer["UnitOfMeasure.DeactivateError"], Severity.Error);
 
                 return;
             }
 
-            Snackbar.Add("UoM deactivated.", Severity.Success);
+            Snackbar.Add(Localizer["UnitOfMeasure.Deactivated"], Severity.Success);
 
             await LoadUnitsOfMeasureAsync();
         }
@@ -162,12 +162,12 @@ public partial class Index
 
             if (result.IsFailure)
             {
-                Snackbar.Add(result.Error?.Message ?? "UoM reactivation failed.", Severity.Error);
+                Snackbar.Add(result.Error?.Message ?? Localizer["UnitOfMeasure.ReactivateError"], Severity.Error);
 
                 return;
             }
 
-            Snackbar.Add("UoM reactivated.", Severity.Success);
+            Snackbar.Add(Localizer["UnitOfMeasure.Reactivated"], Severity.Success);
 
             await LoadUnitsOfMeasureAsync();
         }

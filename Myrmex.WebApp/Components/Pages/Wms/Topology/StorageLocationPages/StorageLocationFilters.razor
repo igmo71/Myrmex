@@ -1,11 +1,12 @@
 ﻿@using MudBlazor
 @using Myrmex.WebApp.Wms.Topology
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudPaper Class="pa-4">
     <MudStack Spacing="2">
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudSelect T="Guid?"
-                       Label="Warehouse"
+                       Label="@Localizer["Common.Warehouse"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Clearable="true"
@@ -22,7 +23,7 @@
             </MudSelect>
 
             <MudSelect T="Guid?"
-                       Label="Zone"
+                       Label="@Localizer["Common.Zone"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Clearable="true"
@@ -39,7 +40,7 @@
             </MudSelect>
 
             <MudTextField T="string"
-                          Label="Search"
+                          Label="@Localizer["Common.Search"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Clearable="true"
@@ -52,7 +53,7 @@
 
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudSelect T="Guid?"
-                       Label="Type"
+                       Label="@Localizer["Common.Type"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Clearable="true"
@@ -69,7 +70,7 @@
             </MudSelect>
 
             <MudSelect T="Guid?"
-                       Label="Status"
+                       Label="@Localizer["Common.Status"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Clearable="true"
@@ -86,7 +87,7 @@
             </MudSelect>
 
             <MudSwitch T="bool"
-                       Label="Include inactive"
+                       Label="@Localizer["Common.IncludeInactive"]"
                        Color="Color.Primary"
                        Value="IncludeInactive"
                        ValueChanged="OnIncludeInactiveChanged" />

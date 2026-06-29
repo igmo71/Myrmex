@@ -1,23 +1,24 @@
 @using Myrmex.Shared.Wms.Catalog
 @using Myrmex.Shared.Wms.Inventory
 @using Myrmex.Shared.Wms.Topology
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">Add count line</MudText>
+        <MudText Typo="Typo.h6">@Localizer["InventoryCount.AddLineTitle"]</MudText>
     </TitleContent>
 
     <DialogContent>
         <MudForm @ref="_form">
             <MudStack Spacing="3">
                 <MudText Typo="Typo.body2">
-                    Warehouse: @Count.Warehouse.Code - @Count.Warehouse.Name
+                    @Localizer["Common.Warehouse"]: @Count.Warehouse.Code - @Count.Warehouse.Name
                 </MudText>
 
                 <MudAutocomplete T="StockKeepingUnitLookupItem"
-                                 Label="SKU"
+                                 Label="@Localizer["Common.Sku"]"
                                  Required="true"
-                                 RequiredError="SKU is required."
+                                 RequiredError="@Localizer["Common.SkuRequired"]"
                                  Variant="Variant.Outlined"
                                  Clearable="true"
                                  MinCharacters="0"
@@ -28,9 +29,9 @@
                                  @bind-Value="_sku" />
 
                 <MudAutocomplete T="StorageLocationLookupItem"
-                                 Label="Storage location"
+                                 Label="@Localizer["Common.StorageLocation"]"
                                  Required="true"
-                                 RequiredError="Storage location is required."
+                                 RequiredError="@Localizer["Common.StorageLocationRequired"]"
                                  Variant="Variant.Outlined"
                                  Clearable="true"
                                  MinCharacters="0"
@@ -49,12 +50,12 @@
     </DialogContent>
 
     <DialogActions>
-        <MudButton OnClick="Cancel" Disabled="_isSaving">Cancel</MudButton>
+        <MudButton OnClick="Cancel" Disabled="_isSaving">@Localizer["Common.Cancel"]</MudButton>
         <MudButton Color="Color.Primary"
                    Variant="Variant.Filled"
                    OnClick="SaveAsync"
                    Disabled="_isSaving">
-            Add line
+            @Localizer["InventoryCount.AddLine"]
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -164,7 +165,7 @@
 
             if (result.IsFailure || result.Value is null)
             {
-                _errorMessage = result.Error?.Message ?? "Adding the count line failed.";
+                _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.AddLineError"];
                 return;
             }
 

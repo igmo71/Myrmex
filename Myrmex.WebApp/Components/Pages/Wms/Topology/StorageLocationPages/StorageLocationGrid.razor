@@ -1,5 +1,6 @@
 ﻿@using MudBlazor
 @using Myrmex.WebApp.Wms.Topology
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDataGrid T="StorageLocationDetails"
              Items="StorageLocations"
@@ -11,34 +12,34 @@
              SortMode="SortMode.Multiple"
              Filterable="false">
     <Columns>
-        <PropertyColumn Property="x => x.Code" Title="Code" />
-        <PropertyColumn Property="x => x.Name" Title="Name" />
-        <PropertyColumn Property="x => x.Description" Title="Description" />
+        <PropertyColumn Property="x => x.Code" Title="@Localizer["Common.Code"]" />
+        <PropertyColumn Property="x => x.Name" Title="@Localizer["Common.Name"]" />
+        <PropertyColumn Property="x => x.Description" Title="@Localizer["Common.Description"]" />
 
-        <TemplateColumn Title="Type" Sortable="false" Filterable="false">
+        <TemplateColumn Title="@Localizer["Common.Type"]" Sortable="false" Filterable="false">
             <CellTemplate>
                 @GetStorageLocationTypeDisplayName(context.Item.StorageLocationTypeId)
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Status" Sortable="false" Filterable="false">
+        <TemplateColumn Title="@Localizer["Common.Status"]" Sortable="false" Filterable="false">
             <CellTemplate>
                 @GetStorageLocationStatusDisplayName(context.Item.StorageLocationStatusId)
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Pickable" Sortable="false" Filterable="false">
+        <TemplateColumn Title="@Localizer["StorageLocation.Pickable"]" Sortable="false" Filterable="false">
             <CellTemplate>
                 @if (context.Item.IsPickable)
                 {
-                    <MudTooltip Text="Pickable">
+                    <MudTooltip Text="@Localizer["StorageLocation.Pickable"]">
                         <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
                                  Color="Color.Success" />
                     </MudTooltip>
                 }
                 else
                 {
-                    <MudTooltip Text="Not pickable">
+                    <MudTooltip Text="@Localizer["StorageLocation.NotPickable"]">
                         <MudIcon Icon="@Icons.Material.Filled.Cancel"
                                  Color="Color.Error" />
                     </MudTooltip>
@@ -46,18 +47,18 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="Active" Sortable="false" Filterable="false">
+        <TemplateColumn Title="@Localizer["Common.Active"]" Sortable="false" Filterable="false">
             <CellTemplate>
                 @if (context.Item.IsActive)
                 {
-                    <MudTooltip Text="Active">
+                    <MudTooltip Text="@Localizer["Common.Active"]">
                         <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
                                  Color="Color.Success" />
                     </MudTooltip>
                 }
                 else
                 {
-                    <MudTooltip Text="Inactive">
+                    <MudTooltip Text="@Localizer["Common.Inactive"]">
                         <MudIcon Icon="@Icons.Material.Filled.Cancel"
                                  Color="Color.Error" />
                     </MudTooltip>
@@ -65,10 +66,10 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <PropertyColumn Property="x => x.CreatedAtUtc" Title="Created UTC" />
-        <PropertyColumn Property="x => x.UpdatedAtUtc" Title="Updated UTC" />
+        <PropertyColumn Property="x => x.CreatedAtUtc" Title="@Localizer["Common.CreatedUtc"]" />
+        <PropertyColumn Property="x => x.UpdatedAtUtc" Title="@Localizer["Common.UpdatedUtc"]" />
 
-        <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+        <TemplateColumn Title="@Localizer["Common.Actions"]" Sortable="false" Filterable="false">
             <CellTemplate>
                 <MudMenu Icon="@Icons.Material.Filled.MoreVert"
                          Size="Size.Small"
@@ -78,7 +79,7 @@
 
                     <MudMenuItem Icon="@Icons.Material.Filled.Edit"
                                  OnClick="@(() => EditRequested.InvokeAsync(context.Item))">
-                        Edit
+                        @Localizer["Common.Edit"]
                     </MudMenuItem>
 
                     @if (context.Item.IsActive)
@@ -86,7 +87,7 @@
                         <MudMenuItem Icon="@Icons.Material.Filled.Block"
                                      IconColor="Color.Error"
                                      OnClick="@(() => DeactivateRequested.InvokeAsync(context.Item))">
-                            Deactivate
+                            @Localizer["Common.Deactivate"]
                         </MudMenuItem>
                     }
                     else
@@ -94,7 +95,7 @@
                         <MudMenuItem Icon="@Icons.Material.Filled.Restore"
                                      IconColor="Color.Success"
                                      OnClick="@(() => ReactivateRequested.InvokeAsync(context.Item))">
-                            Reactivate
+                            @Localizer["Common.Reactivate"]
                         </MudMenuItem>
                     }
                 </MudMenu>

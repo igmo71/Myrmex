@@ -1,67 +1,68 @@
 @using System.Globalization
 @using Myrmex.Shared.Wms.Inventory
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">Adjust inventory balance</MudText>
+        <MudText Typo="Typo.h6">@Localizer["InventoryBalance.AdjustTitle"]</MudText>
     </TitleContent>
 
     <DialogContent>
         <MudForm @ref="_form">
             <MudStack Spacing="3">
                 <MudTextField T="string"
-                              Label="SKU"
+                              Label="@Localizer["Common.Sku"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Value="@StockKeepingUnitDisplay"
                               Disabled="true" />
 
                 <MudTextField T="string"
-                              Label="Warehouse"
+                              Label="@Localizer["Common.Warehouse"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Value="@WarehouseDisplay"
                               Disabled="true" />
 
                 <MudTextField T="string"
-                              Label="Storage location"
+                              Label="@Localizer["Common.StorageLocation"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Value="@StorageLocationDisplay"
                               Disabled="true" />
 
                 <MudTextField T="string"
-                              Label="Base UoM"
+                              Label="@Localizer["Sku.BaseUnitOfMeasure"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Value="@BaseUnitOfMeasureDisplay"
                               Disabled="true" />
 
                 <MudNumericField T="decimal"
-                                 Label="Current quantity"
+                                 Label="@Localizer["InventoryBalance.CurrentQuantity"]"
                                  Value="InventoryBalance.Quantity"
                                  Disabled="true"
                                  Culture="@QuantityCulture"
                                  Format="0.####" />
 
                 <MudNumericField T="decimal"
-                                 Label="Counted quantity"
+                                 Label="@Localizer["InventoryBalance.CountedQuantity"]"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="0"
                                  Required="true"
-                                 RequiredError="Counted quantity is required."
+                                 RequiredError="@Localizer["InventoryBalance.CountedQuantityRequired"]"
                                  Culture="@QuantityCulture"
                                  Format="0.####"
                                  InputMode="@(InputMode.@decimal)"
                                  @bind-Value="_countedQuantity" />
 
                 <MudTextField T="string"
-                              Label="Reason"
+                              Label="@Localizer["Common.Reason"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Required="true"
-                              RequiredError="Reason is required."
+                              RequiredError="@Localizer["Common.ReasonRequired"]"
                               MaxLength="500"
                               Lines="3"
                               @bind-Value="_reason" />
@@ -79,7 +80,7 @@
     <DialogActions>
         <MudButton OnClick="Cancel"
                    Disabled="_isSaving">
-            Cancel
+            @Localizer["Common.Cancel"]
         </MudButton>
 
         <MudButton Color="Color.Primary"
@@ -92,7 +93,7 @@
                                      Indeterminate="true"
                                      Class="me-2" />
             }
-            Save
+            @Localizer["Common.Save"]
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -116,7 +117,7 @@
     private bool _hasConcurrencyConflict;
     private string? _errorMessage;
 
-    private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
+    private static CultureInfo QuantityCulture => CultureInfo.CurrentCulture;
 
     private string StockKeepingUnitDisplay =>
         $"{InventoryBalance.Sku.Code} - {InventoryBalance.Sku.Name}";
@@ -153,13 +154,13 @@
 
         if (_countedQuantity < 0)
         {
-            _errorMessage = "Counted quantity must be greater than or equal to zero.";
+            _errorMessage = Localizer["InventoryBalance.CountedQuantityNonNegative"];
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_reason))
         {
-            _errorMessage = "Reason is required.";
+            _errorMessage = Localizer["Common.ReasonRequired"];
             return;
         }
 
@@ -183,17 +184,17 @@
                 if (IsConcurrencyConflict(result.Error))
                 {
                     _hasConcurrencyConflict = true;
-                    _errorMessage = "Inventory balance changed. Close this dialog, review the refreshed balances, and adjust again if needed.";
+                    _errorMessage = Localizer["InventoryBalance.AdjustConcurrencyConflict"];
                     return;
                 }
 
-                _errorMessage = result.Error?.Message ?? "Inventory balance adjustment failed.";
+                _errorMessage = result.Error?.Message ?? Localizer["InventoryBalance.AdjustError"];
                 return;
             }
 
             if (result.Value is null)
             {
-                _errorMessage = "The operation completed without returning inventory balance details.";
+                _errorMessage = Localizer["InventoryBalance.MissingResult"];
                 return;
             }
 

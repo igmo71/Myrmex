@@ -3,21 +3,22 @@
 @using Myrmex.Shared.Wms.Catalog
 @using Myrmex.Shared.Wms.Inventory
 @using Myrmex.Shared.Wms.Topology
+@inject IStringLocalizer<SharedResource> Localizer
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">Create transfer</MudText>
+        <MudText Typo="Typo.h6">@Localizer["InventoryTransfer.CreateTitle"]</MudText>
     </TitleContent>
 
     <DialogContent>
         <MudForm @ref="_form">
             <MudStack Spacing="3">
                 <MudSelect T="Guid?"
-                           Label="Warehouse"
+                           Label="@Localizer["Common.Warehouse"]"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Required="true"
-                           RequiredError="Warehouse is required."
+                           RequiredError="@Localizer["Common.WarehouseRequired"]"
                            Disabled="_isLoadingWarehouses"
                            Value="_warehouseId"
                            ValueChanged="OnWarehouseChanged">
@@ -30,7 +31,7 @@
                 </MudSelect>
 
                 <MudAutocomplete T="StorageLocationLookupItem"
-                                 Label="Internal transit location"
+                                 Label="@Localizer["InventoryTransfer.InternalTransitLocation"]"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Clearable="true"
@@ -51,7 +52,7 @@
                         <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
                     </ItemTemplate>
                     <NoItemsTemplate>
-                        <MudText>No storage locations found.</MudText>
+                        <MudText>@Localizer["StorageLocation.NoneFound"]</MudText>
                     </NoItemsTemplate>
                 </MudAutocomplete>
 
@@ -59,7 +60,7 @@
                     <MudStack Row="true"
                               AlignItems="AlignItems.Center"
                               Justify="Justify.SpaceBetween">
-                        <MudText Typo="Typo.subtitle2">Lines</MudText>
+                        <MudText Typo="Typo.subtitle2">@Localizer["InventoryTransfer.Lines"]</MudText>
                         <MudIconButton Icon="@Icons.Material.Filled.Add"
                                        Color="Color.Primary"
                                        Size="Size.Small"
@@ -73,7 +74,7 @@
                                 <MudStack Row="true"
                                           AlignItems="AlignItems.Center"
                                           Justify="Justify.SpaceBetween">
-                                    <MudText Typo="Typo.body2">Line @(_lines.IndexOf(line) + 1)</MudText>
+                                    <MudText Typo="Typo.body2">@Localizer["InventoryTransfer.LineNumber", _lines.IndexOf(line) + 1]</MudText>
                                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                    Size="Size.Small"
                                                    Color="Color.Error"
@@ -84,11 +85,11 @@
                                 <MudGrid>
                                     <MudItem xs="12" md="6">
                                         <MudAutocomplete T="StockKeepingUnitLookupItem"
-                                                         Label="SKU"
+                                                         Label="@Localizer["Common.Sku"]"
                                                          Variant="Variant.Outlined"
                                                          Margin="Margin.Dense"
                                                          Required="true"
-                                                         RequiredError="SKU is required."
+                                                         RequiredError="@Localizer["Common.SkuRequired"]"
                                                          Clearable="true"
                                                          ShowProgressIndicator="true"
                                                          MinCharacters="0"
@@ -109,12 +110,12 @@
 
                                     <MudItem xs="12" md="6">
                                         <MudNumericField T="decimal"
-                                                         Label="Requested quantity"
+                                                         Label="@Localizer["InventoryTransfer.RequestedQuantity"]"
                                                          Variant="Variant.Outlined"
                                                          Margin="Margin.Dense"
                                                          Min="@(0.0001m)"
                                                          Required="true"
-                                                         RequiredError="Requested quantity is required."
+                                                         RequiredError="@Localizer["InventoryTransfer.RequestedQuantityRequired"]"
                                                          Culture="@QuantityCulture"
                                                          Format="0.####"
                                                          InputMode="@(InputMode.@decimal)"
@@ -123,11 +124,11 @@
 
                                     <MudItem xs="12" md="6">
                                         <MudAutocomplete T="StorageLocationLookupItem"
-                                                         Label="Source location"
+                                                         Label="@Localizer["InventoryTransfer.SourceLocation"]"
                                                          Variant="Variant.Outlined"
                                                          Margin="Margin.Dense"
                                                          Required="true"
-                                                         RequiredError="Source location is required."
+                                                         RequiredError="@Localizer["InventoryTransfer.SourceLocationRequired"]"
                                                          Clearable="true"
                                                          ShowProgressIndicator="true"
                                                          MinCharacters="0"
@@ -149,11 +150,11 @@
 
                                     <MudItem xs="12" md="6">
                                         <MudAutocomplete T="StorageLocationLookupItem"
-                                                         Label="Destination location"
+                                                         Label="@Localizer["InventoryTransfer.DestinationLocation"]"
                                                          Variant="Variant.Outlined"
                                                          Margin="Margin.Dense"
                                                          Required="true"
-                                                         RequiredError="Destination location is required."
+                                                         RequiredError="@Localizer["InventoryTransfer.DestinationLocationRequired"]"
                                                          Clearable="true"
                                                          ShowProgressIndicator="true"
                                                          MinCharacters="0"
@@ -191,7 +192,7 @@
     <DialogActions>
         <MudButton OnClick="Cancel"
                    Disabled="_isSaving">
-            Cancel
+            @Localizer["Common.Cancel"]
         </MudButton>
 
         <MudButton Color="Color.Primary"
@@ -204,7 +205,7 @@
                                      Indeterminate="true"
                                      Class="me-2" />
             }
-            Save
+            @Localizer["Common.Save"]
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -229,7 +230,7 @@
     private MudForm? _form;
     private readonly List<TransferLineModel> _lines = [new()];
     private readonly Dictionary<string, IReadOnlyList<StorageLocationLookupItem>> _storageLocationCache = [];
-    private static readonly CultureInfo QuantityCulture = CultureInfo.GetCultureInfo("ru-RU");
+    private static CultureInfo QuantityCulture => CultureInfo.CurrentCulture;
 
     private List<WarehouseDetails> _warehouses = [];
     private Guid? _warehouseId;
@@ -479,13 +480,13 @@
 
             if (result.IsFailure)
             {
-                _errorMessage = result.Error?.Message ?? "Inventory transfer creation failed.";
+                _errorMessage = result.Error?.Message ?? Localizer["InventoryTransfer.CreateError"];
                 return;
             }
 
             if (result.Value is null)
             {
-                _errorMessage = "The operation completed without returning transfer details.";
+                _errorMessage = Localizer["InventoryTransfer.MissingResult"];
                 return;
             }
 
@@ -505,12 +506,12 @@
     {
         if (_warehouseId is null)
         {
-            return "Warehouse is required.";
+            return Localizer["Common.WarehouseRequired"];
         }
 
         if (_lines.Count == 0)
         {
-            return "At least one transfer line is required.";
+            return Localizer["InventoryTransfer.LineRequired"];
         }
 
         for (int index = 0; index < _lines.Count; index++)
@@ -519,27 +520,27 @@
 
             if (line.StockKeepingUnit is null)
             {
-                return $"Line {index + 1}: SKU is required.";
+                return Localizer["InventoryTransfer.LineSkuRequired", index + 1];
             }
 
             if (line.SourceStorageLocation is null)
             {
-                return $"Line {index + 1}: source location is required.";
+                return Localizer["InventoryTransfer.LineSourceRequired", index + 1];
             }
 
             if (line.DestinationStorageLocation is null)
             {
-                return $"Line {index + 1}: destination location is required.";
+                return Localizer["InventoryTransfer.LineDestinationRequired", index + 1];
             }
 
             if (line.SourceStorageLocation.Id == line.DestinationStorageLocation.Id)
             {
-                return $"Line {index + 1}: source and destination must be different.";
+                return Localizer["InventoryTransfer.LineLocationsMustDiffer", index + 1];
             }
 
             if (line.RequestedQuantity <= 0)
             {
-                return $"Line {index + 1}: requested quantity must be greater than zero.";
+                return Localizer["InventoryTransfer.LineQuantityPositive", index + 1];
             }
         }
 

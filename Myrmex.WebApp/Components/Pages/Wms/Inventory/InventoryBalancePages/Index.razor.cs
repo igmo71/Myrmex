@@ -174,7 +174,7 @@ public partial class Index
         };
 
         IDialogReference dialog = await DialogService
-            .ShowAsync<InitialCountInventoryBalanceDialog>("Initial count", options);
+            .ShowAsync<InitialCountInventoryBalanceDialog>(Localizer["InventoryBalance.InitialCount"], options);
 
         DialogResult? result = await dialog.Result;
 
@@ -192,8 +192,8 @@ public partial class Index
 
         string message = result.Data is InventoryBalanceDetails createdBalance &&
                          !MatchesActiveFilters(createdBalance)
-            ? "Inventory balance created. Active filters may hide the new balance."
-            : "Inventory balance created.";
+            ? Localizer["InventoryBalance.CreatedMayBeHidden"]
+            : Localizer["InventoryBalance.Created"];
 
         Snackbar.Add(message, Severity.Success);
 
@@ -215,7 +215,7 @@ public partial class Index
         };
 
         IDialogReference dialog = await DialogService.ShowAsync<AdjustInventoryBalanceDialog>(
-            "Adjust inventory balance",
+            Localizer["InventoryBalance.AdjustTitle"],
             parameters,
             options);
 
@@ -233,7 +233,7 @@ public partial class Index
             return;
         }
 
-        Snackbar.Add("Inventory balance adjusted.", Severity.Success);
+        Snackbar.Add(Localizer["InventoryBalance.Adjusted"], Severity.Success);
 
         await ReloadInventoryBalancesAsync();
     }
@@ -253,7 +253,7 @@ public partial class Index
         };
 
         IDialogReference dialog = await DialogService.ShowAsync<MoveInventoryBalanceDialog>(
-            "Move inventory",
+            Localizer["InventoryBalance.MoveTitle"],
             parameters,
             options);
 
@@ -271,7 +271,7 @@ public partial class Index
             return;
         }
 
-        Snackbar.Add("Inventory moved.", Severity.Success);
+        Snackbar.Add(Localizer["InventoryBalance.Moved"], Severity.Success);
         await ReloadInventoryBalancesAsync();
     }
 

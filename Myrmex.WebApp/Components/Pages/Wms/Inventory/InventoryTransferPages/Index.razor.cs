@@ -228,7 +228,7 @@ public partial class Index
         };
 
         IDialogReference dialog = await DialogService
-            .ShowAsync<CreateInventoryTransferDialog>("Create transfer", options);
+            .ShowAsync<CreateInventoryTransferDialog>(Localizer["InventoryTransfer.CreateTitle"], options);
 
         DialogResult? result = await dialog.Result;
 
@@ -239,7 +239,7 @@ public partial class Index
 
         if (result.Data is InventoryTransferDetails transfer)
         {
-            Snackbar.Add("Inventory transfer created.", Severity.Success);
+            Snackbar.Add(Localizer["InventoryTransfer.Created"], Severity.Success);
             await ReloadInventoryTransfersAsync();
         }
     }

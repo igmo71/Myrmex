@@ -1,6 +1,7 @@
 @page "/wms/inventory/balances"
+@inject IStringLocalizer<SharedResource> Localizer
 
-<PageTitle>WMS Inventory Balances</PageTitle>
+<PageTitle>@Localizer["InventoryBalance.PageTitle"]</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
     <MudStack Spacing="3">
@@ -8,9 +9,9 @@
                   AlignItems="AlignItems.Center"
                   Justify="Justify.SpaceBetween">
             <div>
-                <MudText Typo="Typo.h5">Inventory Balances</MudText>
+                <MudText Typo="Typo.h5">@Localizer["InventoryBalance.Heading"]</MudText>
                 <MudText Typo="Typo.body2" Color="Color.Secondary">
-                    Current SKU quantities by warehouse and storage location.
+                    @Localizer["InventoryBalance.Description"]
                 </MudText>
             </div>
 
@@ -20,14 +21,14 @@
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="OpenInitialCountAsync"
                            Disabled="_isLoadingWarehouses">
-                    Initial count
+                    @Localizer["InventoryBalance.InitialCount"]
                 </MudButton>
 
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.Refresh"
                            OnClick="ReloadAsync">
-                    Refresh
+                    @Localizer["Common.Refresh"]
                 </MudButton>
             </MudStack>
         </MudStack>
