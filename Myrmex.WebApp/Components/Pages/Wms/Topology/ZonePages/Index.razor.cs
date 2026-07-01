@@ -101,7 +101,7 @@ public partial class Index
                 Skip: 0,
                 Take: 100,
                 SearchText: null,
-                SortBy: "code",
+                SortBy: "name",
                 SortDescending: false,
                 IncludeInactive: false);
 

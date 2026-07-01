@@ -21,7 +21,7 @@
                     @foreach (WarehouseDetails warehouse in _warehouses)
                     {
                         <MudSelectItem T="Guid?" Value="@((Guid?)warehouse.Id)">
-                            @warehouse.Code - @warehouse.Name
+                            @WarehouseDisplayFormatter.GetName(warehouse.Name, Localizer)
                         </MudSelectItem>
                     }
                 </MudSelect>
@@ -77,7 +77,7 @@
         try
         {
             ListResult<WarehouseDetails> result = await WmsTopologyApiClient.ListWarehousesAsync(
-                new ListRequest(0, 100, SortBy: "code", SortDescending: false, IncludeInactive: false));
+                new ListRequest(0, 100, SortBy: "name", SortDescending: false, IncludeInactive: false));
             _warehouses = result.Items.ToList();
         }
         catch (Exception exception)

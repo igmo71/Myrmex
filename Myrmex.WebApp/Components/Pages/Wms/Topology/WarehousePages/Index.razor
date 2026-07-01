@@ -19,16 +19,14 @@
 				<MudButton Variant="Variant.Filled"
 						   Color="Color.Primary"
 						   StartIcon="@Icons.Material.Filled.Add"
-						   OnClick="CreateWarehouseAsync"
-						   Disabled="_isLoading">
+						   OnClick="CreateWarehouseAsync">
 					@Localizer["Common.Create"]
 				</MudButton>
 
 				<MudButton Variant="Variant.Outlined"
 						   Color="Color.Primary"
 						   StartIcon="@Icons.Material.Filled.Refresh"
-						   OnClick="ReloadAsync"
-						   Disabled="_isLoading">
+						   OnClick="ReloadAsync">
 					@Localizer["Common.Refresh"]
 				</MudButton>
 			</MudStack>
@@ -46,8 +44,8 @@
 						  IncludeInactive="@_includeInactive"
 						  IncludeInactiveChanged="OnIncludeInactiveChanged" />
 
-		<WarehouseGrid Warehouses="@_warehouses"
-					   IsLoading="@_isLoading"
+		<WarehouseGrid @ref="_warehouseGrid"
+					   LoadData="LoadWarehousesAsync"
 					   EditRequested="EditWarehouseAsync"
 					   DeactivateRequested="DeactivateWarehouseAsync"
 					   ReactivateRequested="ReactivateWarehouseAsync"

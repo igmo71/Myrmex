@@ -12,7 +12,7 @@
         <MudForm @ref="_form">
             <MudStack Spacing="3">
                 <MudText Typo="Typo.body2">
-                    @Localizer["Common.Warehouse"]: @Count.Warehouse.Code - @Count.Warehouse.Name
+                    @Localizer["Common.Warehouse"]: @WarehouseDisplayFormatter.GetName(Count.Warehouse.Name, Localizer)
                 </MudText>
 
                 <MudAutocomplete T="StockKeepingUnitLookupItem"

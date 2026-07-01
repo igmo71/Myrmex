@@ -144,7 +144,7 @@ public partial class Index
             ListRequest request = new(
                 Skip: 0,
                 Take: LookupTake,
-                SortBy: "code",
+                SortBy: "name",
                 SortDescending: false,
                 IncludeInactive: false);
 

@@ -43,14 +43,11 @@
         </TemplateColumn>
 
         <TemplateColumn Title="@Localizer["Common.Warehouse"]"
-                        Tag="@InventoryLedgerSortBy.WarehouseCode"
-                        SortBy="@(entry => entry.StorageLocation.Warehouse.Code)"
+                        Tag="@InventoryLedgerSortBy.WarehouseName"
+                        SortBy="@(entry => entry.StorageLocation.Warehouse.Name)"
                         Sortable="true">
             <CellTemplate>
-                <MudText Typo="Typo.body2">@context.Item.StorageLocation.Warehouse.Code</MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    @context.Item.StorageLocation.Warehouse.Name
-                </MudText>
+                @WarehouseDisplayFormatter.GetName(context.Item.StorageLocation.Warehouse.Name, Localizer)
             </CellTemplate>
         </TemplateColumn>
 

@@ -107,6 +107,7 @@
   <data name="Common.Move" xml:space="preserve"><value>Move</value></data>
   <data name="Common.Name" xml:space="preserve"><value>Name</value></data>
   <data name="Common.NameRequired" xml:space="preserve"><value>Name is required.</value></data>
+  <data name="Common.NotAvailable" xml:space="preserve"><value>Not available</value></data>
   <data name="Common.Quantity" xml:space="preserve"><value>Quantity</value></data>
   <data name="Common.QuantityRequired" xml:space="preserve"><value>Quantity is required.</value></data>
   <data name="Common.Reactivate" xml:space="preserve"><value>Reactivate</value></data>

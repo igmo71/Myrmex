@@ -24,14 +24,9 @@
         </TemplateColumn>
 
         <TemplateColumn Title="@Localizer["Common.Warehouse"]"
-                        Tag="@InventoryTransferSortBy.WarehouseCode"
-                        SortBy="@(transfer => transfer.SourceWarehouse.Code)"
-                        Sortable="true">
+                        Sortable="false">
             <CellTemplate>
-                <MudText Typo="Typo.body2">@context.Item.SourceWarehouse.Code</MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    @context.Item.SourceWarehouse.Name
-                </MudText>
+                @WarehouseDisplayFormatter.GetName(context.Item.SourceWarehouse.Name, Localizer)
             </CellTemplate>
         </TemplateColumn>
 

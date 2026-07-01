@@ -1,20 +1,29 @@
 ﻿@using MudBlazor
+@using Myrmex.Shared.Wms.Topology
 @using Myrmex.WebApp.Wms.Topology
 @inject IStringLocalizer<SharedResource> Localizer
 
 <MudDataGrid T="WarehouseDetails"
-             Items="Warehouses"
-             Loading="IsLoading"
+             @ref="_dataGrid"
+             ServerData="LoadServerDataAsync"
              Dense="true"
              Hover="true"
              Bordered="true"
              Striped="true"
-             SortMode="SortMode.Multiple"
+             SortMode="SortMode.Single"
              Filterable="false">
     <Columns>
-        <PropertyColumn Property="x => x.Code" Title="@Localizer["Common.Code"]" />
-        <PropertyColumn Property="x => x.Name" Title="@Localizer["Common.Name"]" />
-        <PropertyColumn Property="x => x.Description" Title="@Localizer["Common.Description"]" />
+        <TemplateColumn Title="@Localizer["Common.Name"]"
+                        Tag="@WarehouseSortBy.Name"
+                        SortBy="@(warehouse => warehouse.Name)"
+                        Sortable="true">
+            <CellTemplate>
+                @WarehouseDisplayFormatter.GetName(context.Item.Name, Localizer)
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.Description"
+                        Title="@Localizer["Common.Description"]"
+                        Sortable="false" />
 
         <TemplateColumn Title="@Localizer["Common.Active"]"
                         Sortable="false"
@@ -38,8 +47,12 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <PropertyColumn Property="x => x.CreatedAtUtc" Title="@Localizer["Common.CreatedUtc"]" />
-        <PropertyColumn Property="x => x.UpdatedAtUtc" Title="@Localizer["Common.UpdatedUtc"]" />
+        <PropertyColumn Property="x => x.CreatedAtUtc"
+                        Title="@Localizer["Common.CreatedUtc"]"
+                        Tag="@WarehouseSortBy.CreatedAtUtc" />
+        <PropertyColumn Property="x => x.UpdatedAtUtc"
+                        Title="@Localizer["Common.UpdatedUtc"]"
+                        Tag="@WarehouseSortBy.UpdatedAtUtc" />
 
         <TemplateColumn Title="@Localizer["Common.Actions"]" Sortable="false" Filterable="false">
             <CellTemplate>
@@ -88,16 +101,13 @@
     </Columns>
 
     <PagerContent>
-        <MudDataGridPager T="WarehouseDetails" />
+        <MudDataGridPager T="WarehouseDetails" PageSizeOptions="@PageSizeOptions" />
     </PagerContent>
 </MudDataGrid>
 
 @code {
-    [Parameter]
-    public IReadOnlyList<WarehouseDetails> Warehouses { get; set; } = [];
-
-    [Parameter]
-    public bool IsLoading { get; set; }
+    [Parameter, EditorRequired]
+    public Func<WarehouseGridRequest, CancellationToken, Task<GridData<WarehouseDetails>>> LoadData { get; set; } = default!;
 
     [Parameter]
     public EventCallback<WarehouseDetails> EditRequested { get; set; }
@@ -113,4 +123,56 @@
 
     [Parameter]
     public EventCallback<WarehouseDetails> LocationsRequested { get; set; }
+
+    private MudDataGrid<WarehouseDetails>? _dataGrid;
+
+    private static readonly int[] PageSizeOptions = [10, 25, 50, 100];
+
+    private Task<GridData<WarehouseDetails>> LoadServerDataAsync(
+        GridState<WarehouseDetails> state,
+        CancellationToken cancellationToken)
+    {
+        SortDefinition<WarehouseDetails>? sortDefinition = state.SortDefinitions.FirstOrDefault();
+
+        WarehouseGridRequest request = new(
+            Skip: state.Page * state.PageSize,
+            Take: state.PageSize,
+            SortBy: ResolveSortBy(sortDefinition),
+            SortDescending: sortDefinition?.Descending ?? false);
+
+        return LoadData(request, cancellationToken);
+    }
+
+    private string ResolveSortBy(SortDefinition<WarehouseDetails>? sortDefinition)
+    {
+        if (sortDefinition is null)
+        {
+            return "name";
+        }
+
+        Column<WarehouseDetails>? column = _dataGrid?.GetColumnByPropertyName(sortDefinition.SortBy);
+
+        return column?.Tag as string ?? "name";
+    }
+
+    public Task ReloadServerDataAsync()
+    {
+        return _dataGrid?.ReloadServerData() ?? Task.CompletedTask;
+    }
+
+    public async Task ResetAndReloadServerDataAsync()
+    {
+        if (_dataGrid is null)
+        {
+            return;
+        }
+
+        if (_dataGrid.CurrentPage == 0)
+        {
+            await _dataGrid.ReloadServerData();
+            return;
+        }
+
+        _dataGrid.NavigateTo(Page.First);
+    }
 }

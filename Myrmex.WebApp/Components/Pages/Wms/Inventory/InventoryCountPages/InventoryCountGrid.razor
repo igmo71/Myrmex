@@ -23,14 +23,9 @@
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn Title="@Localizer["Common.Warehouse"]"
-                        Tag="@InventoryCountSortBy.WarehouseCode"
-                        SortBy="@(count => count.Warehouse.Code)"
-                        Sortable="true">
+                        Sortable="false">
             <CellTemplate>
-                <MudText Typo="Typo.body2">@context.Item.Warehouse.Code</MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    @context.Item.Warehouse.Name
-                </MudText>
+                @WarehouseDisplayFormatter.GetName(context.Item.Warehouse.Name, Localizer)
             </CellTemplate>
         </TemplateColumn>
         <PropertyColumn Property="@(count => count.LineCount)" Title="@Localizer["InventoryCount.CurrentLines"]" Sortable="false" />
