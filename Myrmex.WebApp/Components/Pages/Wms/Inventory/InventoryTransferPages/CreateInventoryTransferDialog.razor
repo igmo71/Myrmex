@@ -25,7 +25,7 @@
                     @foreach (WarehouseDetails warehouse in _warehouses)
                     {
                         <MudSelectItem T="Guid?" Value="@((Guid?)warehouse.Id)">
-                            @warehouse.Code - @warehouse.Name
+                            @warehouse.Name
                         </MudSelectItem>
                     }
                 </MudSelect>
@@ -255,7 +255,7 @@
             ListRequest request = new(
                 Skip: 0,
                 Take: LookupTake,
-                SortBy: "code",
+                SortBy: "name",
                 SortDescending: false,
                 IncludeInactive: false);
 

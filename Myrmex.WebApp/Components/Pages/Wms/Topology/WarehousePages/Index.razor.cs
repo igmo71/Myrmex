@@ -20,62 +20,68 @@ public partial class Index
     [Inject]
     private ISnackbar Snackbar { get; set; } = default!;
 
-    private List<WarehouseDetails> _warehouses = [];
-    private bool _isLoading;
+    private WarehouseGrid? _warehouseGrid;
     private string? _errorMessage;
     private string? _searchText;
     private bool _includeInactive;
 
-    protected override async Task OnInitializedAsync()
+    private Task ReloadAsync()
     {
-        await LoadWarehousesAsync();
-    }
-
-    private async Task ReloadAsync()
-    {
-        await LoadWarehousesAsync();
+        return _warehouseGrid?.ReloadServerDataAsync() ?? Task.CompletedTask;
     }
 
     private async Task OnSearchTextChanged(string? value)
     {
         _searchText = value;
-        await LoadWarehousesAsync();
+        await ResetAndReloadWarehousesAsync();
     }
 
     private async Task OnIncludeInactiveChanged(bool value)
     {
         _includeInactive = value;
-        await LoadWarehousesAsync();
+        await ResetAndReloadWarehousesAsync();
     }
 
-    private async Task LoadWarehousesAsync()
+    private async Task<GridData<WarehouseDetails>> LoadWarehousesAsync(
+        WarehouseGridRequest gridRequest,
+        CancellationToken cancellationToken)
     {
-        _isLoading = true;
         _errorMessage = null;
 
         try
         {
             ListRequest request = new(
-                Skip: 0,
-                Take: 100,
+                Skip: gridRequest.Skip,
+                Take: gridRequest.Take,
                 SearchText: _searchText,
-                SortBy: "code",
-                SortDescending: false,
+                SortBy: gridRequest.SortBy,
+                SortDescending: gridRequest.SortDescending,
                 IncludeInactive: _includeInactive);
 
-            ListResult<WarehouseDetails> result = await WmsTopologyApiClient.ListWarehousesAsync(request);
+            ListResult<WarehouseDetails> result = await WmsTopologyApiClient
+                .ListWarehousesAsync(request, cancellationToken);
 
-            _warehouses = result.Items.ToList();
+            return new GridData<WarehouseDetails>
+            {
+                Items = result.Items,
+                TotalItems = result.TotalCount
+            };
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            return EmptyGridData();
         }
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
-            _warehouses = [];
+            return EmptyGridData();
         }
-        finally
-        {
-            _isLoading = false;
-        }
+    }
+
+    private Task ResetAndReloadWarehousesAsync()
+    {
+        return _warehouseGrid?.ResetAndReloadServerDataAsync() ?? Task.CompletedTask;
     }
 
     private async Task CreateWarehouseAsync()
@@ -99,7 +105,7 @@ public partial class Index
 
         Snackbar.Add(Localizer["Warehouse.Created"], Severity.Success);
 
-        await LoadWarehousesAsync();
+        await ReloadAsync();
     }
 
     private async Task EditWarehouseAsync(WarehouseDetails warehouse)
@@ -128,7 +134,7 @@ public partial class Index
 
         Snackbar.Add(Localizer["Warehouse.Updated"], Severity.Success);
 
-        await LoadWarehousesAsync();
+        await ReloadAsync();
     }
 
     private async Task DeactivateWarehouseAsync(WarehouseDetails warehouse)
@@ -147,7 +153,7 @@ public partial class Index
 
             Snackbar.Add(Localizer["Warehouse.Deactivated"], Severity.Success);
 
-            await LoadWarehousesAsync();
+            await ReloadAsync();
         }
         catch (Exception exception)
         {
@@ -171,7 +177,7 @@ public partial class Index
 
             Snackbar.Add(Localizer["Warehouse.Reactivated"], Severity.Success);
 
-            await LoadWarehousesAsync();
+            await ReloadAsync();
         }
         catch (Exception exception)
         {
@@ -197,5 +203,14 @@ public partial class Index
     private void NavigateToLocations(Guid warehouseId)
     {
         NavigationManager.NavigateTo($"/wms/topology/locations?warehouseId={warehouseId}");
+    }
+
+    private static GridData<WarehouseDetails> EmptyGridData()
+    {
+        return new GridData<WarehouseDetails>
+        {
+            Items = [],
+            TotalItems = 0
+        };
     }
 }

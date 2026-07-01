@@ -76,7 +76,7 @@ public partial class Index
                     new ListRequest(
                         Skip: 0,
                         Take: LookupTake,
-                        SortBy: "code",
+                        SortBy: "name",
                         SortDescending: false,
                         IncludeInactive: false));
             _warehouses = result.Items.ToList();

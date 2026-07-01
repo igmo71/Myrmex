@@ -16,7 +16,7 @@
             @foreach (WarehouseDetails warehouse in Warehouses)
             {
                 <MudSelectItem T="Guid?" Value="@warehouse.Id">
-                    @warehouse.Code - @warehouse.Name
+                    @warehouse.Name
                 </MudSelectItem>
             }
         </MudSelect>

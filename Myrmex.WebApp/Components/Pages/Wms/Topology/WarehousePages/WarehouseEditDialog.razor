@@ -11,16 +11,6 @@
         <MudForm @ref="_form">
             <MudStack Spacing="3">
                 <MudTextField T="string"
-                              Label="@Localizer["Common.Code"]"
-                              Variant="Variant.Outlined"
-                              Margin="Margin.Dense"
-                              Disabled="IsEditMode"
-                              Required="true"
-                              RequiredError="@Localizer["Common.CodeRequired"]"
-                              MaxLength="32"
-                              @bind-Value="_model.Code" />
-
-                <MudTextField T="string"
                               Label="@Localizer["Common.Name"]"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
@@ -28,6 +18,18 @@
                               RequiredError="@Localizer["Common.NameRequired"]"
                               MaxLength="200"
                               @bind-Value="_model.Name" />
+
+                @if (!IsEditMode)
+                {
+                    <MudTextField T="string"
+                                  Label="@Localizer["Common.Code"]"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Required="true"
+                                  RequiredError="@Localizer["Common.CodeRequired"]"
+                                  MaxLength="32"
+                                  @bind-Value="_model.Code" />
+                }
 
                 <MudTextField T="string"
                               Label="@Localizer["Common.Description"]"
