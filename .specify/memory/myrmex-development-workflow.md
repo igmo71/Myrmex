@@ -13,6 +13,8 @@ Feature-specific context belongs in `specs/<feature>/`.
 
 When working on a feature, start with the current `specs/<feature>/plan.md` and `tasks.md`. Read `spec.md`, `research.md`, `data-model.md`, contracts, quickstarts, and checklists only when directly relevant to the task.
 
+For WebApp work that adds or changes user-facing text, follow [WebApp localization conventions](webapp-localization.md).
+
 Do not pin durable memory or `AGENTS.md` to a completed feature.
 
 ## Execution Boundaries
