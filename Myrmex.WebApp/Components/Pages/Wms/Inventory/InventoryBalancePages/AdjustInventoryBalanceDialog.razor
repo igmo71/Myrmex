@@ -123,7 +123,7 @@
         $"{InventoryBalance.Sku.Code} - {InventoryBalance.Sku.Name}";
 
     private string WarehouseDisplay =>
-        $"{InventoryBalance.StorageLocation.Warehouse.Code} - {InventoryBalance.StorageLocation.Warehouse.Name}";
+        WarehouseDisplayFormatter.GetName(InventoryBalance.StorageLocation.Warehouse.Name, Localizer);
 
     private string StorageLocationDisplay =>
         $"{InventoryBalance.StorageLocation.Code} - {InventoryBalance.StorageLocation.Name}";

@@ -23,7 +23,7 @@
                 <div>
                     <MudText Typo="Typo.h5">@Localizer["InventoryCount.DetailsHeading"]</MudText>
                     <MudText Typo="Typo.body2" Color="Color.Secondary">
-                        @_count.Warehouse.Code - @_count.Warehouse.Name
+                        @WarehouseDisplayFormatter.GetName(_count.Warehouse.Name, Localizer)
                     </MudText>
                 </div>
                 @if (CanModifyCount)

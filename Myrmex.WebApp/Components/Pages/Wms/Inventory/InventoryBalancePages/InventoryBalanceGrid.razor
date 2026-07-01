@@ -26,16 +26,11 @@
         </TemplateColumn>
 
         <TemplateColumn Title="@Localizer["Common.Warehouse"]"
-                        Tag="@InventoryBalanceSortBy.WarehouseCode"
-                        SortBy="@(balance => balance.StorageLocation.Warehouse.Code)"
+                        Tag="@InventoryBalanceSortBy.WarehouseName"
+                        SortBy="@(balance => balance.StorageLocation.Warehouse.Name)"
                         Sortable="true">
             <CellTemplate>
-                <MudText Typo="Typo.body2">
-                    @context.Item.StorageLocation.Warehouse.Code
-                </MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    @context.Item.StorageLocation.Warehouse.Name
-                </MudText>
+                @WarehouseDisplayFormatter.GetName(context.Item.StorageLocation.Warehouse.Name, Localizer)
             </CellTemplate>
         </TemplateColumn>
 

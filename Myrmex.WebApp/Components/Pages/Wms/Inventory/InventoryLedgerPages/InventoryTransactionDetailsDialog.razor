@@ -60,10 +60,7 @@
                         </MudText>
                     </MudTd>
                     <MudTd DataLabel="@Localizer["Common.Warehouse"]">
-                        <MudText Typo="Typo.body2">@context.StorageLocation.Warehouse.Code</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">
-                            @context.StorageLocation.Warehouse.Name
-                        </MudText>
+                        @WarehouseDisplayFormatter.GetName(context.StorageLocation.Warehouse.Name, Localizer)
                     </MudTd>
                     <MudTd DataLabel="@Localizer["Common.StorageLocation"]">
                         <MudText Typo="Typo.body2">@context.StorageLocation.Code</MudText>

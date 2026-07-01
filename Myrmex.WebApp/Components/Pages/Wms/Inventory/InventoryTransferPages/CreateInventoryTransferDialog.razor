@@ -25,7 +25,7 @@
                     @foreach (WarehouseDetails warehouse in _warehouses)
                     {
                         <MudSelectItem T="Guid?" Value="@((Guid?)warehouse.Id)">
-                            @warehouse.Name
+                            @WarehouseDisplayFormatter.GetName(warehouse.Name, Localizer)
                         </MudSelectItem>
                     }
                 </MudSelect>

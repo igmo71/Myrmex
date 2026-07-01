@@ -13,9 +13,14 @@
              SortMode="SortMode.Single"
              Filterable="false">
     <Columns>
-        <PropertyColumn Property="x => x.Name"
-                        Title="@Localizer["Common.Name"]"
-                        Tag="@WarehouseSortBy.Name" />
+        <TemplateColumn Title="@Localizer["Common.Name"]"
+                        Tag="@WarehouseSortBy.Name"
+                        SortBy="@(warehouse => warehouse.Name)"
+                        Sortable="true">
+            <CellTemplate>
+                @WarehouseDisplayFormatter.GetName(context.Item.Name, Localizer)
+            </CellTemplate>
+        </TemplateColumn>
         <PropertyColumn Property="x => x.Description"
                         Title="@Localizer["Common.Description"]"
                         Sortable="false" />
