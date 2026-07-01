@@ -15,6 +15,8 @@ When working on a feature, start with the current `specs/<feature>/plan.md` and 
 
 For WebApp work that adds or changes user-facing text, follow [WebApp localization conventions](webapp-localization.md).
 
+For backend-owned WebApp/API lists with filtering, sorting, paging, and total counts, follow the [server-driven list slice pattern](server-driven-list-slice-pattern.md).
+
 Do not pin durable memory or `AGENTS.md` to a completed feature.
 
 ## Execution Boundaries
