@@ -1,37 +1,43 @@
-# Implementation Plan: Normalize WMS List Conventions
+# Implementation Plan: Phase 2 Deterministic Legacy List Ordering
 
 **Branch**: `090-normalize-wms-list-contracts` | **Date**: 2026-07-02 | **Spec**: [spec.md](./spec.md)
 
 **Input**: Feature specification from `/specs/090-normalize-wms-list-contracts/spec.md`
 
-> **Phase note (2026-07-02)**: This plan records the completed Phase 1 audit. `spec.md` now defines the focused Phase 2 deterministic-ordering scope and is ready for a refreshed implementation plan. `research.md` remains the decision base.
-
 ## Summary
 
-Perform a static, evidence-backed audit of nine WMS list slices against the durable server-driven list convention. Produce a decision report covering contract ownership, backend pipeline order, sorting and paging, WebApp grids, cancellation/errors, test protection, and a risk-ranked normalization sequence. This planning phase changes documentation artifacts only.
+Make paging order deterministic in the four legacy backend-owned list slices identified by the completed audit: Zones, Storage Locations, SKUs, and UoM. Preserve every existing primary sort key, direction, fallback, filter, count, paging, projection, result, and public boundary. Add ascending record-ID tie-breakers to every ordering branch and focused handler/persistence tests using duplicate non-unique primary values. No grid or contract migration is included.
 
 ## Technical Context
 
-**Language/Version**: C# / .NET 10 repository; Markdown planning output  
-**Primary Dependencies**: ASP.NET Core Minimal APIs, EF Core, Blazor, MudBlazor, xUnit; no dependency changes  
-**Storage**: PostgreSQL-backed EF Core modules inspected statically; no database access  
-**Testing**: Existing xUnit suites inspected only; builds and tests are not executed  
-**Target Platform**: Myrmex backend and Blazor WebApp repository  
-**Project Type**: Modular .NET WebApp/API solution  
-**Performance Goals**: Preserve bounded, server-driven list behavior; audit count-before-paging and backend projection  
-**Constraints**: Audit-only; no application, test, resource, contract, route, schema, migration, runtime, or infrastructure changes  
-**Scale/Scope**: Nine WMS slices across catalog, topology, and inventory
+**Language/Version**: C# / .NET 10
+
+**Primary Dependencies**: EF Core query ordering, existing internal query handlers, xUnit, existing `TestWmsDbContext`; no dependency changes
+
+**Storage**: Existing WMS EF Core model; no model, schema, index, or migration changes
+
+**Testing**: Focused handler/persistence tests in `Myrmex.Tests`; validation commands are developer-run
+
+**Target Platform**: Existing Myrmex modular-monolith backend
+
+**Project Type**: Backend vertical-slice normalization within the WMS module
+
+**Performance Goals**: Preserve current query shape and page bounds while making all returned pages deterministically ordered
+
+**Constraints**: Four list handlers and focused tests only; preserve primary sorts, public contracts, routes, WebApp behavior, resources, imports, and database behavior
+
+**Scale/Scope**: Four `ApplySorting` implementations and four handler test suites
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- **Domain-first design**: PASS. The audit does not move behavior into UI or transport types and checks domain/module ownership.
-- **Modular boundaries**: PASS. Shared contracts are checked for transport-only dependencies; EF projection remains module-owned.
-- **Explicit vertical slices**: PASS. Findings trace endpoint-to-handler-to-client-to-grid flow per slice.
-- **Behavior-protecting tests**: PASS. Recommendations target the lowest layer owning each risk and avoid duplicate matrices.
-- **Simplicity and evidence**: PASS. Existing local patterns take precedence; no new abstraction is introduced.
-- **Post-design re-check**: PASS. Phase 0 and Phase 1 artifacts preserve these boundaries and the audit-only scope.
+- **Domain Model First**: PASS. Zone, Storage Location, SKU, and UoM identity and business behavior are unchanged; only query ordering among equal values changes.
+- **Modular Monolith Boundaries**: PASS. Ordering stays in each owning WMS handler. No shared, endpoint, client, or UI dependency changes.
+- **Vertical Slices with Explicit Requests**: PASS. Existing explicit internal queries and handlers remain intact; public transport behavior is preserved.
+- **Tests Protect Domain and Integration Behavior**: PASS. Handler/persistence tests protect the EF ordering and page-boundary risk at its owning layer.
+- **Pragmatic Simplicity and Observability**: PASS. Reuse the established Warehouse/inventory `ThenBy(Id)` pattern; add no sorting abstraction or diagnostics.
+- **Post-design re-check**: PASS. The design artifacts introduce no new boundary, schema, interface, or constitution exception.
 
 ## Project Structure
 
@@ -48,50 +54,78 @@ specs/090-normalize-wms-list-contracts/
     `-- requirements.md
 ```
 
-No `contracts/` artifact is created because this feature audits existing interfaces and designs no external contract.
+No `contracts/` artifact is created because Phase 2 preserves every external interface.
 
 ### Source Code (repository root)
 ```text
-Myrmex.Shared/Common/                         # Shared list primitives
-Myrmex.Shared/Wms/                            # Public WMS contracts and sort constants
-Myrmex.Core/Application/Queries/              # Paging normalization policy
-Myrmex.Modules.Wms/Catalog/Features/          # Catalog handlers/projections
-Myrmex.Modules.Wms/Topology/Features/         # Topology handlers/projections
-Myrmex.Modules.Wms/Inventory/Features/        # Inventory handlers/projections
-Myrmex.WebApp/Wms/                            # Clients, grid requests, pages, grids
-Myrmex.Tests/Wms/                             # Existing behavioral/boundary tests
+Myrmex.Modules.Wms/
+|-- Topology/Features/Zones/ListZones.cs
+|-- Topology/Features/StorageLocations/ListStorageLocations.cs
+|-- Catalog/Features/StockKeepingUnits/ListStockKeepingUnits.cs
+`-- Catalog/Features/UnitsOfMeasure/ListUnitsOfMeasure.cs
+
+Myrmex.Tests/Wms/
+|-- Topology/Features/Zones/ListZonesHandlerTests.cs                    # new
+|-- Topology/Features/StorageLocations/ListStorageLocationsHandlerTests.cs # new
+|-- Catalog/Features/StockKeepingUnits/ListStockKeepingUnitsHandlerTests.cs
+`-- Catalog/Features/UnitsOfMeasure/ListUnitsOfMeasureHandlerTests.cs
 ```
 
-**Structure Decision**: Keep the audit in the feature directory. Use durable memory as the normative baseline and the detailed architecture document as supporting context. Cite inspected paths without modifying them.
+**Structure Decision**: Change only each slice's existing private `ApplySorting` method and its handler-level test suite. Keep sorting explicit per slice, matching the accepted Warehouse implementation, rather than introducing a common helper. `research.md` remains completed Phase 1 evidence.
 
 ## Architectural Design Notes
 
-- **Domain concepts first**: Audit catalog, topology, balances, ledger, transfers, and counts without changing domain rules.
-- **Shared boundary**: Verify cross-boundary list contracts are transport-only and owned by `Myrmex.Shared`; identify legacy WebApp-local DTO duplication.
-- **Internal boundary**: Preserve explicit module-owned queries/handlers distinct from public requests.
-- **Projection**: Verify EF expressions stay in the owning module and DTO projection occurs before materialization.
-- **Server lists**: Verify filter, count, deterministic sort, normalized `Skip`/`Take`, projection, and `ListResult<T>` order.
-- **Client/grids**: Compare server-driven grids with bounded client-side legacy grids, including defaults and reload/reset semantics.
-- **Cancellation/errors**: Trace cancellation and preserve read-list exception/ProblemDetails conventions.
-- **Testing**: Recommend only behavior-owning tests for unstable paging, sorting, binding, URLs, and cancellation.
-- **Pattern precedence**: Inventory lists and Warehouse grid provide accepted local examples; no generalized framework is proposed.
+- **Ordering rule**: Append `.ThenBy(x => x.Id)` to ascending and descending primary sort branches and to the fallback/default order. The ID tie-breaker remains ascending in both directions, matching `ListWarehouses` and the durable convention.
+- **Primary behavior**: Do not change supported raw sort keys, key casing, default Code sort, `SortDescending` handling for primary values, filtering, count timing, normalized `Skip`/`Take`, projection, or result metadata.
+- **Zones**: Update all Code, Name, CreatedAtUtc, UpdatedAtUtc, IsActive, and fallback branches in `ListZones.cs`.
+- **Storage Locations**: Update all Code, Name, IsPickable, CreatedAtUtc, UpdatedAtUtc, IsActive, and fallback branches in `ListStorageLocations.cs`.
+- **SKUs**: Update Code, Name, IsActive, and fallback branches in `ListStockKeepingUnits.cs`.
+- **UoM**: Update Code, Name, IsActive, and fallback branches in `ListUnitsOfMeasure.cs`.
+- **Focused tests**: Use duplicate Name values because Code is identity-like/unique. Assert returned IDs follow SQL Server ascending `uniqueidentifier` order for both ascending and descending Name requests, and verify adjacent pages concatenate to that same order. In test expectations, follow `ListWarehousesHandlerTests` and compare with `System.Data.SqlTypes.SqlGuid` rather than .NET `Guid` ordering.
+- **Topology test setup**: Add narrow list-handler suites using existing `TestWmsDbContext` and domain creation patterns from neighboring Zone/Storage Location tests.
+- **Catalog test setup**: Extend the two existing list-handler suites and adapt their private seed helpers to return created entities where ID assertions require it.
+- **Planned test scenario in each suite**: `HandleAsync_WhenNameValuesMatch_OrdersByIdAcrossPages`, implemented as a two-direction theory. Seed three same-name records, request `Take = 2` and then `Skip = 2`, concatenate both pages, and compare IDs with the SQL Server-ordered expected sequence. Zone queries use one seeded Warehouse; Storage Location queries use one valid Warehouse/Zone plus required type/status references.
+- **No boundary changes**: Do not touch endpoints, API clients, DTOs, `Myrmex.Shared`, WebApp components, resources, persistence configuration, or migrations.
 
-## Phase Outputs
+## Phase 0 Decision Resolution
 
-- **Phase 0**: [research.md](./research.md), the evidence-backed audit and prioritization.
-- **Phase 1**: [data-model.md](./data-model.md) defines report records; [quickstart.md](./quickstart.md) defines static review and handoff.
-- **Agent context**: the managed `AGENTS.md` section points active work at this feature plan.
+- No unresolved technical unknowns remain. [research.md](./research.md) is the completed decision base and is not regenerated.
+- **Decision**: use ascending ID as the secondary tie-breaker for both primary directions. **Rationale**: this matches Warehouse and durable list guidance and provides a total order without changing primary-direction semantics. **Alternative rejected**: direction-matched ID ties would diverge from the closest accepted legacy implementation without user value.
+- **Decision**: keep explicit ordering in each handler. **Rationale**: only four small switch expressions change. **Alternative rejected**: a generalized sorting abstraction is expressly out of scope and would increase coupling.
+- **Decision**: protect non-unique Name sorting and page boundaries at handler/persistence level using SQL Server's `uniqueidentifier` ordering semantics. **Rationale**: EF/database ordering owns the risk, and the existing Warehouse test establishes the correct expected-ID comparer. **Alternative rejected**: endpoint, client, and UI tests cannot add distinct protection because those boundaries do not change.
+
+## Phase 2 Planning Artifacts
+
+- [data-model.md](./data-model.md) records that entities and persistence models are unchanged and defines the ordering invariant.
+- No `contracts/` artifact is created because public and internal request/response shapes are unchanged.
+- [quickstart.md](./quickstart.md) provides developer-controlled focused validation commands and expected outcomes.
+- The managed Spec Kit section in `AGENTS.md` already points to this plan and needs no content change.
+
+## Implementation Sequence
+
+1. Add `ListZonesHandlerTests.cs` and `ListStorageLocationsHandlerTests.cs` with the focused duplicate-Name, two-direction, adjacent-page scenario.
+2. Extend `ListStockKeepingUnitsHandlerTests.cs` and `ListUnitsOfMeasureHandlerTests.cs` with the same focused scenario, reusing their existing seed helpers.
+3. Update each of the four private `ApplySorting` switch expressions so every supported and fallback branch appends ascending ID ordering.
+4. Statically compare primary expressions, directions, raw key values, fallback Code ordering, and query pipeline placement with the pre-change behavior.
+5. Hand off the focused test and optional build commands in `quickstart.md` for developer execution.
+
+## Implementation Risks
+
+- **Provider ordering mismatch**: .NET `Guid` comparison does not model SQL Server `uniqueidentifier` ordering. Test expectations must use `SqlGuid`.
+- **Incomplete switch update**: missing one supported or fallback branch leaves a nondeterministic path. Static branch-by-branch review is required in addition to focused runtime tests.
+- **Direction regression**: secondary ID stays ascending even when the primary is descending; only the existing primary expression changes direction.
+- **Over-expansion**: nearby contract, grid, casing, or default-sort findings remain deferred even if encountered during implementation.
+- **Topology fixture complexity**: test data must satisfy existing Warehouse, Zone, type, and status relationships without changing domain or persistence setup.
 
 ## Validation Plan
 
-- Confirm all nine slices appear in compact and detailed findings.
-- Confirm material findings cite repository paths and distinguish absent from unreviewed boundaries.
-- Confirm deterministic sorting requires explicit tie-breakers.
-- Confirm recommendations preserve contracts, behavior, imported data, and module boundaries.
-- Search for unresolved template markers.
-- Review the Git diff for documentation-only scope.
-- Do not run builds, tests, WebApp, AppHost, Docker, infrastructure, migrations, or database updates.
+- Static review: verify every supported and fallback branch in the four handlers includes ascending ID tie resolution after the unchanged primary order.
+- Focused tests: verify duplicate Name values resolve by ascending ID for both primary directions and remain complete/stable across adjacent pages.
+- Regression review: existing catalog sort/fallback tests remain green and topology setup validates the required warehouse/zone relationships.
+- Scope review: changed production files are exactly the four handlers; changed tests are exactly the four handler suites.
+- Developer-run commands are documented in `quickstart.md`; this planning step does not execute builds or tests.
+- Do not start WebApp/AppHost, run Docker/infrastructure, generate/apply migrations, or update a database.
 
 ## Complexity Tracking
 
-No constitution violations or test exceptions are introduced. The audit recommends convergence on accepted patterns rather than a generalized list framework.
+No constitution violations or test exceptions are introduced. Four explicit local changes are simpler and safer than a generalized sorting abstraction.

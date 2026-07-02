@@ -1,24 +1,34 @@
-# Static Audit Quickstart
+# Phase 2 Validation Quickstart
 
-## Inputs
+## Prerequisites
 
 1. Read `spec.md` and `plan.md` in this feature directory.
-2. Use `.specify/memory/server-driven-list-slice-pattern.md` as the normative convention.
-3. Use `docs/architecture/server-driven-list-slice-pattern.md` only for supporting detail.
-4. Inspect current files cited by `research.md`; current code overrides historical notes.
+2. Treat `research.md` as completed audit evidence.
+3. Configure `MYRMEX_WMS_TEST_CONNECTION` for the existing dedicated SQL Server test database whose name ends in `_test`; its migrations must already be current.
+4. Use a development environment capable of running the existing .NET test project.
+5. Do not start WebApp, AppHost, Docker, or infrastructure, and do not generate/apply migrations or update the database schema.
 
-## Review
+## Static Review
 
-For each slice, trace the public request through endpoint mapping, internal query, filters, filtered count, deterministic ordering, normalized paging, backend projection, shared result, API client, and grid. Record exact sort-key values and casing, default order, tie-breakers, cancellation, error conventions, visible warehouse values, and relevant tests.
+- Confirm every supported and fallback branch in the four `ApplySorting` methods ends with ascending `ThenBy(x => x.Id)`.
+- Confirm the original primary expression, primary direction, supported key strings, and default Code ordering remain unchanged.
+- Confirm `Skip` and `Take` remain after sorting.
+- Confirm no endpoint, shared contract, WebApp, resource, persistence configuration, or migration file changed.
 
-Classify normalization as mechanical, focused-test work, or deferred. Prefer an accepted local pattern over a new abstraction.
+## Focused Tests
 
-## Static Validation
+The developer may run the focused suites after implementation:
 
-- Verify all report sections and all nine slices are present.
-- Verify material claims cite precise paths.
-- Verify no unresolved placeholders remain.
-- Confirm the Git diff contains no application, test, resource, contract, schema, or migration changes.
-- Do not build, test, run services, start infrastructure, or access/update the database.
+```powershell
+dotnet test Myrmex.Tests/Myrmex.Tests.csproj --filter "FullyQualifiedName~ListZonesHandlerTests|FullyQualifiedName~ListStorageLocationsHandlerTests|FullyQualifiedName~ListStockKeepingUnitsHandlerTests|FullyQualifiedName~ListUnitsOfMeasureHandlerTests"
+```
 
-Use `research.md` as decision input for later specification and task generation.
+Expected result: all four focused suites pass, including duplicate-Name ordering in both directions and adjacent-page completeness.
+
+If broader compilation confidence is needed, the developer may run:
+
+```powershell
+dotnet build Myrmex.slnx --no-restore
+```
+
+These commands are recommendations only and are not run by the planning workflow.
