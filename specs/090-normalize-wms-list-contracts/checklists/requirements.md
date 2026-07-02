@@ -1,4 +1,4 @@
-# Specification Quality Checklist: Normalize WMS List Conventions
+# Specification Quality Checklist: Normalize WMS List Conventions — Phase 2
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-07-02
@@ -31,5 +31,6 @@
 
 ## Notes
 
-- Validation passed on the first review iteration.
-- Technical vocabulary identifies the audit subject and evidence boundaries; it does not prescribe an implementation solution.
+- Phase 2 validation passed on the first review iteration.
+- The specification retains the completed Phase 1 audit outcomes and explicitly separates them from current implementation scope.
+- Boundary terminology is necessary to enforce the stakeholder-approved change limits; the specification does not prescribe a new framework, public contract, route, or UI design.

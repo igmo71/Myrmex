@@ -4,6 +4,8 @@
 
 **Input**: Feature specification from `/specs/090-normalize-wms-list-contracts/spec.md`
 
+> **Phase note (2026-07-02)**: This plan records the completed Phase 1 audit. `spec.md` now defines the focused Phase 2 deterministic-ordering scope and is ready for a refreshed implementation plan. `research.md` remains the decision base.
+
 ## Summary
 
 Perform a static, evidence-backed audit of nine WMS list slices against the durable server-driven list convention. Produce a decision report covering contract ownership, backend pipeline order, sorting and paging, WebApp grids, cancellation/errors, test protection, and a risk-ranked normalization sequence. This planning phase changes documentation artifacts only.
