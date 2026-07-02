@@ -34,17 +34,17 @@ No foundational tasks are required. Each list owns its explicit sorting expressi
 
 > Write these focused handler/persistence tests before their corresponding implementation task. The expected pre-implementation failure is an ID sequence that is not guaranteed to match the explicit SQL Server order.
 
-- [ ] T001 [P] [US1] Add a two-direction `HandleAsync_WhenNameValuesMatch_OrdersByIdAcrossPages` theory using one valid Warehouse, three same-name Zones, adjacent pages, and `SqlGuid` expected ordering in `Myrmex.Tests/Wms/Topology/Features/Zones/ListZonesHandlerTests.cs`
-- [ ] T002 [P] [US1] Add a two-direction `HandleAsync_WhenNameValuesMatch_OrdersByIdAcrossPages` theory using valid Warehouse/Zone/type/status relationships, three same-name Storage Locations, adjacent pages, and `SqlGuid` expected ordering in `Myrmex.Tests/Wms/Topology/Features/StorageLocations/ListStorageLocationsHandlerTests.cs`
-- [ ] T003 [P] [US1] Extend the existing SKU handler suite with a two-direction `HandleAsync_WhenNameValuesMatch_OrdersByIdAcrossPages` theory, returning seeded entities from helpers as needed and comparing adjacent-page IDs with `SqlGuid` order in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/ListStockKeepingUnitsHandlerTests.cs`
-- [ ] T004 [P] [US1] Extend the existing UoM handler suite with a two-direction `HandleAsync_WhenNameValuesMatch_OrdersByIdAcrossPages` theory, returning seeded entities from helpers as needed and comparing adjacent-page IDs with `SqlGuid` order in `Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/ListUnitsOfMeasureHandlerTests.cs`
+- [X] T001 [P] [US1] Add a two-direction `HandleAsync_WhenNameValuesMatch_OrdersByIdAcrossPages` theory using one valid Warehouse, three same-name Zones, adjacent pages, and `SqlGuid` expected ordering in `Myrmex.Tests/Wms/Topology/Features/Zones/ListZonesHandlerTests.cs`
+- [X] T002 [P] [US1] Add a two-direction `HandleAsync_WhenNameValuesMatch_OrdersByIdAcrossPages` theory using valid Warehouse/Zone/type/status relationships, three same-name Storage Locations, adjacent pages, and `SqlGuid` expected ordering in `Myrmex.Tests/Wms/Topology/Features/StorageLocations/ListStorageLocationsHandlerTests.cs`
+- [X] T003 [P] [US1] Extend the existing SKU handler suite with a two-direction `HandleAsync_WhenNameValuesMatch_OrdersByIdAcrossPages` theory, returning seeded entities from helpers as needed and comparing adjacent-page IDs with `SqlGuid` order in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/ListStockKeepingUnitsHandlerTests.cs`
+- [X] T004 [P] [US1] Extend the existing UoM handler suite with a two-direction `HandleAsync_WhenNameValuesMatch_OrdersByIdAcrossPages` theory, returning seeded entities from helpers as needed and comparing adjacent-page IDs with `SqlGuid` order in `Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/ListUnitsOfMeasureHandlerTests.cs`
 
 ### Implementation for User Story 1
 
-- [ ] T005 [P] [US1] After T001, append ascending `ThenBy(x => x.Id)` to the Code, Name, CreatedAtUtc, UpdatedAtUtc, IsActive, and fallback branches without changing primary ordering in `Myrmex.Modules.Wms/Topology/Features/Zones/ListZones.cs`
-- [ ] T006 [P] [US1] After T002, append ascending `ThenBy(x => x.Id)` to the Code, Name, IsPickable, CreatedAtUtc, UpdatedAtUtc, IsActive, and fallback branches without changing primary ordering in `Myrmex.Modules.Wms/Topology/Features/StorageLocations/ListStorageLocations.cs`
-- [ ] T007 [P] [US1] After T003, append ascending `ThenBy(x => x.Id)` to the Code, Name, IsActive, and fallback branches without changing primary ordering in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/ListStockKeepingUnits.cs`
-- [ ] T008 [P] [US1] After T004, append ascending `ThenBy(x => x.Id)` to the Code, Name, IsActive, and fallback branches without changing primary ordering in `Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/ListUnitsOfMeasure.cs`
+- [X] T005 [P] [US1] After T001, append ascending `ThenBy(x => x.Id)` to the Code, Name, CreatedAtUtc, UpdatedAtUtc, IsActive, and fallback branches without changing primary ordering in `Myrmex.Modules.Wms/Topology/Features/Zones/ListZones.cs`
+- [X] T006 [P] [US1] After T002, append ascending `ThenBy(x => x.Id)` to the Code, Name, IsPickable, CreatedAtUtc, UpdatedAtUtc, IsActive, and fallback branches without changing primary ordering in `Myrmex.Modules.Wms/Topology/Features/StorageLocations/ListStorageLocations.cs`
+- [X] T007 [P] [US1] After T003, append ascending `ThenBy(x => x.Id)` to the Code, Name, IsActive, and fallback branches without changing primary ordering in `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/ListStockKeepingUnits.cs`
+- [X] T008 [P] [US1] After T004, append ascending `ThenBy(x => x.Id)` to the Code, Name, IsActive, and fallback branches without changing primary ordering in `Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/ListUnitsOfMeasure.cs`
 
 **Checkpoint**: All four handlers retain their existing primary sort behavior and produce complete, stable adjacent pages for duplicate Name values in both primary directions.
 
@@ -56,7 +56,7 @@ No foundational tasks are required. Each list owns its explicit sorting expressi
 
 **Independent Test**: Review the four focused suites and confirm each would fail if its handler's ID tie-breaker were removed, exercises both Name directions and a page boundary, and uses SQL Server-compatible ID expectations.
 
-- [ ] T009 [US2] Review and tighten the four focused ordering theories so each isolates duplicate-primary-value paging risk, covers both Name directions, asserts `SqlGuid` ID order across adjacent pages, and adds no endpoint/client/UI coverage in `Myrmex.Tests/Wms/Topology/Features/Zones/ListZonesHandlerTests.cs`, `Myrmex.Tests/Wms/Topology/Features/StorageLocations/ListStorageLocationsHandlerTests.cs`, `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/ListStockKeepingUnitsHandlerTests.cs`, and `Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/ListUnitsOfMeasureHandlerTests.cs`
+- [X] T009 [US2] Review and tighten the four focused ordering theories so each isolates duplicate-primary-value paging risk, covers both Name directions, asserts `SqlGuid` ID order across adjacent pages, and adds no endpoint/client/UI coverage in `Myrmex.Tests/Wms/Topology/Features/Zones/ListZonesHandlerTests.cs`, `Myrmex.Tests/Wms/Topology/Features/StorageLocations/ListStorageLocationsHandlerTests.cs`, `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/ListStockKeepingUnitsHandlerTests.cs`, and `Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/ListUnitsOfMeasureHandlerTests.cs`
 
 **Checkpoint**: The smallest behavior-owning test set protects all four changed list slices.
 
@@ -66,7 +66,7 @@ No foundational tasks are required. Each list owns its explicit sorting expressi
 
 **Purpose**: Perform static scope and consistency checks without expanding Phase 2.
 
-- [ ] T010 Verify every supported and fallback switch branch has ascending ID tie resolution, primary expressions/directions and `Skip`/`Take` placement are unchanged, and no out-of-scope files changed in `Myrmex.Modules.Wms/Topology/Features/Zones/ListZones.cs`, `Myrmex.Modules.Wms/Topology/Features/StorageLocations/ListStorageLocations.cs`, `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/ListStockKeepingUnits.cs`, and `Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/ListUnitsOfMeasure.cs`
+- [X] T010 Verify every supported and fallback switch branch has ascending ID tie resolution, primary expressions/directions and `Skip`/`Take` placement are unchanged, and no out-of-scope files changed in `Myrmex.Modules.Wms/Topology/Features/Zones/ListZones.cs`, `Myrmex.Modules.Wms/Topology/Features/StorageLocations/ListStorageLocations.cs`, `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/ListStockKeepingUnits.cs`, and `Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/ListUnitsOfMeasure.cs`
 
 ### Developer-Controlled Validation
 
