@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Topology;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Topology;
 
@@ -25,10 +26,8 @@ public partial class Index
     public Guid? WarehouseIdQuery { get; set; }
 
     private List<WarehouseDetails> _warehouses = [];
-    private List<ZoneDetails> _zones = [];
-
+    private ZoneGrid? _zoneGrid;
     private Guid? _selectedWarehouseId;
-    private bool _isLoading;
     private bool _isLoadingWarehouses;
     private string? _errorMessage;
     private string? _searchText;
@@ -39,55 +38,33 @@ public partial class Index
         _selectedWarehouseId = WarehouseIdQuery;
 
         await LoadWarehousesAsync();
-
-        if (_selectedWarehouseId is not null)
-        {
-            await LoadZonesAsync();
-        }
     }
 
-    private async Task ReloadAsync()
+    private Task ReloadAsync()
     {
-        if (_selectedWarehouseId is null)
-        {
-            _zones = [];
-            return;
-        }
-
-        await LoadZonesAsync();
+        return _zoneGrid?.ReloadServerDataAsync() ?? Task.CompletedTask;
     }
 
     private async Task OnWarehouseChanged(Guid? value)
     {
         _selectedWarehouseId = value;
-        _zones = [];
 
         UpdateUrl();
-
-        if (_selectedWarehouseId is not null)
-        {
-            await LoadZonesAsync();
-        }
+        await ResetAndReloadZonesAsync();
     }
 
     private async Task OnSearchTextChanged(string? value)
     {
         _searchText = value;
 
-        if (_selectedWarehouseId is not null)
-        {
-            await LoadZonesAsync();
-        }
+        await ResetAndReloadZonesAsync();
     }
 
     private async Task OnIncludeInactiveChanged(bool value)
     {
         _includeInactive = value;
 
-        if (_selectedWarehouseId is not null)
-        {
-            await LoadZonesAsync();
-        }
+        await ResetAndReloadZonesAsync();
     }
 
     private async Task LoadWarehousesAsync()
@@ -97,13 +74,14 @@ public partial class Index
 
         try
         {
-            ListRequest request = new(
-                Skip: 0,
-                Take: 100,
-                SearchText: null,
-                SortBy: "name",
-                SortDescending: false,
-                IncludeInactive: false);
+            ListWarehousesRequest request = new()
+            {
+                Skip = 0,
+                Take = 100,
+                SortBy = WarehouseSortBy.Name,
+                SortDescending = false,
+                IncludeInactive = false
+            };
 
             ListResult<WarehouseDetails> result = await WmsTopologyApiClient
                 .ListWarehousesAsync(request);
@@ -121,41 +99,53 @@ public partial class Index
         }
     }
 
-    private async Task LoadZonesAsync()
+    private async Task<GridData<ZoneDetails>> LoadZonesAsync(
+        ZoneGridRequest gridRequest,
+        CancellationToken cancellationToken)
     {
         if (_selectedWarehouseId is null)
         {
-            _zones = [];
-            return;
+            return EmptyGridData();
         }
 
-        _isLoading = true;
         _errorMessage = null;
 
         try
         {
-            ListRequest request = new(
-                Skip: 0,
-                Take: 100,
-                SearchText: _searchText,
-                SortBy: "code",
-                SortDescending: false,
-                IncludeInactive: _includeInactive);
+            ListZonesRequest request = new()
+            {
+                WarehouseId = _selectedWarehouseId,
+                Skip = gridRequest.Skip,
+                Take = gridRequest.Take,
+                SearchText = _searchText,
+                SortBy = gridRequest.SortBy,
+                SortDescending = gridRequest.SortDescending,
+                IncludeInactive = _includeInactive
+            };
 
             ListResult<ZoneDetails> result = await WmsTopologyApiClient
-                .ListZonesAsync(_selectedWarehouseId.Value, request);
+                .ListZonesAsync(_selectedWarehouseId.Value, request, cancellationToken);
 
-            _zones = result.Items.ToList();
+            return new GridData<ZoneDetails>
+            {
+                Items = result.Items,
+                TotalItems = result.TotalCount
+            };
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return EmptyGridData();
         }
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
-            _zones = [];
+            return EmptyGridData();
         }
-        finally
-        {
-            _isLoading = false;
-        }
+    }
+
+    private Task ResetAndReloadZonesAsync()
+    {
+        return _zoneGrid?.ResetAndReloadServerDataAsync() ?? Task.CompletedTask;
     }
 
     private async Task CreateZoneAsync()
@@ -189,7 +179,7 @@ public partial class Index
 
         Snackbar.Add(Localizer["Zone.Created"], Severity.Success);
 
-        await LoadZonesAsync();
+        await ReloadAsync();
     }
 
     private async Task EditZoneAsync(ZoneDetails zone)
@@ -218,7 +208,7 @@ public partial class Index
 
         Snackbar.Add(Localizer["Zone.Updated"], Severity.Success);
 
-        await LoadZonesAsync();
+        await ReloadAsync();
     }
 
     private async Task DeactivateZoneAsync(ZoneDetails zone)
@@ -237,7 +227,7 @@ public partial class Index
 
             Snackbar.Add(Localizer["Zone.Deactivated"], Severity.Success);
 
-            await LoadZonesAsync();
+            await ReloadAsync();
         }
         catch (Exception exception)
         {
@@ -261,7 +251,7 @@ public partial class Index
 
             Snackbar.Add(Localizer["Zone.Reactivated"], Severity.Success);
 
-            await LoadZonesAsync();
+            await ReloadAsync();
         }
         catch (Exception exception)
         {
@@ -286,6 +276,15 @@ public partial class Index
     {
         NavigationManager.NavigateTo(
             $"/wms/topology/locations?warehouseId={zone.WarehouseId}&zoneId={zone.Id}");
+    }
+
+    private static GridData<ZoneDetails> EmptyGridData()
+    {
+        return new GridData<ZoneDetails>
+        {
+            Items = [],
+            TotalItems = 0
+        };
     }
 }
 

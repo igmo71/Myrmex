@@ -26,7 +26,9 @@
                         Sortable="false" />
 
         <TemplateColumn Title="@Localizer["Common.Active"]"
-                        Sortable="false"
+                        Tag="@WarehouseSortBy.IsActive"
+                        SortBy="@(warehouse => warehouse.IsActive)"
+                        Sortable="true"
                         Filterable="false"
                         CellClass="d-flex justify-center">
             <CellTemplate>
@@ -147,12 +149,12 @@
     {
         if (sortDefinition is null)
         {
-            return "name";
+            return WarehouseSortBy.Name;
         }
 
         Column<WarehouseDetails>? column = _dataGrid?.GetColumnByPropertyName(sortDefinition.SortBy);
 
-        return column?.Tag as string ?? "name";
+        return column?.Tag as string ?? WarehouseSortBy.Name;
     }
 
     public Task ReloadServerDataAsync()

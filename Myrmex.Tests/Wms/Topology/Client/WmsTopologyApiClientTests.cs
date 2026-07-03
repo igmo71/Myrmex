@@ -1,4 +1,5 @@
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Topology;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Topology;
 using System.Text;
@@ -11,6 +12,37 @@ namespace Myrmex.Tests.Wms.Topology.Client;
 public sealed class WmsTopologyApiClientTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    [Fact]
+    public async Task ListWarehousesAsync_WhenSuccessful_BuildsFeatureListUrlAndOmitsNulls()
+    {
+        WarehouseDetails details = new(
+            Guid.Parse("018f0000-0000-7000-8000-000000000101"),
+            "WH-A",
+            "Warehouse A",
+            null,
+            true,
+            DateTimeOffset.Parse("2026-06-17T09:00:00Z"),
+            null);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(new ListResult<WarehouseDetails>([details], 1, 0, 25)),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsTopologyApiClient apiClient = new(httpClient);
+
+        ListResult<WarehouseDetails> result = await apiClient.ListWarehousesAsync(
+            new ListWarehousesRequest
+            {
+                Take = 25,
+                SortBy = WarehouseSortBy.Name
+            },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(details, Assert.Single(result.Items));
+        Assert.Equal("/api/wms/topology/warehouses", handler.RequestPath);
+        Assert.Equal("?take=25&sortBy=Name", handler.RequestQuery);
+    }
 
     [Fact]
     public async Task ListZonesAsync_WhenSuccessful_BuildsNestedWarehouseRouteAndMapsDetails()
@@ -35,12 +67,16 @@ public sealed class WmsTopologyApiClientTests
 
         ListResult<ZoneDetails> result = await apiClient.ListZonesAsync(
             warehouseId,
-            new ListRequest(
-                Skip: 5,
-                Take: 10,
-                SearchText: "zone",
-                SortBy: "code",
-                IncludeInactive: true),
+            new ListZonesRequest
+            {
+                WarehouseId = warehouseId,
+                Skip = 5,
+                Take = 10,
+                SearchText = "zone & pick",
+                SortBy = ZoneSortBy.Code,
+                SortDescending = false,
+                IncludeInactive = true
+            },
             TestContext.Current.CancellationToken);
 
         ZoneDetails item = Assert.Single(result.Items);
@@ -50,7 +86,69 @@ public sealed class WmsTopologyApiClientTests
         Assert.Equal(1, result.TotalCount);
         Assert.Equal(HttpMethod.Get, handler.RequestMethod);
         Assert.Equal($"/api/wms/topology/warehouses/{warehouseId}/zones", handler.RequestPath);
-        Assert.Equal("?skip=5&take=10&searchText=zone&sortBy=code&sortDescending=false&includeInactive=true", handler.RequestQuery);
+        Assert.Equal("?skip=5&take=10&searchText=zone+%26+pick&sortBy=Code&sortDescending=false&includeInactive=true", handler.RequestQuery);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ListStorageLocationsAsync_BuildsNestedRoutesAndAllFilters(bool byWarehouse)
+    {
+        Guid warehouseId = Guid.Parse("018f0000-0000-7000-8000-000000000101");
+        Guid zoneId = Guid.Parse("018f0000-0000-7000-8000-000000000201");
+        Guid typeId = Guid.Parse("018f0000-0000-7000-8000-000000000301");
+        Guid statusId = Guid.Parse("018f0000-0000-7000-8000-000000000401");
+        StorageLocationDetails details = new(
+            Guid.Parse("018f0000-0000-7000-8000-000000000501"),
+            warehouseId,
+            zoneId,
+            typeId,
+            statusId,
+            "A-01",
+            "A 01",
+            null,
+            true,
+            true,
+            DateTimeOffset.Parse("2026-06-17T09:00:00Z"),
+            null);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(new ListResult<StorageLocationDetails>([details], 1, 10, 25)),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsTopologyApiClient apiClient = new(httpClient);
+        using CancellationTokenSource cancellationTokenSource = new();
+        ListStorageLocationsRequest request = new()
+        {
+            WarehouseId = warehouseId,
+            ZoneId = zoneId,
+            StorageLocationTypeId = typeId,
+            StorageLocationStatusId = statusId,
+            Skip = 10,
+            Take = 25,
+            SearchText = "A 01",
+            SortBy = StorageLocationSortBy.UpdatedAtUtc,
+            SortDescending = true,
+            IncludeInactive = true
+        };
+
+        ListResult<StorageLocationDetails> result = byWarehouse
+            ? await apiClient.ListStorageLocationsByWarehouseAsync(warehouseId, request, cancellationTokenSource.Token)
+            : await apiClient.ListStorageLocationsByZoneAsync(zoneId, request, cancellationTokenSource.Token);
+
+        Assert.Equal(details, Assert.Single(result.Items));
+        Assert.True(handler.RequestCancellationToken.CanBeCanceled);
+        Assert.Equal(
+            byWarehouse
+                ? $"/api/wms/topology/warehouses/{warehouseId}/locations"
+                : $"/api/wms/topology/zones/{zoneId}/locations",
+            handler.RequestPath);
+        string routeFilter = byWarehouse ? $"&zoneId={zoneId}" : $"&warehouseId={warehouseId}";
+        Assert.Equal(
+            $"?skip=10&take=25&searchText=A+01&sortBy=UpdatedAtUtc&sortDescending=true&includeInactive=true" +
+            routeFilter +
+            $"&storageLocationTypeId={typeId}&storageLocationStatusId={statusId}",
+            handler.RequestQuery);
     }
 
     [Fact]

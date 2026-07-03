@@ -3,6 +3,7 @@ using Myrmex.Core.Application;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
+using Myrmex.Shared.Wms.Topology;
 
 namespace Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 
@@ -20,7 +21,7 @@ internal static class GetStorageLocationById
             StorageLocationDetails? result = await dbContext.StorageLocations
                 .AsNoTracking()
                 .Where(x => x.Id == query.StorageLocationId)
-                .Select(StorageLocationDetails.Projection)
+                .Select(StorageLocationDetailsMapping.Projection)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (result is null)

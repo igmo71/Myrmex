@@ -2,6 +2,7 @@
 using Myrmex.Core.Application;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
+using Myrmex.Shared.Wms.Topology;
 
 namespace Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 
@@ -28,7 +29,7 @@ internal static class ListStorageLocationTypes
             List<StorageLocationTypeDetails> items = await queryable
                 .OrderBy(x => x.SortOrder)
                 .ThenBy(x => x.Code)
-                .Select(StorageLocationTypeDetails.Projection)
+                .Select(StorageLocationTypeDetailsMapping.Projection)
                 .ToListAsync(cancellationToken);
 
             return ServiceResult<IReadOnlyList<StorageLocationTypeDetails>>.Success(items);

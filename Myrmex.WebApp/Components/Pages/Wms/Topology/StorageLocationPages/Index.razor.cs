@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Topology;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Topology;
 
@@ -30,29 +31,21 @@ public partial class Index
 
     private List<WarehouseDetails> _warehouses = [];
     private List<ZoneDetails> _zones = [];
-    private List<StorageLocationDetails> _storageLocations = [];
     private List<StorageLocationTypeDetails> _storageLocationTypes = [];
     private List<StorageLocationStatusDetails> _storageLocationStatuses = [];
+    private StorageLocationGrid? _storageLocationGrid;
 
     private Guid? _selectedWarehouseId;
     private Guid? _selectedZoneId;
     private Guid? _selectedStorageLocationTypeId;
     private Guid? _selectedStorageLocationStatusId;
 
-    private bool _isLoading;
     private bool _isLoadingWarehouses;
     private bool _isLoadingZones;
     private bool _isLoadingLookups;
     private string? _errorMessage;
     private string? _searchText;
     private bool _includeInactive;
-
-    private IEnumerable<StorageLocationDetails> FilteredStorageLocations =>
-        _storageLocations
-            .Where(x => _selectedStorageLocationTypeId is null ||
-                        x.StorageLocationTypeId == _selectedStorageLocationTypeId.Value)
-            .Where(x => _selectedStorageLocationStatusId is null ||
-                        x.StorageLocationStatusId == _selectedStorageLocationStatusId.Value);
 
     protected override async Task OnInitializedAsync()
     {
@@ -70,8 +63,9 @@ public partial class Index
         if (_selectedWarehouseId is not null)
         {
             await LoadZonesAsync();
-            await LoadStorageLocationsAsync();
         }
+
+        await ResetAndReloadStorageLocationsAsync();
     }
 
     private async Task ResolveWarehouseFromZoneAsync(Guid zoneId)
@@ -88,9 +82,9 @@ public partial class Index
         }
     }
 
-    private async Task ReloadAsync()
+    private Task ReloadAsync()
     {
-        await LoadStorageLocationsAsync();
+        return _storageLocationGrid?.ReloadServerDataAsync() ?? Task.CompletedTask;
     }
 
     private async Task OnWarehouseChanged(Guid? value)
@@ -98,15 +92,15 @@ public partial class Index
         _selectedWarehouseId = value;
         _selectedZoneId = null;
         _zones = [];
-        _storageLocations = [];
 
         UpdateUrl();
 
         if (_selectedWarehouseId is not null)
         {
             await LoadZonesAsync();
-            await LoadStorageLocationsAsync();
         }
+
+        await ResetAndReloadStorageLocationsAsync();
     }
 
     private async Task OnZoneChanged(Guid? value)
@@ -115,40 +109,33 @@ public partial class Index
 
         UpdateUrl();
 
-        if (_selectedWarehouseId is not null)
-        {
-            await LoadStorageLocationsAsync();
-        }
+        await ResetAndReloadStorageLocationsAsync();
     }
 
     private async Task OnSearchTextChanged(string? value)
     {
         _searchText = value;
 
-        if (_selectedWarehouseId is not null)
-        {
-            await LoadStorageLocationsAsync();
-        }
+        await ResetAndReloadStorageLocationsAsync();
     }
 
-    private void OnStorageLocationTypeChanged(Guid? value)
+    private async Task OnStorageLocationTypeChanged(Guid? value)
     {
         _selectedStorageLocationTypeId = value;
+        await ResetAndReloadStorageLocationsAsync();
     }
 
-    private void OnStorageLocationStatusChanged(Guid? value)
+    private async Task OnStorageLocationStatusChanged(Guid? value)
     {
         _selectedStorageLocationStatusId = value;
+        await ResetAndReloadStorageLocationsAsync();
     }
 
     private async Task OnIncludeInactiveChanged(bool value)
     {
         _includeInactive = value;
 
-        if (_selectedWarehouseId is not null)
-        {
-            await LoadStorageLocationsAsync();
-        }
+        await ResetAndReloadStorageLocationsAsync();
     }
 
     private async Task LoadWarehousesAsync()
@@ -158,13 +145,14 @@ public partial class Index
 
         try
         {
-            ListRequest request = new(
-                Skip: 0,
-                Take: 100,
-                SearchText: null,
-                SortBy: "name",
-                SortDescending: false,
-                IncludeInactive: false);
+            ListWarehousesRequest request = new()
+            {
+                Skip = 0,
+                Take = 100,
+                SortBy = WarehouseSortBy.Name,
+                SortDescending = false,
+                IncludeInactive = false
+            };
 
             ListResult<WarehouseDetails> result = await WmsTopologyApiClient
                 .ListWarehousesAsync(request);
@@ -195,13 +183,16 @@ public partial class Index
 
         try
         {
-            ListRequest request = new(
-                Skip: 0,
-                Take: 100,
-                SearchText: null,
-                SortBy: "code",
-                SortDescending: false,
-                IncludeInactive: false);
+            ListZonesRequest request = new()
+            {
+                WarehouseId = _selectedWarehouseId,
+                Skip = 0,
+                // The Zone selector remains a documented first-page preload for this feature.
+                Take = 100,
+                SortBy = ZoneSortBy.Code,
+                SortDescending = false,
+                IncludeInactive = false
+            };
 
             ListResult<ZoneDetails> result = await WmsTopologyApiClient
                 .ListZonesAsync(_selectedWarehouseId.Value, request);
@@ -254,42 +245,63 @@ public partial class Index
         }
     }
 
-    private async Task LoadStorageLocationsAsync()
+    private async Task<GridData<StorageLocationDetails>> LoadStorageLocationsAsync(
+        StorageLocationGridRequest gridRequest,
+        CancellationToken cancellationToken)
     {
         if (_selectedWarehouseId is null)
         {
-            _storageLocations = [];
-            return;
+            return EmptyGridData();
         }
 
-        _isLoading = true;
         _errorMessage = null;
 
         try
         {
-            ListRequest request = new(
-                Skip: 0,
-                Take: 100,
-                SearchText: _searchText,
-                SortBy: "code",
-                SortDescending: false,
-                IncludeInactive: _includeInactive);
+            ListStorageLocationsRequest request = new()
+            {
+                WarehouseId = _selectedWarehouseId,
+                ZoneId = _selectedZoneId,
+                StorageLocationTypeId = _selectedStorageLocationTypeId,
+                StorageLocationStatusId = _selectedStorageLocationStatusId,
+                Skip = gridRequest.Skip,
+                Take = gridRequest.Take,
+                SearchText = _searchText,
+                SortBy = gridRequest.SortBy,
+                SortDescending = gridRequest.SortDescending,
+                IncludeInactive = _includeInactive
+            };
 
             ListResult<StorageLocationDetails> result = _selectedZoneId is not null
-                ? await WmsTopologyApiClient.ListStorageLocationsByZoneAsync(_selectedZoneId.Value, request)
-                : await WmsTopologyApiClient.ListStorageLocationsByWarehouseAsync(_selectedWarehouseId.Value, request);
+                ? await WmsTopologyApiClient.ListStorageLocationsByZoneAsync(
+                    _selectedZoneId.Value,
+                    request,
+                    cancellationToken)
+                : await WmsTopologyApiClient.ListStorageLocationsByWarehouseAsync(
+                    _selectedWarehouseId.Value,
+                    request,
+                    cancellationToken);
 
-            _storageLocations = result.Items.ToList();
+            return new GridData<StorageLocationDetails>
+            {
+                Items = result.Items,
+                TotalItems = result.TotalCount
+            };
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return EmptyGridData();
         }
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
-            _storageLocations = [];
+            return EmptyGridData();
         }
-        finally
-        {
-            _isLoading = false;
-        }
+    }
+
+    private Task ResetAndReloadStorageLocationsAsync()
+    {
+        return _storageLocationGrid?.ResetAndReloadServerDataAsync() ?? Task.CompletedTask;
     }
 
     private void UpdateUrl()
@@ -354,7 +366,7 @@ public partial class Index
 
         Snackbar.Add(Localizer["StorageLocation.Created"], Severity.Success);
 
-        await LoadStorageLocationsAsync();
+        await ReloadAsync();
     }
 
     private async Task EditStorageLocationAsync(StorageLocationDetails storageLocation)
@@ -387,7 +399,7 @@ public partial class Index
 
         Snackbar.Add(Localizer["StorageLocation.Updated"], Severity.Success);
 
-        await LoadStorageLocationsAsync();
+        await ReloadAsync();
     }
 
     private async Task DeactivateStorageLocationAsync(StorageLocationDetails storageLocation)
@@ -406,7 +418,7 @@ public partial class Index
 
             Snackbar.Add(Localizer["StorageLocation.Deactivated"], Severity.Success);
 
-            await LoadStorageLocationsAsync();
+            await ReloadAsync();
         }
         catch (Exception exception)
         {
@@ -430,11 +442,20 @@ public partial class Index
 
             Snackbar.Add(Localizer["StorageLocation.Reactivated"], Severity.Success);
 
-            await LoadStorageLocationsAsync();
+            await ReloadAsync();
         }
         catch (Exception exception)
         {
             Snackbar.Add(exception.Message, Severity.Error);
         }
+    }
+
+    private static GridData<StorageLocationDetails> EmptyGridData()
+    {
+        return new GridData<StorageLocationDetails>
+        {
+            Items = [],
+            TotalItems = 0
+        };
     }
 }

@@ -5,6 +5,7 @@ using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Domain.Zones;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Topology;
 
 namespace Myrmex.Modules.Wms.Topology.Features.Zones;
 
@@ -55,7 +56,7 @@ internal static class ListZones
             List<ZoneDetails> items = await queryable
                 .Skip(skip)
                 .Take(take)
-                .Select(ZoneDetails.Projection)
+                .Select(ZoneDetailsMapping.Projection)
                 .ToListAsync(cancellationToken);
 
             return ServiceResult<ListResult<ZoneDetails>>

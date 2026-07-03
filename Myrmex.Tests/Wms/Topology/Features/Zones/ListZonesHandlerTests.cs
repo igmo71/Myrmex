@@ -2,6 +2,7 @@ using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 using Myrmex.Modules.Wms.Topology.Domain.Zones;
 using Myrmex.Modules.Wms.Topology.Features.Zones;
+using Myrmex.Shared.Wms.Topology;
 using Myrmex.Shared.Common;
 using Myrmex.Tests.Wms.Topology.Testing;
 using System.Data.SqlTypes;

@@ -8,6 +8,7 @@ using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Topology.Features.Warehouses;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Topology;
 
 namespace Myrmex.Modules.Wms.Topology.Endpoints;
 
@@ -42,11 +43,6 @@ internal static class WarehouseEndpoints
         return group;
     }
 
-    private sealed record CreateWarehouseRequest(
-        string? Code,
-        string? Name,
-        string? Description);
-
     private static async Task<IResult> CreateWarehouseAsync(
         CreateWarehouseRequest request,
         ICommandDispatcher commandDispatcher,
@@ -74,33 +70,24 @@ internal static class WarehouseEndpoints
     }
 
     private static async Task<IResult> ListWarehousesAsync(
-        int? skip,
-        int? take,
-        string? searchText,
-        string? sortBy,
-        bool? sortDescending,
-        bool? includeInactive,
+        [AsParameters] ListWarehousesRequest request,
         IQueryDispatcher queryDispatcher,
         CancellationToken cancellationToken)
     {
         var query = new ListWarehouses.Query
         {
-            Skip = skip ?? 0,
-            Take = take ?? ListQuery.DefaultTake,
-            SearchText = searchText,
-            SortBy = sortBy,
-            SortDescending = sortDescending ?? false,
-            IncludeInactive = includeInactive ?? false
+            Skip = request.Skip ?? 0,
+            Take = request.Take ?? ListQuery.DefaultTake,
+            SearchText = request.SearchText,
+            SortBy = request.SortBy,
+            SortDescending = request.SortDescending ?? false,
+            IncludeInactive = request.IncludeInactive ?? false
         };
 
         var result = await queryDispatcher
             .DispatchAsync<ListWarehouses.Query, ServiceResult<ListResult<WarehouseDetails>>>(query, cancellationToken);
         return result.ToHttpResult();
     }
-
-    private sealed record UpdateWarehouseDetailsRequest(
-        string? Name,
-        string? Description);
 
     private static async Task<IResult> UpdateWarehouseDetailsAsync(
         Guid warehouseId,
