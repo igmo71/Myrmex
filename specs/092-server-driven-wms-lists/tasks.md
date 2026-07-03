@@ -155,10 +155,10 @@ No setup changes are required. Reuse the existing .NET 10 projects, `Myrmex.Shar
 
 **Purpose**: Enforce architectural boundaries, remove obsolete duplicates, and prepare developer-controlled validation.
 
-- [ ] T056 [P] Remove obsolete affected module/WebApp DTO declarations and generic list-request imports, then verify all remaining consumers reference `Myrmex.Shared.Wms.Catalog` or `Myrmex.Shared.Wms.Topology` in `Myrmex.Modules.Wms/`, `Myrmex.WebApp/`, and `Myrmex.Tests/`
-- [ ] T057 [P] Verify shared contracts depend only on BCL/other shared types and contain no domain, EF Core, dispatcher, infrastructure, Blazor, or MudBlazor references in `Myrmex.Shared/Myrmex.Shared.csproj`, `Myrmex.Shared/Wms/Catalog/`, and `Myrmex.Shared/Wms/Topology/`
-- [ ] T058 Verify route strings, search fields, paging normalization, count-before-paging, deterministic ID ties, backend projection, and the documented deferred Zone selector against `specs/092-server-driven-wms-lists/contracts/catalog-contracts.md`, `specs/092-server-driven-wms-lists/contracts/topology-contracts.md`, and the affected endpoint/handler files under `Myrmex.Modules.Wms/Catalog/` and `Myrmex.Modules.Wms/Topology/`
-- [ ] T059 Review localized UI usage and ensure any newly introduced Warehouse autocomplete text uses existing keys or matching entries in `Myrmex.WebApp/Resources/Localization/SharedResource.resx`, `SharedResource.ru-RU.resx`, and `SharedResource.en-US.resx`
+- [X] T056 [P] Remove obsolete affected module/WebApp DTO declarations and generic list-request imports, then verify all remaining consumers reference `Myrmex.Shared.Wms.Catalog` or `Myrmex.Shared.Wms.Topology` in `Myrmex.Modules.Wms/`, `Myrmex.WebApp/`, and `Myrmex.Tests/`
+- [X] T057 [P] Verify shared contracts depend only on BCL/other shared types and contain no domain, EF Core, dispatcher, infrastructure, Blazor, or MudBlazor references in `Myrmex.Shared/Myrmex.Shared.csproj`, `Myrmex.Shared/Wms/Catalog/`, and `Myrmex.Shared/Wms/Topology/`
+- [X] T058 Verify route strings, search fields, paging normalization, count-before-paging, deterministic ID ties, backend projection, and the documented deferred Zone selector against `specs/092-server-driven-wms-lists/contracts/catalog-contracts.md`, `specs/092-server-driven-wms-lists/contracts/topology-contracts.md`, and the affected endpoint/handler files under `Myrmex.Modules.Wms/Catalog/` and `Myrmex.Modules.Wms/Topology/`
+- [X] T059 Review localized UI usage and ensure any newly introduced Warehouse autocomplete text uses existing keys or matching entries in `Myrmex.WebApp/Resources/Localization/SharedResource.resx`, `SharedResource.ru-RU.resx`, and `SharedResource.en-US.resx`
 
 ### Developer-Controlled Validation
 
