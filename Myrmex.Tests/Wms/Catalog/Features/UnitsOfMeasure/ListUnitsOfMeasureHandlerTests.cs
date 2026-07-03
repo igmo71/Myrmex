@@ -3,11 +3,45 @@ using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Catalog.Features.UnitsOfMeasure;
 using Myrmex.Shared.Common;
 using Myrmex.Tests.Wms.Topology.Testing;
+using System.Data.SqlTypes;
 
 namespace Myrmex.Tests.Wms.Catalog.Features.UnitsOfMeasure;
 
 public sealed class ListUnitsOfMeasureHandlerTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task HandleAsync_WhenNameValuesMatch_OrdersByIdAcrossPages(bool sortDescending)
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        string marker = Guid.NewGuid().ToString("N")[..8];
+        UnitOfMeasure[] unitsOfMeasure =
+        [
+            await AddUnitOfMeasureAsync(testDbContext, $"UOM-{marker}-A", $"Matching {marker}", $"{marker}a"),
+            await AddUnitOfMeasureAsync(testDbContext, $"UOM-{marker}-B", $"Matching {marker}", $"{marker}b"),
+            await AddUnitOfMeasureAsync(testDbContext, $"UOM-{marker}-C", $"Matching {marker}", $"{marker}c")
+        ];
+
+        ListUnitsOfMeasure.Handler handler = new(testDbContext.DbContext);
+
+        ListResult<UnitOfMeasureDetails> firstPage = await GetPageAsync(handler, marker, sortDescending, skip: 0);
+        ListResult<UnitOfMeasureDetails> secondPage = await GetPageAsync(handler, marker, sortDescending, skip: 2);
+
+        Guid[] expectedIds = unitsOfMeasure
+            .OrderBy(x => new SqlGuid(x.Id))
+            .Select(x => x.Id)
+            .ToArray();
+        Guid[] actualIds = firstPage.Items
+            .Concat(secondPage.Items)
+            .Select(x => x.Id)
+            .ToArray();
+
+        Assert.Equal(3, firstPage.TotalCount);
+        Assert.Equal(3, secondPage.TotalCount);
+        Assert.Equal(expectedIds, actualIds);
+    }
+
     [Fact]
     public async Task HandleAsync_WhenIncludeInactiveIsFalse_ReturnsActiveUnitsOfMeasureOnly()
     {
@@ -148,7 +182,7 @@ public sealed class ListUnitsOfMeasureHandlerTests
         Assert.Equal(["A-UOM", "B-UOM"], result.Value.Items.Select(x => x.Code).ToArray());
     }
 
-    private static async Task AddUnitOfMeasureAsync(
+    private static async Task<UnitOfMeasure> AddUnitOfMeasureAsync(
         TestWmsDbContext testDbContext,
         string code,
         string name,
@@ -172,5 +206,28 @@ public sealed class ListUnitsOfMeasureHandlerTests
             .CurrentValue = isActive;
 
         await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return unitOfMeasure;
+    }
+
+    private static async Task<ListResult<UnitOfMeasureDetails>> GetPageAsync(
+        ListUnitsOfMeasure.Handler handler,
+        string marker,
+        bool sortDescending,
+        int skip)
+    {
+        ServiceResult<ListResult<UnitOfMeasureDetails>> result = await handler.HandleAsync(
+            new ListUnitsOfMeasure.Query
+            {
+                SearchText = marker,
+                SortBy = "name",
+                SortDescending = sortDescending,
+                Skip = skip,
+                Take = 2
+            },
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        return result.Value;
     }
 }

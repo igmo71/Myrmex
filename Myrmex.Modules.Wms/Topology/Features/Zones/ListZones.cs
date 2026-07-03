@@ -71,12 +71,22 @@ internal static class ListZones
 
             return normalizedSortBy switch
             {
-                "code" => sortDescending ? query.OrderByDescending(x => x.Code) : query.OrderBy(x => x.Code),
-                "name" => sortDescending ? query.OrderByDescending(x => x.Name) : query.OrderBy(x => x.Name),
-                "createdatutc" => sortDescending ? query.OrderByDescending(x => x.CreatedAtUtc) : query.OrderBy(x => x.CreatedAtUtc),
-                "updatedatutc" => sortDescending ? query.OrderByDescending(x => x.UpdatedAtUtc) : query.OrderBy(x => x.UpdatedAtUtc),
-                "isactive" => sortDescending ? query.OrderByDescending(x => x.IsActive) : query.OrderBy(x => x.IsActive),
-                _ => query.OrderBy(x => x.Code)
+                "code" => sortDescending
+                    ? query.OrderByDescending(x => x.Code).ThenBy(x => x.Id)
+                    : query.OrderBy(x => x.Code).ThenBy(x => x.Id),
+                "name" => sortDescending
+                    ? query.OrderByDescending(x => x.Name).ThenBy(x => x.Id)
+                    : query.OrderBy(x => x.Name).ThenBy(x => x.Id),
+                "createdatutc" => sortDescending
+                    ? query.OrderByDescending(x => x.CreatedAtUtc).ThenBy(x => x.Id)
+                    : query.OrderBy(x => x.CreatedAtUtc).ThenBy(x => x.Id),
+                "updatedatutc" => sortDescending
+                    ? query.OrderByDescending(x => x.UpdatedAtUtc).ThenBy(x => x.Id)
+                    : query.OrderBy(x => x.UpdatedAtUtc).ThenBy(x => x.Id),
+                "isactive" => sortDescending
+                    ? query.OrderByDescending(x => x.IsActive).ThenBy(x => x.Id)
+                    : query.OrderBy(x => x.IsActive).ThenBy(x => x.Id),
+                _ => query.OrderBy(x => x.Code).ThenBy(x => x.Id)
             };
         }
     }

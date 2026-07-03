@@ -5,11 +5,45 @@ using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Catalog.Features.StockKeepingUnits;
 using Myrmex.Shared.Common;
 using Myrmex.Tests.Wms.Topology.Testing;
+using System.Data.SqlTypes;
 
 namespace Myrmex.Tests.Wms.Catalog.Features.StockKeepingUnits;
 
 public sealed class ListStockKeepingUnitsHandlerTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task HandleAsync_WhenNameValuesMatch_OrdersByIdAcrossPages(bool sortDescending)
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        string marker = Guid.NewGuid().ToString("N")[..8];
+        StockKeepingUnit[] stockKeepingUnits =
+        [
+            await AddStockKeepingUnitAsync(testDbContext, $"SKU-{marker}-A", $"Matching {marker}"),
+            await AddStockKeepingUnitAsync(testDbContext, $"SKU-{marker}-B", $"Matching {marker}"),
+            await AddStockKeepingUnitAsync(testDbContext, $"SKU-{marker}-C", $"Matching {marker}")
+        ];
+
+        ListStockKeepingUnits.Handler handler = new(testDbContext.DbContext);
+
+        ListResult<StockKeepingUnitDetails> firstPage = await GetPageAsync(handler, marker, sortDescending, skip: 0);
+        ListResult<StockKeepingUnitDetails> secondPage = await GetPageAsync(handler, marker, sortDescending, skip: 2);
+
+        Guid[] expectedIds = stockKeepingUnits
+            .OrderBy(x => new SqlGuid(x.Id))
+            .Select(x => x.Id)
+            .ToArray();
+        Guid[] actualIds = firstPage.Items
+            .Concat(secondPage.Items)
+            .Select(x => x.Id)
+            .ToArray();
+
+        Assert.Equal(3, firstPage.TotalCount);
+        Assert.Equal(3, secondPage.TotalCount);
+        Assert.Equal(expectedIds, actualIds);
+    }
+
     [Fact]
     public async Task HandleAsync_WhenIncludeInactiveIsFalse_ReturnsActiveStockKeepingUnitsOnly()
     {
@@ -269,6 +303,27 @@ public sealed class ListStockKeepingUnitsHandlerTests
         await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         return stockKeepingUnit;
+    }
+
+    private static async Task<ListResult<StockKeepingUnitDetails>> GetPageAsync(
+        ListStockKeepingUnits.Handler handler,
+        string marker,
+        bool sortDescending,
+        int skip)
+    {
+        ServiceResult<ListResult<StockKeepingUnitDetails>> result = await handler.HandleAsync(
+            new ListStockKeepingUnits.Query
+            {
+                SearchText = marker,
+                SortBy = "name",
+                SortDescending = sortDescending,
+                Skip = skip,
+                Take = 2
+            },
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        return result.Value;
     }
 
     private static UnitOfMeasure CreateUnitOfMeasure(string skuCode)

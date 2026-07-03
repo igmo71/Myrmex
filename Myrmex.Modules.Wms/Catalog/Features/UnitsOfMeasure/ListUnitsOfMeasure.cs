@@ -63,10 +63,16 @@ internal static class ListUnitsOfMeasure
 
             return normalizedSortBy switch
             {
-                "code" => sortDescending ? query.OrderByDescending(x => x.Code) : query.OrderBy(x => x.Code),
-                "name" => sortDescending ? query.OrderByDescending(x => x.Name) : query.OrderBy(x => x.Name),
-                "isactive" => sortDescending ? query.OrderByDescending(x => x.IsActive) : query.OrderBy(x => x.IsActive),
-                _ => query.OrderBy(x => x.Code)
+                "code" => sortDescending
+                    ? query.OrderByDescending(x => x.Code).ThenBy(x => x.Id)
+                    : query.OrderBy(x => x.Code).ThenBy(x => x.Id),
+                "name" => sortDescending
+                    ? query.OrderByDescending(x => x.Name).ThenBy(x => x.Id)
+                    : query.OrderBy(x => x.Name).ThenBy(x => x.Id),
+                "isactive" => sortDescending
+                    ? query.OrderByDescending(x => x.IsActive).ThenBy(x => x.Id)
+                    : query.OrderBy(x => x.IsActive).ThenBy(x => x.Id),
+                _ => query.OrderBy(x => x.Code).ThenBy(x => x.Id)
             };
         }
     }
