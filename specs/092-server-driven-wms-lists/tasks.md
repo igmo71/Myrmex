@@ -118,17 +118,17 @@ No setup changes are required. Reuse the existing .NET 10 projects, `Myrmex.Shar
 
 ### Tests for User Story 3
 
-- [ ] T044 [P] [US3] Add handler tests for Code/Name/Description search, active selectable filtering, default/max Take 20, Name/Code/ID deterministic ordering, and cancellation in `Myrmex.Tests/Wms/Topology/Features/Warehouses/LookupWarehousesHandlerTests.cs`
-- [ ] T045 [P] [US3] Extend the Topology endpoint suite to verify `/warehouses/lookup` request binding, shared item serialization, route selection before GUID details, and cancellation token dispatch in `Myrmex.Tests/Wms/Topology/Endpoints/TopologyListEndpointTests.cs`
-- [ ] T046 [P] [US3] Extend Topology client tests for encoded Warehouse lookup search, Take/selectableOnly query values, shared response mapping, and caller cancellation in `Myrmex.Tests/Wms/Topology/Client/WmsTopologyApiClientTests.cs`
+- [X] T044 [P] [US3] Add handler tests for Code/Name/Description search, active selectable filtering, default/max Take 20, Name/Code/ID deterministic ordering, and cancellation in `Myrmex.Tests/Wms/Topology/Features/Warehouses/LookupWarehousesHandlerTests.cs`
+- [X] T045 [P] [US3] Extend the Topology endpoint suite to verify `/warehouses/lookup` request binding, shared item serialization, route selection before GUID details, and cancellation token dispatch in `Myrmex.Tests/Wms/Topology/Endpoints/TopologyListEndpointTests.cs`
+- [X] T046 [P] [US3] Extend Topology client tests for encoded Warehouse lookup search, Take/selectableOnly query values, shared response mapping, and caller cancellation in `Myrmex.Tests/Wms/Topology/Client/WmsTopologyApiClientTests.cs`
 
 ### Implementation for User Story 3
 
-- [ ] T047 [US3] Implement internal bounded Warehouse lookup normalization, active selectability, current Code/Name/Description search, Name/Code/ID ordering, shared projection, and cancellation in `Myrmex.Modules.Wms/Topology/Features/Warehouses/LookupWarehouses.cs`
-- [ ] T048 [US3] Map `GET /warehouses/lookup` before the Warehouse GUID detail route and map `LookupWarehousesRequest` to the internal query in `Myrmex.Modules.Wms/Topology/Endpoints/WarehouseEndpoints.cs`
-- [ ] T049 [US3] Add `LookupWarehousesAsync`, encoded nullable query construction, shared result mapping, and cancellation propagation in `Myrmex.WebApp/Wms/Topology/WmsTopologyApiClient.cs`
-- [ ] T050 [US3] Replace the Zone page Warehouse `MudSelect` and fixed preload with `MudAutocomplete<WarehouseLookupItem>`, resolve query-supplied Warehouse IDs through the existing detail read, retain URL/filter reset behavior, and suppress only expected lookup cancellation in `Myrmex.WebApp/Components/Pages/Wms/Topology/ZonePages/ZoneFilters.razor`, `Index.razor`, and `Index.razor.cs`
-- [ ] T051 [US3] Replace the Storage Location page Warehouse `MudSelect` and fixed preload with `MudAutocomplete<WarehouseLookupItem>`, resolve query-supplied Warehouse IDs, clear dependent Zone state on change, retain no-Warehouse gating, and suppress only expected lookup cancellation in `Myrmex.WebApp/Components/Pages/Wms/Topology/StorageLocationPages/StorageLocationFilters.razor`, `Index.razor`, and `Index.razor.cs`
+- [X] T047 [US3] Implement internal bounded Warehouse lookup normalization, active selectability, current Code/Name/Description search, Name/Code/ID ordering, shared projection, and cancellation in `Myrmex.Modules.Wms/Topology/Features/Warehouses/LookupWarehouses.cs`
+- [X] T048 [US3] Map `GET /warehouses/lookup` before the Warehouse GUID detail route and map `LookupWarehousesRequest` to the internal query in `Myrmex.Modules.Wms/Topology/Endpoints/WarehouseEndpoints.cs`
+- [X] T049 [US3] Add `LookupWarehousesAsync`, encoded nullable query construction, shared result mapping, and cancellation propagation in `Myrmex.WebApp/Wms/Topology/WmsTopologyApiClient.cs`
+- [X] T050 [US3] Replace the Zone page Warehouse `MudSelect` and fixed preload with `MudAutocomplete<WarehouseLookupItem>`, resolve query-supplied Warehouse IDs through the existing detail read, retain URL/filter reset behavior, and suppress only expected lookup cancellation in `Myrmex.WebApp/Components/Pages/Wms/Topology/ZonePages/ZoneFilters.razor`, `Index.razor`, and `Index.razor.cs`
+- [X] T051 [US3] Replace the Storage Location page Warehouse `MudSelect` and fixed preload with `MudAutocomplete<WarehouseLookupItem>`, resolve query-supplied Warehouse IDs, clear dependent Zone state on change, retain no-Warehouse gating, and suppress only expected lookup cancellation in `Myrmex.WebApp/Components/Pages/Wms/Topology/StorageLocationPages/StorageLocationFilters.razor`, `Index.razor`, and `Index.razor.cs`
 
 **Checkpoint**: User Story 3 is independently functional; both selectors find Warehouses beyond any fixed preload and remain bounded/cancellation-aware.
 

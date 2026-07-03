@@ -40,19 +40,18 @@
 			</MudAlert>
 		}
 
-		<StorageLocationFilters Warehouses="@_warehouses"
-								Zones="@_zones"
+		<StorageLocationFilters Zones="@_zones"
 								StorageLocationTypes="@_storageLocationTypes"
 								StorageLocationStatuses="@_storageLocationStatuses"
-								SelectedWarehouseId="@_selectedWarehouseId"
-								SelectedWarehouseIdChanged="OnWarehouseChanged"
+								SelectedWarehouse="@_selectedWarehouse"
+								SelectedWarehouseChanged="OnWarehouseChanged"
+								SearchWarehouses="SearchWarehousesAsync"
 								SelectedZoneId="@_selectedZoneId"
 								SelectedZoneIdChanged="OnZoneChanged"
 								SelectedStorageLocationTypeId="@_selectedStorageLocationTypeId"
 								SelectedStorageLocationTypeIdChanged="OnStorageLocationTypeChanged"
 								SelectedStorageLocationStatusId="@_selectedStorageLocationStatusId"
 								SelectedStorageLocationStatusIdChanged="OnStorageLocationStatusChanged"
-								IsLoadingWarehouses="@_isLoadingWarehouses"
 								IsLoadingZones="@_isLoadingZones"
 								IsLoadingLookups="@_isLoadingLookups"
 								SearchText="@_searchText"

@@ -25,10 +25,9 @@ public partial class Index
     [SupplyParameterFromQuery(Name = "warehouseId")]
     public Guid? WarehouseIdQuery { get; set; }
 
-    private List<WarehouseDetails> _warehouses = [];
     private ZoneGrid? _zoneGrid;
+    private WarehouseLookupItem? _selectedWarehouse;
     private Guid? _selectedWarehouseId;
-    private bool _isLoadingWarehouses;
     private string? _errorMessage;
     private string? _searchText;
     private bool _includeInactive;
@@ -36,8 +35,7 @@ public partial class Index
     protected override async Task OnInitializedAsync()
     {
         _selectedWarehouseId = WarehouseIdQuery;
-
-        await LoadWarehousesAsync();
+        await ResolveSelectedWarehouseAsync();
     }
 
     private Task ReloadAsync()
@@ -45,9 +43,10 @@ public partial class Index
         return _zoneGrid?.ReloadServerDataAsync() ?? Task.CompletedTask;
     }
 
-    private async Task OnWarehouseChanged(Guid? value)
+    private async Task OnWarehouseChanged(WarehouseLookupItem? value)
     {
-        _selectedWarehouseId = value;
+        _selectedWarehouse = value;
+        _selectedWarehouseId = value?.Id;
 
         UpdateUrl();
         await ResetAndReloadZonesAsync();
@@ -67,35 +66,55 @@ public partial class Index
         await ResetAndReloadZonesAsync();
     }
 
-    private async Task LoadWarehousesAsync()
+    private async Task ResolveSelectedWarehouseAsync()
     {
-        _isLoadingWarehouses = true;
-        _errorMessage = null;
+        if (_selectedWarehouseId is not Guid warehouseId)
+        {
+            _selectedWarehouse = null;
+            return;
+        }
 
         try
         {
-            ListWarehousesRequest request = new()
-            {
-                Skip = 0,
-                Take = 100,
-                SortBy = WarehouseSortBy.Name,
-                SortDescending = false,
-                IncludeInactive = false
-            };
-
-            ListResult<WarehouseDetails> result = await WmsTopologyApiClient
-                .ListWarehousesAsync(request);
-
-            _warehouses = result.Items.ToList();
+            WarehouseDetails warehouse = await WmsTopologyApiClient.GetWarehouseByIdAsync(warehouseId);
+            _selectedWarehouse = new WarehouseLookupItem(
+                warehouse.Id,
+                warehouse.Code,
+                warehouse.Name,
+                warehouse.IsActive);
         }
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
-            _warehouses = [];
+            _selectedWarehouse = null;
+            _selectedWarehouseId = null;
+            UpdateUrl();
         }
-        finally
+    }
+
+    private async Task<IEnumerable<WarehouseLookupItem>> SearchWarehousesAsync(
+        string value,
+        CancellationToken cancellationToken)
+    {
+        try
         {
-            _isLoadingWarehouses = false;
+            return await WmsTopologyApiClient.LookupWarehousesAsync(
+                new LookupWarehousesRequest
+                {
+                    SearchText = value,
+                    Take = 20,
+                    SelectableOnly = true
+                },
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return [];
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            return [];
         }
     }
 

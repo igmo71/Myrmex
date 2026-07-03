@@ -40,10 +40,9 @@
 			</MudAlert>
 		}
 
-		<ZoneFilters Warehouses="@_warehouses"
-					 SelectedWarehouseId="@_selectedWarehouseId"
-					 SelectedWarehouseIdChanged="OnWarehouseChanged"
-					 IsLoadingWarehouses="@_isLoadingWarehouses"
+		<ZoneFilters SelectedWarehouse="@_selectedWarehouse"
+					 SelectedWarehouseChanged="OnWarehouseChanged"
+					 SearchWarehouses="SearchWarehousesAsync"
 					 SearchText="@_searchText"
 					 SearchTextChanged="OnSearchTextChanged"
 					 IncludeInactive="@_includeInactive"

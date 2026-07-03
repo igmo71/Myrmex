@@ -16,6 +16,17 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         return await httpClient.GetRequiredAsync<ListResult<WarehouseDetails>>(url, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<WarehouseLookupItem>> LookupWarehousesAsync(
+        LookupWarehousesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        string url = BuildWarehouseLookupUrl(request);
+
+        return await httpClient.GetRequiredAsync<IReadOnlyList<WarehouseLookupItem>>(
+            url,
+            cancellationToken);
+    }
+
     public async Task<WarehouseDetails> GetWarehouseByIdAsync(
         Guid warehouseId,
         CancellationToken cancellationToken = default)
@@ -251,6 +262,31 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
             request.SortBy,
             request.SortDescending,
             request.IncludeInactive);
+    }
+
+    private static string BuildWarehouseLookupUrl(LookupWarehousesRequest request)
+    {
+        const string path = "/api/wms/topology/warehouses/lookup";
+        List<string> query = [];
+
+        if (!string.IsNullOrWhiteSpace(request.SearchText))
+        {
+            query.Add($"searchText={HttpUtility.UrlEncode(request.SearchText)}");
+        }
+
+        if (request.Take.HasValue)
+        {
+            query.Add($"take={request.Take.Value}");
+        }
+
+        if (request.SelectableOnly.HasValue)
+        {
+            query.Add($"selectableOnly={request.SelectableOnly.Value.ToString().ToLowerInvariant()}");
+        }
+
+        return query.Count == 0
+            ? path
+            : $"{path}?{string.Join("&", query)}";
     }
 
     private static string BuildZoneListUrl(Guid warehouseId, ListZonesRequest request)

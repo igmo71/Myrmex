@@ -20,6 +20,10 @@ internal static class WarehouseEndpoints
             .WithName("CreateWarehouse")
             .WithSummary("Create Warehouse");
 
+        group.MapGet("/warehouses/lookup", LookupWarehousesAsync)
+            .WithName("LookupWarehouses")
+            .WithSummary("Lookup Warehouses");
+
         group.MapGet("/warehouses/{warehouseId:guid}", GetWarehouseByIdAsync)
             .WithName("GetWarehouseById")
             .WithSummary("Get Warehouse By Id");
@@ -66,6 +70,26 @@ internal static class WarehouseEndpoints
 
         var result = await queryDispatcher
             .DispatchAsync<GetWarehouseById.Query, ServiceResult<WarehouseDetails>>(query, cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> LookupWarehousesAsync(
+        [AsParameters] LookupWarehousesRequest request,
+        IQueryDispatcher queryDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var query = new LookupWarehouses.Query
+        {
+            SearchText = request.SearchText,
+            Take = request.Take,
+            SelectableOnly = request.SelectableOnly ?? true
+        };
+
+        var result = await queryDispatcher
+            .DispatchAsync<LookupWarehouses.Query, ServiceResult<IReadOnlyList<WarehouseLookupItem>>>(
+                query,
+                cancellationToken);
+
         return result.ToHttpResult();
     }
 

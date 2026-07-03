@@ -14,6 +14,37 @@ public sealed class WmsTopologyApiClientTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
+    public async Task LookupWarehousesAsync_BuildsEncodedUrlMapsSharedItemsAndPropagatesCancellation()
+    {
+        WarehouseLookupItem details = new(
+            Guid.Parse("018f0000-0000-7000-8000-000000000101"),
+            "WH-A",
+            "Warehouse A",
+            true);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson<IReadOnlyList<WarehouseLookupItem>>([details]),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsTopologyApiClient apiClient = new(httpClient);
+        using CancellationTokenSource cancellationTokenSource = new();
+
+        IReadOnlyList<WarehouseLookupItem> result = await apiClient.LookupWarehousesAsync(
+            new LookupWarehousesRequest
+            {
+                SearchText = "North & East",
+                Take = 20,
+                SelectableOnly = false
+            },
+            cancellationTokenSource.Token);
+
+        Assert.Equal(details, Assert.Single(result));
+        Assert.Equal("/api/wms/topology/warehouses/lookup", handler.RequestPath);
+        Assert.Equal("?searchText=North+%26+East&take=20&selectableOnly=false", handler.RequestQuery);
+        Assert.True(handler.RequestCancellationToken.CanBeCanceled);
+    }
+
+    [Fact]
     public async Task ListWarehousesAsync_WhenSuccessful_BuildsFeatureListUrlAndOmitsNulls()
     {
         WarehouseDetails details = new(

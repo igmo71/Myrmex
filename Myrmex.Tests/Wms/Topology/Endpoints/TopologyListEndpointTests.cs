@@ -19,6 +19,39 @@ namespace Myrmex.Tests.Wms.Topology.Endpoints;
 public sealed class TopologyListEndpointTests
 {
     [Fact]
+    public async Task LookupWarehousesAsync_BindsRequestSerializesSharedItemAndDispatchesCancellation()
+    {
+        RecordingQueryDispatcher dispatcher = new();
+        await using WebApplication app = CreateApp(dispatcher);
+        CancellationToken appCancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(appCancellationToken);
+
+        try
+        {
+            using HttpClient client = CreateHttpClient(app);
+            using CancellationTokenSource cancellationTokenSource = new();
+            using HttpResponseMessage response = await client.GetAsync(
+                "/api/wms/topology/warehouses/lookup?searchText=north&take=17&selectableOnly=false",
+                cancellationTokenSource.Token);
+
+            response.EnsureSuccessStatusCode();
+            LookupWarehouses.Query query = Assert.IsType<LookupWarehouses.Query>(dispatcher.CapturedQuery);
+            Assert.Equal("north", query.SearchText);
+            Assert.Equal(17, query.Take);
+            Assert.False(query.SelectableOnly);
+            Assert.True(dispatcher.CapturedCancellationToken.CanBeCanceled);
+            using JsonDocument json = JsonDocument.Parse(
+                await response.Content.ReadAsStringAsync(appCancellationToken));
+            Assert.Equal("WH-A", json.RootElement[0].GetProperty("code").GetString());
+            Assert.True(json.RootElement[0].GetProperty("isActive").GetBoolean());
+        }
+        finally
+        {
+            await app.StopAsync(appCancellationToken);
+        }
+    }
+
+    [Fact]
     public async Task ListWarehousesAsync_BindsFeatureRequestAndSerializesSharedDetails()
     {
         RecordingQueryDispatcher dispatcher = new();
@@ -154,6 +187,8 @@ public sealed class TopologyListEndpointTests
     {
         public object? CapturedQuery { get; private set; }
 
+        public CancellationToken CapturedCancellationToken { get; private set; }
+
         public Task<TResult> DispatchAsync<TQuery, TResult>(
             TQuery query,
             CancellationToken cancellationToken = default)
@@ -161,8 +196,15 @@ public sealed class TopologyListEndpointTests
             where TResult : IServiceResult
         {
             CapturedQuery = query;
+            CapturedCancellationToken = cancellationToken;
             object result = query switch
             {
+                LookupWarehouses.Query => ServiceResult<IReadOnlyList<WarehouseLookupItem>>.Success(
+                    [new WarehouseLookupItem(
+                        Guid.Parse("018f0000-0000-7000-8000-000000000101"),
+                        "WH-A",
+                        "Warehouse A",
+                        true)]),
                 ListWarehouses.Query value => ServiceResult<ListResult<WarehouseDetails>>.Success(
                     new ListResult<WarehouseDetails>([Warehouse()], 1, value.Skip, value.Take)),
                 ListZones.Query value => ServiceResult<ListResult<ZoneDetails>>.Success(

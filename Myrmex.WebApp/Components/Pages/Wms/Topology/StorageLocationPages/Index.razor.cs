@@ -29,18 +29,17 @@ public partial class Index
     [SupplyParameterFromQuery(Name = "zoneId")]
     public Guid? ZoneIdQuery { get; set; }
 
-    private List<WarehouseDetails> _warehouses = [];
     private List<ZoneDetails> _zones = [];
     private List<StorageLocationTypeDetails> _storageLocationTypes = [];
     private List<StorageLocationStatusDetails> _storageLocationStatuses = [];
     private StorageLocationGrid? _storageLocationGrid;
+    private WarehouseLookupItem? _selectedWarehouse;
 
     private Guid? _selectedWarehouseId;
     private Guid? _selectedZoneId;
     private Guid? _selectedStorageLocationTypeId;
     private Guid? _selectedStorageLocationStatusId;
 
-    private bool _isLoadingWarehouses;
     private bool _isLoadingZones;
     private bool _isLoadingLookups;
     private string? _errorMessage;
@@ -53,12 +52,13 @@ public partial class Index
         _selectedZoneId = ZoneIdQuery;
 
         await LoadLookupsAsync();
-        await LoadWarehousesAsync();
 
         if (_selectedZoneId is not null && _selectedWarehouseId is null)
         {
             await ResolveWarehouseFromZoneAsync(_selectedZoneId.Value);
         }
+
+        await ResolveSelectedWarehouseAsync();
 
         if (_selectedWarehouseId is not null)
         {
@@ -87,9 +87,10 @@ public partial class Index
         return _storageLocationGrid?.ReloadServerDataAsync() ?? Task.CompletedTask;
     }
 
-    private async Task OnWarehouseChanged(Guid? value)
+    private async Task OnWarehouseChanged(WarehouseLookupItem? value)
     {
-        _selectedWarehouseId = value;
+        _selectedWarehouse = value;
+        _selectedWarehouseId = value?.Id;
         _selectedZoneId = null;
         _zones = [];
 
@@ -138,35 +139,56 @@ public partial class Index
         await ResetAndReloadStorageLocationsAsync();
     }
 
-    private async Task LoadWarehousesAsync()
+    private async Task ResolveSelectedWarehouseAsync()
     {
-        _isLoadingWarehouses = true;
-        _errorMessage = null;
+        if (_selectedWarehouseId is not Guid warehouseId)
+        {
+            _selectedWarehouse = null;
+            return;
+        }
 
         try
         {
-            ListWarehousesRequest request = new()
-            {
-                Skip = 0,
-                Take = 100,
-                SortBy = WarehouseSortBy.Name,
-                SortDescending = false,
-                IncludeInactive = false
-            };
-
-            ListResult<WarehouseDetails> result = await WmsTopologyApiClient
-                .ListWarehousesAsync(request);
-
-            _warehouses = result.Items.ToList();
+            WarehouseDetails warehouse = await WmsTopologyApiClient.GetWarehouseByIdAsync(warehouseId);
+            _selectedWarehouse = new WarehouseLookupItem(
+                warehouse.Id,
+                warehouse.Code,
+                warehouse.Name,
+                warehouse.IsActive);
         }
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
-            _warehouses = [];
+            _selectedWarehouse = null;
+            _selectedWarehouseId = null;
+            _selectedZoneId = null;
+            UpdateUrl();
         }
-        finally
+    }
+
+    private async Task<IEnumerable<WarehouseLookupItem>> SearchWarehousesAsync(
+        string value,
+        CancellationToken cancellationToken)
+    {
+        try
         {
-            _isLoadingWarehouses = false;
+            return await WmsTopologyApiClient.LookupWarehousesAsync(
+                new LookupWarehousesRequest
+                {
+                    SearchText = value,
+                    Take = 20,
+                    SelectableOnly = true
+                },
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return [];
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
+            return [];
         }
     }
 
