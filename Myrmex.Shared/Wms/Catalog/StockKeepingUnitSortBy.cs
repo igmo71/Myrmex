@@ -1,6 +1,6 @@
-﻿namespace Myrmex.Shared.Wms.Topology;
+namespace Myrmex.Shared.Wms.Catalog;
 
-public static class WarehouseSortBy
+public static class StockKeepingUnitSortBy
 {
     public const string Code = "Code";
     public const string Name = "Name";
@@ -8,3 +8,4 @@ public static class WarehouseSortBy
     public const string UpdatedAtUtc = "UpdatedAtUtc";
     public const string IsActive = "IsActive";
 }
+

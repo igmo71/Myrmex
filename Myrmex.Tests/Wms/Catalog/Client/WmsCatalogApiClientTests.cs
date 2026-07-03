@@ -1,9 +1,10 @@
 using Myrmex.Shared.Common;
-using Myrmex.Shared.Wms.Catalog;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Catalog;
 using System.Text;
 using System.Text.Json;
+using LookupStockKeepingUnitsRequest = Myrmex.Shared.Wms.Catalog.LookupStockKeepingUnitsRequest;
+using StockKeepingUnitLookupItem = Myrmex.Shared.Wms.Catalog.StockKeepingUnitLookupItem;
 
 namespace Myrmex.Tests.Wms.Catalog.Client;
 

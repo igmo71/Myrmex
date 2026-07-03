@@ -1,9 +1,10 @@
 using Myrmex.Shared.Common;
-using Myrmex.Shared.Wms.Topology;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Topology;
 using System.Text;
 using System.Text.Json;
+using LookupStorageLocationsRequest = Myrmex.Shared.Wms.Topology.LookupStorageLocationsRequest;
+using StorageLocationLookupItem = Myrmex.Shared.Wms.Topology.StorageLocationLookupItem;
 
 namespace Myrmex.Tests.Wms.Topology.Client;
 

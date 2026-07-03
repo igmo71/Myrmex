@@ -8,7 +8,8 @@ using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Features.StockKeepingUnits;
 using Myrmex.Shared.Common;
-using Myrmex.Shared.Wms.Catalog;
+using LookupStockKeepingUnitsRequest = Myrmex.Shared.Wms.Catalog.LookupStockKeepingUnitsRequest;
+using StockKeepingUnitLookupItem = Myrmex.Shared.Wms.Catalog.StockKeepingUnitLookupItem;
 
 namespace Myrmex.Modules.Wms.Catalog.Endpoints;
 

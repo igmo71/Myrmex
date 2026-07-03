@@ -3,10 +3,11 @@ using MudBlazor;
 using Myrmex.Shared.Common;
 using Myrmex.Shared.Wms.Catalog;
 using Myrmex.Shared.Wms.Inventory;
-using Myrmex.Shared.Wms.Topology;
 using Myrmex.WebApp.Wms.Catalog;
 using Myrmex.WebApp.Wms.Inventory;
 using Myrmex.WebApp.Wms.Topology;
+using LookupStorageLocationsRequest = Myrmex.Shared.Wms.Topology.LookupStorageLocationsRequest;
+using StorageLocationLookupItem = Myrmex.Shared.Wms.Topology.StorageLocationLookupItem;
 
 namespace Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryTransferPages;
 

@@ -8,7 +8,8 @@ using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 using Myrmex.Shared.Common;
-using Myrmex.Shared.Wms.Topology;
+using LookupStorageLocationsRequest = Myrmex.Shared.Wms.Topology.LookupStorageLocationsRequest;
+using StorageLocationLookupItem = Myrmex.Shared.Wms.Topology.StorageLocationLookupItem;
 
 namespace Myrmex.Modules.Wms.Topology.Endpoints;
 
