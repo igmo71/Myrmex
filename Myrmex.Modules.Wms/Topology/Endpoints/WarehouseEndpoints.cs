@@ -8,6 +8,7 @@ using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Topology.Features.Warehouses;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Topology;
 
 namespace Myrmex.Modules.Wms.Topology.Endpoints;
 
@@ -18,6 +19,10 @@ internal static class WarehouseEndpoints
         group.MapPost("/warehouses", CreateWarehouseAsync)
             .WithName("CreateWarehouse")
             .WithSummary("Create Warehouse");
+
+        group.MapGet("/warehouses/lookup", LookupWarehousesAsync)
+            .WithName("LookupWarehouses")
+            .WithSummary("Lookup Warehouses");
 
         group.MapGet("/warehouses/{warehouseId:guid}", GetWarehouseByIdAsync)
             .WithName("GetWarehouseById")
@@ -41,11 +46,6 @@ internal static class WarehouseEndpoints
 
         return group;
     }
-
-    private sealed record CreateWarehouseRequest(
-        string? Code,
-        string? Name,
-        string? Description);
 
     private static async Task<IResult> CreateWarehouseAsync(
         CreateWarehouseRequest request,
@@ -73,34 +73,45 @@ internal static class WarehouseEndpoints
         return result.ToHttpResult();
     }
 
+    private static async Task<IResult> LookupWarehousesAsync(
+        [AsParameters] LookupWarehousesRequest request,
+        IQueryDispatcher queryDispatcher,
+        CancellationToken cancellationToken)
+    {
+        var query = new LookupWarehouses.Query
+        {
+            SearchText = request.SearchText,
+            Take = request.Take,
+            SelectableOnly = request.SelectableOnly ?? true
+        };
+
+        var result = await queryDispatcher
+            .DispatchAsync<LookupWarehouses.Query, ServiceResult<IReadOnlyList<WarehouseLookupItem>>>(
+                query,
+                cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
     private static async Task<IResult> ListWarehousesAsync(
-        int? skip,
-        int? take,
-        string? searchText,
-        string? sortBy,
-        bool? sortDescending,
-        bool? includeInactive,
+        [AsParameters] ListWarehousesRequest request,
         IQueryDispatcher queryDispatcher,
         CancellationToken cancellationToken)
     {
         var query = new ListWarehouses.Query
         {
-            Skip = skip ?? 0,
-            Take = take ?? ListQuery.DefaultTake,
-            SearchText = searchText,
-            SortBy = sortBy,
-            SortDescending = sortDescending ?? false,
-            IncludeInactive = includeInactive ?? false
+            Skip = request.Skip ?? 0,
+            Take = request.Take ?? ListQuery.DefaultTake,
+            SearchText = request.SearchText,
+            SortBy = request.SortBy,
+            SortDescending = request.SortDescending ?? false,
+            IncludeInactive = request.IncludeInactive ?? false
         };
 
         var result = await queryDispatcher
             .DispatchAsync<ListWarehouses.Query, ServiceResult<ListResult<WarehouseDetails>>>(query, cancellationToken);
         return result.ToHttpResult();
     }
-
-    private sealed record UpdateWarehouseDetailsRequest(
-        string? Name,
-        string? Description);
 
     private static async Task<IResult> UpdateWarehouseDetailsAsync(
         Guid warehouseId,

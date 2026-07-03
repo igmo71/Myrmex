@@ -1,20 +1,25 @@
 @using MudBlazor
 @using Microsoft.AspNetCore.Components
+@using Myrmex.Shared.Wms.Catalog
 @using Myrmex.WebApp.Wms.Catalog
 @inject IStringLocalizer<SharedResource> Localizer
 
 <MudDataGrid T="UnitOfMeasureDetails"
-             Items="UnitsOfMeasure"
-             Loading="IsLoading"
+             @ref="_dataGrid"
+             ServerData="LoadServerDataAsync"
              Dense="true"
              Hover="true"
              Bordered="true"
              Striped="true"
-             SortMode="SortMode.Multiple"
+             SortMode="SortMode.Single"
              Filterable="false">
     <Columns>
-        <PropertyColumn Property="x => x.Code" Title="@Localizer["Common.Code"]" />
-        <PropertyColumn Property="x => x.Name" Title="@Localizer["Common.Name"]" />
+        <PropertyColumn Property="x => x.Code"
+                        Title="@Localizer["Common.Code"]"
+                        Tag="@UnitOfMeasureSortBy.Code" />
+        <PropertyColumn Property="x => x.Name"
+                        Title="@Localizer["Common.Name"]"
+                        Tag="@UnitOfMeasureSortBy.Name" />
 
         <TemplateColumn Title="@Localizer["UnitOfMeasure.Symbol"]" Sortable="false" Filterable="false">
             <CellTemplate>
@@ -23,7 +28,9 @@
         </TemplateColumn>
 
         <TemplateColumn Title="@Localizer["Common.Active"]"
-                        Sortable="false"
+                        Tag="@UnitOfMeasureSortBy.IsActive"
+                        SortBy="@(unit => unit.IsActive)"
+                        Sortable="true"
                         Filterable="false"
                         CellClass="d-flex justify-center">
             <CellTemplate>
@@ -44,13 +51,21 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="@Localizer["Common.CreatedUtc"]" Sortable="false" Filterable="false">
+        <TemplateColumn Title="@Localizer["Common.CreatedUtc"]"
+                        Tag="@UnitOfMeasureSortBy.CreatedAtUtc"
+                        SortBy="@(unit => unit.CreatedAtUtc)"
+                        Sortable="true"
+                        Filterable="false">
             <CellTemplate>
                 @context.Item.CreatedAtUtc
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="@Localizer["Common.UpdatedUtc"]" Sortable="false" Filterable="false">
+        <TemplateColumn Title="@Localizer["Common.UpdatedUtc"]"
+                        Tag="@UnitOfMeasureSortBy.UpdatedAtUtc"
+                        SortBy="@(unit => unit.UpdatedAtUtc)"
+                        Sortable="true"
+                        Filterable="false">
             <CellTemplate>
                 @context.Item.UpdatedAtUtc
             </CellTemplate>
@@ -91,16 +106,13 @@
     </Columns>
 
     <PagerContent>
-        <MudDataGridPager T="UnitOfMeasureDetails" />
+        <MudDataGridPager T="UnitOfMeasureDetails" PageSizeOptions="@PageSizeOptions" />
     </PagerContent>
 </MudDataGrid>
 
 @code {
-    [Parameter]
-    public IReadOnlyList<UnitOfMeasureDetails> UnitsOfMeasure { get; set; } = [];
-
-    [Parameter]
-    public bool IsLoading { get; set; }
+    [Parameter, EditorRequired]
+    public Func<UomGridRequest, CancellationToken, Task<GridData<UnitOfMeasureDetails>>> LoadData { get; set; } = default!;
 
     [Parameter]
     public EventCallback<UnitOfMeasureDetails> EditRequested { get; set; }
@@ -110,4 +122,58 @@
 
     [Parameter]
     public EventCallback<UnitOfMeasureDetails> ReactivateRequested { get; set; }
+
+    private MudDataGrid<UnitOfMeasureDetails>? _dataGrid;
+
+    private static readonly int[] PageSizeOptions = [10, 25, 50, 100];
+
+    private Task<GridData<UnitOfMeasureDetails>> LoadServerDataAsync(
+        GridState<UnitOfMeasureDetails> state,
+        CancellationToken cancellationToken)
+    {
+        SortDefinition<UnitOfMeasureDetails>? sortDefinition =
+            state.SortDefinitions.FirstOrDefault();
+
+        UomGridRequest request = new(
+            Skip: state.Page * state.PageSize,
+            Take: state.PageSize,
+            SortBy: ResolveSortBy(sortDefinition),
+            SortDescending: sortDefinition?.Descending ?? false);
+
+        return LoadData(request, cancellationToken);
+    }
+
+    private string ResolveSortBy(SortDefinition<UnitOfMeasureDetails>? sortDefinition)
+    {
+        if (sortDefinition is null)
+        {
+            return UnitOfMeasureSortBy.Code;
+        }
+
+        Column<UnitOfMeasureDetails>? column =
+            _dataGrid?.GetColumnByPropertyName(sortDefinition.SortBy);
+
+        return column?.Tag as string ?? UnitOfMeasureSortBy.Code;
+    }
+
+    public Task ReloadServerDataAsync()
+    {
+        return _dataGrid?.ReloadServerData() ?? Task.CompletedTask;
+    }
+
+    public async Task ResetAndReloadServerDataAsync()
+    {
+        if (_dataGrid is null)
+        {
+            return;
+        }
+
+        if (_dataGrid.CurrentPage == 0)
+        {
+            await _dataGrid.ReloadServerData();
+            return;
+        }
+
+        _dataGrid.NavigateTo(Page.First);
+    }
 }

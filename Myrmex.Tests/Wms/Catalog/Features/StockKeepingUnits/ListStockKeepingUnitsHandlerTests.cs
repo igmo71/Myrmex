@@ -4,6 +4,7 @@ using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Catalog.Features.StockKeepingUnits;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Catalog;
 using Myrmex.Tests.Wms.Topology.Testing;
 using System.Data.SqlTypes;
 
@@ -218,6 +219,39 @@ public sealed class ListStockKeepingUnitsHandlerTests
         Assert.Equal(["ITEM-A", "ITEM-B"], result.Value.Items.Select(x => x.Code).ToArray());
     }
 
+    [Theory]
+    [InlineData(StockKeepingUnitSortBy.CreatedAtUtc)]
+    [InlineData(StockKeepingUnitSortBy.UpdatedAtUtc)]
+    public async Task HandleAsync_WhenSortByIsAuditField_SortsAndProjectsSharedDetails(string sortBy)
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        DateTimeOffset earlier = DateTimeOffset.Parse("2026-01-01T00:00:00Z");
+        DateTimeOffset later = DateTimeOffset.Parse("2026-02-01T00:00:00Z");
+
+        await AddStockKeepingUnitAsync(
+            testDbContext,
+            "ITEM-A",
+            "Alpha",
+            createdAtUtc: later,
+            updatedAtUtc: later);
+        await AddStockKeepingUnitAsync(
+            testDbContext,
+            "ITEM-B",
+            "Beta",
+            createdAtUtc: earlier,
+            updatedAtUtc: earlier);
+
+        ListStockKeepingUnits.Handler handler = new(testDbContext.DbContext);
+
+        ServiceResult<ListResult<StockKeepingUnitDetails>> result = await handler.HandleAsync(
+            new ListStockKeepingUnits.Query { SortBy = sortBy },
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(["ITEM-B", "ITEM-A"], result.Value.Items.Select(x => x.Code).ToArray());
+        Assert.All(result.Value.Items, item => Assert.IsType<StockKeepingUnitDetails>(item));
+    }
+
     [Fact]
     public async Task HandleAsync_WhenSortDescendingIsTrue_SortsDescending()
     {
@@ -277,7 +311,9 @@ public sealed class ListStockKeepingUnitsHandlerTests
         string code,
         string name,
         string? description = null,
-        bool isActive = true)
+        bool isActive = true,
+        DateTimeOffset? createdAtUtc = null,
+        DateTimeOffset? updatedAtUtc = null)
     {
         UnitOfMeasure baseUnitOfMeasure = CreateUnitOfMeasure(code);
         testDbContext.DbContext.UnitsOfMeasure.Add(baseUnitOfMeasure);
@@ -299,6 +335,17 @@ public sealed class ListStockKeepingUnitsHandlerTests
         testDbContext.DbContext.Entry(stockKeepingUnit)
             .Property(nameof(StockKeepingUnit.IsActive))
             .CurrentValue = isActive;
+
+        if (createdAtUtc.HasValue)
+        {
+            testDbContext.DbContext.Entry(stockKeepingUnit)
+                .Property(nameof(StockKeepingUnit.CreatedAtUtc))
+                .CurrentValue = createdAtUtc.Value;
+        }
+
+        testDbContext.DbContext.Entry(stockKeepingUnit)
+            .Property(nameof(StockKeepingUnit.UpdatedAtUtc))
+            .CurrentValue = updatedAtUtc;
 
         await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 

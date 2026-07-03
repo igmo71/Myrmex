@@ -1,20 +1,20 @@
 ﻿@using MudBlazor
-@using Myrmex.WebApp.Wms.Topology
+@using Myrmex.Shared.Wms.Topology
 @inject IStringLocalizer<SharedResource> Localizer
 
 <MudDataGrid T="StorageLocationDetails"
-             Items="StorageLocations"
-             Loading="IsLoading"
+             @ref="_dataGrid"
+             ServerData="LoadServerDataAsync"
              Dense="true"
              Hover="true"
              Bordered="true"
              Striped="true"
-             SortMode="SortMode.Multiple"
+             SortMode="SortMode.Single"
              Filterable="false">
     <Columns>
-        <PropertyColumn Property="x => x.Code" Title="@Localizer["Common.Code"]" />
-        <PropertyColumn Property="x => x.Name" Title="@Localizer["Common.Name"]" />
-        <PropertyColumn Property="x => x.Description" Title="@Localizer["Common.Description"]" />
+        <PropertyColumn Property="x => x.Code" Title="@Localizer["Common.Code"]" Tag="@StorageLocationSortBy.Code" />
+        <PropertyColumn Property="x => x.Name" Title="@Localizer["Common.Name"]" Tag="@StorageLocationSortBy.Name" />
+        <PropertyColumn Property="x => x.Description" Title="@Localizer["Common.Description"]" Sortable="false" />
 
         <TemplateColumn Title="@Localizer["Common.Type"]" Sortable="false" Filterable="false">
             <CellTemplate>
@@ -28,7 +28,11 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="@Localizer["StorageLocation.Pickable"]" Sortable="false" Filterable="false">
+        <TemplateColumn Title="@Localizer["StorageLocation.Pickable"]"
+                        Tag="@StorageLocationSortBy.IsPickable"
+                        SortBy="@(location => location.IsPickable)"
+                        Sortable="true"
+                        Filterable="false">
             <CellTemplate>
                 @if (context.Item.IsPickable)
                 {
@@ -47,7 +51,11 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="@Localizer["Common.Active"]" Sortable="false" Filterable="false">
+        <TemplateColumn Title="@Localizer["Common.Active"]"
+                        Tag="@StorageLocationSortBy.IsActive"
+                        SortBy="@(location => location.IsActive)"
+                        Sortable="true"
+                        Filterable="false">
             <CellTemplate>
                 @if (context.Item.IsActive)
                 {
@@ -66,8 +74,8 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <PropertyColumn Property="x => x.CreatedAtUtc" Title="@Localizer["Common.CreatedUtc"]" />
-        <PropertyColumn Property="x => x.UpdatedAtUtc" Title="@Localizer["Common.UpdatedUtc"]" />
+        <PropertyColumn Property="x => x.CreatedAtUtc" Title="@Localizer["Common.CreatedUtc"]" Tag="@StorageLocationSortBy.CreatedAtUtc" />
+        <PropertyColumn Property="x => x.UpdatedAtUtc" Title="@Localizer["Common.UpdatedUtc"]" Tag="@StorageLocationSortBy.UpdatedAtUtc" />
 
         <TemplateColumn Title="@Localizer["Common.Actions"]" Sortable="false" Filterable="false">
             <CellTemplate>
@@ -104,22 +112,19 @@
     </Columns>
 
     <PagerContent>
-        <MudDataGridPager T="StorageLocationDetails" />
+        <MudDataGridPager T="StorageLocationDetails" PageSizeOptions="@PageSizeOptions" />
     </PagerContent>
 </MudDataGrid>
 
 @code {
-    [Parameter]
-    public IEnumerable<StorageLocationDetails> StorageLocations { get; set; } = [];
+    [Parameter, EditorRequired]
+    public Func<StorageLocationGridRequest, CancellationToken, Task<GridData<StorageLocationDetails>>> LoadData { get; set; } = default!;
 
     [Parameter]
     public IReadOnlyList<StorageLocationTypeDetails> StorageLocationTypes { get; set; } = [];
 
     [Parameter]
     public IReadOnlyList<StorageLocationStatusDetails> StorageLocationStatuses { get; set; } = [];
-
-    [Parameter]
-    public bool IsLoading { get; set; }
 
     [Parameter]
     public EventCallback<StorageLocationDetails> EditRequested { get; set; }
@@ -129,6 +134,55 @@
 
     [Parameter]
     public EventCallback<StorageLocationDetails> ReactivateRequested { get; set; }
+
+    private MudDataGrid<StorageLocationDetails>? _dataGrid;
+    private static readonly int[] PageSizeOptions = [10, 25, 50, 100];
+
+    private Task<GridData<StorageLocationDetails>> LoadServerDataAsync(
+        GridState<StorageLocationDetails> state,
+        CancellationToken cancellationToken)
+    {
+        SortDefinition<StorageLocationDetails>? sortDefinition = state.SortDefinitions.FirstOrDefault();
+        StorageLocationGridRequest request = new(
+            state.Page * state.PageSize,
+            state.PageSize,
+            ResolveSortBy(sortDefinition),
+            sortDefinition?.Descending ?? false);
+
+        return LoadData(request, cancellationToken);
+    }
+
+    private string ResolveSortBy(SortDefinition<StorageLocationDetails>? sortDefinition)
+    {
+        if (sortDefinition is null)
+        {
+            return StorageLocationSortBy.Code;
+        }
+
+        Column<StorageLocationDetails>? column = _dataGrid?.GetColumnByPropertyName(sortDefinition.SortBy);
+        return column?.Tag as string ?? StorageLocationSortBy.Code;
+    }
+
+    public Task ReloadServerDataAsync()
+    {
+        return _dataGrid?.ReloadServerData() ?? Task.CompletedTask;
+    }
+
+    public async Task ResetAndReloadServerDataAsync()
+    {
+        if (_dataGrid is null)
+        {
+            return;
+        }
+
+        if (_dataGrid.CurrentPage == 0)
+        {
+            await _dataGrid.ReloadServerData();
+            return;
+        }
+
+        _dataGrid.NavigateTo(Page.First);
+    }
 
     private string GetStorageLocationTypeDisplayName(Guid storageLocationTypeId)
     {

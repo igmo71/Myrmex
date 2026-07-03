@@ -77,7 +77,14 @@
         try
         {
             ListResult<WarehouseDetails> result = await WmsTopologyApiClient.ListWarehousesAsync(
-                new ListRequest(0, 100, SortBy: "name", SortDescending: false, IncludeInactive: false));
+                new ListWarehousesRequest
+                {
+                    Skip = 0,
+                    Take = 100,
+                    SortBy = WarehouseSortBy.Name,
+                    SortDescending = false,
+                    IncludeInactive = false
+                });
             _warehouses = result.Items.ToList();
         }
         catch (Exception exception)

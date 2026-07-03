@@ -5,6 +5,7 @@ using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
+using Myrmex.Shared.Wms.Catalog;
 
 namespace Myrmex.Modules.Wms.Catalog.Features.UnitsOfMeasure;
 
@@ -58,7 +59,7 @@ internal static class CreateUnitOfMeasure
                 return ServiceResult<UnitOfMeasureDetails>.Fail(saveResult.Error);
             }
 
-            return ServiceResult<UnitOfMeasureDetails>.Success(UnitOfMeasureDetails.From(unitOfMeasure));
+            return ServiceResult<UnitOfMeasureDetails>.Success(UnitOfMeasureDetailsMapping.From(unitOfMeasure));
         }
     }
 }

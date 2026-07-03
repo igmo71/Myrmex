@@ -5,6 +5,7 @@ using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Domain.Zones;
+using Myrmex.Shared.Wms.Topology;
 
 namespace Myrmex.Modules.Wms.Topology.Features.Zones;
 
@@ -49,7 +50,7 @@ internal static class UpdateZoneDetails
                 return ServiceResult<ZoneDetails>.Fail(saveResult.Error);
             }
 
-            return ServiceResult<ZoneDetails>.Success(ZoneDetails.From(zone));
+            return ServiceResult<ZoneDetails>.Success(ZoneDetailsMapping.From(zone));
         }
     }
 }

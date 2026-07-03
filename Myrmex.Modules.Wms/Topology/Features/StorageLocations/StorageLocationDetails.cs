@@ -1,21 +1,10 @@
 ﻿using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
+using Myrmex.Shared.Wms.Topology;
 using System.Linq.Expressions;
 
 namespace Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 
-internal sealed record StorageLocationDetails(
-    Guid Id,
-    Guid WarehouseId,
-    Guid ZoneId,
-    Guid StorageLocationTypeId,
-    Guid StorageLocationStatusId,
-    string Code,
-    string Name,
-    string? Description,
-    bool IsPickable,
-    bool IsActive,
-    DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? UpdatedAtUtc)
+internal static class StorageLocationDetailsMapping
 {
     public static StorageLocationDetails From(StorageLocation storageLocation)
     {

@@ -20,15 +20,14 @@
 						   Color="Color.Primary"
 						   StartIcon="@Icons.Material.Filled.Add"
 						   OnClick="CreateZoneAsync"
-						   Disabled="_isLoading || _selectedWarehouseId is null">
+						   Disabled="_selectedWarehouseId is null">
 					@Localizer["Common.Create"]
 				</MudButton>
 
 				<MudButton Variant="Variant.Outlined"
 						   Color="Color.Primary"
 						   StartIcon="@Icons.Material.Filled.Refresh"
-						   OnClick="ReloadAsync"
-						   Disabled="_isLoading">
+						   OnClick="ReloadAsync">
 					@Localizer["Common.Refresh"]
 				</MudButton>
 			</MudStack>
@@ -41,10 +40,9 @@
 			</MudAlert>
 		}
 
-		<ZoneFilters Warehouses="@_warehouses"
-					 SelectedWarehouseId="@_selectedWarehouseId"
-					 SelectedWarehouseIdChanged="OnWarehouseChanged"
-					 IsLoadingWarehouses="@_isLoadingWarehouses"
+		<ZoneFilters SelectedWarehouse="@_selectedWarehouse"
+					 SelectedWarehouseChanged="OnWarehouseChanged"
+					 SearchWarehouses="SearchWarehousesAsync"
 					 SearchText="@_searchText"
 					 SearchTextChanged="OnSearchTextChanged"
 					 IncludeInactive="@_includeInactive"
@@ -58,8 +56,8 @@
 		}
 		else
 		{
-			<ZoneGrid Zones="@_zones"
-					  IsLoading="@_isLoading"
+			<ZoneGrid @ref="_zoneGrid"
+					  LoadData="LoadZonesAsync"
 					  EditRequested="EditZoneAsync"
 					  DeactivateRequested="DeactivateZoneAsync"
 					  ReactivateRequested="ReactivateZoneAsync"

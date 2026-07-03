@@ -1,17 +1,10 @@
 ﻿using Myrmex.Modules.Wms.Topology.Domain.Zones;
+using Myrmex.Shared.Wms.Topology;
 using System.Linq.Expressions;
 
 namespace Myrmex.Modules.Wms.Topology.Features.Zones;
 
-internal sealed record ZoneDetails(
-    Guid Id,
-    Guid WarehouseId,
-    string Code,
-    string Name,
-    string? Description,
-    bool IsActive,
-    DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? UpdatedAtUtc)
+internal static class ZoneDetailsMapping
 {
     public static ZoneDetails From(Zone zone)
     {

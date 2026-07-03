@@ -1,20 +1,27 @@
 @using MudBlazor
+@using Myrmex.Shared.Wms.Catalog
 @using Myrmex.WebApp.Wms.Catalog
 @inject IStringLocalizer<SharedResource> Localizer
 
 <MudDataGrid T="StockKeepingUnitDetails"
-             Items="Skus"
-             Loading="IsLoading"
+             @ref="_dataGrid"
+             ServerData="LoadServerDataAsync"
              Dense="true"
              Hover="true"
              Bordered="true"
              Striped="true"
-             SortMode="SortMode.Multiple"
+             SortMode="SortMode.Single"
              Filterable="false">
     <Columns>
-        <PropertyColumn Property="x => x.Code" Title="@Localizer["Common.Code"]" />
-        <PropertyColumn Property="x => x.Name" Title="@Localizer["Common.Name"]" />
-        <PropertyColumn Property="x => x.Description" Title="@Localizer["Common.Description"]" />
+        <PropertyColumn Property="x => x.Code"
+                        Title="@Localizer["Common.Code"]"
+                        Tag="@StockKeepingUnitSortBy.Code" />
+        <PropertyColumn Property="x => x.Name"
+                        Title="@Localizer["Common.Name"]"
+                        Tag="@StockKeepingUnitSortBy.Name" />
+        <PropertyColumn Property="x => x.Description"
+                        Title="@Localizer["Common.Description"]"
+                        Sortable="false" />
         <TemplateColumn Title="@Localizer["Sku.BaseUnitOfMeasure"]"
                         Sortable="false"
                         Filterable="false">
@@ -24,7 +31,9 @@
         </TemplateColumn>
 
         <TemplateColumn Title="@Localizer["Common.Active"]"
-                        Sortable="false"
+                        Tag="@StockKeepingUnitSortBy.IsActive"
+                        SortBy="@(sku => sku.IsActive)"
+                        Sortable="true"
                         Filterable="false"
                         CellClass="d-flex justify-center">
             <CellTemplate>
@@ -45,8 +54,12 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <PropertyColumn Property="x => x.CreatedAtUtc" Title="@Localizer["Common.CreatedUtc"]" />
-        <PropertyColumn Property="x => x.UpdatedAtUtc" Title="@Localizer["Common.UpdatedUtc"]" />
+        <PropertyColumn Property="x => x.CreatedAtUtc"
+                        Title="@Localizer["Common.CreatedUtc"]"
+                        Tag="@StockKeepingUnitSortBy.CreatedAtUtc" />
+        <PropertyColumn Property="x => x.UpdatedAtUtc"
+                        Title="@Localizer["Common.UpdatedUtc"]"
+                        Tag="@StockKeepingUnitSortBy.UpdatedAtUtc" />
 
         <TemplateColumn Title="@Localizer["Common.Actions"]" Sortable="false" Filterable="false">
             <CellTemplate>
@@ -83,20 +96,17 @@
     </Columns>
 
     <PagerContent>
-        <MudDataGridPager T="StockKeepingUnitDetails" />
+        <MudDataGridPager T="StockKeepingUnitDetails" PageSizeOptions="@PageSizeOptions" />
     </PagerContent>
 </MudDataGrid>
 
 @code {
-    [Parameter]
-    public IReadOnlyList<StockKeepingUnitDetails> Skus { get; set; } = [];
+    [Parameter, EditorRequired]
+    public Func<SkuGridRequest, CancellationToken, Task<GridData<StockKeepingUnitDetails>>> LoadData { get; set; } = default!;
 
     [Parameter]
     public IReadOnlyDictionary<Guid, UnitOfMeasureDetails> UnitOfMeasureLookup { get; set; } =
         new Dictionary<Guid, UnitOfMeasureDetails>();
-
-    [Parameter]
-    public bool IsLoading { get; set; }
 
     [Parameter]
     public EventCallback<StockKeepingUnitDetails> EditRequested { get; set; }
@@ -106,6 +116,60 @@
 
     [Parameter]
     public EventCallback<StockKeepingUnitDetails> ReactivateRequested { get; set; }
+
+    private MudDataGrid<StockKeepingUnitDetails>? _dataGrid;
+
+    private static readonly int[] PageSizeOptions = [10, 25, 50, 100];
+
+    private Task<GridData<StockKeepingUnitDetails>> LoadServerDataAsync(
+        GridState<StockKeepingUnitDetails> state,
+        CancellationToken cancellationToken)
+    {
+        SortDefinition<StockKeepingUnitDetails>? sortDefinition =
+            state.SortDefinitions.FirstOrDefault();
+
+        SkuGridRequest request = new(
+            Skip: state.Page * state.PageSize,
+            Take: state.PageSize,
+            SortBy: ResolveSortBy(sortDefinition),
+            SortDescending: sortDefinition?.Descending ?? false);
+
+        return LoadData(request, cancellationToken);
+    }
+
+    private string ResolveSortBy(SortDefinition<StockKeepingUnitDetails>? sortDefinition)
+    {
+        if (sortDefinition is null)
+        {
+            return StockKeepingUnitSortBy.Code;
+        }
+
+        Column<StockKeepingUnitDetails>? column =
+            _dataGrid?.GetColumnByPropertyName(sortDefinition.SortBy);
+
+        return column?.Tag as string ?? StockKeepingUnitSortBy.Code;
+    }
+
+    public Task ReloadServerDataAsync()
+    {
+        return _dataGrid?.ReloadServerData() ?? Task.CompletedTask;
+    }
+
+    public async Task ResetAndReloadServerDataAsync()
+    {
+        if (_dataGrid is null)
+        {
+            return;
+        }
+
+        if (_dataGrid.CurrentPage == 0)
+        {
+            await _dataGrid.ReloadServerData();
+            return;
+        }
+
+        _dataGrid.NavigateTo(Page.First);
+    }
 
     private string GetBaseUnitOfMeasureDisplay(StockKeepingUnitDetails sku)
     {

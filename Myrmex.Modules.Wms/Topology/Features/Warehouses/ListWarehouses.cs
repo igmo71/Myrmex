@@ -5,6 +5,7 @@ using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Topology;
 
 namespace Myrmex.Modules.Wms.Topology.Features.Warehouses;
 
@@ -44,7 +45,7 @@ internal static class ListWarehouses
             List<WarehouseDetails> items = await queryable
                 .Skip(skip)
                 .Take(take)
-                .Select(WarehouseDetails.Projection)
+                .Select(WarehouseDetailsMapping.Projection)
                 .ToListAsync(cancellationToken);
 
             return ServiceResult<ListResult<WarehouseDetails>>

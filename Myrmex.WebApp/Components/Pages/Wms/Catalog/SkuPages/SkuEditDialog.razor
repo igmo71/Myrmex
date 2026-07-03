@@ -125,12 +125,14 @@
 
         try
         {
-            ListRequest request = new(
-                Skip: 0,
-                Take: 100,
-                SortBy: "code",
-                SortDescending: false,
-                IncludeInactive: false);
+            ListUnitsOfMeasureRequest request = new()
+            {
+                Skip = 0,
+                Take = 100,
+                SortBy = UnitOfMeasureSortBy.Code,
+                SortDescending = false,
+                IncludeInactive = false
+            };
 
             ListResult<UnitOfMeasureDetails> result = await WmsCatalogApiClient
                 .ListUnitsOfMeasureAsync(request);

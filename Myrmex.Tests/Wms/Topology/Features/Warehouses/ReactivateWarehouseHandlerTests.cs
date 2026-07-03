@@ -2,6 +2,7 @@
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 using Myrmex.Modules.Wms.Topology.Features.Warehouses;
+using Myrmex.Shared.Wms.Topology;
 using Myrmex.Tests.Wms.Topology.Testing;
 
 namespace Myrmex.Tests.Wms.Topology.Features.Warehouses;

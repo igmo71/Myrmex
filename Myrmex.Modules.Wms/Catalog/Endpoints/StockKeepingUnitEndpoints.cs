@@ -47,12 +47,6 @@ internal static class StockKeepingUnitEndpoints
         return group;
     }
 
-    private sealed record CreateStockKeepingUnitRequest(
-        string? Code,
-        string? Name,
-        string? Description,
-        Guid? BaseUnitOfMeasureId);
-
     private static async Task<IResult> CreateStockKeepingUnitAsync(
         CreateStockKeepingUnitRequest request,
         ICommandDispatcher commandDispatcher,
@@ -84,23 +78,18 @@ internal static class StockKeepingUnitEndpoints
     }
 
     private static async Task<IResult> ListStockKeepingUnitsAsync(
-        int? skip,
-        int? take,
-        string? searchText,
-        string? sortBy,
-        bool? sortDescending,
-        bool? includeInactive,
+        [AsParameters] ListStockKeepingUnitsRequest request,
         IQueryDispatcher queryDispatcher,
         CancellationToken cancellationToken)
     {
         var query = new ListStockKeepingUnits.Query
         {
-            Skip = skip ?? 0,
-            Take = take ?? ListQuery.DefaultTake,
-            SearchText = searchText,
-            SortBy = sortBy,
-            SortDescending = sortDescending ?? false,
-            IncludeInactive = includeInactive ?? false
+            Skip = request.Skip ?? 0,
+            Take = request.Take ?? ListQuery.DefaultTake,
+            SearchText = request.SearchText,
+            SortBy = request.SortBy,
+            SortDescending = request.SortDescending ?? false,
+            IncludeInactive = request.IncludeInactive ?? false
         };
 
         var result = await queryDispatcher
@@ -128,11 +117,6 @@ internal static class StockKeepingUnitEndpoints
 
         return result.ToHttpResult();
     }
-
-    private sealed record UpdateStockKeepingUnitDetailsRequest(
-        string? Name,
-        string? Description,
-        Guid? BaseUnitOfMeasureId);
 
     private static async Task<IResult> UpdateStockKeepingUnitDetailsAsync(
         Guid stockKeepingUnitId,

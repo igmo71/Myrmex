@@ -3,6 +3,7 @@ using Myrmex.Core.Application;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
+using Myrmex.Shared.Wms.Catalog;
 
 namespace Myrmex.Modules.Wms.Catalog.Features.UnitsOfMeasure;
 
@@ -19,7 +20,7 @@ internal static class GetUnitOfMeasureById
             UnitOfMeasureDetails? result = await dbContext.UnitsOfMeasure
                 .AsNoTracking()
                 .Where(x => x.Id == query.UnitOfMeasureId)
-                .Select(UnitOfMeasureDetails.Projection)
+                .Select(UnitOfMeasureDetailsMapping.Projection)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (result is null)

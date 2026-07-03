@@ -8,6 +8,7 @@ using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Features.UnitsOfMeasure;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Catalog;
 
 namespace Myrmex.Modules.Wms.Catalog.Endpoints;
 
@@ -42,11 +43,6 @@ internal static class UnitOfMeasureEndpoints
         return group;
     }
 
-    private sealed record CreateUnitOfMeasureRequest(
-        string? Code,
-        string? Name,
-        string? Symbol);
-
     private static async Task<IResult> CreateUnitOfMeasureAsync(
         CreateUnitOfMeasureRequest request,
         ICommandDispatcher commandDispatcher,
@@ -62,10 +58,6 @@ internal static class UnitOfMeasureEndpoints
 
         return result.ToHttpResult();
     }
-
-    private sealed record UpdateUnitOfMeasureDetailsRequest(
-        string? Name,
-        string? Symbol);
 
     private static async Task<IResult> UpdateUnitOfMeasureDetailsAsync(
         Guid unitOfMeasureId,
@@ -124,23 +116,18 @@ internal static class UnitOfMeasureEndpoints
     }
 
     private static async Task<IResult> ListUnitsOfMeasureAsync(
-        int? skip,
-        int? take,
-        string? searchText,
-        string? sortBy,
-        bool? sortDescending,
-        bool? includeInactive,
+        [AsParameters] ListUnitsOfMeasureRequest request,
         IQueryDispatcher queryDispatcher,
         CancellationToken cancellationToken)
     {
         var query = new ListUnitsOfMeasure.Query
         {
-            Skip = skip ?? 0,
-            Take = take ?? ListQuery.DefaultTake,
-            SearchText = searchText,
-            SortBy = sortBy,
-            SortDescending = sortDescending ?? false,
-            IncludeInactive = includeInactive ?? false
+            Skip = request.Skip ?? 0,
+            Take = request.Take ?? ListQuery.DefaultTake,
+            SearchText = request.SearchText,
+            SortBy = request.SortBy,
+            SortDescending = request.SortDescending ?? false,
+            IncludeInactive = request.IncludeInactive ?? false
         };
 
         var result = await queryDispatcher

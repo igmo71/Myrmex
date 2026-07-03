@@ -3,6 +3,7 @@ using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Catalog.Features.StockKeepingUnits;
+using Myrmex.Shared.Wms.Catalog;
 using Myrmex.Shared.Common;
 using Myrmex.Tests.Wms.Topology.Testing;
 

@@ -364,6 +364,7 @@
   <data name="Warehouse.EditTitle" xml:space="preserve"><value>Edit warehouse</value></data>
   <data name="Warehouse.Heading" xml:space="preserve"><value>Warehouses</value></data>
   <data name="Warehouse.MissingResult" xml:space="preserve"><value>The operation completed without returning warehouse details.</value></data>
+  <data name="Warehouse.NoneFound" xml:space="preserve"><value>No warehouses found.</value></data>
   <data name="Warehouse.PageTitle" xml:space="preserve"><value>WMS Warehouses</value></data>
   <data name="Warehouse.Reactivated" xml:space="preserve"><value>Warehouse reactivated.</value></data>
   <data name="Warehouse.ReactivateError" xml:space="preserve"><value>Warehouse reactivation failed.</value></data>

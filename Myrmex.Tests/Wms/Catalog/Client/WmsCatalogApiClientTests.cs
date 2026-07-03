@@ -35,10 +35,19 @@ public sealed class WmsCatalogApiClientTests
             "application/json");
         using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
+        using CancellationTokenSource cancellationTokenSource = new();
 
         ListResult<StockKeepingUnitDetails> result = await apiClient.ListStockKeepingUnitsAsync(
-            new ListRequest(IncludeInactive: true),
-            TestContext.Current.CancellationToken);
+            new ListStockKeepingUnitsRequest
+            {
+                Skip = 5,
+                Take = 25,
+                SearchText = "Widget & Part",
+                SortBy = StockKeepingUnitSortBy.CreatedAtUtc,
+                SortDescending = true,
+                IncludeInactive = true
+            },
+            cancellationTokenSource.Token);
 
         Assert.Equal(2, result.TotalCount);
         Assert.Equal(
@@ -46,7 +55,11 @@ public sealed class WmsCatalogApiClientTests
             result.Items.Select(x => x.BaseUnitOfMeasureId).ToArray());
         Assert.Equal(HttpMethod.Get, handler.RequestMethod);
         Assert.Equal("/api/wms/catalog/skus", handler.RequestPath);
-        Assert.Equal("?skip=0&take=20&sortDescending=false&includeInactive=true", handler.RequestQuery);
+        Assert.Equal(
+            "?skip=5&take=25&searchText=Widget+%26+Part&sortBy=CreatedAtUtc" +
+            "&sortDescending=true&includeInactive=true",
+            handler.RequestQuery);
+        Assert.True(handler.RequestCancellationToken.CanBeCanceled);
     }
 
     [Fact]
@@ -185,6 +198,38 @@ public sealed class WmsCatalogApiClientTests
         Assert.Equal(baseUnitOfMeasureId, requestBody.RootElement.GetProperty("baseUnitOfMeasureId").GetGuid());
     }
 
+    [Theory]
+    [InlineData(false, "deactivate")]
+    [InlineData(true, "reactivate")]
+    public async Task StockKeepingUnitLifecycleAsync_WhenSuccessful_UsesExpectedRouteAndMapsSharedDetails(
+        bool reactivate,
+        string action)
+    {
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000001");
+        StockKeepingUnitDetails details = CreateStockKeepingUnitDetails(
+            id: stockKeepingUnitId,
+            isActive: reactivate);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        ApiResult<StockKeepingUnitDetails> result = reactivate
+            ? await apiClient.TryReactivateStockKeepingUnitAsync(
+                stockKeepingUnitId,
+                TestContext.Current.CancellationToken)
+            : await apiClient.TryDeactivateStockKeepingUnitAsync(
+                stockKeepingUnitId,
+                TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(reactivate, result.Value!.IsActive);
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal($"/api/wms/catalog/skus/{stockKeepingUnitId}/{action}", handler.RequestPath);
+    }
+
     [Fact]
     public async Task TryCreateUnitOfMeasureAsync_WhenSuccessful_PostsToUomRouteAndReturnsDetails()
     {
@@ -232,7 +277,12 @@ public sealed class WmsCatalogApiClientTests
         WmsCatalogApiClient apiClient = new(httpClient);
 
         ListResult<UnitOfMeasureDetails> result = await apiClient.ListUnitsOfMeasureAsync(
-            new ListRequest(SearchText: "EA", SortBy: "code", IncludeInactive: true),
+            new ListUnitsOfMeasureRequest
+            {
+                SearchText = "EA",
+                SortBy = UnitOfMeasureSortBy.Code,
+                IncludeInactive = true
+            },
             TestContext.Current.CancellationToken);
 
         UnitOfMeasureDetails item = Assert.Single(result.Items);
@@ -240,7 +290,7 @@ public sealed class WmsCatalogApiClientTests
         Assert.Equal("EA", item.Code);
         Assert.Equal(HttpMethod.Get, handler.RequestMethod);
         Assert.Equal("/api/wms/catalog/uoms", handler.RequestPath);
-        Assert.Equal("?skip=0&take=20&searchText=EA&sortBy=code&sortDescending=false&includeInactive=true", handler.RequestQuery);
+        Assert.Equal("?searchText=EA&sortBy=Code&includeInactive=true", handler.RequestQuery);
     }
 
     [Fact]
@@ -374,6 +424,37 @@ public sealed class WmsCatalogApiClientTests
             "API request failed for POST '/api/wms/catalog/skus'. Status code: 400 BadRequest.",
             result.Error.Message);
         Assert.Empty(result.Error.Extensions);
+    }
+
+    [Fact]
+    public async Task TryCreateStockKeepingUnitAsync_WhenProblemDetailsReturned_ReturnsParsedApiError()
+    {
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.Conflict,
+            """
+            {
+              "status": 409,
+              "title": "Conflict",
+              "detail": "SKU code already exists.",
+              "code": "StockKeepingUnit.CodeConflict"
+            }
+            """,
+            "application/problem+json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        ApiResult<StockKeepingUnitDetails> result = await apiClient.TryCreateStockKeepingUnitAsync(
+            new CreateStockKeepingUnitRequest(
+                "ITEM-001",
+                "Widget",
+                null,
+                Guid.NewGuid()),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(409, result.Error!.Status);
+        Assert.Equal("SKU code already exists.", result.Error.Message);
+        Assert.Equal("StockKeepingUnit.CodeConflict", result.Error.Extensions["code"]);
     }
 
     [Fact]

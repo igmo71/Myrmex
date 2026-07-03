@@ -1,16 +1,10 @@
 ﻿using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
+using Myrmex.Shared.Wms.Topology;
 using System.Linq.Expressions;
 
 namespace Myrmex.Modules.Wms.Topology.Features.Warehouses;
 
-internal sealed record WarehouseDetails(
-    Guid Id,
-    string Code,
-    string Name,
-    string? Description,
-    bool IsActive,
-    DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? UpdatedAtUtc)
+internal static class WarehouseDetailsMapping
 {
     public static WarehouseDetails From(Warehouse warehouse)
     {

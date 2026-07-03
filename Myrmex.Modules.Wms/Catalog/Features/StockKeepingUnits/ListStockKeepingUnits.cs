@@ -5,6 +5,7 @@ using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Catalog;
 
 namespace Myrmex.Modules.Wms.Catalog.Features.StockKeepingUnits;
 
@@ -47,7 +48,7 @@ internal static class ListStockKeepingUnits
             List<StockKeepingUnitDetails> items = await queryable
                 .Skip(skip)
                 .Take(take)
-                .Select(StockKeepingUnitDetails.Projection)
+                .Select(StockKeepingUnitDetailsMapping.Projection)
                 .ToListAsync(cancellationToken);
 
             return ServiceResult<ListResult<StockKeepingUnitDetails>>
@@ -69,6 +70,12 @@ internal static class ListStockKeepingUnits
                 "name" => sortDescending
                     ? query.OrderByDescending(x => x.Name).ThenBy(x => x.Id)
                     : query.OrderBy(x => x.Name).ThenBy(x => x.Id),
+                "createdatutc" => sortDescending
+                    ? query.OrderByDescending(x => x.CreatedAtUtc).ThenBy(x => x.Id)
+                    : query.OrderBy(x => x.CreatedAtUtc).ThenBy(x => x.Id),
+                "updatedatutc" => sortDescending
+                    ? query.OrderByDescending(x => x.UpdatedAtUtc).ThenBy(x => x.Id)
+                    : query.OrderBy(x => x.UpdatedAtUtc).ThenBy(x => x.Id),
                 "isactive" => sortDescending
                     ? query.OrderByDescending(x => x.IsActive).ThenBy(x => x.Id)
                     : query.OrderBy(x => x.IsActive).ThenBy(x => x.Id),

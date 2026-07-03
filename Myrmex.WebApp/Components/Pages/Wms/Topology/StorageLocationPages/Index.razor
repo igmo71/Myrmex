@@ -20,15 +20,14 @@
 						   Color="Color.Primary"
 						   StartIcon="@Icons.Material.Filled.Add"
 						   OnClick="CreateStorageLocationAsync"
-						   Disabled="_isLoading || _selectedWarehouseId is null || _selectedZoneId is null">
+						   Disabled="_selectedWarehouseId is null || _selectedZoneId is null">
 					@Localizer["Common.Create"]
 				</MudButton>
 
 				<MudButton Variant="Variant.Outlined"
 						   Color="Color.Primary"
 						   StartIcon="@Icons.Material.Filled.Refresh"
-						   OnClick="ReloadAsync"
-						   Disabled="_isLoading">
+						   OnClick="ReloadAsync">
 					@Localizer["Common.Refresh"]
 				</MudButton>
 			</MudStack>
@@ -41,19 +40,18 @@
 			</MudAlert>
 		}
 
-		<StorageLocationFilters Warehouses="@_warehouses"
-								Zones="@_zones"
+		<StorageLocationFilters Zones="@_zones"
 								StorageLocationTypes="@_storageLocationTypes"
 								StorageLocationStatuses="@_storageLocationStatuses"
-								SelectedWarehouseId="@_selectedWarehouseId"
-								SelectedWarehouseIdChanged="OnWarehouseChanged"
+								SelectedWarehouse="@_selectedWarehouse"
+								SelectedWarehouseChanged="OnWarehouseChanged"
+								SearchWarehouses="SearchWarehousesAsync"
 								SelectedZoneId="@_selectedZoneId"
 								SelectedZoneIdChanged="OnZoneChanged"
 								SelectedStorageLocationTypeId="@_selectedStorageLocationTypeId"
 								SelectedStorageLocationTypeIdChanged="OnStorageLocationTypeChanged"
 								SelectedStorageLocationStatusId="@_selectedStorageLocationStatusId"
 								SelectedStorageLocationStatusIdChanged="OnStorageLocationStatusChanged"
-								IsLoadingWarehouses="@_isLoadingWarehouses"
 								IsLoadingZones="@_isLoadingZones"
 								IsLoadingLookups="@_isLoadingLookups"
 								SearchText="@_searchText"
@@ -69,10 +67,10 @@
 		}
 		else
 		{
-			<StorageLocationGrid StorageLocations="@FilteredStorageLocations"
+			<StorageLocationGrid @ref="_storageLocationGrid"
+								 LoadData="LoadStorageLocationsAsync"
 								 StorageLocationTypes="@_storageLocationTypes"
 								 StorageLocationStatuses="@_storageLocationStatuses"
-								 IsLoading="@_isLoading"
 								 EditRequested="EditStorageLocationAsync"
 								 DeactivateRequested="DeactivateStorageLocationAsync"
 								 ReactivateRequested="ReactivateStorageLocationAsync" />

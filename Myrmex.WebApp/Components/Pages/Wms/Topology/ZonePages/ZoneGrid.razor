@@ -1,22 +1,26 @@
 ﻿@using MudBlazor
-@using Myrmex.WebApp.Wms.Topology
+@using Myrmex.Shared.Wms.Topology
 @inject IStringLocalizer<SharedResource> Localizer
 
 <MudDataGrid T="ZoneDetails"
-             Items="Zones"
-             Loading="IsLoading"
+             @ref="_dataGrid"
+             ServerData="LoadServerDataAsync"
              Dense="true"
              Hover="true"
              Bordered="true"
              Striped="true"
-             SortMode="SortMode.Multiple"
+             SortMode="SortMode.Single"
              Filterable="false">
     <Columns>
-        <PropertyColumn Property="x => x.Code" Title="@Localizer["Common.Code"]" />
-        <PropertyColumn Property="x => x.Name" Title="@Localizer["Common.Name"]" />
-        <PropertyColumn Property="x => x.Description" Title="@Localizer["Common.Description"]" />
+        <PropertyColumn Property="x => x.Code" Title="@Localizer["Common.Code"]" Tag="@ZoneSortBy.Code" />
+        <PropertyColumn Property="x => x.Name" Title="@Localizer["Common.Name"]" Tag="@ZoneSortBy.Name" />
+        <PropertyColumn Property="x => x.Description" Title="@Localizer["Common.Description"]" Sortable="false" />
 
-        <TemplateColumn Title="@Localizer["Common.Active"]" Sortable="false" Filterable="false">
+        <TemplateColumn Title="@Localizer["Common.Active"]"
+                        Tag="@ZoneSortBy.IsActive"
+                        SortBy="@(zone => zone.IsActive)"
+                        Sortable="true"
+                        Filterable="false">
             <CellTemplate>
                 @if (context.Item.IsActive)
                 {
@@ -35,8 +39,8 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <PropertyColumn Property="x => x.CreatedAtUtc" Title="@Localizer["Common.CreatedUtc"]" />
-        <PropertyColumn Property="x => x.UpdatedAtUtc" Title="@Localizer["Common.UpdatedUtc"]" />
+        <PropertyColumn Property="x => x.CreatedAtUtc" Title="@Localizer["Common.CreatedUtc"]" Tag="@ZoneSortBy.CreatedAtUtc" />
+        <PropertyColumn Property="x => x.UpdatedAtUtc" Title="@Localizer["Common.UpdatedUtc"]" Tag="@ZoneSortBy.UpdatedAtUtc" />
 
         <TemplateColumn Title="@Localizer["Common.Actions"]" Sortable="false" Filterable="false">
             <CellTemplate>
@@ -80,16 +84,13 @@
     </Columns>
 
     <PagerContent>
-        <MudDataGridPager T="ZoneDetails" />
+        <MudDataGridPager T="ZoneDetails" PageSizeOptions="@PageSizeOptions" />
     </PagerContent>
 </MudDataGrid>
 
 @code {
-    [Parameter]
-    public IReadOnlyList<ZoneDetails> Zones { get; set; } = [];
-
-    [Parameter]
-    public bool IsLoading { get; set; }
+    [Parameter, EditorRequired]
+    public Func<ZoneGridRequest, CancellationToken, Task<GridData<ZoneDetails>>> LoadData { get; set; } = default!;
 
     [Parameter]
     public EventCallback<ZoneDetails> EditRequested { get; set; }
@@ -102,4 +103,53 @@
 
     [Parameter]
     public EventCallback<ZoneDetails> LocationsRequested { get; set; }
+
+    private MudDataGrid<ZoneDetails>? _dataGrid;
+    private static readonly int[] PageSizeOptions = [10, 25, 50, 100];
+
+    private Task<GridData<ZoneDetails>> LoadServerDataAsync(
+        GridState<ZoneDetails> state,
+        CancellationToken cancellationToken)
+    {
+        SortDefinition<ZoneDetails>? sortDefinition = state.SortDefinitions.FirstOrDefault();
+        ZoneGridRequest request = new(
+            state.Page * state.PageSize,
+            state.PageSize,
+            ResolveSortBy(sortDefinition),
+            sortDefinition?.Descending ?? false);
+
+        return LoadData(request, cancellationToken);
+    }
+
+    private string ResolveSortBy(SortDefinition<ZoneDetails>? sortDefinition)
+    {
+        if (sortDefinition is null)
+        {
+            return ZoneSortBy.Code;
+        }
+
+        Column<ZoneDetails>? column = _dataGrid?.GetColumnByPropertyName(sortDefinition.SortBy);
+        return column?.Tag as string ?? ZoneSortBy.Code;
+    }
+
+    public Task ReloadServerDataAsync()
+    {
+        return _dataGrid?.ReloadServerData() ?? Task.CompletedTask;
+    }
+
+    public async Task ResetAndReloadServerDataAsync()
+    {
+        if (_dataGrid is null)
+        {
+            return;
+        }
+
+        if (_dataGrid.CurrentPage == 0)
+        {
+            await _dataGrid.ReloadServerData();
+            return;
+        }
+
+        _dataGrid.NavigateTo(Page.First);
+    }
 }

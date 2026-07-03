@@ -5,6 +5,7 @@ using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
+using Myrmex.Shared.Wms.Topology;
 
 namespace Myrmex.Modules.Wms.Topology.Features.Warehouses;
 
@@ -56,7 +57,7 @@ internal static class CreateWarehouse
                 return ServiceResult<WarehouseDetails>.Fail(saveResult.Error);
             }
 
-            return ServiceResult<WarehouseDetails>.Success(WarehouseDetails.From(warehouse));
+            return ServiceResult<WarehouseDetails>.Success(WarehouseDetailsMapping.From(warehouse));
         }
     }
 }

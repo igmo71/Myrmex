@@ -5,6 +5,6 @@ Durable project guidance lives in `.specify/memory/`. Read only the files releva
 - `myrmex-development-workflow.md` before executing or recommending work.
 - Architecture, testing, API, and roadmap memory only when that area is touched.
 
-For active feature work on WMS list convention normalization, start with `specs/090-normalize-wms-list-contracts/plan.md` and `tasks.md` when it exists. Read other feature artifacts only when directly relevant.
+For active feature work on server-driven WMS Catalog and Topology lists, start with `specs/092-server-driven-wms-lists/plan.md` and `tasks.md` when it exists. Read other feature artifacts only when directly relevant.
 
 <!-- SPECKIT END -->

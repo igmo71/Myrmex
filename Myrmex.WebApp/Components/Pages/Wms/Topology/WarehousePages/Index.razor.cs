@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Topology;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Topology;
 
@@ -50,13 +51,15 @@ public partial class Index
 
         try
         {
-            ListRequest request = new(
-                Skip: gridRequest.Skip,
-                Take: gridRequest.Take,
-                SearchText: _searchText,
-                SortBy: gridRequest.SortBy,
-                SortDescending: gridRequest.SortDescending,
-                IncludeInactive: _includeInactive);
+            ListWarehousesRequest request = new()
+            {
+                Skip = gridRequest.Skip,
+                Take = gridRequest.Take,
+                SearchText = _searchText,
+                SortBy = gridRequest.SortBy,
+                SortDescending = gridRequest.SortDescending,
+                IncludeInactive = _includeInactive
+            };
 
             ListResult<WarehouseDetails> result = await WmsTopologyApiClient
                 .ListWarehousesAsync(request, cancellationToken);

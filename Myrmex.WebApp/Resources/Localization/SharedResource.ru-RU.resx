@@ -364,6 +364,7 @@
   <data name="Warehouse.EditTitle" xml:space="preserve"><value>Изменение склада</value></data>
   <data name="Warehouse.Heading" xml:space="preserve"><value>Склады</value></data>
   <data name="Warehouse.MissingResult" xml:space="preserve"><value>Операция завершилась без данных о складе.</value></data>
+  <data name="Warehouse.NoneFound" xml:space="preserve"><value>Склады не найдены.</value></data>
   <data name="Warehouse.PageTitle" xml:space="preserve"><value>WMS — Склады</value></data>
   <data name="Warehouse.Reactivated" xml:space="preserve"><value>Склад активирован.</value></data>
   <data name="Warehouse.ReactivateError" xml:space="preserve"><value>Не удалось активировать склад.</value></data>

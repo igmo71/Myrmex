@@ -5,6 +5,7 @@ using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Topology;
 
 namespace Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 
@@ -14,6 +15,8 @@ internal static class ListStorageLocations
     {
         public Guid? WarehouseId { get; init; }
         public Guid? ZoneId { get; init; }
+        public Guid? StorageLocationTypeId { get; init; }
+        public Guid? StorageLocationStatusId { get; init; }
     }
 
     internal sealed class Handler(WmsDbContext dbContext)
@@ -69,6 +72,16 @@ internal static class ListStorageLocations
                 queryable = queryable.Where(x => x.ZoneId == query.ZoneId.Value);
             }
 
+            if (query.StorageLocationTypeId.HasValue)
+            {
+                queryable = queryable.Where(x => x.StorageLocationTypeId == query.StorageLocationTypeId.Value);
+            }
+
+            if (query.StorageLocationStatusId.HasValue)
+            {
+                queryable = queryable.Where(x => x.StorageLocationStatusId == query.StorageLocationStatusId.Value);
+            }
+
             if (!query.IncludeInactive)
             {
                 queryable = queryable.Where(x => x.IsActive);
@@ -91,7 +104,7 @@ internal static class ListStorageLocations
             List<StorageLocationDetails> items = await queryable
                 .Skip(skip)
                 .Take(take)
-                .Select(StorageLocationDetails.Projection)
+                .Select(StorageLocationDetailsMapping.Projection)
                 .ToListAsync(cancellationToken);
 
             return ServiceResult<ListResult<StorageLocationDetails>>.Success(new ListResult<StorageLocationDetails>(items, totalCount, skip, take));

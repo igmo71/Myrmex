@@ -8,14 +8,23 @@ namespace Myrmex.WebApp.Wms.Topology;
 public sealed class WmsTopologyApiClient(HttpClient httpClient)
 {
     public async Task<ListResult<WarehouseDetails>> ListWarehousesAsync(
-        ListRequest request,
+        ListWarehousesRequest request,
         CancellationToken cancellationToken = default)
     {
-        string url = WmsApiUrls.BuildListUrl(
-            "/api/wms/topology/warehouses",
-            request);
+        string url = BuildWarehouseListUrl(request);
 
         return await httpClient.GetRequiredAsync<ListResult<WarehouseDetails>>(url, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<WarehouseLookupItem>> LookupWarehousesAsync(
+        LookupWarehousesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        string url = BuildWarehouseLookupUrl(request);
+
+        return await httpClient.GetRequiredAsync<IReadOnlyList<WarehouseLookupItem>>(
+            url,
+            cancellationToken);
     }
 
     public async Task<WarehouseDetails> GetWarehouseByIdAsync(
@@ -70,12 +79,10 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
 
     public async Task<ListResult<ZoneDetails>> ListZonesAsync(
         Guid warehouseId,
-        ListRequest request,
+        ListZonesRequest request,
         CancellationToken cancellationToken = default)
     {
-        string url = WmsApiUrls.BuildListUrl(
-            $"/api/wms/topology/warehouses/{warehouseId}/zones",
-            request);
+        string url = BuildZoneListUrl(warehouseId, request);
 
         return await httpClient.GetRequiredAsync<ListResult<ZoneDetails>>(url, cancellationToken);
     }
@@ -133,12 +140,14 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
 
     public async Task<ListResult<StorageLocationDetails>> ListStorageLocationsByWarehouseAsync(
         Guid warehouseId,
-        ListRequest request,
+        ListStorageLocationsRequest request,
         CancellationToken cancellationToken = default)
     {
-        string url = WmsApiUrls.BuildListUrl(
+        string url = BuildStorageLocationListUrl(
             $"/api/wms/topology/warehouses/{warehouseId}/locations",
-            request);
+            request,
+            includeWarehouseId: false,
+            includeZoneId: true);
 
         return await httpClient.GetRequiredAsync<ListResult<StorageLocationDetails>>(url, cancellationToken);
     }
@@ -157,12 +166,14 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
 
     public async Task<ListResult<StorageLocationDetails>> ListStorageLocationsByZoneAsync(
         Guid zoneId,
-        ListRequest request,
+        ListStorageLocationsRequest request,
         CancellationToken cancellationToken = default)
     {
-        string url = WmsApiUrls.BuildListUrl(
+        string url = BuildStorageLocationListUrl(
             $"/api/wms/topology/zones/{zoneId}/locations",
-            request);
+            request,
+            includeWarehouseId: true,
+            includeZoneId: false);
 
         return await httpClient.GetRequiredAsync<ListResult<StorageLocationDetails>>(url, cancellationToken);
     }
@@ -241,6 +252,159 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
         return await httpClient.GetRequiredAsync<IReadOnlyList<StorageLocationStatusDetails>>(url, cancellationToken);
     }
 
+    private static string BuildWarehouseListUrl(ListWarehousesRequest request)
+    {
+        return BuildTopologyListUrl(
+            "/api/wms/topology/warehouses",
+            request.Skip,
+            request.Take,
+            request.SearchText,
+            request.SortBy,
+            request.SortDescending,
+            request.IncludeInactive);
+    }
+
+    private static string BuildWarehouseLookupUrl(LookupWarehousesRequest request)
+    {
+        const string path = "/api/wms/topology/warehouses/lookup";
+        List<string> query = [];
+
+        if (!string.IsNullOrWhiteSpace(request.SearchText))
+        {
+            query.Add($"searchText={HttpUtility.UrlEncode(request.SearchText)}");
+        }
+
+        if (request.Take.HasValue)
+        {
+            query.Add($"take={request.Take.Value}");
+        }
+
+        if (request.SelectableOnly.HasValue)
+        {
+            query.Add($"selectableOnly={request.SelectableOnly.Value.ToString().ToLowerInvariant()}");
+        }
+
+        return query.Count == 0
+            ? path
+            : $"{path}?{string.Join("&", query)}";
+    }
+
+    private static string BuildZoneListUrl(Guid warehouseId, ListZonesRequest request)
+    {
+        return BuildTopologyListUrl(
+            $"/api/wms/topology/warehouses/{warehouseId}/zones",
+            request.Skip,
+            request.Take,
+            request.SearchText,
+            request.SortBy,
+            request.SortDescending,
+            request.IncludeInactive);
+    }
+
+    private static string BuildStorageLocationListUrl(
+        string path,
+        ListStorageLocationsRequest request,
+        bool includeWarehouseId,
+        bool includeZoneId)
+    {
+        List<string> query = BuildTopologyListQuery(
+            request.Skip,
+            request.Take,
+            request.SearchText,
+            request.SortBy,
+            request.SortDescending,
+            request.IncludeInactive);
+
+        if (includeWarehouseId && request.WarehouseId.HasValue)
+        {
+            query.Add($"warehouseId={request.WarehouseId.Value}");
+        }
+
+        if (includeZoneId && request.ZoneId.HasValue)
+        {
+            query.Add($"zoneId={request.ZoneId.Value}");
+        }
+
+        if (request.StorageLocationTypeId.HasValue)
+        {
+            query.Add($"storageLocationTypeId={request.StorageLocationTypeId.Value}");
+        }
+
+        if (request.StorageLocationStatusId.HasValue)
+        {
+            query.Add($"storageLocationStatusId={request.StorageLocationStatusId.Value}");
+        }
+
+        return query.Count == 0
+            ? path
+            : $"{path}?{string.Join("&", query)}";
+    }
+
+    private static string BuildTopologyListUrl(
+        string path,
+        int? skip,
+        int? take,
+        string? searchText,
+        string? sortBy,
+        bool? sortDescending,
+        bool? includeInactive)
+    {
+        List<string> query = BuildTopologyListQuery(
+            skip,
+            take,
+            searchText,
+            sortBy,
+            sortDescending,
+            includeInactive);
+
+        return query.Count == 0
+            ? path
+            : $"{path}?{string.Join("&", query)}";
+    }
+
+    private static List<string> BuildTopologyListQuery(
+        int? skip,
+        int? take,
+        string? searchText,
+        string? sortBy,
+        bool? sortDescending,
+        bool? includeInactive)
+    {
+        List<string> query = [];
+
+        if (skip.HasValue)
+        {
+            query.Add($"skip={skip.Value}");
+        }
+
+        if (take.HasValue)
+        {
+            query.Add($"take={take.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            query.Add($"searchText={HttpUtility.UrlEncode(searchText)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(sortBy))
+        {
+            query.Add($"sortBy={HttpUtility.UrlEncode(sortBy)}");
+        }
+
+        if (sortDescending.HasValue)
+        {
+            query.Add($"sortDescending={sortDescending.Value.ToString().ToLowerInvariant()}");
+        }
+
+        if (includeInactive.HasValue)
+        {
+            query.Add($"includeInactive={includeInactive.Value.ToString().ToLowerInvariant()}");
+        }
+
+        return query;
+    }
+
     private static string BuildStorageLocationLookupUrl(
         Guid warehouseId,
         LookupStorageLocationsRequest request)
@@ -279,85 +443,3 @@ public sealed class WmsTopologyApiClient(HttpClient httpClient)
             : $"{path}?{string.Join("&", query)}";
     }
 }
-
-public sealed record WarehouseDetails(
-    Guid Id,
-    string Code,
-    string Name,
-    string? Description,
-    bool IsActive,
-    DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? UpdatedAtUtc);
-
-public sealed record CreateWarehouseRequest(
-    string? Code,
-    string? Name,
-    string? Description);
-
-public sealed record UpdateWarehouseDetailsRequest(
-    string? Name,
-    string? Description);
-
-public sealed record ZoneDetails(
-    Guid Id,
-    Guid WarehouseId,
-    string Code,
-    string Name,
-    string? Description,
-    bool IsActive,
-    DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? UpdatedAtUtc);
-
-public sealed record CreateZoneRequest(
-    string? Code,
-    string? Name,
-    string? Description);
-
-public sealed record UpdateZoneDetailsRequest(
-    string? Name,
-    string? Description);
-
-public sealed record StorageLocationDetails(
-    Guid Id,
-    Guid WarehouseId,
-    Guid ZoneId,
-    Guid StorageLocationTypeId,
-    Guid StorageLocationStatusId,
-    string Code,
-    string Name,
-    string? Description,
-    bool IsPickable,
-    bool IsActive,
-    DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? UpdatedAtUtc);
-
-public sealed record CreateStorageLocationRequest(
-    Guid StorageLocationTypeId,
-    Guid StorageLocationStatusId,
-    string? Code,
-    string? Name,
-    string? Description,
-    bool IsPickable);
-
-public sealed record UpdateStorageLocationDetailsRequest(
-    string? Name,
-    string? Description,
-    bool IsPickable);
-
-public sealed record StorageLocationTypeDetails(
-    Guid Id,
-    string Code,
-    string Name,
-    string? Description,
-    bool IsSystem,
-    bool IsActive,
-    int SortOrder);
-
-public sealed record StorageLocationStatusDetails(
-    Guid Id,
-    string Code,
-    string Name,
-    string? Description,
-    bool IsSystem,
-    bool IsActive,
-    int SortOrder);

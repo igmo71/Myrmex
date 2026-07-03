@@ -5,6 +5,7 @@ using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
+using Myrmex.Shared.Wms.Topology;
 
 namespace Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 
@@ -108,7 +109,7 @@ internal static class CreateStorageLocation
                 return ServiceResult<StorageLocationDetails>.Fail(saveResult.Error);
             }
 
-            return ServiceResult<StorageLocationDetails>.Success(StorageLocationDetails.From(storageLocation));
+            return ServiceResult<StorageLocationDetails>.Success(StorageLocationDetailsMapping.From(storageLocation));
         }
     }
 }

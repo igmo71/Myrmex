@@ -8,6 +8,7 @@ using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Topology.Features.Zones;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Topology;
 
 namespace Myrmex.Modules.Wms.Topology.Endpoints;
 
@@ -42,11 +43,6 @@ internal static class ZoneEndpoints
         return group;
     }
 
-    private sealed record CreateZoneRequest(
-        string? Code,
-        string? Name,
-        string? Description);
-
     private static async Task<IResult> CreateZoneAsync(
         Guid warehouseId,
         CreateZoneRequest request,
@@ -80,23 +76,18 @@ internal static class ZoneEndpoints
 
     private static async Task<IResult> ListZonesAsync(
         Guid warehouseId,
-        int? skip,
-        int? take,
-        string? searchText,
-        string? sortBy,
-        bool? sortDescending,
-        bool? includeInactive,
+        [AsParameters] ListZonesRequest request,
         IQueryDispatcher queryDispatcher,
         CancellationToken cancellationToken)
     {
         var query = new ListZones.Query(warehouseId)
         {
-            Skip = skip ?? 0,
-            Take = take ?? ListQuery.DefaultTake,
-            SearchText = searchText,
-            SortBy = sortBy,
-            SortDescending = sortDescending ?? false,
-            IncludeInactive = includeInactive ?? false
+            Skip = request.Skip ?? 0,
+            Take = request.Take ?? ListQuery.DefaultTake,
+            SearchText = request.SearchText,
+            SortBy = request.SortBy,
+            SortDescending = request.SortDescending ?? false,
+            IncludeInactive = request.IncludeInactive ?? false
         };
 
         var result = await queryDispatcher
@@ -104,10 +95,6 @@ internal static class ZoneEndpoints
 
         return result.ToHttpResult();
     }
-
-    private sealed record UpdateZoneDetailsRequest(
-        string? Name,
-        string? Description);
 
     private static async Task<IResult> UpdateZoneDetailsAsync(
         Guid zoneId,

@@ -2,6 +2,7 @@ using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Catalog.Features.UnitsOfMeasure;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Catalog;
 using Myrmex.Tests.Wms.Topology.Testing;
 using System.Data.SqlTypes;
 
@@ -153,9 +154,42 @@ public sealed class ListUnitsOfMeasureHandlerTests
     }
 
     [Theory]
+    [InlineData(UnitOfMeasureSortBy.CreatedAtUtc)]
+    [InlineData(UnitOfMeasureSortBy.UpdatedAtUtc)]
+    public async Task HandleAsync_WhenSortByIsAuditField_SortsAndProjectsSharedDetails(string sortBy)
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        DateTimeOffset earlier = DateTimeOffset.Parse("2026-01-01T00:00:00Z");
+        DateTimeOffset later = DateTimeOffset.Parse("2026-02-01T00:00:00Z");
+
+        await AddUnitOfMeasureAsync(
+            testDbContext,
+            "A-UOM",
+            "Alpha",
+            "a",
+            createdAtUtc: later,
+            updatedAtUtc: later);
+        await AddUnitOfMeasureAsync(
+            testDbContext,
+            "B-UOM",
+            "Beta",
+            "b",
+            createdAtUtc: earlier,
+            updatedAtUtc: earlier);
+
+        ListUnitsOfMeasure.Handler handler = new(testDbContext.DbContext);
+
+        ServiceResult<ListResult<UnitOfMeasureDetails>> result = await handler.HandleAsync(
+            new ListUnitsOfMeasure.Query { SortBy = sortBy },
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(["B-UOM", "A-UOM"], result.Value.Items.Select(x => x.Code).ToArray());
+        Assert.All(result.Value.Items, item => Assert.IsType<UnitOfMeasureDetails>(item));
+    }
+
+    [Theory]
     [InlineData("unknown")]
-    [InlineData("createdAtUtc")]
-    [InlineData("updatedAtUtc")]
     public async Task HandleAsync_WhenSortByIsUnsupported_FallsBackToCodeOrdering(string sortBy)
     {
         // Arrange
@@ -187,7 +221,9 @@ public sealed class ListUnitsOfMeasureHandlerTests
         string code,
         string name,
         string? symbol,
-        bool isActive = true)
+        bool isActive = true,
+        DateTimeOffset? createdAtUtc = null,
+        DateTimeOffset? updatedAtUtc = null)
     {
         var result = UnitOfMeasure.Create(
             code,
@@ -204,6 +240,17 @@ public sealed class ListUnitsOfMeasureHandlerTests
         testDbContext.DbContext.Entry(unitOfMeasure)
             .Property(nameof(UnitOfMeasure.IsActive))
             .CurrentValue = isActive;
+
+        if (createdAtUtc.HasValue)
+        {
+            testDbContext.DbContext.Entry(unitOfMeasure)
+                .Property(nameof(UnitOfMeasure.CreatedAtUtc))
+                .CurrentValue = createdAtUtc.Value;
+        }
+
+        testDbContext.DbContext.Entry(unitOfMeasure)
+            .Property(nameof(UnitOfMeasure.UpdatedAtUtc))
+            .CurrentValue = updatedAtUtc;
 
         await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 

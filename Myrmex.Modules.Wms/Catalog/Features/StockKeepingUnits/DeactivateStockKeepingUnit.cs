@@ -4,6 +4,7 @@ using Myrmex.Core.Application;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
+using Myrmex.Shared.Wms.Catalog;
 
 namespace Myrmex.Modules.Wms.Catalog.Features.StockKeepingUnits;
 
@@ -38,7 +39,7 @@ internal static class DeactivateStockKeepingUnit
                 return ServiceResult<StockKeepingUnitDetails>.Fail(saveResult.Error);
             }
 
-            return ServiceResult<StockKeepingUnitDetails>.Success(StockKeepingUnitDetails.From(stockKeepingUnit));
+            return ServiceResult<StockKeepingUnitDetails>.Success(StockKeepingUnitDetailsMapping.From(stockKeepingUnit));
         }
     }
 }

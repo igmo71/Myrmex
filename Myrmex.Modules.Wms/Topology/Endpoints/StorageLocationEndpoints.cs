@@ -59,14 +59,6 @@ internal static class StorageLocationEndpoints
         return group;
     }
 
-    private sealed record CreateStorageLocationRequest(
-        Guid StorageLocationTypeId,
-        Guid StorageLocationStatusId,
-        string? Code,
-        string? Name,
-        string? Description,
-        bool IsPickable);
-
     private static async Task<IResult> CreateStorageLocationAsync(
         Guid warehouseId,
         Guid zoneId,
@@ -103,24 +95,22 @@ internal static class StorageLocationEndpoints
 
     private static async Task<IResult> ListStorageLocationsByWarehouseAsync(
         Guid warehouseId,
-        int? skip,
-        int? take,
-        string? searchText,
-        string? sortBy,
-        bool? sortDescending,
-        bool? includeInactive,
+        [AsParameters] ListStorageLocationsRequest request,
         IQueryDispatcher queryDispatcher,
         CancellationToken cancellationToken)
     {
         var query = new ListStorageLocations.Query
         {
             WarehouseId = warehouseId,
-            Skip = skip ?? 0,
-            Take = take ?? ListQuery.DefaultTake,
-            SearchText = searchText,
-            SortBy = sortBy,
-            SortDescending = sortDescending ?? false,
-            IncludeInactive = includeInactive ?? false
+            ZoneId = request.ZoneId,
+            StorageLocationTypeId = request.StorageLocationTypeId,
+            StorageLocationStatusId = request.StorageLocationStatusId,
+            Skip = request.Skip ?? 0,
+            Take = request.Take ?? ListQuery.DefaultTake,
+            SearchText = request.SearchText,
+            SortBy = request.SortBy,
+            SortDescending = request.SortDescending ?? false,
+            IncludeInactive = request.IncludeInactive ?? false
         };
 
         var result = await queryDispatcher
@@ -154,35 +144,28 @@ internal static class StorageLocationEndpoints
 
     private static async Task<IResult> ListStorageLocationsByZoneAsync(
         Guid zoneId,
-        int? skip,
-        int? take,
-        string? searchText,
-        string? sortBy,
-        bool? sortDescending,
-        bool? includeInactive,
+        [AsParameters] ListStorageLocationsRequest request,
         IQueryDispatcher queryDispatcher,
         CancellationToken cancellationToken)
     {
         var query = new ListStorageLocations.Query
         {
+            WarehouseId = request.WarehouseId,
             ZoneId = zoneId,
-            Skip = skip ?? 0,
-            Take = take ?? ListQuery.DefaultTake,
-            SearchText = searchText,
-            SortBy = sortBy,
-            SortDescending = sortDescending ?? false,
-            IncludeInactive = includeInactive ?? false
+            StorageLocationTypeId = request.StorageLocationTypeId,
+            StorageLocationStatusId = request.StorageLocationStatusId,
+            Skip = request.Skip ?? 0,
+            Take = request.Take ?? ListQuery.DefaultTake,
+            SearchText = request.SearchText,
+            SortBy = request.SortBy,
+            SortDescending = request.SortDescending ?? false,
+            IncludeInactive = request.IncludeInactive ?? false
         };
 
         var result = await queryDispatcher
             .DispatchAsync<ListStorageLocations.Query, ServiceResult<ListResult<StorageLocationDetails>>>(query, cancellationToken);
         return result.ToHttpResult();
     }
-
-    private sealed record UpdateStorageLocationDetailsRequest(
-        string? Name,
-        string? Description,
-        bool IsPickable);
 
     private static async Task<IResult> UpdateStorageLocationDetailsAsync(
         Guid storageLocationId,
