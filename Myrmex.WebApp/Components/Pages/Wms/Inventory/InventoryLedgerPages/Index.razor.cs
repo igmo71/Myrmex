@@ -1,13 +1,12 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Catalog;
 using Myrmex.Shared.Wms.Inventory;
 using Myrmex.WebApp.Wms.Catalog;
 using Myrmex.WebApp.Wms.Inventory;
 using Myrmex.WebApp.Wms.Topology;
-using LookupStockKeepingUnitsRequest = Myrmex.Shared.Wms.Catalog.LookupStockKeepingUnitsRequest;
 using LookupStorageLocationsRequest = Myrmex.Shared.Wms.Topology.LookupStorageLocationsRequest;
-using StockKeepingUnitLookupItem = Myrmex.Shared.Wms.Catalog.StockKeepingUnitLookupItem;
 using StorageLocationLookupItem = Myrmex.Shared.Wms.Topology.StorageLocationLookupItem;
 
 namespace Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryLedgerPages;

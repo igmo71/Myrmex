@@ -2,6 +2,7 @@ using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Catalog.Features.StockKeepingUnits;
+using Myrmex.Shared.Wms.Catalog;
 using Myrmex.Tests.Wms.Topology.Testing;
 
 namespace Myrmex.Tests.Wms.Catalog.Features.StockKeepingUnits;

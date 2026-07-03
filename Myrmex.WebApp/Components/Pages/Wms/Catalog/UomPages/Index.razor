@@ -19,16 +19,14 @@
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.Add"
-                           OnClick="CreateUnitOfMeasureAsync"
-                           Disabled="_isLoading">
+                           OnClick="CreateUnitOfMeasureAsync">
                     @Localizer["Common.Create"]
                 </MudButton>
 
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.Refresh"
-                           OnClick="ReloadAsync"
-                           Disabled="_isLoading">
+                           OnClick="ReloadAsync">
                     @Localizer["Common.Refresh"]
                 </MudButton>
             </MudStack>
@@ -46,8 +44,8 @@
                     IncludeInactive="@_includeInactive"
                     IncludeInactiveChanged="OnIncludeInactiveChanged" />
 
-        <UomGrid UnitsOfMeasure="@_unitsOfMeasure"
-                 IsLoading="@_isLoading"
+        <UomGrid @ref="_uomGrid"
+                 LoadData="LoadUnitsOfMeasureAsync"
                  EditRequested="EditUnitOfMeasureAsync"
                  DeactivateRequested="DeactivateUnitOfMeasureAsync"
                  ReactivateRequested="ReactivateUnitOfMeasureAsync" />

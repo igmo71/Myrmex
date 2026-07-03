@@ -5,6 +5,7 @@ using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Catalog;
 
 namespace Myrmex.Modules.Wms.Catalog.Features.UnitsOfMeasure;
 
@@ -47,7 +48,7 @@ internal static class ListUnitsOfMeasure
             List<UnitOfMeasureDetails> items = await queryable
                 .Skip(skip)
                 .Take(take)
-                .Select(UnitOfMeasureDetails.Projection)
+                .Select(UnitOfMeasureDetailsMapping.Projection)
                 .ToListAsync(cancellationToken);
 
             return ServiceResult<ListResult<UnitOfMeasureDetails>>
@@ -69,6 +70,12 @@ internal static class ListUnitsOfMeasure
                 "name" => sortDescending
                     ? query.OrderByDescending(x => x.Name).ThenBy(x => x.Id)
                     : query.OrderBy(x => x.Name).ThenBy(x => x.Id),
+                "createdatutc" => sortDescending
+                    ? query.OrderByDescending(x => x.CreatedAtUtc).ThenBy(x => x.Id)
+                    : query.OrderBy(x => x.CreatedAtUtc).ThenBy(x => x.Id),
+                "updatedatutc" => sortDescending
+                    ? query.OrderByDescending(x => x.UpdatedAtUtc).ThenBy(x => x.Id)
+                    : query.OrderBy(x => x.UpdatedAtUtc).ThenBy(x => x.Id),
                 "isactive" => sortDescending
                     ? query.OrderByDescending(x => x.IsActive).ThenBy(x => x.Id)
                     : query.OrderBy(x => x.IsActive).ThenBy(x => x.Id),

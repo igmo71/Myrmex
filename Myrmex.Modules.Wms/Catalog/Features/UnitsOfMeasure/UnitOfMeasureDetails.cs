@@ -1,16 +1,10 @@
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
+using Myrmex.Shared.Wms.Catalog;
 using System.Linq.Expressions;
 
 namespace Myrmex.Modules.Wms.Catalog.Features.UnitsOfMeasure;
 
-internal sealed record UnitOfMeasureDetails(
-    Guid Id,
-    string Code,
-    string Name,
-    string? Symbol,
-    bool IsActive,
-    DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? UpdatedAtUtc)
+internal static class UnitOfMeasureDetailsMapping
 {
     public static UnitOfMeasureDetails From(UnitOfMeasure unitOfMeasure)
     {

@@ -1,10 +1,9 @@
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Catalog;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Catalog;
 using System.Text;
 using System.Text.Json;
-using LookupStockKeepingUnitsRequest = Myrmex.Shared.Wms.Catalog.LookupStockKeepingUnitsRequest;
-using StockKeepingUnitLookupItem = Myrmex.Shared.Wms.Catalog.StockKeepingUnitLookupItem;
 
 namespace Myrmex.Tests.Wms.Catalog.Client;
 
@@ -36,10 +35,19 @@ public sealed class WmsCatalogApiClientTests
             "application/json");
         using HttpClient httpClient = CreateHttpClient(handler);
         WmsCatalogApiClient apiClient = new(httpClient);
+        using CancellationTokenSource cancellationTokenSource = new();
 
         ListResult<StockKeepingUnitDetails> result = await apiClient.ListStockKeepingUnitsAsync(
-            new ListRequest(IncludeInactive: true),
-            TestContext.Current.CancellationToken);
+            new ListStockKeepingUnitsRequest
+            {
+                Skip = 5,
+                Take = 25,
+                SearchText = "Widget & Part",
+                SortBy = StockKeepingUnitSortBy.CreatedAtUtc,
+                SortDescending = true,
+                IncludeInactive = true
+            },
+            cancellationTokenSource.Token);
 
         Assert.Equal(2, result.TotalCount);
         Assert.Equal(
@@ -47,7 +55,11 @@ public sealed class WmsCatalogApiClientTests
             result.Items.Select(x => x.BaseUnitOfMeasureId).ToArray());
         Assert.Equal(HttpMethod.Get, handler.RequestMethod);
         Assert.Equal("/api/wms/catalog/skus", handler.RequestPath);
-        Assert.Equal("?skip=0&take=20&sortDescending=false&includeInactive=true", handler.RequestQuery);
+        Assert.Equal(
+            "?skip=5&take=25&searchText=Widget+%26+Part&sortBy=CreatedAtUtc" +
+            "&sortDescending=true&includeInactive=true",
+            handler.RequestQuery);
+        Assert.True(handler.RequestCancellationToken.CanBeCanceled);
     }
 
     [Fact]
@@ -233,7 +245,12 @@ public sealed class WmsCatalogApiClientTests
         WmsCatalogApiClient apiClient = new(httpClient);
 
         ListResult<UnitOfMeasureDetails> result = await apiClient.ListUnitsOfMeasureAsync(
-            new ListRequest(SearchText: "EA", SortBy: "code", IncludeInactive: true),
+            new ListUnitsOfMeasureRequest
+            {
+                SearchText = "EA",
+                SortBy = UnitOfMeasureSortBy.Code,
+                IncludeInactive = true
+            },
             TestContext.Current.CancellationToken);
 
         UnitOfMeasureDetails item = Assert.Single(result.Items);
@@ -241,7 +258,7 @@ public sealed class WmsCatalogApiClientTests
         Assert.Equal("EA", item.Code);
         Assert.Equal(HttpMethod.Get, handler.RequestMethod);
         Assert.Equal("/api/wms/catalog/uoms", handler.RequestPath);
-        Assert.Equal("?skip=0&take=20&searchText=EA&sortBy=code&sortDescending=false&includeInactive=true", handler.RequestQuery);
+        Assert.Equal("?searchText=EA&sortBy=Code&includeInactive=true", handler.RequestQuery);
     }
 
     [Fact]

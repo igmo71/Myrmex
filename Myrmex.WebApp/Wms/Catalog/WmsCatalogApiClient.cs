@@ -8,12 +8,10 @@ namespace Myrmex.WebApp.Wms.Catalog;
 public sealed class WmsCatalogApiClient(HttpClient httpClient)
 {
     public async Task<ListResult<StockKeepingUnitDetails>> ListStockKeepingUnitsAsync(
-        ListRequest request,
+        ListStockKeepingUnitsRequest request,
         CancellationToken cancellationToken = default)
     {
-        string url = WmsApiUrls.BuildListUrl(
-            "/api/wms/catalog/skus",
-            request);
+        string url = BuildStockKeepingUnitListUrl(request);
 
         return await httpClient.GetRequiredAsync<ListResult<StockKeepingUnitDetails>>(url, cancellationToken);
     }
@@ -39,12 +37,10 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
     }
 
     public async Task<ListResult<UnitOfMeasureDetails>> ListUnitsOfMeasureAsync(
-        ListRequest request,
+        ListUnitsOfMeasureRequest request,
         CancellationToken cancellationToken = default)
     {
-        string url = WmsApiUrls.BuildListUrl(
-            "/api/wms/catalog/uoms",
-            request);
+        string url = BuildUnitOfMeasureListUrl(request);
 
         return await httpClient.GetRequiredAsync<ListResult<UnitOfMeasureDetails>>(url, cancellationToken);
     }
@@ -221,6 +217,76 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
         return url;
     }
 
+    private static string BuildStockKeepingUnitListUrl(ListStockKeepingUnitsRequest request)
+    {
+        return BuildCatalogListUrl(
+            "/api/wms/catalog/skus",
+            request.Skip,
+            request.Take,
+            request.SearchText,
+            request.SortBy,
+            request.SortDescending,
+            request.IncludeInactive);
+    }
+
+    private static string BuildUnitOfMeasureListUrl(ListUnitsOfMeasureRequest request)
+    {
+        return BuildCatalogListUrl(
+            "/api/wms/catalog/uoms",
+            request.Skip,
+            request.Take,
+            request.SearchText,
+            request.SortBy,
+            request.SortDescending,
+            request.IncludeInactive);
+    }
+
+    private static string BuildCatalogListUrl(
+        string path,
+        int? skip,
+        int? take,
+        string? searchText,
+        string? sortBy,
+        bool? sortDescending,
+        bool? includeInactive)
+    {
+        List<string> query = [];
+
+        if (skip.HasValue)
+        {
+            query.Add($"skip={skip.Value}");
+        }
+
+        if (take.HasValue)
+        {
+            query.Add($"take={take.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            query.Add($"searchText={HttpUtility.UrlEncode(searchText)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(sortBy))
+        {
+            query.Add($"sortBy={HttpUtility.UrlEncode(sortBy)}");
+        }
+
+        if (sortDescending.HasValue)
+        {
+            query.Add($"sortDescending={sortDescending.Value.ToString().ToLowerInvariant()}");
+        }
+
+        if (includeInactive.HasValue)
+        {
+            query.Add($"includeInactive={includeInactive.Value.ToString().ToLowerInvariant()}");
+        }
+
+        return query.Count == 0
+            ? path
+            : $"{path}?{string.Join("&", query)}";
+    }
+
     private static string BuildStockKeepingUnitLookupUrl(LookupStockKeepingUnitsRequest request)
     {
         const string path = "/api/wms/catalog/skus/lookup";
@@ -244,45 +310,6 @@ public sealed class WmsCatalogApiClient(HttpClient httpClient)
             : $"{path}?{string.Join("&", query)}";
     }
 }
-
-public sealed record StockKeepingUnitDetails(
-    Guid Id,
-    string Code,
-    string Name,
-    string? Description,
-    Guid BaseUnitOfMeasureId,
-    bool IsActive,
-    DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? UpdatedAtUtc);
-
-public sealed record CreateStockKeepingUnitRequest(
-    string? Code,
-    string? Name,
-    string? Description,
-    Guid? BaseUnitOfMeasureId = null);
-
-public sealed record UpdateStockKeepingUnitDetailsRequest(
-    string? Name,
-    string? Description,
-    Guid? BaseUnitOfMeasureId = null);
-
-public sealed record UnitOfMeasureDetails(
-    Guid Id,
-    string Code,
-    string Name,
-    string? Symbol,
-    bool IsActive,
-    DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? UpdatedAtUtc);
-
-public sealed record CreateUnitOfMeasureRequest(
-    string? Code,
-    string? Name,
-    string? Symbol);
-
-public sealed record UpdateUnitOfMeasureDetailsRequest(
-    string? Name,
-    string? Symbol);
 
 public sealed record SkuBarcodeDetails(
     Guid Id,

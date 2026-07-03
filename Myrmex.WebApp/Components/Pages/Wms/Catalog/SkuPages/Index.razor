@@ -19,16 +19,14 @@
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.Add"
-                           OnClick="CreateSkuAsync"
-                           Disabled="_isLoading">
+                           OnClick="CreateSkuAsync">
                     @Localizer["Common.Create"]
                 </MudButton>
 
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.Refresh"
-                           OnClick="ReloadAsync"
-                           Disabled="_isLoading">
+                           OnClick="ReloadAsync">
                     @Localizer["Common.Refresh"]
                 </MudButton>
             </MudStack>
@@ -46,9 +44,9 @@
                     IncludeInactive="@_includeInactive"
                     IncludeInactiveChanged="OnIncludeInactiveChanged" />
 
-        <SkuGrid Skus="@_skus"
+        <SkuGrid @ref="_skuGrid"
+                 LoadData="LoadSkusAsync"
                  UnitOfMeasureLookup="@_unitOfMeasureLookup"
-                 IsLoading="@_isLoading"
                  EditRequested="EditSkuAsync"
                  DeactivateRequested="DeactivateSkuAsync"
                  ReactivateRequested="ReactivateSkuAsync" />

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Catalog.Features.UnitsOfMeasure;
+using Myrmex.Shared.Wms.Catalog;
 using Myrmex.Tests.Wms.Topology.Testing;
 
 namespace Myrmex.Tests.Wms.Catalog.Features.UnitsOfMeasure;

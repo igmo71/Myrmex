@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Catalog;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Catalog;
 
@@ -17,63 +18,70 @@ public partial class Index
     [Inject]
     private ISnackbar Snackbar { get; set; } = default!;
 
-    private List<UnitOfMeasureDetails> _unitsOfMeasure = [];
-    private bool _isLoading;
+    private UomGrid? _uomGrid;
     private string? _errorMessage;
     private string? _searchText;
     private bool _includeInactive;
 
-    protected override async Task OnInitializedAsync()
+    private Task ReloadAsync()
     {
-        await LoadUnitsOfMeasureAsync();
-    }
-
-    private async Task ReloadAsync()
-    {
-        await LoadUnitsOfMeasureAsync();
+        return _uomGrid?.ReloadServerDataAsync() ?? Task.CompletedTask;
     }
 
     private async Task OnSearchTextChanged(string? value)
     {
         _searchText = value;
-        await LoadUnitsOfMeasureAsync();
+        await ResetAndReloadUnitsOfMeasureAsync();
     }
 
     private async Task OnIncludeInactiveChanged(bool value)
     {
         _includeInactive = value;
-        await LoadUnitsOfMeasureAsync();
+        await ResetAndReloadUnitsOfMeasureAsync();
     }
 
-    private async Task LoadUnitsOfMeasureAsync()
+    private async Task<GridData<UnitOfMeasureDetails>> LoadUnitsOfMeasureAsync(
+        UomGridRequest gridRequest,
+        CancellationToken cancellationToken)
     {
-        _isLoading = true;
         _errorMessage = null;
 
         try
         {
-            ListRequest request = new(
-                Skip: 0,
-                Take: 100,
-                SearchText: _searchText,
-                SortBy: "code",
-                SortDescending: false,
-                IncludeInactive: _includeInactive);
+            ListUnitsOfMeasureRequest request = new()
+            {
+                Skip = gridRequest.Skip,
+                Take = gridRequest.Take,
+                SearchText = _searchText,
+                SortBy = gridRequest.SortBy,
+                SortDescending = gridRequest.SortDescending,
+                IncludeInactive = _includeInactive
+            };
 
             ListResult<UnitOfMeasureDetails> result = await WmsCatalogApiClient
-                .ListUnitsOfMeasureAsync(request);
+                .ListUnitsOfMeasureAsync(request, cancellationToken);
 
-            _unitsOfMeasure = result.Items.ToList();
+            return new GridData<UnitOfMeasureDetails>
+            {
+                Items = result.Items,
+                TotalItems = result.TotalCount
+            };
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            return EmptyGridData();
         }
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
-            _unitsOfMeasure = [];
+            return EmptyGridData();
         }
-        finally
-        {
-            _isLoading = false;
-        }
+    }
+
+    private Task ResetAndReloadUnitsOfMeasureAsync()
+    {
+        return _uomGrid?.ResetAndReloadServerDataAsync() ?? Task.CompletedTask;
     }
 
     private async Task CreateUnitOfMeasureAsync()
@@ -97,7 +105,7 @@ public partial class Index
 
         Snackbar.Add(Localizer["UnitOfMeasure.Created"], Severity.Success);
 
-        await LoadUnitsOfMeasureAsync();
+        await ReloadAsync();
     }
 
     private async Task EditUnitOfMeasureAsync(UnitOfMeasureDetails unitOfMeasure)
@@ -126,7 +134,7 @@ public partial class Index
 
         Snackbar.Add(Localizer["UnitOfMeasure.Updated"], Severity.Success);
 
-        await LoadUnitsOfMeasureAsync();
+        await ReloadAsync();
     }
 
     private async Task DeactivateUnitOfMeasureAsync(UnitOfMeasureDetails unitOfMeasure)
@@ -145,7 +153,7 @@ public partial class Index
 
             Snackbar.Add(Localizer["UnitOfMeasure.Deactivated"], Severity.Success);
 
-            await LoadUnitsOfMeasureAsync();
+            await ReloadAsync();
         }
         catch (Exception exception)
         {
@@ -169,11 +177,20 @@ public partial class Index
 
             Snackbar.Add(Localizer["UnitOfMeasure.Reactivated"], Severity.Success);
 
-            await LoadUnitsOfMeasureAsync();
+            await ReloadAsync();
         }
         catch (Exception exception)
         {
             Snackbar.Add(exception.Message, Severity.Error);
         }
+    }
+
+    private static GridData<UnitOfMeasureDetails> EmptyGridData()
+    {
+        return new GridData<UnitOfMeasureDetails>
+        {
+            Items = [],
+            TotalItems = 0
+        };
     }
 }

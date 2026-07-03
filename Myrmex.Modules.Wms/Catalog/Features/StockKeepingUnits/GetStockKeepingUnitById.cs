@@ -3,6 +3,7 @@ using Myrmex.Core.Application;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
+using Myrmex.Shared.Wms.Catalog;
 
 namespace Myrmex.Modules.Wms.Catalog.Features.StockKeepingUnits;
 
@@ -19,7 +20,7 @@ internal static class GetStockKeepingUnitById
             StockKeepingUnitDetails? result = await dbContext.StockKeepingUnits
                 .AsNoTracking()
                 .Where(x => x.Id == query.StockKeepingUnitId)
-                .Select(StockKeepingUnitDetails.Projection)
+                .Select(StockKeepingUnitDetailsMapping.Projection)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (result is null)

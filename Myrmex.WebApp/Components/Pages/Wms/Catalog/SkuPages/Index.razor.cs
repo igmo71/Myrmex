@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using Myrmex.Shared.Common;
+using Myrmex.Shared.Wms.Catalog;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Catalog;
 
@@ -17,78 +18,101 @@ public partial class Index
     [Inject]
     private ISnackbar Snackbar { get; set; } = default!;
 
-    private List<StockKeepingUnitDetails> _skus = [];
+    private SkuGrid? _skuGrid;
     private IReadOnlyDictionary<Guid, UnitOfMeasureDetails> _unitOfMeasureLookup =
         new Dictionary<Guid, UnitOfMeasureDetails>();
 
-    private bool _isLoading;
     private string? _errorMessage;
     private string? _searchText;
     private bool _includeInactive;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadSkusAsync();
+        await LoadUnitOfMeasureLookupAsync();
     }
 
-    private async Task ReloadAsync()
+    private Task ReloadAsync()
     {
-        await LoadSkusAsync();
+        return _skuGrid?.ReloadServerDataAsync() ?? Task.CompletedTask;
     }
 
     private async Task OnSearchTextChanged(string? value)
     {
         _searchText = value;
-        await LoadSkusAsync();
+        await ResetAndReloadSkusAsync();
     }
 
     private async Task OnIncludeInactiveChanged(bool value)
     {
         _includeInactive = value;
-        await LoadSkusAsync();
+        await ResetAndReloadSkusAsync();
     }
 
-    private async Task LoadSkusAsync()
+    private async Task<GridData<StockKeepingUnitDetails>> LoadSkusAsync(
+        SkuGridRequest gridRequest,
+        CancellationToken cancellationToken)
     {
-        _isLoading = true;
         _errorMessage = null;
 
         try
         {
-            ListRequest skuRequest = new(
-                Skip: 0,
-                Take: 100,
-                SearchText: _searchText,
-                SortBy: "code",
-                SortDescending: false,
-                IncludeInactive: _includeInactive);
+            ListStockKeepingUnitsRequest request = new()
+            {
+                Skip = gridRequest.Skip,
+                Take = gridRequest.Take,
+                SearchText = _searchText,
+                SortBy = gridRequest.SortBy,
+                SortDescending = gridRequest.SortDescending,
+                IncludeInactive = _includeInactive
+            };
 
-            ListRequest unitOfMeasureRequest = new(
-                Skip: 0,
-                Take: 100,
-                SortBy: "code",
-                SortDescending: false,
-                IncludeInactive: false);
+            ListResult<StockKeepingUnitDetails> result = await WmsCatalogApiClient
+                .ListStockKeepingUnitsAsync(request, cancellationToken);
 
-            ListResult<StockKeepingUnitDetails> skuResult = await WmsCatalogApiClient
-                .ListStockKeepingUnitsAsync(skuRequest);
-
-            ListResult<UnitOfMeasureDetails> unitOfMeasureResult = await WmsCatalogApiClient
-                .ListUnitsOfMeasureAsync(unitOfMeasureRequest);
-
-            _skus = skuResult.Items.ToList();
-            _unitOfMeasureLookup = unitOfMeasureResult.Items.ToDictionary(unitOfMeasure => unitOfMeasure.Id);
+            return new GridData<StockKeepingUnitDetails>
+            {
+                Items = result.Items,
+                TotalItems = result.TotalCount
+            };
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            return EmptyGridData();
         }
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
-            _skus = [];
+            return EmptyGridData();
+        }
+    }
+
+    private async Task LoadUnitOfMeasureLookupAsync()
+    {
+        try
+        {
+            ListResult<UnitOfMeasureDetails> result = await WmsCatalogApiClient
+                .ListUnitsOfMeasureAsync(new ListUnitsOfMeasureRequest
+                {
+                    Skip = 0,
+                    Take = 100,
+                    SortBy = UnitOfMeasureSortBy.Code,
+                    SortDescending = false,
+                    IncludeInactive = false
+                });
+
+            _unitOfMeasureLookup = result.Items.ToDictionary(unit => unit.Id);
+        }
+        catch (Exception exception)
+        {
+            _errorMessage = exception.Message;
             _unitOfMeasureLookup = new Dictionary<Guid, UnitOfMeasureDetails>();
         }
-        finally
-        {
-            _isLoading = false;
-        }
+    }
+
+    private Task ResetAndReloadSkusAsync()
+    {
+        return _skuGrid?.ResetAndReloadServerDataAsync() ?? Task.CompletedTask;
     }
 
     private async Task CreateSkuAsync()
@@ -112,7 +136,7 @@ public partial class Index
 
         Snackbar.Add(Localizer["Sku.Created"], Severity.Success);
 
-        await LoadSkusAsync();
+        await ReloadAsync();
     }
 
     private async Task EditSkuAsync(StockKeepingUnitDetails sku)
@@ -141,7 +165,7 @@ public partial class Index
 
         Snackbar.Add(Localizer["Sku.Updated"], Severity.Success);
 
-        await LoadSkusAsync();
+        await ReloadAsync();
     }
 
     private async Task DeactivateSkuAsync(StockKeepingUnitDetails sku)
@@ -160,7 +184,7 @@ public partial class Index
 
             Snackbar.Add(Localizer["Sku.Deactivated"], Severity.Success);
 
-            await LoadSkusAsync();
+            await ReloadAsync();
         }
         catch (Exception exception)
         {
@@ -184,11 +208,20 @@ public partial class Index
 
             Snackbar.Add(Localizer["Sku.Reactivated"], Severity.Success);
 
-            await LoadSkusAsync();
+            await ReloadAsync();
         }
         catch (Exception exception)
         {
             Snackbar.Add(exception.Message, Severity.Error);
         }
+    }
+
+    private static GridData<StockKeepingUnitDetails> EmptyGridData()
+    {
+        return new GridData<StockKeepingUnitDetails>
+        {
+            Items = [],
+            TotalItems = 0
+        };
     }
 }
