@@ -198,6 +198,38 @@ public sealed class WmsCatalogApiClientTests
         Assert.Equal(baseUnitOfMeasureId, requestBody.RootElement.GetProperty("baseUnitOfMeasureId").GetGuid());
     }
 
+    [Theory]
+    [InlineData(false, "deactivate")]
+    [InlineData(true, "reactivate")]
+    public async Task StockKeepingUnitLifecycleAsync_WhenSuccessful_UsesExpectedRouteAndMapsSharedDetails(
+        bool reactivate,
+        string action)
+    {
+        Guid stockKeepingUnitId = Guid.Parse("018f0000-0000-7000-8000-000000000001");
+        StockKeepingUnitDetails details = CreateStockKeepingUnitDetails(
+            id: stockKeepingUnitId,
+            isActive: reactivate);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        ApiResult<StockKeepingUnitDetails> result = reactivate
+            ? await apiClient.TryReactivateStockKeepingUnitAsync(
+                stockKeepingUnitId,
+                TestContext.Current.CancellationToken)
+            : await apiClient.TryDeactivateStockKeepingUnitAsync(
+                stockKeepingUnitId,
+                TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(reactivate, result.Value!.IsActive);
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal($"/api/wms/catalog/skus/{stockKeepingUnitId}/{action}", handler.RequestPath);
+    }
+
     [Fact]
     public async Task TryCreateUnitOfMeasureAsync_WhenSuccessful_PostsToUomRouteAndReturnsDetails()
     {
@@ -392,6 +424,37 @@ public sealed class WmsCatalogApiClientTests
             "API request failed for POST '/api/wms/catalog/skus'. Status code: 400 BadRequest.",
             result.Error.Message);
         Assert.Empty(result.Error.Extensions);
+    }
+
+    [Fact]
+    public async Task TryCreateStockKeepingUnitAsync_WhenProblemDetailsReturned_ReturnsParsedApiError()
+    {
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.Conflict,
+            """
+            {
+              "status": 409,
+              "title": "Conflict",
+              "detail": "SKU code already exists.",
+              "code": "StockKeepingUnit.CodeConflict"
+            }
+            """,
+            "application/problem+json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsCatalogApiClient apiClient = new(httpClient);
+
+        ApiResult<StockKeepingUnitDetails> result = await apiClient.TryCreateStockKeepingUnitAsync(
+            new CreateStockKeepingUnitRequest(
+                "ITEM-001",
+                "Widget",
+                null,
+                Guid.NewGuid()),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(409, result.Error!.Status);
+        Assert.Equal("SKU code already exists.", result.Error.Message);
+        Assert.Equal("StockKeepingUnit.CodeConflict", result.Error.Extensions["code"]);
     }
 
     [Fact]

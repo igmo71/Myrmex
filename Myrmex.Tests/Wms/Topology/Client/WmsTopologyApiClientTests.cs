@@ -317,6 +317,146 @@ public sealed class WmsTopologyApiClientTests
         Assert.Equal("?includeInactive=true", handler.RequestQuery);
     }
 
+    [Fact]
+    public async Task TryCreateWarehouseAsync_WhenSuccessful_PostsSharedRequestAndMapsDetails()
+    {
+        WarehouseDetails details = CreateWarehouseDetails();
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsTopologyApiClient apiClient = new(httpClient);
+
+        ApiResult<WarehouseDetails> result = await apiClient.TryCreateWarehouseAsync(
+            new CreateWarehouseRequest(" WH-A ", "Warehouse A", "North"),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(details, result.Value);
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal("/api/wms/topology/warehouses", handler.RequestPath);
+        using JsonDocument body = JsonDocument.Parse(handler.RequestBody);
+        Assert.Equal(" WH-A ", body.RootElement.GetProperty("code").GetString());
+        Assert.Equal("Warehouse A", body.RootElement.GetProperty("name").GetString());
+        Assert.Equal("North", body.RootElement.GetProperty("description").GetString());
+    }
+
+    [Fact]
+    public async Task TryUpdateZoneDetailsAsync_WhenSuccessful_PutsSharedRequestAndMapsDetails()
+    {
+        ZoneDetails details = CreateZoneDetails(name: "Updated Zone");
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsTopologyApiClient apiClient = new(httpClient);
+
+        ApiResult<ZoneDetails> result = await apiClient.TryUpdateZoneDetailsAsync(
+            details.Id,
+            new UpdateZoneDetailsRequest("Updated Zone", null),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(details, result.Value);
+        Assert.Equal(HttpMethod.Put, handler.RequestMethod);
+        Assert.Equal($"/api/wms/topology/zones/{details.Id}", handler.RequestPath);
+        using JsonDocument body = JsonDocument.Parse(handler.RequestBody);
+        Assert.Equal("Updated Zone", body.RootElement.GetProperty("name").GetString());
+        Assert.Equal(JsonValueKind.Null, body.RootElement.GetProperty("description").ValueKind);
+    }
+
+    [Fact]
+    public async Task TryDeactivateWarehouseAsync_WhenSuccessful_PostsLifecycleRoute()
+    {
+        WarehouseDetails details = CreateWarehouseDetails(isActive: false);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsTopologyApiClient apiClient = new(httpClient);
+
+        ApiResult<WarehouseDetails> result = await apiClient.TryDeactivateWarehouseAsync(
+            details.Id,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(result.Value!.IsActive);
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal($"/api/wms/topology/warehouses/{details.Id}/deactivate", handler.RequestPath);
+    }
+
+    [Fact]
+    public async Task TryReactivateZoneAsync_WhenSuccessful_PostsLifecycleRoute()
+    {
+        ZoneDetails details = CreateZoneDetails(isActive: true);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsTopologyApiClient apiClient = new(httpClient);
+
+        ApiResult<ZoneDetails> result = await apiClient.TryReactivateZoneAsync(
+            details.Id,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value!.IsActive);
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal($"/api/wms/topology/zones/{details.Id}/reactivate", handler.RequestPath);
+    }
+
+    [Fact]
+    public async Task TryDeactivateStorageLocationAsync_WhenSuccessful_PostsLifecycleRoute()
+    {
+        StorageLocationDetails details = CreateStorageLocationDetails(isActive: false);
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.OK,
+            SerializeJson(details),
+            "application/json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsTopologyApiClient apiClient = new(httpClient);
+
+        ApiResult<StorageLocationDetails> result = await apiClient.TryDeactivateStorageLocationAsync(
+            details.Id,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(result.Value!.IsActive);
+        Assert.Equal(HttpMethod.Post, handler.RequestMethod);
+        Assert.Equal($"/api/wms/topology/locations/{details.Id}/deactivate", handler.RequestPath);
+    }
+
+    [Fact]
+    public async Task TryCreateWarehouseAsync_WhenProblemDetailsReturned_ReturnsParsedApiError()
+    {
+        using StubHttpMessageHandler handler = new(
+            HttpStatusCode.Conflict,
+            """
+            {
+              "status": 409,
+              "title": "Conflict",
+              "detail": "Warehouse code already exists.",
+              "code": "Warehouse.CodeConflict"
+            }
+            """,
+            "application/problem+json");
+        using HttpClient httpClient = CreateHttpClient(handler);
+        WmsTopologyApiClient apiClient = new(httpClient);
+
+        ApiResult<WarehouseDetails> result = await apiClient.TryCreateWarehouseAsync(
+            new CreateWarehouseRequest("WH-A", "Warehouse A", null),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(409, result.Error!.Status);
+        Assert.Equal("Warehouse code already exists.", result.Error.Message);
+        Assert.Equal("Warehouse.CodeConflict", result.Error.Extensions["code"]);
+    }
+
     private static HttpClient CreateHttpClient(StubHttpMessageHandler handler)
     {
         return new HttpClient(handler)
@@ -328,6 +468,48 @@ public sealed class WmsTopologyApiClientTests
     private static string SerializeJson<T>(T value)
     {
         return JsonSerializer.Serialize(value, JsonOptions);
+    }
+
+    private static WarehouseDetails CreateWarehouseDetails(bool isActive = true)
+    {
+        return new WarehouseDetails(
+            Guid.Parse("018f0000-0000-7000-8000-000000000101"),
+            "WH-A",
+            "Warehouse A",
+            "North",
+            isActive,
+            DateTimeOffset.Parse("2026-06-17T09:00:00Z"),
+            null);
+    }
+
+    private static ZoneDetails CreateZoneDetails(string name = "Zone A", bool isActive = true)
+    {
+        return new ZoneDetails(
+            Guid.Parse("018f0000-0000-7000-8000-000000000201"),
+            Guid.Parse("018f0000-0000-7000-8000-000000000101"),
+            "ZONE-A",
+            name,
+            null,
+            isActive,
+            DateTimeOffset.Parse("2026-06-17T09:00:00Z"),
+            null);
+    }
+
+    private static StorageLocationDetails CreateStorageLocationDetails(bool isActive = true)
+    {
+        return new StorageLocationDetails(
+            Guid.Parse("018f0000-0000-7000-8000-000000000501"),
+            Guid.Parse("018f0000-0000-7000-8000-000000000101"),
+            Guid.Parse("018f0000-0000-7000-8000-000000000201"),
+            Guid.Parse("018f0000-0000-7000-8000-000000000301"),
+            Guid.Parse("018f0000-0000-7000-8000-000000000401"),
+            "A-01",
+            "A 01",
+            null,
+            true,
+            isActive,
+            DateTimeOffset.Parse("2026-06-17T09:00:00Z"),
+            null);
     }
 
     private sealed class StubHttpMessageHandler(
