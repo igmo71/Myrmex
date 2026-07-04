@@ -20,7 +20,7 @@
 
 **Purpose**: Establish safe default host configuration without enabling destructive behavior.
 
-- [ ] T001 Add default-disabled `Myrmex:Wms:DemoData` configuration keys without a confirmation secret in `Myrmex.ApiService/appsettings.json`
+- [X] T001 Add default-disabled `Myrmex:Wms:DemoData` configuration keys without a confirmation secret in `Myrmex.ApiService/appsettings.json`
 
 ---
 
@@ -30,13 +30,13 @@
 
 **Critical**: Complete this phase before beginning a user-story phase.
 
-- [ ] T002 [P] Add `ClearDemoDataRequest`, `DemoDataAreaSummary`, and `DemoDataOperationResponse` transport records in `Myrmex.Shared/Wms/DemoData/ClearDemoDataRequest.cs`, `Myrmex.Shared/Wms/DemoData/DemoDataAreaSummary.cs`, and `Myrmex.Shared/Wms/DemoData/DemoDataOperationResponse.cs`
-- [ ] T003 [P] Implement safe-default option binding fields and the `Myrmex:Wms:DemoData` section name in `Myrmex.Modules.Wms/DemoData/Configuration/WmsDemoDataOptions.cs`
-- [ ] T004 [P] Define stable validation, forbidden, conflict, readiness, and execution `ServiceError` values in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataErrors.cs`
-- [ ] T005 [P] Implement one non-waiting process-local lease shared by seed and clear in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataOperationGate.cs`
-- [ ] T006 Encode the exact UoM, SKU, warehouse, zone, location, opening-stock, transfer, and count definitions from `data-model.md` in `Myrmex.Modules.Wms/DemoData/Features/DemoDataDefinitions.cs`
-- [ ] T007 Add fixed time, authenticated actor, configurable environment/options, stub command results, and in-process HTTP helpers in `Myrmex.Tests/Wms/DemoData/Testing/DemoDataTestHost.cs`
-- [ ] T008 Bind `WmsDemoDataOptions`, register `TimeProvider`, and register the singleton operation gate without mapping routes in `Myrmex.Modules.Wms/WmsModule.cs`
+- [X] T002 [P] Add `ClearDemoDataRequest`, `DemoDataAreaSummary`, and `DemoDataOperationResponse` transport records in `Myrmex.Shared/Wms/DemoData/ClearDemoDataRequest.cs`, `Myrmex.Shared/Wms/DemoData/DemoDataAreaSummary.cs`, and `Myrmex.Shared/Wms/DemoData/DemoDataOperationResponse.cs`
+- [X] T003 [P] Implement safe-default option binding fields and the `Myrmex:Wms:DemoData` section name in `Myrmex.Modules.Wms/DemoData/Configuration/WmsDemoDataOptions.cs`
+- [X] T004 [P] Define stable validation, forbidden, conflict, readiness, and execution `ServiceError` values in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataErrors.cs`
+- [X] T005 [P] Implement one non-waiting process-local lease shared by seed and clear in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataOperationGate.cs`
+- [X] T006 Encode the exact UoM, SKU, warehouse, zone, location, opening-stock, transfer, and count definitions from `data-model.md` in `Myrmex.Modules.Wms/DemoData/Features/DemoDataDefinitions.cs`
+- [X] T007 Add fixed time, authenticated actor, configurable environment/options, stub command results, and in-process HTTP helpers in `Myrmex.Tests/Wms/DemoData/Testing/DemoDataTestHost.cs`
+- [X] T008 Bind `WmsDemoDataOptions`, register `TimeProvider`, and register the singleton operation gate without mapping routes in `Myrmex.Modules.Wms/WmsModule.cs`
 
 **Checkpoint**: Shared contracts and primitives compile conceptually without changing the database model or enabling any endpoint.
 
@@ -50,20 +50,20 @@
 
 ### Tests for User Story 1
 
-- [ ] T009 [P] [US1] Add SQL Server service tests protecting exact catalog/topology volume, Russian text, supported reference reuse, absent barcodes, and success-area counts in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataSeederTests.cs`
-- [ ] T010 [P] [US1] Add SQL Server service tests protecting opening balance/ledger consistency, direct/cart transfer states, cart stock, count variance states, and whole-request rollback after an injected mid-stage failure in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataOperationalStateTests.cs`
-- [ ] T011 [P] [US1] Add focused Minimal API tests protecting seed route binding, authenticated-actor dispatch, cancellation propagation, 200 serialization, and standard failure ProblemDetails in `Myrmex.Tests/Wms/DemoData/Endpoints/DemoDataSeedEndpointTests.cs`
+- [X] T009 [P] [US1] Add SQL Server service tests protecting exact catalog/topology volume, Russian text, supported reference reuse, absent barcodes, and success-area counts in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataSeederTests.cs`
+- [X] T010 [P] [US1] Add SQL Server service tests protecting opening balance/ledger consistency, direct/cart transfer states, cart stock, count variance states, and whole-request rollback after an injected mid-stage failure in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataOperationalStateTests.cs`
+- [X] T011 [P] [US1] Add focused Minimal API tests protecting seed route binding, authenticated-actor dispatch, cancellation propagation, 200 serialization, and standard failure ProblemDetails in `Myrmex.Tests/Wms/DemoData/Endpoints/DemoDataSeedEndpointTests.cs`
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Implement schema-connectivity, pending-migration, required-system-reference checks plus the outer seed transaction, rollback, tracking cleanup, timing, and area accounting in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
-- [ ] T013 [US1] Implement UoM, SKU, warehouse, zone, and storage-location creation through current domain factories in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
-- [ ] T014 [US1] Implement opening balances and immutable adjustment/ledger history through the current inventory adjustment use case in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
-- [ ] T015 [US1] Implement stable-code direct, completed-cart, in-progress-cart, and created transfer scenarios using current transfer movement use cases in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
-- [ ] T016 [US1] Implement InProgress variance and Completed zero-variance inventory-count scenarios using current count use cases in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
-- [ ] T017 [US1] Implement `SeedWmsDemoData.Command` and handler with actor propagation and service-result mapping in `Myrmex.Modules.Wms/DemoData/Features/SeedWmsDemoData.cs`
-- [ ] T018 [US1] Map the authenticated `POST /api/admin/demo-data/seed` action and shared success/ProblemDetails result in `Myrmex.Modules.Wms/DemoData/Endpoints/DemoDataAdminEndpoints.cs`
-- [ ] T019 [US1] Register the scoped seeder/seed handler dependencies and map the demo endpoint group when `Enabled=true` in `Myrmex.Modules.Wms/WmsModule.cs`
+- [X] T012 [US1] Implement schema-connectivity, pending-migration, required-system-reference checks plus the outer seed transaction, rollback, tracking cleanup, timing, and area accounting in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
+- [X] T013 [US1] Implement UoM, SKU, warehouse, zone, and storage-location creation through current domain factories in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
+- [X] T014 [US1] Implement opening balances and immutable adjustment/ledger history through the current inventory adjustment use case in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
+- [X] T015 [US1] Implement stable-code direct, completed-cart, in-progress-cart, and created transfer scenarios using current transfer movement use cases in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
+- [X] T016 [US1] Implement InProgress variance and Completed zero-variance inventory-count scenarios using current count use cases in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
+- [X] T017 [US1] Implement `SeedWmsDemoData.Command` and handler with actor propagation and service-result mapping in `Myrmex.Modules.Wms/DemoData/Features/SeedWmsDemoData.cs`
+- [X] T018 [US1] Map the authenticated `POST /api/admin/demo-data/seed` action and shared success/ProblemDetails result in `Myrmex.Modules.Wms/DemoData/Endpoints/DemoDataAdminEndpoints.cs`
+- [X] T019 [US1] Register the scoped seeder/seed handler dependencies and map the demo endpoint group when `Enabled=true` in `Myrmex.Modules.Wms/WmsModule.cs`
 
 **Checkpoint**: User Story 1 can seed and demonstrate the complete dataset from an empty migrated database without any clear operation.
 
@@ -77,15 +77,15 @@
 
 ### Tests for User Story 2
 
-- [ ] T020 [P] [US2] Add SQL Server tests protecting second-run zero-duplicate identities/effects and accurate reused/skipped summaries in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataIdempotencyTests.cs`
-- [ ] T021 [P] [US2] Add SQL Server tests protecting compatible partial-stage resume for references, topology, opening history, transfers, and counts in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataResumeTests.cs`
-- [ ] T022 [P] [US2] Add SQL Server tests protecting incompatible or ambiguous identity detection, 409 errors, no overwrite, and complete rollback in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataConflictTests.cs`
+- [X] T020 [P] [US2] Add SQL Server tests protecting second-run zero-duplicate identities/effects and accurate reused/skipped summaries in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataIdempotencyTests.cs`
+- [X] T021 [P] [US2] Add SQL Server tests protecting compatible partial-stage resume for references, topology, opening history, transfers, and counts in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataResumeTests.cs`
+- [X] T022 [P] [US2] Add SQL Server tests protecting incompatible or ambiguous identity detection, 409 errors, no overwrite, and complete rollback in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataConflictTests.cs`
 
 ### Implementation for User Story 2
 
-- [ ] T023 [US2] Add normalized identity lookup and compatibility validation for UoMs, SKUs, warehouse, zones, and locations in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
-- [ ] T024 [US2] Add stable `DEMO-OPEN-*`, `DEMO-TRF-*`, and `DEMO-CNT-*` reconciliation with compatible operational-stage resume in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
-- [ ] T025 [US2] Return precise created/reused/skipped area counts and map incompatible or ambiguous identities to `DemoData.IdentityConflict` without exposing data or committing changes in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
+- [X] T023 [US2] Add normalized identity lookup and compatibility validation for UoMs, SKUs, warehouse, zones, and locations in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
+- [X] T024 [US2] Add stable `DEMO-OPEN-*`, `DEMO-TRF-*`, and `DEMO-CNT-*` reconciliation with compatible operational-stage resume in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
+- [X] T025 [US2] Return precise created/reused/skipped area counts and map incompatible or ambiguous identities to `DemoData.IdentityConflict` without exposing data or committing changes in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
 
 **Checkpoint**: User Stories 1 and 2 support empty, repeated, and compatible-partial seeding while rejecting incompatible data atomically.
 
@@ -99,16 +99,16 @@
 
 ### Tests for User Story 3
 
-- [ ] T026 [P] [US3] Add SQL Server tests protecting foreign-key-safe deletion counts, user-created record removal, system type/status preservation, schema/history preservation, and rollback after an injected clear-stage failure in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataClearServiceTests.cs`
-- [ ] T027 [P] [US3] Add SQL Server reset-roundtrip tests protecting stable identities and equivalent demo scenarios after seed → mutation → clear → reseed in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataResetTests.cs`
-- [ ] T028 [P] [US3] Add focused Minimal API tests protecting clear JSON binding, authenticated-actor dispatch, cancellation, 200 deletion-summary serialization, and standard failure ProblemDetails in `Myrmex.Tests/Wms/DemoData/Endpoints/DemoDataClearEndpointTests.cs`
+- [X] T026 [P] [US3] Add SQL Server tests protecting foreign-key-safe deletion counts, user-created record removal, system type/status preservation, schema/history preservation, and rollback after an injected clear-stage failure in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataClearServiceTests.cs`
+- [X] T027 [P] [US3] Add SQL Server reset-roundtrip tests protecting stable identities and equivalent demo scenarios after seed → mutation → clear → reseed in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataResetTests.cs`
+- [X] T028 [P] [US3] Add focused Minimal API tests protecting clear JSON binding, authenticated-actor dispatch, cancellation, 200 deletion-summary serialization, and standard failure ProblemDetails in `Myrmex.Tests/Wms/DemoData/Endpoints/DemoDataClearEndpointTests.cs`
 
 ### Implementation for User Story 3
 
-- [ ] T029 [US3] Implement the explicit clear transaction and ordered `ExecuteDeleteAsync` stages with per-area deletion counts, rollback, tracking cleanup, and preservation rules in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataClearService.cs`
-- [ ] T030 [US3] Implement `ClearWmsDemoData.Command` and handler with actor/confirmation propagation and service-result mapping in `Myrmex.Modules.Wms/DemoData/Features/ClearWmsDemoData.cs`
-- [ ] T031 [US3] Add the authenticated JSON-body `POST /api/admin/demo-data/clear` action and shared success/ProblemDetails result in `Myrmex.Modules.Wms/DemoData/Endpoints/DemoDataAdminEndpoints.cs`
-- [ ] T032 [US3] Register the scoped clear service and clear command dependencies in `Myrmex.Modules.Wms/WmsModule.cs`
+- [X] T029 [US3] Implement the explicit clear transaction and ordered `ExecuteDeleteAsync` stages with per-area deletion counts, rollback, tracking cleanup, and preservation rules in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataClearService.cs`
+- [X] T030 [US3] Implement `ClearWmsDemoData.Command` and handler with actor/confirmation propagation and service-result mapping in `Myrmex.Modules.Wms/DemoData/Features/ClearWmsDemoData.cs`
+- [X] T031 [US3] Add the authenticated JSON-body `POST /api/admin/demo-data/clear` action and shared success/ProblemDetails result in `Myrmex.Modules.Wms/DemoData/Endpoints/DemoDataAdminEndpoints.cs`
+- [X] T032 [US3] Register the scoped clear service and clear command dependencies in `Myrmex.Modules.Wms/WmsModule.cs`
 
 **Checkpoint**: User Story 3 can independently clear arbitrary mutable WMS data and, with User Story 1, restore the known demo state.
 
@@ -122,18 +122,18 @@
 
 ### Tests for User Story 4
 
-- [ ] T033 [P] [US4] Add unit tests protecting the shared zero-wait lease, seed/clear mutual exclusion, and release-after-success/failure behavior in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataOperationGateTests.cs`
-- [ ] T034 [P] [US4] Add focused host tests protecting disabled and Production 404 route absence plus enabled non-production registration in `Myrmex.Tests/Wms/DemoData/Endpoints/DemoDataRouteRegistrationTests.cs`
-- [ ] T035 [P] [US4] Add focused endpoint tests protecting 401 actor checks, 403 clear-disabled/wrong-confirmation behavior, 400 missing confirmation, 409 overlap, and zero service calls for rejected requests in `Myrmex.Tests/Wms/DemoData/Endpoints/DemoDataSafetyEndpointTests.cs`
-- [ ] T036 [P] [US4] Add logging tests protecting attempted/completed/rejected/failed/cancelled diagnostics and ensuring confirmation values never appear in messages or structured properties in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataDiagnosticsTests.cs`
+- [X] T033 [P] [US4] Add unit tests protecting the shared zero-wait lease, seed/clear mutual exclusion, and release-after-success/failure behavior in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataOperationGateTests.cs`
+- [X] T034 [P] [US4] Add focused host tests protecting disabled and Production 404 route absence plus enabled non-production registration in `Myrmex.Tests/Wms/DemoData/Endpoints/DemoDataRouteRegistrationTests.cs`
+- [X] T035 [P] [US4] Add focused endpoint tests protecting 401 actor checks, 403 clear-disabled/wrong-confirmation behavior, 400 missing confirmation, 409 overlap, and zero service calls for rejected requests in `Myrmex.Tests/Wms/DemoData/Endpoints/DemoDataSafetyEndpointTests.cs`
+- [X] T036 [P] [US4] Add logging tests protecting attempted/completed/rejected/failed/cancelled diagnostics and ensuring confirmation values never appear in messages or structured properties in `Myrmex.Tests/Wms/DemoData/Features/WmsDemoDataDiagnosticsTests.cs`
 
 ### Implementation for User Story 4
 
-- [ ] T037 [US4] Enforce default-disabled and Production route omission while preserving enabled non-production mapping in `Myrmex.Modules.Wms/WmsModule.cs`
-- [ ] T038 [US4] Enforce actor presence, `AllowClear`, non-empty configured confirmation, required JSON confirmation, and ordinal exact-match guards before database dispatch in `Myrmex.Modules.Wms/DemoData/Endpoints/DemoDataAdminEndpoints.cs`
-- [ ] T039 [US4] Integrate the shared operation gate and stable overlap/cancellation/error outcomes into seed orchestration in `Myrmex.Modules.Wms/DemoData/Features/SeedWmsDemoData.cs`
-- [ ] T040 [US4] Integrate the shared operation gate and stable clear-disabled/confirmation/overlap/cancellation/error outcomes into clear orchestration in `Myrmex.Modules.Wms/DemoData/Features/ClearWmsDemoData.cs`
-- [ ] T041 [US4] Add secret-safe structured attempted/completed/rejected/failed/cancelled logging with actor, environment, duration, category, and area counts in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs` and `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataClearService.cs`
+- [X] T037 [US4] Enforce default-disabled and Production route omission while preserving enabled non-production mapping in `Myrmex.Modules.Wms/WmsModule.cs`
+- [X] T038 [US4] Enforce actor presence, `AllowClear`, non-empty configured confirmation, required JSON confirmation, and ordinal exact-match guards before database dispatch in `Myrmex.Modules.Wms/DemoData/Endpoints/DemoDataAdminEndpoints.cs`
+- [X] T039 [US4] Integrate the shared operation gate and stable overlap/cancellation/error outcomes into seed orchestration in `Myrmex.Modules.Wms/DemoData/Features/SeedWmsDemoData.cs`
+- [X] T040 [US4] Integrate the shared operation gate and stable clear-disabled/confirmation/overlap/cancellation/error outcomes into clear orchestration in `Myrmex.Modules.Wms/DemoData/Features/ClearWmsDemoData.cs`
+- [X] T041 [US4] Add secret-safe structured attempted/completed/rejected/failed/cancelled logging with actor, environment, duration, category, and area counts in `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs` and `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataClearService.cs`
 
 **Checkpoint**: All unsafe and overlapping requests fail closed without data changes or confirmation disclosure.
 
@@ -143,12 +143,12 @@
 
 **Purpose**: Finalize operator guidance and verify the implementation remains within the approved boundaries.
 
-- [ ] T042 [P] Write operator enable/seed/clear/reseed, response interpretation, troubleshooting, diagnostics, and safety guidance in `docs/demo-data.md`
-- [ ] T043 [P] Link the demo-data operator guide from `./README.md`
-- [ ] T044 [P] Add non-secret seed/clear request examples that match the implemented JSON contract in `Myrmex.ApiService/Myrmex.ApiService.http`
-- [ ] T045 Reconcile implemented routes, schemas, status codes, area keys, and error codes with `specs/094-full-wms-demo-data/contracts/demo-data-admin.openapi.yaml`
-- [ ] T046 Reconcile configuration, developer-controlled commands, negative scenarios, and the twelve-step WebApp walkthrough with `specs/094-full-wms-demo-data/quickstart.md`
-- [ ] T047 Perform a static scope audit confirming no migration, `HasData` operational seed, 1C behavior change, SKU group/barcode, generic import framework, WebApp redesign, or deployment change and record any correction in `specs/094-full-wms-demo-data/plan.md`
+- [X] T042 [P] Write operator enable/seed/clear/reseed, response interpretation, troubleshooting, diagnostics, and safety guidance in `docs/demo-data.md`
+- [X] T043 [P] Link the demo-data operator guide from `./README.md`
+- [X] T044 [P] Add non-secret seed/clear request examples that match the implemented JSON contract in `Myrmex.ApiService/Myrmex.ApiService.http`
+- [X] T045 Reconcile implemented routes, schemas, status codes, area keys, and error codes with `specs/094-full-wms-demo-data/contracts/demo-data-admin.openapi.yaml`
+- [X] T046 Reconcile configuration, developer-controlled commands, negative scenarios, and the twelve-step WebApp walkthrough with `specs/094-full-wms-demo-data/quickstart.md`
+- [X] T047 Perform a static scope audit confirming no migration, `HasData` operational seed, 1C behavior change, SKU group/barcode, generic import framework, WebApp redesign, or deployment change and record any correction in `specs/094-full-wms-demo-data/plan.md`
 
 ---
 

@@ -202,6 +202,13 @@ components:
                 status: 400
                 detail: Demo data clear confirmation is required.
                 code: DemoData.ConfirmationRequired
+            invalidConfiguration:
+              value:
+                type: https://httpstatuses.com/400
+                title: Bad Request
+                status: 400
+                detail: Demo data clear confirmation is not configured.
+                code: DemoData.InvalidConfiguration
     Unauthorized:
       description: No authenticated actor identity is available.
       content:
@@ -259,6 +266,13 @@ components:
             $ref: "#/components/schemas/ProblemDetails"
           examples:
             database:
+              value:
+                type: https://httpstatuses.com/500
+                title: Internal Server Error
+                status: 500
+                detail: The demo database schema is unavailable or not current.
+                code: DemoData.DatabaseNotReady
+            execution:
               value:
                 type: https://httpstatuses.com/500
                 title: Internal Server Error

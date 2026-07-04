@@ -133,6 +133,10 @@ The future `tasks.md` must order focused tests before implementation, then cover
 
 Tasks must not add `HasData` operational records, a demo manifest/history table, schema migration, SKU groups/barcodes, 1C changes, a generic import/seeding framework, distributed locking, background jobs, production reset behavior, WebApp redesign, authorization infrastructure, deployment changes, or unrelated refactoring.
 
+## Implementation Scope Audit
+
+Static implementation review confirmed the feature adds no migration, operational `HasData`, 1C behavior, SKU grouping/barcode data, generic import framework, WebApp redesign, or deployment change. The implementation remains API-only in the WMS module and preserves the planned system reference rows and schema history during clear. No scope correction was required.
+
 ## Developer-Controlled Validation Commands
 
 Planning did not run builds, tests, application startup, migrations, database updates, Docker, or infrastructure operations. `quickstart.md` lists recommended developer-run commands. No migration command is expected because the plan changes no persisted shape.
