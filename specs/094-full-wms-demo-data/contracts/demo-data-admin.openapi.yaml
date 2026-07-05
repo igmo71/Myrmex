@@ -1,0 +1,281 @@
+openapi: 3.1.0
+info:
+  title: Myrmex WMS Demo Data Administration
+  version: 1.0.0
+  description: >-
+    API-only non-production actions for atomically seeding and clearing the
+    bounded Myrmex WMS demonstration dataset. The paths are registered only
+    when Myrmex:Wms:DemoData:Enabled is true and the host is not Production.
+paths:
+  /api/admin/demo-data/seed:
+    post:
+      operationId: seedWmsDemoData
+      summary: Seed the complete WMS demonstration dataset
+      description: >-
+        Reuses compatible stable identities, creates missing records and
+        stages, and rolls back the entire operation on conflict or failure.
+        Requires an authenticated actor. No request body is accepted.
+      responses:
+        "200":
+          description: Seed completed and committed atomically.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoDataOperationResponse"
+              examples:
+                seeded:
+                  value:
+                    operation: seed
+                    startedAtUtc: "2026-07-04T09:00:00Z"
+                    completedAtUtc: "2026-07-04T09:00:01Z"
+                    areas:
+                      - area: unitsOfMeasure
+                        created: 4
+                        reused: 0
+                        skipped: 0
+                        deleted: 0
+                      - area: stockKeepingUnits
+                        created: 10
+                        reused: 0
+                        skipped: 0
+                        deleted: 0
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: >-
+            Normal host not-found response when demo data is disabled or the
+            environment is Production because this path is not registered.
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/Failure"
+  /api/admin/demo-data/clear:
+    post:
+      operationId: clearWmsDemoData
+      summary: Clear mutable WMS application and demo data
+      description: >-
+        Deletes mutable WMS data in foreign-key-safe order within one
+        transaction. Preserves system location references, schema, and
+        migration history. Requires an authenticated actor, AllowClear=true,
+        and an exact confirmation value in the JSON body.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClearDemoDataRequest"
+            examples:
+              confirm:
+                value:
+                  confirmation: CLEAR-MYRMEX-DEMO
+      responses:
+        "200":
+          description: Clear completed and committed atomically.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoDataOperationResponse"
+              examples:
+                cleared:
+                  value:
+                    operation: clear
+                    startedAtUtc: "2026-07-04T09:05:00Z"
+                    completedAtUtc: "2026-07-04T09:05:01Z"
+                    areas:
+                      - area: inventoryCountLines
+                        created: 0
+                        reused: 0
+                        skipped: 0
+                        deleted: 5
+                      - area: unitsOfMeasure
+                        created: 0
+                        reused: 0
+                        skipped: 0
+                        deleted: 4
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: >-
+            Normal host not-found response when demo data is disabled or the
+            environment is Production because this path is not registered.
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/Failure"
+components:
+  schemas:
+    ClearDemoDataRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - confirmation
+      properties:
+        confirmation:
+          type: string
+          minLength: 1
+          description: >-
+            Must exactly match the configured non-empty confirmation value.
+            It is never echoed or logged.
+    DemoDataOperationResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - operation
+        - startedAtUtc
+        - completedAtUtc
+        - areas
+      properties:
+        operation:
+          type: string
+          enum: [seed, clear]
+        startedAtUtc:
+          type: string
+          format: date-time
+        completedAtUtc:
+          type: string
+          format: date-time
+        areas:
+          type: array
+          items:
+            $ref: "#/components/schemas/DemoDataAreaSummary"
+    DemoDataAreaSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - area
+        - created
+        - reused
+        - skipped
+        - deleted
+      properties:
+        area:
+          type: string
+          minLength: 1
+        created:
+          type: integer
+          minimum: 0
+        reused:
+          type: integer
+          minimum: 0
+        skipped:
+          type: integer
+          minimum: 0
+        deleted:
+          type: integer
+          minimum: 0
+    ProblemDetails:
+      type: object
+      additionalProperties: true
+      required:
+        - title
+        - status
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+        property:
+          type: string
+  responses:
+    InvalidRequest:
+      description: Invalid JSON, blank confirmation, or invalid demo configuration.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          examples:
+            invalid:
+              value:
+                type: https://httpstatuses.com/400
+                title: Bad Request
+                status: 400
+                detail: Demo data clear confirmation is required.
+                code: DemoData.ConfirmationRequired
+            invalidConfiguration:
+              value:
+                type: https://httpstatuses.com/400
+                title: Bad Request
+                status: 400
+                detail: Demo data clear confirmation is not configured.
+                code: DemoData.InvalidConfiguration
+    Unauthorized:
+      description: No authenticated actor identity is available.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          examples:
+            unauthorized:
+              value:
+                type: https://httpstatuses.com/401
+                title: Unauthorized
+                status: 401
+                detail: Authentication is required.
+                code: Unauthorized
+    Forbidden:
+      description: Clearing is disabled or the supplied confirmation is incorrect.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          examples:
+            forbidden:
+              value:
+                type: https://httpstatuses.com/403
+                title: Forbidden
+                status: 403
+                detail: Demo data clearing is not permitted.
+                code: DemoData.ClearForbidden
+    Conflict:
+      description: Another demo operation is running or stable demo identity is incompatible.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          examples:
+            running:
+              value:
+                type: https://httpstatuses.com/409
+                title: Conflict
+                status: 409
+                detail: Another demo data operation is already in progress.
+                code: DemoData.OperationInProgress
+            incompatible:
+              value:
+                type: https://httpstatuses.com/409
+                title: Conflict
+                status: 409
+                detail: A stable demo identity belongs to incompatible data.
+                code: DemoData.IdentityConflict
+    Failure:
+      description: Schema readiness, persistence, transaction, or unexpected execution failure.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          examples:
+            database:
+              value:
+                type: https://httpstatuses.com/500
+                title: Internal Server Error
+                status: 500
+                detail: The demo database schema is unavailable or not current.
+                code: DemoData.DatabaseNotReady
+            execution:
+              value:
+                type: https://httpstatuses.com/500
+                title: Internal Server Error
+                status: 500
+                detail: The demo data operation could not be completed.
+                code: DemoData.ExecutionFailed

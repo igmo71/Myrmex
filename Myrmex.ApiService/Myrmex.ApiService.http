@@ -4,3 +4,19 @@ GET {{ApiService_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+# Demo routes require non-production enablement and an authenticated actor.
+POST {{ApiService_HostAddress}}/api/admin/demo-data/seed
+
+###
+
+# Set this client variable locally to the configured confirmation value.
+@DemoDataClearConfirmation = SET-LOCALLY
+POST {{ApiService_HostAddress}}/api/admin/demo-data/clear
+Content-Type: application/json
+
+{
+  "confirmation": "{{DemoDataClearConfirmation}}"
+}
+
+###
