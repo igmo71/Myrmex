@@ -1,9 +1,10 @@
-using System.Security.Claims;
 using Myrmex.AppDispatching;
 using Myrmex.Integrations.OneC;
 using Myrmex.Integrations.OneC.Endpoints;
 using Myrmex.Modules.Wms;
+using Myrmex.ServiceDefaults;
 using Scalar.AspNetCore;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +27,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
 
-if (app.Environment.IsDevelopment())
+//if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();

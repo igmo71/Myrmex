@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Localization;
 using MudBlazor.Services;
 using MudBlazor.Translations;
+using Myrmex.ServiceDefaults;
 using Myrmex.WebApp;
 using Myrmex.WebApp.Components;
 using Myrmex.WebApp.Integrations.OneC;
