@@ -1,22 +1,12 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using Myrmex.AppDispatching;
-using Myrmex.AppDispatching.CommandDispatching;
-using Myrmex.Core.Application;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms;
-using Myrmex.Modules.Wms.DemoData.Configuration;
-using Myrmex.Modules.Wms.DemoData.Endpoints;
 using Myrmex.Modules.Wms.DemoData.Features;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Shared.Wms.DemoData;
 using Myrmex.Tests.Wms.Topology.Testing;
-using System.Security.Claims;
 
 namespace Myrmex.Tests.Wms.DemoData.Testing;
 
@@ -24,81 +14,6 @@ internal static class DemoDataTestHost
 {
     public const string ActorId = "demo-test-operator";
 
-    public static async Task<RunningDemoDataApp> StartAsync(
-        RecordingCommandDispatcher dispatcher,
-        WmsDemoDataOptions? options = null,
-        string? environmentName = null,
-        bool authenticated = true)
-    {
-        environmentName ??= Environments.Development;
-
-        WebApplicationBuilder builder = WebApplication.CreateBuilder();
-        builder.WebHost.UseUrls("http://127.0.0.1:0");
-        builder.WebHost.UseEnvironment(environmentName);
-        builder.Services.AddProblemDetails();
-        builder.Services.AddSingleton<ICommandDispatcher>(dispatcher);
-        builder.Services.AddSingleton(Options.Create(options ?? new WmsDemoDataOptions
-        {
-            Enabled = true,
-            AllowClear = true,
-            ClearConfirmation = "CLEAR-MYRMEX-DEMO"
-        }));
-
-        WebApplication app = builder.Build();
-        app.UseExceptionHandler();
-        if (authenticated)
-        {
-            app.Use(async (context, next) =>
-            {
-                context.User = new ClaimsPrincipal(new ClaimsIdentity(
-                    [new Claim("sub", ActorId)],
-                    authenticationType: "Test"));
-                await next(context);
-            });
-        }
-
-        app.MapDemoDataAdminEndpoints();
-        await app.StartAsync(TestContext.Current.CancellationToken);
-        return new RunningDemoDataApp(app);
-    }
-
-    internal sealed class RunningDemoDataApp(WebApplication app) : IAsyncDisposable
-    {
-        public HttpClient CreateClient()
-        {
-            string address = app.Services
-                .GetRequiredService<IServer>()
-                .Features.Get<IServerAddressesFeature>()!
-                .Addresses.Single();
-            return new HttpClient { BaseAddress = new Uri(address) };
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await app.StopAsync(TestContext.Current.CancellationToken);
-            await app.DisposeAsync();
-        }
-    }
-}
-
-internal sealed class RecordingCommandDispatcher(Func<object, IServiceResult> resultFactory)
-    : ICommandDispatcher
-{
-    public object? Command { get; private set; }
-    public CancellationToken CancellationToken { get; private set; }
-    public int CallCount { get; private set; }
-
-    public Task<TResult> DispatchAsync<TCommand, TResult>(
-        TCommand command,
-        CancellationToken cancellationToken = default)
-        where TCommand : ICommand<TResult>
-        where TResult : IServiceResult
-    {
-        Command = command;
-        CancellationToken = cancellationToken;
-        CallCount++;
-        return Task.FromResult((TResult)resultFactory(command!));
-    }
 }
 
 internal sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
