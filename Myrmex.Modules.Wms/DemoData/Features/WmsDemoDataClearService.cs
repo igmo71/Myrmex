@@ -128,7 +128,7 @@ internal sealed class WmsDemoDataClearService(
     private static async Task DeleteAsync<TEntity>(
         string area,
         DbSet<TEntity> set,
-        ICollection<DemoDataAreaSummary> summaries,
+        List<DemoDataAreaSummary> summaries,
         CancellationToken cancellationToken)
         where TEntity : class
     {

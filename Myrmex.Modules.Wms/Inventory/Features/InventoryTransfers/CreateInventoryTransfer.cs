@@ -77,8 +77,11 @@ internal static class CreateInventoryTransfer
                 {
                     return ServiceResult<InventoryTransferDetails>.Invalid(lineValidationResult.Errors);
                 }
-
-                lines.Add(line!);
+                if (line is null)
+                {
+                    throw new InvalidOperationException("InventoryTransferLine.Create returned a valid result without a line.");
+                }
+                lines.Add(line);
             }
 
             DomainValidationResult transferValidationResult = InventoryTransfer.Create(
@@ -195,13 +198,23 @@ internal static class CreateInventoryTransfer
             Command command,
             CancellationToken cancellationToken)
         {
+            if (!command.SourceWarehouseId.HasValue)
+            {
+                return ServiceError.Validation<InventoryTransfer>("SourceWarehouseId is required", nameof(Command.SourceWarehouseId));
+            }
+
+            if (!command.DestinationWarehouseId.HasValue)
+            {
+                return ServiceError.Validation<InventoryTransfer>("DestinationWarehouseId is required", nameof(Command.DestinationWarehouseId));
+            }
+
             Warehouse? sourceWarehouse = await dbContext.Warehouses
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == command.SourceWarehouseId!.Value, cancellationToken);
+                .FirstOrDefaultAsync(x => x.Id == command.SourceWarehouseId.Value, cancellationToken);
 
             Warehouse? destinationWarehouse = await dbContext.Warehouses
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == command.DestinationWarehouseId!.Value, cancellationToken);
+                .FirstOrDefaultAsync(x => x.Id == command.DestinationWarehouseId.Value, cancellationToken);
 
             if (sourceWarehouse is null)
             {
@@ -278,10 +291,15 @@ internal static class CreateInventoryTransfer
             int index,
             CancellationToken cancellationToken)
         {
+            if (!line.StockKeepingUnitId.HasValue)
+            {
+                return ServiceError.Validation<InventoryTransferLine>("StockKeepingUnitId is required", LineProperty(index, nameof(Line.StockKeepingUnitId)));
+            }
+
             StockKeepingUnit? sku = await dbContext.StockKeepingUnits
                 .AsNoTracking()
                 .Include(x => x.BaseUnitOfMeasure)
-                .FirstOrDefaultAsync(x => x.Id == line.StockKeepingUnitId!.Value, cancellationToken);
+                .FirstOrDefaultAsync(x => x.Id == line.StockKeepingUnitId.Value, cancellationToken);
 
             if (sku is null)
             {

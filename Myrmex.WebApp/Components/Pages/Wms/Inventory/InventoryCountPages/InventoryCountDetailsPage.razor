@@ -275,7 +275,7 @@
             [nameof(AddInventoryCountLineDialog.Count)] = _count
         };
         IDialogReference dialog = await DialogService.ShowAsync<AddInventoryCountLineDialog>(
-            Localizer["InventoryCount.AddLineTitle"],
+            Localizer["InventoryCount.AddLineTitle"].Value,
             parameters,
             new DialogOptions { CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.Medium });
         DialogResult? result = await dialog.Result;
@@ -303,8 +303,8 @@
         };
         IDialogReference dialog = await DialogService.ShowAsync<RecordInventoryCountLineDialog>(
             countLine.Status == InventoryCountLineStatusDetails.Counted
-                ? Localizer["InventoryCount.EditPhysicalCount"]
-                : Localizer["InventoryCount.EnterPhysicalCount"],
+                ? Localizer["InventoryCount.EditPhysicalCount"].Value
+                : Localizer["InventoryCount.EnterPhysicalCount"].Value,
             parameters,
             new DialogOptions
             {
@@ -323,7 +323,7 @@
         {
             _count = updated;
             _errorMessage = null;
-            _actionMessage = Localizer["InventoryCount.PhysicalCountRecorded"];
+            _actionMessage = Localizer["InventoryCount.PhysicalCountRecorded"].Value;
             return;
         }
 
@@ -331,7 +331,7 @@
             outcome == RecordInventoryCountLineDialog.StaleResult)
         {
             await LoadAsync();
-            _actionMessage = Localizer["InventoryCount.LineChangedRefresh"];
+            _actionMessage = Localizer["InventoryCount.LineChangedRefresh"].Value;
         }
     }
 
@@ -343,10 +343,10 @@
         }
 
         bool? confirmed = await DialogService.ShowMessageBoxAsync(
-            Localizer["InventoryCount.RemoveLineTitle"],
-            Localizer["InventoryCount.RemoveLinePrompt", line.Sku.Code, line.StorageLocation.Code],
-            yesText: Localizer["Common.Remove"],
-            cancelText: Localizer["Common.Cancel"]);
+            Localizer["InventoryCount.RemoveLineTitle"].Value,
+            Localizer["InventoryCount.RemoveLinePrompt", line.Sku.Code, line.StorageLocation.Code].Value,
+            yesText: Localizer["Common.Remove"].Value,
+            cancelText: Localizer["Common.Cancel"].Value);
 
         if (confirmed != true)
         {
@@ -361,7 +361,7 @@
 
         if (result.IsFailure || result.Value is null)
         {
-            _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.RemoveLineError"];
+            _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.RemoveLineError"].Value;
             return;
         }
 
@@ -377,12 +377,12 @@
         }
 
         bool? confirmed = await DialogService.ShowMessageBoxAsync(
-            Localizer["InventoryCount.ApplyResultTitle"],
+            Localizer["InventoryCount.ApplyResultTitle"].Value,
             line.VarianceQuantity == 0
-                ? Localizer["InventoryCount.ApplyZeroVariancePrompt"]
-                : Localizer["InventoryCount.ApplyVariancePrompt", $"{line.VarianceQuantity:+0.####;-0.####;0}", $"{line.CountedQuantity:0.####}"],
-            yesText: Localizer["Common.Apply"],
-            cancelText: Localizer["Common.Cancel"]);
+                ? Localizer["InventoryCount.ApplyZeroVariancePrompt"].Value
+                : Localizer["InventoryCount.ApplyVariancePrompt", $"{line.VarianceQuantity:+0.####;-0.####;0}", $"{line.CountedQuantity:0.####}"].Value,
+            yesText: Localizer["Common.Apply"].Value,
+            cancelText: Localizer["Common.Cancel"].Value);
         if (confirmed != true)
         {
             return;
@@ -398,28 +398,28 @@
             await LoadAsync();
             if (result.Error?.Status == StatusCodes.Status409Conflict)
             {
-                _actionMessage = Localizer["InventoryCount.ApplyConflictRefresh"];
+                _actionMessage = Localizer["InventoryCount.ApplyConflictRefresh"].Value;
                 _errorMessage = null;
             }
             else
             {
                 _actionMessage = null;
-                _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.ApplyError"];
+                _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.ApplyError"].Value;
             }            
             return;
         }
 
         if (result.Value is null)
         {
-            _errorMessage = Localizer["InventoryCount.MissingResult"];
+            _errorMessage = Localizer["InventoryCount.MissingResult"].Value;
             return;
         }
 
         _count = result.Value;
         InventoryCountLineDetails applied = _count.Lines.Single(x => x.Id == line.Id);
         _actionMessage = applied.AppliedInventoryTransactionId.HasValue
-            ? Localizer["InventoryCount.InventoryAdjusted", $"{applied.CountedQuantity:0.####}", applied.AppliedInventoryTransactionId]
-            : Localizer["InventoryCount.ZeroVarianceConfirmed"];
+            ? Localizer["InventoryCount.InventoryAdjusted", $"{applied.CountedQuantity:0.####}", applied.AppliedInventoryTransactionId].Value
+            : Localizer["InventoryCount.ZeroVarianceConfirmed"].Value;
         _errorMessage = null;
     }
 
@@ -431,10 +431,10 @@
         }
 
         bool? confirmed = await DialogService.ShowMessageBoxAsync(
-            Localizer["InventoryCount.SupersedeTitle"],
-            Localizer["InventoryCount.SupersedePrompt"],
-            yesText: Localizer["InventoryCount.Supersede"],
-            cancelText: Localizer["Common.Cancel"]);
+            Localizer["InventoryCount.SupersedeTitle"].Value,
+            Localizer["InventoryCount.SupersedePrompt"].Value,
+            yesText: Localizer["InventoryCount.Supersede"].Value,
+            cancelText: Localizer["Common.Cancel"].Value);
         if (confirmed != true)
         {
             return;
@@ -448,14 +448,14 @@
         if (result.IsFailure || result.Value is null)
         {
             await LoadAsync();
-            _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.SupersedeError"];
+            _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.SupersedeError"].Value;
             return;
         }
 
         _count = result.Value;
         InventoryCountLineDetails replacement = _count.Lines.Single(
             x => x.SupersedesInventoryCountLineId == line.Id);
-        _actionMessage = Localizer["InventoryCount.Superseded", $"{replacement.SystemQuantity:0.####}"];
+        _actionMessage = Localizer["InventoryCount.Superseded", $"{replacement.SystemQuantity:0.####}"].Value;
         _errorMessage = null;
     }
 
@@ -470,7 +470,7 @@
                 [nameof(InventoryTransactionDetailsDialog.Transaction)] = transaction
             };
             await DialogService.ShowAsync<InventoryTransactionDetailsDialog>(
-                Localizer["InventoryCount.InventoryTransactionTitle"],
+                Localizer["InventoryCount.InventoryTransactionTitle"].Value,
                 parameters,
                 new DialogOptions
                 {
@@ -493,10 +493,10 @@
         }
 
         bool? confirmed = await DialogService.ShowMessageBoxAsync(
-            Localizer["InventoryCount.CompleteTitle"],
-            Localizer["InventoryCount.CompletePrompt"],
-            yesText: Localizer["Common.Complete"],
-            cancelText: Localizer["Common.Cancel"]);
+            Localizer["InventoryCount.CompleteTitle"].Value,
+            Localizer["InventoryCount.CompletePrompt"].Value,
+            yesText: Localizer["Common.Complete"].Value,
+            cancelText: Localizer["Common.Cancel"].Value);
         if (confirmed != true)
         {
             return;
@@ -512,12 +512,12 @@
             if (result.IsFailure || result.Value is null)
             {
                 await LoadAsync();
-                _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.CompleteError"];
+                _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.CompleteError"].Value;
                 return;
             }
 
             _count = result.Value;
-            _actionMessage = Localizer["InventoryCount.CompletedReadOnly"];
+            _actionMessage = Localizer["InventoryCount.CompletedReadOnly"].Value;
             _errorMessage = null;
         }
         finally
@@ -534,13 +534,13 @@
         }
 
         string message = HasAppliedAdjustments
-            ? Localizer["InventoryCount.CancelAppliedPrompt"]
-            : Localizer["InventoryCount.CancelPrompt"];
+            ? Localizer["InventoryCount.CancelAppliedPrompt"].Value
+            : Localizer["InventoryCount.CancelPrompt"].Value;
         bool? confirmed = await DialogService.ShowMessageBoxAsync(
-            Localizer["InventoryCount.CancelTitle"],
+            Localizer["InventoryCount.CancelTitle"].Value,
             message,
-            yesText: Localizer["InventoryCount.CancelCount"],
-            cancelText: Localizer["InventoryCount.KeepOpen"]);
+            yesText: Localizer["InventoryCount.CancelCount"].Value,
+            cancelText: Localizer["InventoryCount.KeepOpen"].Value);
         if (confirmed != true)
         {
             return;
@@ -556,14 +556,14 @@
             if (result.IsFailure || result.Value is null)
             {
                 await LoadAsync();
-                _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.CancelError"];
+                _errorMessage = result.Error?.Message ?? Localizer["InventoryCount.CancelError"].Value;
                 return;
             }
 
             _count = result.Value;
             _actionMessage = HasAppliedAdjustments
-                ? Localizer["InventoryCount.CancelledAppliedEffective"]
-                : Localizer["InventoryCount.Cancelled"];
+                ? Localizer["InventoryCount.CancelledAppliedEffective"].Value
+                : Localizer["InventoryCount.Cancelled"].Value;
             _errorMessage = null;
         }
         finally

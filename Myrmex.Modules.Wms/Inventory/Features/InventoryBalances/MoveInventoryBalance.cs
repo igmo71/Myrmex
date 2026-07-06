@@ -108,7 +108,7 @@ internal static class MoveInventoryBalance
 
             InventoryBalance? sourceBalance = await dbContext.InventoryBalances
                 .SingleOrDefaultAsync(
-                    x => x.StockKeepingUnitId == command.StockKeepingUnitId.Value &&
+                    x => x.StockKeepingUnitId == command.StockKeepingUnitId!.Value &&
                          x.StorageLocationId == command.SourceStorageLocationId.Value,
                     cancellationToken);
 
@@ -126,7 +126,7 @@ internal static class MoveInventoryBalance
 
             InventoryBalance? destinationBalance = await dbContext.InventoryBalances
                 .SingleOrDefaultAsync(
-                    x => x.StockKeepingUnitId == command.StockKeepingUnitId.Value &&
+                    x => x.StockKeepingUnitId == command.StockKeepingUnitId!.Value &&
                          x.StorageLocationId == command.DestinationStorageLocationId.Value,
                     cancellationToken);
 

@@ -114,7 +114,7 @@ public sealed class ApplyInventoryCountLineHandlerTests
                 InventoryCountTestData.ActorId),
             TestContext.Current.CancellationToken);
 
-        Assert.Equal(ServiceErrorType.Conflict, result.Error.Type);
+        Assert.Equal(ServiceErrorType.Conflict, result.Error?.Type);
         db.DbContext.ChangeTracker.Clear();
         InventoryCountLine line = await db.DbContext.InventoryCountLines.SingleAsync(
             x => x.Id == prepared.Line.Id,
@@ -255,7 +255,7 @@ public sealed class ApplyInventoryCountLineHandlerTests
                 conflictLine.LineVersion,
                 InventoryCountTestData.ActorId),
             TestContext.Current.CancellationToken);
-        Assert.Equal(ServiceErrorType.Conflict, duplicate.Error.Type);
+        Assert.Equal(ServiceErrorType.Conflict, duplicate.Error?.Type);
     }
 
     private static ApplyInventoryCountLine.Handler CreateApplyHandler(TestWmsDbContext db) =>

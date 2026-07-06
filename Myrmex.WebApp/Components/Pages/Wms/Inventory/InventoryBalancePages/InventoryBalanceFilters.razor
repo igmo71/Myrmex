@@ -123,7 +123,7 @@
         (_, _) => Task.FromResult(Enumerable.Empty<StorageLocationLookupItem>());
 
     private string? StorageLocationHelperText =>
-        SelectedWarehouseId is null ? Localizer["Common.SelectWarehouseFirst"] : null;
+        SelectedWarehouseId is null ? Localizer["Common.SelectWarehouseFirst"].Value : null;
 
     private async Task OnWarehouseChanged(Guid? value)
     {

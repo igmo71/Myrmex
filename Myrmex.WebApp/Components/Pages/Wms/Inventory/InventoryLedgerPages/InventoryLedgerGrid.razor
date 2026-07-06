@@ -107,8 +107,8 @@
                 <MudIconButton Icon="@Icons.Material.Filled.Visibility"
                                Size="Size.Small"
                                Color="Color.Primary"
-                               Title="@Localizer["InventoryLedger.ViewTransactionDetails"]"
-                               OnClick="@(() => DetailsRequested.InvokeAsync(context.Item))" />
+                               OnClick="@(() => DetailsRequested.InvokeAsync(context.Item))"
+                               title="@Localizer["InventoryLedger.ViewTransactionDetails"]" />
             </CellTemplate>
         </TemplateColumn>
     </Columns>

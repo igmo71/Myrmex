@@ -193,7 +193,7 @@
         {
             if (_selectedStockKeepingUnit is null)
             {
-                return Localizer["InventoryBalance.SelectSkuForBaseUnit"];
+                return Localizer["InventoryBalance.SelectSkuForBaseUnit"].Value;
             }
 
             return string.IsNullOrWhiteSpace(_selectedStockKeepingUnit.BaseUnitOfMeasureSymbol)
@@ -356,31 +356,31 @@
 
         if (_model.StockKeepingUnitId is null)
         {
-            _errorMessage = Localizer["Common.SkuRequired"];
+            _errorMessage = Localizer["Common.SkuRequired"].Value;
             return;
         }
 
         if (_model.WarehouseId is null)
         {
-            _errorMessage = Localizer["Common.WarehouseRequired"];
+            _errorMessage = Localizer["Common.WarehouseRequired"].Value;
             return;
         }
 
         if (_model.StorageLocationId is null)
         {
-            _errorMessage = Localizer["Common.StorageLocationRequired"];
+            _errorMessage = Localizer["Common.StorageLocationRequired"].Value;
             return;
         }
 
         if (_model.CountedQuantity < 0)
         {
-            _errorMessage = Localizer["InventoryBalance.CountedQuantityNonNegative"];
+            _errorMessage = Localizer["InventoryBalance.CountedQuantityNonNegative"].Value;
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_model.Reason))
         {
-            _errorMessage = Localizer["Common.ReasonRequired"];
+            _errorMessage = Localizer["Common.ReasonRequired"].Value;
             return;
         }
 
@@ -404,17 +404,17 @@
                 if (IsConcurrencyConflict(result.Error))
                 {
                     _hasConcurrencyConflict = true;
-                    _errorMessage = Localizer["InventoryBalance.InitialCountConcurrencyConflict"];
+                    _errorMessage = Localizer["InventoryBalance.InitialCountConcurrencyConflict"].Value;
                     return;
                 }
 
-                _errorMessage = result.Error?.Message ?? Localizer["InventoryBalance.InitialCountError"];
+                _errorMessage = result.Error?.Message ?? Localizer["InventoryBalance.InitialCountError"].Value;
                 return;
             }
 
             if (result.Value is null)
             {
-                _errorMessage = Localizer["InventoryBalance.MissingResult"];
+                _errorMessage = Localizer["InventoryBalance.MissingResult"].Value;
                 return;
             }
 
