@@ -8,7 +8,11 @@ services:
       OTEL_SERVICE_NAME: myrmex-api
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+
+      # Required for legacy SQL Server TLS compatibility.
+      # Remove after SQL Server is upgraded.
       OPENSSL_CONF: "/app/openssl-legacy.cnf"
+
       ConnectionStrings__MyrmexDatabase: "${MYRMEX_DB_CONNECTION}"
       Myrmex__Wms__DemoData__Enabled: "false"
       Myrmex__Wms__DemoData__AllowClear: "false"
@@ -17,7 +21,16 @@ services:
     ports:
       - "8204:8080"
     depends_on:
-      - aspire-dashboard
+      aspire-dashboard:
+        condition: service_started
+
+  myrmex-webapp-dataprotection-init:
+    image: alpine:latest
+    container_name: myrmex-webapp-dataprotection-init
+    restart: "no"
+    command: sh -c "mkdir -p /keys && chown -R 1654:1654 /keys && ls -la /keys"
+    volumes:
+      - myrmex_webapp_dataprotection:/keys
 
   myrmex-webapp:
     image: 192.168.1.55:5000/myrmex-webapp:${MYRMEX_TAG}
@@ -28,16 +41,25 @@ services:
       OTEL_SERVICE_NAME: myrmex-webapp
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://aspire-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+
+      # Aspire service discovery equivalent for WithReference(apiService)
       services__apiservice__http__0: "http://myrmex-api:8080"
+
+      # Aspire Redis connection string equivalent for WithReference(cache)
       ConnectionStrings__cache: "myrmex-redis:6379"
     ports:
       - "8205:8080"
     volumes:
       - myrmex_webapp_dataprotection:/home/app/.aspnet/DataProtection-Keys
     depends_on:
-      - myrmex-api
-      - myrmex-redis
-      - aspire-dashboard
+      myrmex-webapp-dataprotection-init:
+        condition: service_completed_successfully
+      myrmex-api:
+        condition: service_started
+      myrmex-redis:
+        condition: service_started
+      aspire-dashboard:
+        condition: service_started
 
   myrmex-redis:
     image: redis:7-alpine
@@ -56,5 +78,6 @@ services:
 volumes:
   myrmex_redis_data:
     name: myrmex_redis_data
+
   myrmex_webapp_dataprotection:
     name: myrmex_webapp_dataprotection
