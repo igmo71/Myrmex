@@ -2,7 +2,7 @@ namespace Myrmex.Modules.Wms.DemoData.Features;
 
 internal static class DemoDataDefinitions
 {
-    public const string WarehouseCode = "DEMO";
+    public static readonly WarehouseDefinition Warehouse = new("DEMO", "Демо склад", "Склад для демонстрации возможностей Myrmex");
 
     public static readonly IReadOnlyList<UnitDefinition> Units =
     [
@@ -84,6 +84,7 @@ internal static class DemoDataDefinitions
     public static string OpeningReason(OpeningDefinition definition) =>
         $"DEMO-OPEN-{definition.SkuCode}-{definition.LocationCode}";
 
+    internal sealed record WarehouseDefinition(string Code, string Name, string Description);
     internal sealed record UnitDefinition(string Code, string Name, string Symbol);
     internal sealed record SkuDefinition(string Code, string Name, string Description, string UnitCode);
     internal sealed record ZoneDefinition(string Code, string Name, string Description);

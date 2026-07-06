@@ -92,10 +92,10 @@ public sealed class InventoryCountLifecycleHandlerTests
                     InventoryCountTestData.ActorId),
                 TestContext.Current.CancellationToken);
 
-        Assert.Equal(ServiceErrorType.Conflict, emptyResult.Error.Type);
-        Assert.Equal(ServiceErrorType.Conflict, unresolved.Error.Type);
-        Assert.Equal(ServiceErrorType.Conflict, stale.Error.Type);
-        Assert.Equal(ServiceErrorType.Conflict, staleCancel.Error.Type);
+        Assert.Equal(ServiceErrorType.Conflict, emptyResult.Error?.Type);
+        Assert.Equal(ServiceErrorType.Conflict, unresolved.Error?.Type);
+        Assert.Equal(ServiceErrorType.Conflict, stale.Error?.Type);
+        Assert.Equal(ServiceErrorType.Conflict, staleCancel.Error?.Type);
     }
 
     [Fact]
@@ -171,8 +171,8 @@ public sealed class InventoryCountLifecycleHandlerTests
                     InventoryCountTestData.ActorId),
                 TestContext.Current.CancellationToken);
 
-        Assert.Equal(ServiceErrorType.Conflict, completeAgain.Error.Type);
-        Assert.Equal(ServiceErrorType.Conflict, cancelCompleted.Error.Type);
+        Assert.Equal(ServiceErrorType.Conflict, completeAgain.Error?.Type);
+        Assert.Equal(ServiceErrorType.Conflict, cancelCompleted.Error?.Type);
     }
 
     private static async Task<PreparedLifecycleCount> PrepareAppliedCountAsync(

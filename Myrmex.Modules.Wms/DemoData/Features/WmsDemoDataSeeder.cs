@@ -275,33 +275,34 @@ internal sealed class WmsDemoDataSeeder(
 
         Warehouse? warehouse = await dbContext.Warehouses
             .SingleOrDefaultAsync(
-                x => x.Code == DemoDataDefinitions.WarehouseCode,
+                x => x.Code == DemoDataDefinitions.Warehouse.Code,
                 cancellationToken);
-        const string warehouseName = "Демонстрационный склад";
-        const string warehouseDescription = "Склад для демонстрации возможностей Myrmex";
+
         if (warehouse is null)
         {
             DomainValidationResult result = Warehouse.Create(
-                DemoDataDefinitions.WarehouseCode,
-                warehouseName,
-                warehouseDescription,
+                DemoDataDefinitions.Warehouse.Code,
+                DemoDataDefinitions.Warehouse.Name,
+                DemoDataDefinitions.Warehouse.Description,
                 out warehouse);
-            EnsureValid(result, "warehouses", DemoDataDefinitions.WarehouseCode);
+            EnsureValid(result, "warehouses", DemoDataDefinitions.Warehouse.Code);
             dbContext.Warehouses.Add(warehouse!);
         }
         else
         {
-            Ensure(warehouse.Name == warehouseName &&
-                   warehouse.Description == warehouseDescription &&
+            Ensure(warehouse.Name == DemoDataDefinitions.Warehouse.Name &&
+                   warehouse.Description == DemoDataDefinitions.Warehouse.Description &&
                    warehouse.IsActive,
                 "warehouses",
-                DemoDataDefinitions.WarehouseCode);
+                DemoDataDefinitions.Warehouse.Code);
             reused["warehouses"]++;
         }
 
+        Warehouse validWarehouse = warehouse!;
+
         string[] zoneCodes = DemoDataDefinitions.Zones.Select(x => x.Code).ToArray();
         Dictionary<string, Zone> zones = await dbContext.Zones
-            .Where(x => x.WarehouseId == warehouse!.Id)
+            .Where(x => x.WarehouseId == validWarehouse.Id)
             .Where(x => zoneCodes.Contains(x.Code))
             .ToDictionaryAsync(x => x.Code, cancellationToken);
 
@@ -319,7 +320,7 @@ internal sealed class WmsDemoDataSeeder(
             }
 
             DomainValidationResult result = Zone.Create(
-                warehouse.Id,
+                validWarehouse.Id,
                 definition.Code,
                 definition.Name,
                 definition.Description,
@@ -331,7 +332,7 @@ internal sealed class WmsDemoDataSeeder(
 
         string[] locationCodes = DemoDataDefinitions.Locations.Select(x => x.Code).ToArray();
         Dictionary<string, StorageLocation> locations = await dbContext.StorageLocations
-            .Where(x => x.WarehouseId == warehouse.Id)
+            .Where(x => x.WarehouseId == validWarehouse.Id)
             .Where(x => locationCodes.Contains(x.Code))
             .ToDictionaryAsync(x => x.Code, cancellationToken);
 
@@ -356,7 +357,7 @@ internal sealed class WmsDemoDataSeeder(
             }
 
             DomainValidationResult result = StorageLocation.Create(
-                warehouse.Id,
+                validWarehouse.Id,
                 zone.Id,
                 type.Id,
                 status.Id,
@@ -370,7 +371,7 @@ internal sealed class WmsDemoDataSeeder(
             locations[definition.Code] = created!;
         }
 
-        return new SeedContext(warehouse, units, skus, zones, locations);
+        return new SeedContext(validWarehouse, units, skus, zones, locations);
     }
 
     private async Task SeedOpeningsAsync(
@@ -740,22 +741,22 @@ internal sealed class WmsDemoDataSeeder(
 
     private async Task<Dictionary<string, int>> ReadAreaCountsAsync(
         CancellationToken cancellationToken) => new()
-    {
-        ["unitsOfMeasure"] = await dbContext.UnitsOfMeasure.CountAsync(cancellationToken),
-        ["stockKeepingUnits"] = await dbContext.StockKeepingUnits.CountAsync(cancellationToken),
-        ["warehouses"] = await dbContext.Warehouses.CountAsync(cancellationToken),
-        ["zones"] = await dbContext.Zones.CountAsync(cancellationToken),
-        ["storageLocations"] = await dbContext.StorageLocations.CountAsync(cancellationToken),
-        ["inventoryBalances"] = await dbContext.InventoryBalances.CountAsync(cancellationToken),
-        ["inventoryTransactions"] = await dbContext.InventoryTransactions.CountAsync(cancellationToken),
-        ["inventoryLedgerEntries"] = await dbContext.InventoryLedgerEntries.CountAsync(cancellationToken),
-        ["inventoryTransfers"] = await dbContext.InventoryTransfers.CountAsync(cancellationToken),
-        ["inventoryTransferLines"] = await dbContext.InventoryTransferLines.CountAsync(cancellationToken),
-        ["inventoryTransferMovements"] = await dbContext.InventoryTransferMovements.CountAsync(cancellationToken),
-        ["inventoryCounts"] = await dbContext.InventoryCounts.CountAsync(cancellationToken),
-        ["inventoryCountLines"] = await dbContext.InventoryCountLines.CountAsync(cancellationToken),
-        ["skuBarcodes"] = await dbContext.SkuBarcodes.CountAsync(cancellationToken)
-    };
+        {
+            ["unitsOfMeasure"] = await dbContext.UnitsOfMeasure.CountAsync(cancellationToken),
+            ["stockKeepingUnits"] = await dbContext.StockKeepingUnits.CountAsync(cancellationToken),
+            ["warehouses"] = await dbContext.Warehouses.CountAsync(cancellationToken),
+            ["zones"] = await dbContext.Zones.CountAsync(cancellationToken),
+            ["storageLocations"] = await dbContext.StorageLocations.CountAsync(cancellationToken),
+            ["inventoryBalances"] = await dbContext.InventoryBalances.CountAsync(cancellationToken),
+            ["inventoryTransactions"] = await dbContext.InventoryTransactions.CountAsync(cancellationToken),
+            ["inventoryLedgerEntries"] = await dbContext.InventoryLedgerEntries.CountAsync(cancellationToken),
+            ["inventoryTransfers"] = await dbContext.InventoryTransfers.CountAsync(cancellationToken),
+            ["inventoryTransferLines"] = await dbContext.InventoryTransferLines.CountAsync(cancellationToken),
+            ["inventoryTransferMovements"] = await dbContext.InventoryTransferMovements.CountAsync(cancellationToken),
+            ["inventoryCounts"] = await dbContext.InventoryCounts.CountAsync(cancellationToken),
+            ["inventoryCountLines"] = await dbContext.InventoryCountLines.CountAsync(cancellationToken),
+            ["skuBarcodes"] = await dbContext.SkuBarcodes.CountAsync(cancellationToken)
+        };
 
     private static IReadOnlyList<DemoDataAreaSummary> BuildAreas(
         IReadOnlyDictionary<string, int> before,

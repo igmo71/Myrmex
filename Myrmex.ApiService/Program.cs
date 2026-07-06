@@ -53,7 +53,7 @@ app.MapGet("/weatherforecast", () =>
 
 app.MapDefaultEndpoints();
 
-if (app.Environment.IsDevelopment()
+if ((app.Environment.IsDevelopment() || app.Environment.IsStaging())
     && app.Configuration.GetValue<bool>("Myrmex:DevelopmentActor:Enabled"))
 {
     var actorId = app.Configuration["Myrmex:DevelopmentActor:ActorId"];
@@ -61,6 +61,11 @@ if (app.Environment.IsDevelopment()
     {
         actorId = "dev-smoke-operator";
     }
+
+    app.Logger.LogWarning(
+        "Development actor middleware is enabled. Environment={Environment}; ActorId={ActorId}",
+        app.Environment.EnvironmentName,
+        actorId);
 
     app.Use(async (context, next) =>
     {

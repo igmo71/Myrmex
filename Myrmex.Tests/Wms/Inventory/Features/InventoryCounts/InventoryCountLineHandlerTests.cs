@@ -138,8 +138,8 @@ public sealed class InventoryCountLineHandlerTests
                 InventoryCountTestData.ActorId),
             TestContext.Current.CancellationToken);
 
-        Assert.Equal(ServiceErrorType.Conflict, stale.Error.Type);
-        Assert.Equal(ServiceErrorType.Conflict, duplicate.Error.Type);
+        Assert.Equal(ServiceErrorType.Conflict, stale.Error?.Type);
+        Assert.Equal(ServiceErrorType.Conflict, duplicate.Error?.Type);
     }
 
     [Fact]
@@ -166,8 +166,8 @@ public sealed class InventoryCountLineHandlerTests
                     InventoryCountTestData.ActorId),
                 TestContext.Current.CancellationToken);
 
-        Assert.Equal(ServiceErrorType.Invalid, inactiveWarehouse.Error.Type);
-        Assert.Equal(ServiceErrorType.NotFound, missingWarehouse.Error.Type);
+        Assert.Equal(ServiceErrorType.Invalid, inactiveWarehouse.Error?.Type);
+        Assert.Equal(ServiceErrorType.NotFound, missingWarehouse.Error?.Type);
 
         InventoryCountDetails created = (await new CreateInventoryCount.Handler(testDbContext.DbContext)
             .HandleAsync(
@@ -195,8 +195,8 @@ public sealed class InventoryCountLineHandlerTests
                 InventoryCountTestData.ActorId),
             TestContext.Current.CancellationToken);
 
-        Assert.Equal(ServiceErrorType.NotFound, missingSku.Error.Type);
-        Assert.Equal(ServiceErrorType.NotFound, missingLocation.Error.Type);
+        Assert.Equal(ServiceErrorType.NotFound, missingSku.Error?.Type);
+        Assert.Equal(ServiceErrorType.NotFound, missingLocation.Error?.Type);
     }
 
     [Theory]
@@ -233,7 +233,7 @@ public sealed class InventoryCountLineHandlerTests
                     InventoryCountTestData.ActorId),
                 TestContext.Current.CancellationToken);
 
-        Assert.Equal(ServiceErrorType.Invalid, result.Error.Type);
+        Assert.Equal(ServiceErrorType.Invalid, result.Error?.Type);
     }
 
     [Fact]
@@ -318,8 +318,8 @@ public sealed class InventoryCountLineHandlerTests
                 ActorId: InventoryCountTestData.ActorId),
             TestContext.Current.CancellationToken);
 
-        Assert.Equal(ServiceErrorType.Invalid, negative.Error.Type);
-        Assert.Equal(ServiceErrorType.Invalid, longComment.Error.Type);
+        Assert.Equal(ServiceErrorType.Invalid, negative.Error?.Type);
+        Assert.Equal(ServiceErrorType.Invalid, longComment.Error?.Type);
 
         ServiceResult<InventoryCountDetails> recorded = await handler.HandleAsync(
             new RecordInventoryCountLine.Command(
@@ -341,7 +341,7 @@ public sealed class InventoryCountLineHandlerTests
             TestContext.Current.CancellationToken);
 
         Assert.True(recorded.IsSuccess);
-        Assert.Equal(ServiceErrorType.Conflict, stale.Error.Type);
+        Assert.Equal(ServiceErrorType.Conflict, stale.Error?.Type);
     }
 
     [Fact]
@@ -373,7 +373,7 @@ public sealed class InventoryCountLineHandlerTests
                     InventoryCountTestData.ActorId),
                 TestContext.Current.CancellationToken);
 
-        Assert.Equal(ServiceErrorType.Conflict, removed.Error.Type);
+        Assert.Equal(ServiceErrorType.Conflict, removed.Error?.Type);
         Assert.Equal(
             1,
             await testDbContext.DbContext.InventoryCountLines.CountAsync(
