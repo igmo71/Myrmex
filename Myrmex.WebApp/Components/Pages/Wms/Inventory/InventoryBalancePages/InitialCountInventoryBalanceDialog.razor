@@ -174,8 +174,18 @@
     private string? _errorMessage;
     private int _storageLocationSearchVersion;
 
-    private string? StorageLocationHelperText =>
-        _model.WarehouseId is null ? Localizer["Common.SelectWarehouseFirst"] : null;
+    private string? StorageLocationHelperText
+    {
+        get
+        {
+            if (_model.WarehouseId is not null)
+            {
+                return null;
+            }
+
+            return Localizer["Common.SelectWarehouseFirst"].Value;
+        }
+    }
 
     private string SelectedBaseUnitOfMeasureDisplay
     {

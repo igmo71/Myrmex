@@ -203,7 +203,7 @@ internal static class ApplyInventoryCountLine
                     line.StorageLocationId,
                     saveResult.Error?.Code,
                     createdTransaction.Id);
-                return ServiceResult<InventoryCountDetails>.Fail(saveResult.Error);
+                return ServiceResult<InventoryCountDetails>.Fail(saveResult.Error ?? ServiceError.Failure<InventoryCount>("InventoryCount.SaveFailed"));
             }
 
             logger.LogInformation(

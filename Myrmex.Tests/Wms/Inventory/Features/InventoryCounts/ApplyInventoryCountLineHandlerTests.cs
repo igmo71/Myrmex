@@ -162,7 +162,7 @@ public sealed class ApplyInventoryCountLineHandlerTests
                 InventoryCountTestData.ActorId),
             TestContext.Current.CancellationToken);
 
-        Assert.Equal(ServiceErrorType.Conflict, result.Error.Type);
+        Assert.Equal(ServiceErrorType.Conflict, result.Error?.Type);
         db.DbContext.ChangeTracker.Clear();
         Assert.Equal(
             InventoryCountLineStatus.Conflict,
@@ -196,7 +196,7 @@ public sealed class ApplyInventoryCountLineHandlerTests
             TestContext.Current.CancellationToken);
 
         Assert.True(first.IsSuccess);
-        Assert.Equal(ServiceErrorType.Conflict, second.Error.Type);
+        Assert.Equal(ServiceErrorType.Conflict, second.Error?.Type);
         Assert.Equal(1, await db.DbContext.InventoryTransactions.CountAsync(
             TestContext.Current.CancellationToken));
         Assert.Equal(1, await db.DbContext.InventoryLedgerEntries.CountAsync(
