@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Builder;
@@ -250,18 +249,10 @@ public sealed class OneCEndpointTests
         builder.Services.AddSingleton(client);
         builder.Services.AddSingleton(importService ?? new StubImportService(CreateImportResponse("warehouses")));
         builder.Services.AddSingleton<TimeProvider>(new FixedTimeProvider(CheckedAtUtc));
+        builder.Services.AddTestAuthentication(authenticated, actorId: "operator");
 
         WebApplication app = builder.Build();
-        if (authenticated)
-        {
-            app.Use(async (context, next) =>
-            {
-                context.User = new ClaimsPrincipal(new ClaimsIdentity(
-                    [new Claim("sub", "operator")],
-                    authenticationType: "Test"));
-                await next();
-            });
-        }
+        app.UseTestAuthentication();
         app.MapOneCIntegration();
         return app;
     }

@@ -316,9 +316,13 @@ public sealed class InventoryTransferEndpointTests
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Services.AddSingleton<ICommandDispatcher>(commandDispatcher);
         builder.Services.AddSingleton<IQueryDispatcher>(queryDispatcher ?? new RecordingQueryDispatcher());
+        builder.Services.AddTestAuthentication();
 
         WebApplication app = builder.Build();
-        app.MapGroup("/api/wms/inventory").MapInventoryTransferEndpoints();
+        app.UseTestAuthentication();
+        app.MapGroup("/api/wms/inventory")
+            .RequireAuthorization(Myrmex.AspNetCore.Security.MyrmexAuthorizationPolicies.WmsOperator)
+            .MapInventoryTransferEndpoints();
 
         return app;
     }

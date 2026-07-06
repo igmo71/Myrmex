@@ -1,10 +1,12 @@
+using Microsoft.AspNetCore.Authentication;
 using Myrmex.AppDispatching;
+using Myrmex.AspNetCore.Security;
+using Myrmex.Core.Application.Security;
 using Myrmex.Integrations.OneC;
 using Myrmex.Integrations.OneC.Endpoints;
 using Myrmex.Modules.Wms;
 using Myrmex.ServiceDefaults;
 using Scalar.AspNetCore;
-using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +19,24 @@ builder.Services.AddProblemDetails();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IActorContext, HttpContextActorContext>();
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = MyrmexAuthenticationSchemes.DevelopmentActor;
+        options.DefaultChallengeScheme = MyrmexAuthenticationSchemes.DevelopmentActor;
+    })
+    .AddScheme<AuthenticationSchemeOptions, DevelopmentActorAuthenticationHandler>(
+        MyrmexAuthenticationSchemes.DevelopmentActor,
+        _ => { });
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(
+        MyrmexAuthorizationPolicies.WmsOperator,
+        policy => policy.RequireAuthenticatedUser());
+});
+
 builder.Services.AddWmsModule(builder.Configuration);
 builder.Services.AddOneCIntegration(builder.Configuration);
 
@@ -26,6 +46,22 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
+
+if (app.Configuration.GetValue<bool>(
+        $"{DevelopmentActorAuthenticationHandler.ConfigurationSectionName}:Enabled"))
+{
+    string actorId = app.Configuration[
+        $"{DevelopmentActorAuthenticationHandler.ConfigurationSectionName}:ActorId"]
+        ?? "(not configured)";
+
+    app.Logger.LogWarning(
+        "DevelopmentActor authentication is enabled. Environment={Environment}; ActorId={ActorId}",
+        app.Environment.EnvironmentName,
+        actorId);
+}
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 //if (app.Environment.IsDevelopment())
 {
@@ -52,36 +88,6 @@ app.MapGet("/weatherforecast", () =>
 .WithName("GetWeatherForecast");
 
 app.MapDefaultEndpoints();
-
-if ((app.Environment.IsDevelopment() || app.Environment.IsStaging())
-    && app.Configuration.GetValue<bool>("Myrmex:DevelopmentActor:Enabled"))
-{
-    var actorId = app.Configuration["Myrmex:DevelopmentActor:ActorId"];
-    if (string.IsNullOrWhiteSpace(actorId))
-    {
-        actorId = "dev-smoke-operator";
-    }
-
-    app.Logger.LogWarning(
-        "Development actor middleware is enabled. Environment={Environment}; ActorId={ActorId}",
-        app.Environment.EnvironmentName,
-        actorId);
-
-    app.Use(async (context, next) =>
-    {
-        Claim[] claims =
-        [
-            new("sub", actorId),
-            new(ClaimTypes.NameIdentifier, actorId),
-            new(ClaimTypes.Name, actorId)
-        ];
-
-        context.User = new ClaimsPrincipal(
-            new ClaimsIdentity(claims, authenticationType: "DevelopmentActor"));
-
-        await next(context);
-    });
-}
 
 app.MapWmsModule();
 app.MapOneCIntegration();

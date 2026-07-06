@@ -2,9 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Myrmex.AspNetCore.Results;
 using Myrmex.AspNetCore.Security;
-using Myrmex.Core.Results;
 using Myrmex.Integrations.OneC.Transport;
 using Myrmex.Integrations.OneC.Imports;
 using Myrmex.Shared.Integrations.OneC;
@@ -15,7 +13,9 @@ public static class OneCEndpoints
 {
     public static IEndpointRouteBuilder MapOneCIntegration(this IEndpointRouteBuilder endpoints)
     {
-        RouteGroupBuilder group = endpoints.MapGroup("/api/integrations/1c");
+        RouteGroupBuilder group = endpoints
+            .MapGroup("/api/integrations/1c")
+            .RequireAuthorization(MyrmexAuthorizationPolicies.WmsOperator);
 
         group.MapPost("/connection/test", TestConnectionAsync)
             .WithName("TestOneCConnection")
@@ -37,44 +37,30 @@ public static class OneCEndpoints
     }
 
     private static Task<IResult> ImportWarehousesAsync(
-        HttpContext httpContext,
         IOneCImportService importService,
         CancellationToken cancellationToken) =>
         ImportAsync(
-            httpContext,
             importService.ImportWarehousesAsync,
             cancellationToken);
 
     private static Task<IResult> ImportUnitsOfMeasureAsync(
-        HttpContext httpContext,
         IOneCImportService importService,
         CancellationToken cancellationToken) =>
         ImportAsync(
-            httpContext,
             importService.ImportUnitsOfMeasureAsync,
             cancellationToken);
 
     private static Task<IResult> ImportStockKeepingUnitsAsync(
-        HttpContext httpContext,
         IOneCImportService importService,
         CancellationToken cancellationToken) =>
         ImportAsync(
-            httpContext,
             importService.ImportStockKeepingUnitsAsync,
             cancellationToken);
 
     private static async Task<IResult> ImportAsync(
-        HttpContext httpContext,
         Func<CancellationToken, Task<OneCImportResponse>> import,
         CancellationToken cancellationToken)
     {
-        if (httpContext.GetActorId() is null)
-        {
-            return ServiceResult<OneCImportResponse>
-                .Fail(ServiceError.Unauthorized())
-                .ToHttpResult();
-        }
-
         try
         {
             return TypedResults.Ok(await import(cancellationToken));
@@ -90,18 +76,10 @@ public static class OneCEndpoints
     }
 
     private static async Task<IResult> TestConnectionAsync(
-        HttpContext httpContext,
         IOneCODataClient client,
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
-        if (httpContext.GetActorId() is null)
-        {
-            return ServiceResult<OneCConnectionTestResponse>
-                .Fail(ServiceError.Unauthorized())
-                .ToHttpResult();
-        }
-
         try
         {
             await client.TestConnectionAsync(cancellationToken);

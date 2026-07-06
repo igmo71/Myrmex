@@ -117,9 +117,12 @@ public sealed class CatalogListEndpointTests
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Services.AddSingleton<IQueryDispatcher>(dispatcher);
         builder.Services.AddSingleton<ICommandDispatcher, UnsupportedCommandDispatcher>();
+        builder.Services.AddTestAuthentication();
 
         WebApplication app = builder.Build();
-        var group = app.MapGroup("/api/wms/catalog");
+        app.UseTestAuthentication();
+        var group = app.MapGroup("/api/wms/catalog")
+            .RequireAuthorization(Myrmex.AspNetCore.Security.MyrmexAuthorizationPolicies.WmsOperator);
         group.MapStockKeepingUnitEndpoints();
         group.MapUnitOfMeasureEndpoints();
 

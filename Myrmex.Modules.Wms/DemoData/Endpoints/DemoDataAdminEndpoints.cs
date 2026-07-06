@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Myrmex.AppDispatching.CommandDispatching;
 using Myrmex.AspNetCore.Results;
 using Myrmex.AspNetCore.Security;
+using Myrmex.Core.Application.Security;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.DemoData.Configuration;
 using Myrmex.Modules.Wms.DemoData.Features;
@@ -19,7 +20,8 @@ internal static class DemoDataAdminEndpoints
     {
         RouteGroupBuilder group = endpoints
             .MapGroup("/api/admin/demo-data")
-            .WithTags("WMS Demo Data");
+            .WithTags("WMS Demo Data")
+            .RequireAuthorization(MyrmexAuthorizationPolicies.WmsOperator);
 
         group.MapPost("/seed", SeedAsync)
             .WithName("SeedWmsDemoData")
@@ -33,36 +35,24 @@ internal static class DemoDataAdminEndpoints
     }
 
     private static async Task<IResult> SeedAsync(
-        HttpContext httpContext,
+        IActorContext actorContext,
         ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken = default)
     {
-        string? actorId = httpContext.GetActorId();
-        if (actorId is null)
-        {
-            return UnauthorizedResult();
-        }
-
         ServiceResult<DemoDataOperationResponse> result = await commandDispatcher
             .DispatchAsync<SeedWmsDemoData.Command, ServiceResult<DemoDataOperationResponse>>(
-                new SeedWmsDemoData.Command(actorId),
+                new SeedWmsDemoData.Command(actorContext.ActorId),
                 cancellationToken);
         return result.ToHttpResult();
     }
 
     private static async Task<IResult> ClearAsync(
         ClearDemoDataRequest request,
-        HttpContext httpContext,
+        IActorContext actorContext,
         ICommandDispatcher commandDispatcher,
         IOptions<WmsDemoDataOptions> options,
         CancellationToken cancellationToken = default)
     {
-        string? actorId = httpContext.GetActorId();
-        if (actorId is null)
-        {
-            return UnauthorizedResult();
-        }
-
         ServiceError? guardError = ClearWmsDemoData.Handler.Validate(
             options.Value,
             request.Confirmation);
@@ -75,13 +65,8 @@ internal static class DemoDataAdminEndpoints
 
         ServiceResult<DemoDataOperationResponse> result = await commandDispatcher
             .DispatchAsync<ClearWmsDemoData.Command, ServiceResult<DemoDataOperationResponse>>(
-                new ClearWmsDemoData.Command(actorId, request.Confirmation),
+                new ClearWmsDemoData.Command(actorContext.ActorId, request.Confirmation),
                 cancellationToken);
         return result.ToHttpResult();
     }
-
-    private static IResult UnauthorizedResult() =>
-        ServiceResult<DemoDataOperationResponse>
-            .Fail(ServiceError.Unauthorized())
-            .ToHttpResult();
 }
