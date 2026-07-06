@@ -4,71 +4,111 @@
 <PageTitle>@Localizer["Home.PageTitle"]</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
-    <MudText Typo="Typo.h4" GutterBottom="true">@Localizer["Home.Heading"]</MudText>
+    <MudStack Spacing="4">
+        <MudPaper Class="pa-6" Elevation="1">
+            <MudText Typo="Typo.h4" GutterBottom="true">
+                @Localizer["Home.Heading"]
+            </MudText>
 
-    <MudText Typo="Typo.subtitle1" Class="mb-4">
-        @Localizer["Home.Subtitle"]
-    </MudText>
+            <MudText Typo="Typo.h6" Class="mb-4">
+                @Localizer["Home.Subtitle"]
+            </MudText>
 
-    <MudPaper Class="pa-4" Elevation="1">
-        <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Home.About.Title"]</MudText>
+            <MudText Typo="Typo.body1" Class="mb-3">
+                @Localizer["Home.About.Platform"]
+            </MudText>
 
-        <MudText Class="mb-3">
-            @Localizer["Home.About.Platform"]
-        </MudText>
+            <MudText Typo="Typo.body1">
+                @Localizer["Home.About.CurrentScope"]
+            </MudText>
+        </MudPaper>
 
-        <MudText Class="mb-3">
-            @Localizer["Home.About.Movements"]
-        </MudText>
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-4 h-100" Elevation="1">
+                    <MudText Typo="Typo.h6" GutterBottom="true">
+                        @Localizer["Home.ReferenceData.Title"]
+                    </MudText>
+                    <MudText>
+                        @Localizer["Home.ReferenceData.Description"]
+                    </MudText>
+                </MudPaper>
+            </MudItem>
 
-        <MudText>
-            @Localizer["Home.About.OneC"]
-        </MudText>
-    </MudPaper>
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-4 h-100" Elevation="1">
+                    <MudText Typo="Typo.h6" GutterBottom="true">
+                        @Localizer["Home.Inventory.Title"]
+                    </MudText>
+                    <MudText>
+                        @Localizer["Home.Inventory.Description"]
+                    </MudText>
+                </MudPaper>
+            </MudItem>
 
-    <MudGrid Class="mt-4">
-        <MudItem xs="12" md="3">
-            <MudPaper Class="pa-4 h-100" Elevation="1">
-                <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Home.ReferenceData.Title"]</MudText>
-                <MudText>
-                    @Localizer["Home.ReferenceData.Description"]
-                </MudText>
-            </MudPaper>
-        </MudItem>
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-4 h-100" Elevation="1">
+                    <MudText Typo="Typo.h6" GutterBottom="true">
+                        @Localizer["Home.InventoryLedger.Title"]
+                    </MudText>
+                    <MudText>
+                        @Localizer["Home.InventoryLedger.Description"]
+                    </MudText>
+                </MudPaper>
+            </MudItem>
 
-        <MudItem xs="12" md="3">
-            <MudPaper Class="pa-4 h-100" Elevation="1">
-                <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Home.Inventory.Title"]</MudText>
-                <MudText>
-                    @Localizer["Home.Inventory.Description"]
-                </MudText>
-            </MudPaper>
-        </MudItem>
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-4 h-100" Elevation="1">
+                    <MudText Typo="Typo.h6" GutterBottom="true">
+                        @Localizer["Home.InventoryTransfers.Title"]
+                    </MudText>
+                    <MudText>
+                        @Localizer["Home.InventoryTransfers.Description"]
+                    </MudText>
+                </MudPaper>
+            </MudItem>
 
-        <MudItem xs="12" md="3">
-            <MudPaper Class="pa-4 h-100" Elevation="1">
-                <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Home.Movements.Title"]</MudText>
-                <MudText>
-                    @Localizer["Home.Movements.Description"]
-                </MudText>
-            </MudPaper>
-        </MudItem>
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-4 h-100" Elevation="1">
+                    <MudText Typo="Typo.h6" GutterBottom="true">
+                        @Localizer["Home.InventoryCounts.Title"]
+                    </MudText>
+                    <MudText>
+                        @Localizer["Home.InventoryCounts.Description"]
+                    </MudText>
+                </MudPaper>
+            </MudItem>
 
-        <MudItem xs="12" md="3">
-            <MudPaper Class="pa-4 h-100" Elevation="1">
-                <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Home.OneC.Title"]</MudText>
-                <MudText>
-                    @Localizer["Home.OneC.Description"]
-                </MudText>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
+            <MudItem xs="12" md="4">
+                <MudPaper Class="pa-4 h-100" Elevation="1">
+                    <MudText Typo="Typo.h6" GutterBottom="true">
+                        @Localizer["Home.OneC.Title"]
+                    </MudText>
+                    <MudText>
+                        @Localizer["Home.OneC.Description"]
+                    </MudText>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
 
-    <MudPaper Class="pa-4 mt-4" Elevation="1">
-        <MudText Typo="Typo.h6" GutterBottom="true">@Localizer["Home.Roadmap.Title"]</MudText>
+        <MudPaper Class="pa-4" Elevation="1">
+            <MudText Typo="Typo.h6" GutterBottom="true">
+                @Localizer["Home.CurrentFocus.Title"]
+            </MudText>
 
-        <MudText>
-            @Localizer["Home.Roadmap.Description"]
-        </MudText>
-    </MudPaper>
+            <MudText Class="mb-3">
+                @Localizer["Home.CurrentFocus.Description"]
+            </MudText>
+
+            <MudDivider Class="my-3" />
+
+            <MudText Typo="Typo.h6" GutterBottom="true">
+                @Localizer["Home.Roadmap.Title"]
+            </MudText>
+
+            <MudText>
+                @Localizer["Home.Roadmap.Description"]
+            </MudText>
+        </MudPaper>
+    </MudStack>
 </MudContainer>

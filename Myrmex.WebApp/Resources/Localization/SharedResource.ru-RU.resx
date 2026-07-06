@@ -24,20 +24,24 @@
   <data name="Home.PageTitle" xml:space="preserve"><value>Myrmex</value></data>
   <data name="Home.Heading" xml:space="preserve"><value>Myrmex</value></data>
   <data name="Home.Subtitle" xml:space="preserve"><value>Рабочий прототип WMS-платформы.</value></data>
-  <data name="Home.About.Title" xml:space="preserve"><value>О проекте</value></data>
-  <data name="Home.About.Platform" xml:space="preserve"><value>Myrmex разрабатывается как модульная система управления складскими операциями. В текущей версии уже заложена основа для работы со складами, ячейками, SKU, единицами измерения, остатками и базовыми движениями товара.</value></data>
-  <data name="Home.About.Movements" xml:space="preserve"><value>Поддерживаются внутрискладские перемещения между ячейками, в том числе сценарии перемещения через промежуточную тележку и прямого перемещения без нее. Эти механизмы формируют основу для дальнейших операций приемки, размещения, отбора и контроля остатков.</value></data>
-  <data name="Home.About.OneC" xml:space="preserve"><value>Отдельное направление — интеграция с 1С. Справочники складов, единиц измерения и номенклатуры импортируются через OData с сохранением связи по внешнему ключу 1С. Внутренняя модель Myrmex при этом остается независимой от внешних идентификаторов.</value></data>
+  <data name="Home.About.Platform" xml:space="preserve"><value>Myrmex разрабатывается как модульная система управления складскими операциями. Текущая версия уже объединяет справочники, остатки, журнал движений, внутрискладские перемещения, базовую инвентаризацию и импорт справочных данных из 1С.</value></data>
+  <data name="Home.About.CurrentScope" xml:space="preserve"><value>Реализованная функциональность покрывает основу складских справочников, видимость текущих остатков, трассируемые движения запасов, управляемые перемещения между ячейками хранения и первый сценарий инвентаризации.</value></data>
   <data name="Home.ReferenceData.Title" xml:space="preserve"><value>Справочники</value></data>
-  <data name="Home.ReferenceData.Description" xml:space="preserve"><value>Склады, ячейки, единицы измерения и SKU используются как базовые данные для складских операций и учета.</value></data>
+  <data name="Home.ReferenceData.Description" xml:space="preserve"><value>Склады, зоны, ячейки хранения, SKU и единицы измерения задают операционную структуру для складских процессов и учета запасов.</value></data>
   <data name="Home.Inventory.Title" xml:space="preserve"><value>Остатки</value></data>
-  <data name="Home.Inventory.Description" xml:space="preserve"><value>Остатки отражают текущее наличие товара по складам, ячейкам и SKU и служат основой для контроля доступного количества.</value></data>
-  <data name="Home.Movements.Title" xml:space="preserve"><value>Движения</value></data>
-  <data name="Home.Movements.Description" xml:space="preserve"><value>Базовые складские движения уже поддерживают перемещение товара, включая сценарии через тележку и прямое перемещение между ячейками.</value></data>
+  <data name="Home.Inventory.Description" xml:space="preserve"><value>Остатки показывают текущее количество SKU по складам и ячейкам хранения и служат основой для контроля наличия.</value></data>
+  <data name="Home.InventoryLedger.Title" xml:space="preserve"><value>Движения</value></data>
+  <data name="Home.InventoryLedger.Description" xml:space="preserve"><value>Журнал движений фиксирует изменения запасов и позволяет прослеживать историю складских операций.</value></data>
+  <data name="Home.InventoryTransfers.Title" xml:space="preserve"><value>Внутрискладские перемещения</value></data>
+  <data name="Home.InventoryTransfers.Description" xml:space="preserve"><value>Внутрискладские перемещения позволяют перемещать запасы между ячейками хранения напрямую или через транзитную ячейку.</value></data>
+  <data name="Home.InventoryCounts.Title" xml:space="preserve"><value>Инвентаризация</value></data>
+  <data name="Home.InventoryCounts.Description" xml:space="preserve"><value>Базовая инвентаризация поддерживает документы пересчета, строки инвентаризации, обработку расхождений и применение посчитанных количеств к остаткам.</value></data>
   <data name="Home.OneC.Title" xml:space="preserve"><value>Интеграция с 1С</value></data>
-  <data name="Home.OneC.Description" xml:space="preserve"><value>Импорт справочных данных выполняется через OData с привязкой к внешнему ключу 1С и сохранением внутренней идентичности Myrmex.</value></data>
-  <data name="Home.Roadmap.Title" xml:space="preserve"><value>Ближайшее развитие</value></data>
-  <data name="Home.Roadmap.Description" xml:space="preserve"><value>Следующие этапы — развитие приемки, LPN, размещения, уточнение складских процессов и подготовка интерфейсов для оператора. Цель ближайших шагов — постепенно связать справочники, остатки и движения в полноценные рабочие сценарии WMS.</value></data>
+  <data name="Home.OneC.Description" xml:space="preserve"><value>Склады, единицы измерения и номенклатура импортируются через OData с сохранением внутренней идентичности Myrmex и связи с внешними ключами 1С.</value></data>
+  <data name="Home.CurrentFocus.Title" xml:space="preserve"><value>Текущий фокус</value></data>
+  <data name="Home.CurrentFocus.Description" xml:space="preserve"><value>Текущий фокус — стабилизировать контракты серверных списков, сортировку, пагинацию и соглашения WebApp-гридов во всем WMS-модуле.</value></data>
+  <data name="Home.Roadmap.Title" xml:space="preserve"><value>Следующие шаги</value></data>
+  <data name="Home.Roadmap.Description" xml:space="preserve"><value>Следующие этапы будут двигаться в сторону приемки, LPN, размещения, отбора, операторских сценариев и более глубокого контроля запасов.</value></data>
   <data name="OneC.PageTitle" xml:space="preserve"><value>Интеграция с 1С</value></data>
   <data name="OneC.Heading" xml:space="preserve"><value>Интеграция с 1С</value></data>
   <data name="OneC.Connection.Description" xml:space="preserve"><value>Проверка доступности публикации OData.</value></data>

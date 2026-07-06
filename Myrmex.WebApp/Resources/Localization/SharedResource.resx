@@ -24,20 +24,24 @@
   <data name="Home.PageTitle" xml:space="preserve"><value>Myrmex</value></data>
   <data name="Home.Heading" xml:space="preserve"><value>Myrmex</value></data>
   <data name="Home.Subtitle" xml:space="preserve"><value>A working WMS platform prototype.</value></data>
-  <data name="Home.About.Title" xml:space="preserve"><value>About the Project</value></data>
-  <data name="Home.About.Platform" xml:space="preserve"><value>Myrmex is being developed as a modular warehouse operations management system. The current version provides a foundation for warehouses, storage locations, SKUs, units of measure, inventory balances, and basic inventory movements.</value></data>
-  <data name="Home.About.Movements" xml:space="preserve"><value>Internal warehouse transfers between storage locations are supported, including movements through an intermediate cart and direct movements without one. These capabilities establish a foundation for receiving, putaway, picking, and inventory control.</value></data>
-  <data name="Home.About.OneC" xml:space="preserve"><value>Integration with 1С is a separate area. Warehouse, unit-of-measure, and nomenclature reference data is imported through OData while retaining the relationship to the external 1С key. The internal Myrmex model remains independent of external identifiers.</value></data>
+  <data name="Home.About.Platform" xml:space="preserve"><value>Myrmex is being developed as a modular warehouse operations management system. The current version already connects reference data, inventory balances, inventory ledger entries, internal warehouse transfers, basic inventory counts, and 1С reference-data import.</value></data>
+  <data name="Home.About.CurrentScope" xml:space="preserve"><value>The implemented functionality now covers the foundation of warehouse master data, current stock visibility, traceable inventory movements, controlled internal transfers between storage locations, and the first inventory-counting workflow.</value></data>
   <data name="Home.ReferenceData.Title" xml:space="preserve"><value>Reference Data</value></data>
-  <data name="Home.ReferenceData.Description" xml:space="preserve"><value>Warehouses, storage locations, units of measure, and SKUs provide the base data for warehouse operations and inventory accounting.</value></data>
-  <data name="Home.Inventory.Title" xml:space="preserve"><value>Inventory</value></data>
-  <data name="Home.Inventory.Description" xml:space="preserve"><value>Inventory balances show the current quantity by warehouse, storage location, and SKU and provide the basis for available-quantity control.</value></data>
-  <data name="Home.Movements.Title" xml:space="preserve"><value>Movements</value></data>
-  <data name="Home.Movements.Description" xml:space="preserve"><value>Basic warehouse movements support inventory transfers, including movements through a cart and direct movements between storage locations.</value></data>
+  <data name="Home.ReferenceData.Description" xml:space="preserve"><value>Warehouses, zones, storage locations, SKUs, and units of measure define the operational structure used by inventory and warehouse processes.</value></data>
+  <data name="Home.Inventory.Title" xml:space="preserve"><value>Inventory Balances</value></data>
+  <data name="Home.Inventory.Description" xml:space="preserve"><value>Inventory balances show the current SKU quantity by warehouse and storage location and provide the basis for stock visibility.</value></data>
+  <data name="Home.InventoryLedger.Title" xml:space="preserve"><value>Inventory Ledger</value></data>
+  <data name="Home.InventoryLedger.Description" xml:space="preserve"><value>Inventory ledger entries record stock changes and make inventory operations traceable through movement history.</value></data>
+  <data name="Home.InventoryTransfers.Title" xml:space="preserve"><value>Internal Transfers</value></data>
+  <data name="Home.InventoryTransfers.Description" xml:space="preserve"><value>Internal warehouse transfers move stock between storage locations, including direct movements and movements through transit locations.</value></data>
+  <data name="Home.InventoryCounts.Title" xml:space="preserve"><value>Inventory Counts</value></data>
+  <data name="Home.InventoryCounts.Description" xml:space="preserve"><value>Basic inventory-counting functionality supports count documents, count lines, variance handling, and applying counted quantities to inventory balances.</value></data>
   <data name="Home.OneC.Title" xml:space="preserve"><value>1С Integration</value></data>
-  <data name="Home.OneC.Description" xml:space="preserve"><value>Reference data is imported through OData, linked to the external 1С key, while preserving Myrmex's internal identity.</value></data>
+  <data name="Home.OneC.Description" xml:space="preserve"><value>Warehouse, unit-of-measure, and nomenclature reference data is imported through OData while preserving Myrmex's internal identity and linkage to external 1С keys.</value></data>
+  <data name="Home.CurrentFocus.Title" xml:space="preserve"><value>Current Focus</value></data>
+  <data name="Home.CurrentFocus.Description" xml:space="preserve"><value>The current focus is stabilizing server-driven list contracts, sorting, paging, and WebApp grid conventions across the WMS module.</value></data>
   <data name="Home.Roadmap.Title" xml:space="preserve"><value>Next Steps</value></data>
-  <data name="Home.Roadmap.Description" xml:space="preserve"><value>The next stages cover receiving, LPNs, putaway, refinement of warehouse processes, and preparation of operator interfaces. The immediate goal is to connect reference data, inventory balances, and movements into complete WMS workflows.</value></data>
+  <data name="Home.Roadmap.Description" xml:space="preserve"><value>The next stages will continue toward receiving, LPN support, putaway, picking, operator-oriented workflows, and deeper inventory-control scenarios.</value></data>
   <data name="OneC.PageTitle" xml:space="preserve"><value>1С Integration</value></data>
   <data name="OneC.Heading" xml:space="preserve"><value>1С Integration</value></data>
   <data name="OneC.Connection.Description" xml:space="preserve"><value>Check OData publication availability.</value></data>
