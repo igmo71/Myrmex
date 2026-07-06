@@ -1,0 +1,42 @@
+services:
+  myrmex-api:
+    image: 192.168.1.55:5000/myrmex-api:${MYRMEX_TAG}
+    container_name: myrmex-api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Staging
+      ConnectionStrings__MyrmexDatabase: "${MYRMEX_DB_CONNECTION}"
+      Myrmex__Wms__DemoData__Enabled: "false"
+      Myrmex__Wms__DemoData__AllowClear: "false"
+    ports:
+      - "8204:8080"
+
+  myrmex-webapp:
+    image: 192.168.1.55:5000/myrmex-webapp:${MYRMEX_TAG}
+    container_name: myrmex-webapp
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Staging
+
+      # Aspire service discovery equivalent for WithReference(apiService)
+      services__apiservice__http__0: "http://myrmex-api:8080"
+
+      # Aspire connection string equivalent for WithReference(cache)
+      ConnectionStrings__cache: "myrmex-redis:6379"
+    ports:
+      - "8205:8080"
+    depends_on:
+      - myrmex-api
+      - myrmex-redis
+
+  myrmex-redis:
+    image: redis:7-alpine
+    container_name: myrmex-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - myrmex_redis_data:/data
+
+volumes:
+  myrmex_redis_data:
