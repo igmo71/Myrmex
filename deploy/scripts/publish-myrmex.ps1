@@ -1,5 +1,9 @@
-$registry = "192.168.1.55:5000"
-$tag = Get-Date -Format "yyyyMMdd-HHmm"
+param(
+    [string]$Registry = "192.168.1.55:5000",
+    [string]$Tag = (Get-Date -Format "yyyyMMdd-HHmm")
+)
+
+$ErrorActionPreference = "Stop"
 
 dotnet publish .\Myrmex.ApiService\Myrmex.ApiService.csproj `
   -c Release `
@@ -7,10 +11,10 @@ dotnet publish .\Myrmex.ApiService\Myrmex.ApiService.csproj `
   --arch x64 `
   /t:PublishContainer `
   -p:ContainerRepository=myrmex-api `
-  -p:ContainerImageTag=$tag
+  -p:ContainerImageTag=$Tag
 
-docker tag myrmex-api:$tag $registry/myrmex-api:$tag
-docker push $registry/myrmex-api:$tag
+docker tag myrmex-api:$Tag $Registry/myrmex-api:$Tag
+docker push $Registry/myrmex-api:$Tag
 
 dotnet publish .\Myrmex.WebApp\Myrmex.WebApp.csproj `
   -c Release `
@@ -18,11 +22,14 @@ dotnet publish .\Myrmex.WebApp\Myrmex.WebApp.csproj `
   --arch x64 `
   /t:PublishContainer `
   -p:ContainerRepository=myrmex-webapp `
-  -p:ContainerImageTag=$tag
+  -p:ContainerImageTag=$Tag
 
-docker tag myrmex-webapp:$tag $registry/myrmex-webapp:$tag
-docker push $registry/myrmex-webapp:$tag
+docker tag myrmex-webapp:$Tag $Registry/myrmex-webapp:$Tag
+docker push $Registry/myrmex-webapp:$Tag
 
+Write-Host ""
 Write-Host "Published:"
-Write-Host "$registry/myrmex-api:$tag"
-Write-Host "$registry/myrmex-webapp:$tag"
+Write-Host "$Registry/myrmex-api:$Tag"
+Write-Host "$Registry/myrmex-webapp:$Tag"
+Write-Host ""
+Write-Host "Set MYRMEX_TAG=$Tag in staging .env"

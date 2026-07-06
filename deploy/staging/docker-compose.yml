@@ -55,4 +55,6 @@ services:
 
 volumes:
   myrmex_redis_data:
+    name: myrmex_redis_data
   myrmex_webapp_dataprotection:
+    name: myrmex_webapp_dataprotection
