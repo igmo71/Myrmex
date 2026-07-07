@@ -83,6 +83,8 @@ public partial class Index
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
+            await InvokeAsync(StateHasChanged);
+
             return EmptyGridData();
         }
     }
