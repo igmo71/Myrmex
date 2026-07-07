@@ -21,21 +21,20 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IActorContext, HttpContextActorContext>();
-builder.Services
-    .AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme = MyrmexAuthenticationSchemes.DevelopmentActor;
-        options.DefaultChallengeScheme = MyrmexAuthenticationSchemes.DevelopmentActor;
-    })
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = MyrmexAuthenticationSchemes.DevelopmentActor;
+    options.DefaultChallengeScheme = MyrmexAuthenticationSchemes.DevelopmentActor;
+})
     .AddScheme<AuthenticationSchemeOptions, DevelopmentActorAuthenticationHandler>(
         MyrmexAuthenticationSchemes.DevelopmentActor,
         _ => { });
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy(
+
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy(
         MyrmexAuthorizationPolicies.WmsOperator,
         policy => policy.RequireAuthenticatedUser());
-});
 
 builder.Services.AddWmsModule(builder.Configuration);
 builder.Services.AddOneCIntegration(builder.Configuration);
@@ -47,18 +46,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
 
-if (app.Configuration.GetValue<bool>(
-        $"{DevelopmentActorAuthenticationHandler.ConfigurationSectionName}:Enabled"))
-{
-    string actorId = app.Configuration[
-        $"{DevelopmentActorAuthenticationHandler.ConfigurationSectionName}:ActorId"]
-        ?? "(not configured)";
-
-    app.Logger.LogWarning(
-        "DevelopmentActor authentication is enabled. Environment={Environment}; ActorId={ActorId}",
-        app.Environment.EnvironmentName,
-        actorId);
-}
+LogEnvironmentAndActor(app);
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -93,6 +81,22 @@ app.MapWmsModule();
 app.MapOneCIntegration();
 
 app.Run();
+
+static void LogEnvironmentAndActor(WebApplication app)
+{
+    if (app.Configuration.GetValue<bool>(
+            $"{DevelopmentActorAuthenticationHandler.ConfigurationSectionName}:Enabled"))
+    {
+        string actorId = app.Configuration[
+            $"{DevelopmentActorAuthenticationHandler.ConfigurationSectionName}:ActorId"]
+            ?? "(not configured)";
+
+        app.Logger.LogWarning(
+            "DevelopmentActor authentication is enabled. Environment={Environment}; ActorId={ActorId}",
+            app.Environment.EnvironmentName,
+            actorId);
+    }
+}
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
