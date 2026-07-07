@@ -221,11 +221,24 @@ public partial class Index
 
             _zones = result.Items.ToList();
 
-            if (_selectedZoneId is not null &&
-                _zones.All(x => x.Id != _selectedZoneId.Value))
+            if (_selectedZoneId is Guid selectedZoneId &&
+                _zones.All(x => x.Id != selectedZoneId))
             {
-                _selectedZoneId = null;
-                UpdateUrl();
+                ZoneDetails selectedZone = await WmsTopologyApiClient.GetZoneByIdAsync(selectedZoneId);
+
+                if (selectedZone.WarehouseId == _selectedWarehouseId.Value)
+                {
+                    _zones.Add(selectedZone);
+                    _zones = _zones
+                        .OrderBy(x => x.Code, StringComparer.OrdinalIgnoreCase)
+                        .ThenBy(x => x.Id)
+                        .ToList();
+                }
+                else
+                {
+                    _selectedZoneId = null;
+                    UpdateUrl();
+                }
             }
         }
         catch (Exception exception)

@@ -18,7 +18,7 @@
                            RequiredError="@Localizer["Common.WarehouseRequired"]"
                            Disabled="_isLoading"
                            @bind-Value="_warehouseId">
-                    @foreach (WarehouseDetails warehouse in _warehouses)
+                    @foreach (WarehouseLookupItem warehouse in _warehouses)
                     {
                         <MudSelectItem T="Guid?" Value="@((Guid?)warehouse.Id)">
                             @WarehouseDisplayFormatter.GetName(warehouse.Name, Localizer)
@@ -63,7 +63,9 @@
     private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = null!;
 
     private MudForm? _form;
-    private List<WarehouseDetails> _warehouses = [];
+    private const int WarehouseLookupTake = 20;
+
+    private List<WarehouseLookupItem> _warehouses = [];
     private Guid? _warehouseId;
     private string? _reason;
     private string? _errorMessage;
@@ -76,16 +78,14 @@
 
         try
         {
-            ListResult<WarehouseDetails> result = await WmsTopologyApiClient.ListWarehousesAsync(
-                new ListWarehousesRequest
+            IReadOnlyList<WarehouseLookupItem> warehouses = await WmsTopologyApiClient
+                .LookupWarehousesAsync(
+                new LookupWarehousesRequest
                 {
-                    Skip = 0,
-                    Take = 100,
-                    SortBy = WarehouseSortBy.Name,
-                    SortDescending = false,
-                    IncludeInactive = false
+                    Take = WarehouseLookupTake,
+                    SelectableOnly = true
                 });
-            _warehouses = result.Items.ToList();
+            _warehouses = warehouses.ToList();
         }
         catch (Exception exception)
         {

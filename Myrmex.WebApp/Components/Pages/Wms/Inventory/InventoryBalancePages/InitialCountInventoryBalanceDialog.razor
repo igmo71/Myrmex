@@ -55,7 +55,7 @@
                            Disabled="_isLoadingWarehouses"
                            Value="_model.WarehouseId"
                            ValueChanged="OnWarehouseChanged">
-                    @foreach (WarehouseDetails warehouse in _warehouses)
+                    @foreach (WarehouseLookupItem warehouse in _warehouses)
                     {
                         <MudSelectItem T="Guid?" Value="@((Guid?)warehouse.Id)">
                             @WarehouseDisplayFormatter.GetName(warehouse.Name, Localizer)
@@ -146,7 +146,6 @@
 
 @code {
     private const string ConcurrencyConflictCode = "InventoryBalance.ConcurrencyConflict";
-    private const int LookupTake = 100;
     private const int AutocompleteTake = 20;
 
     [CascadingParameter]
@@ -163,7 +162,7 @@
 
     private MudForm? _form;
     private readonly InitialCountInventoryBalanceModel _model = new();
-    private List<WarehouseDetails> _warehouses = [];
+    private List<WarehouseLookupItem> _warehouses = [];
     private StockKeepingUnitLookupItem? _selectedStockKeepingUnit;
     private StorageLocationLookupItem? _selectedStorageLocation;
     private static CultureInfo QuantityCulture => CultureInfo.CurrentCulture;
@@ -244,19 +243,14 @@
 
         try
         {
-            ListWarehousesRequest request = new()
-            {
-                Skip = 0,
-                Take = LookupTake,
-                SortBy = WarehouseSortBy.Name,
-                SortDescending = false,
-                IncludeInactive = false
-            };
+            IReadOnlyList<WarehouseLookupItem> warehouses = await WmsTopologyApiClient
+                .LookupWarehousesAsync(new LookupWarehousesRequest
+                {
+                    Take = AutocompleteTake,
+                    SelectableOnly = true
+                });
 
-            ListResult<WarehouseDetails> result = await WmsTopologyApiClient
-                .ListWarehousesAsync(request);
-
-            _warehouses = result.Items.ToList();
+            _warehouses = warehouses.ToList();
         }
         catch (Exception exception)
         {

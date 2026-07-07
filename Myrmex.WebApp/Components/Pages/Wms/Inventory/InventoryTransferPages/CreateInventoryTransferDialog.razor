@@ -22,7 +22,7 @@
                            Disabled="_isLoadingWarehouses"
                            Value="_warehouseId"
                            ValueChanged="OnWarehouseChanged">
-                    @foreach (WarehouseDetails warehouse in _warehouses)
+                    @foreach (WarehouseLookupItem warehouse in _warehouses)
                     {
                         <MudSelectItem T="Guid?" Value="@((Guid?)warehouse.Id)">
                             @WarehouseDisplayFormatter.GetName(warehouse.Name, Localizer)
@@ -211,7 +211,6 @@
 </MudDialog>
 
 @code {
-    private const int LookupTake = 100;
     private const int AutocompleteTake = 20;
     private const string InternalTransitStorageLocationTypeCode = "INTERNAL_TRANSIT";
 
@@ -232,7 +231,7 @@
     private readonly Dictionary<string, IReadOnlyList<StorageLocationLookupItem>> _storageLocationCache = [];
     private static CultureInfo QuantityCulture => CultureInfo.CurrentCulture;
 
-    private List<WarehouseDetails> _warehouses = [];
+    private List<WarehouseLookupItem> _warehouses = [];
     private Guid? _warehouseId;
     private StorageLocationLookupItem? _transitStorageLocation;
     private bool _isLoadingWarehouses;
@@ -252,19 +251,14 @@
 
         try
         {
-            ListWarehousesRequest request = new()
-            {
-                Skip = 0,
-                Take = LookupTake,
-                SortBy = WarehouseSortBy.Name,
-                SortDescending = false,
-                IncludeInactive = false
-            };
+            IReadOnlyList<WarehouseLookupItem> warehouses = await WmsTopologyApiClient
+                .LookupWarehousesAsync(new LookupWarehousesRequest
+                {
+                    Take = AutocompleteTake,
+                    SelectableOnly = true
+                });
 
-            ListResult<WarehouseDetails> result = await WmsTopologyApiClient
-                .ListWarehousesAsync(request);
-
-            _warehouses = result.Items.ToList();
+            _warehouses = warehouses.ToList();
         }
         catch (Exception exception)
         {

@@ -11,7 +11,7 @@ namespace Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryCountPages;
 
 public partial class Index
 {
-    private const int LookupTake = 100;
+    private const int WarehouseLookupTake = 20;
 
     [Inject] private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = default!;
     [Inject] private WmsTopologyApiClient WmsTopologyApiClient { get; set; } = default!;
@@ -19,7 +19,7 @@ public partial class Index
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
 
     private InventoryCountGrid? _inventoryCountGrid;
-    private List<WarehouseDetails> _warehouses = [];
+    private List<WarehouseLookupItem> _warehouses = [];
     private Guid? _selectedWarehouseId;
     private string? _selectedStatus;
     private DateTime? _createdFrom;
@@ -74,17 +74,14 @@ public partial class Index
         _isLoadingWarehouses = true;
         try
         {
-            ListResult<WarehouseDetails> result =
-                await WmsTopologyApiClient.ListWarehousesAsync(
-                    new ListWarehousesRequest
+            IReadOnlyList<WarehouseLookupItem> warehouses =
+                await WmsTopologyApiClient.LookupWarehousesAsync(
+                    new LookupWarehousesRequest
                     {
-                        Skip = 0,
-                        Take = LookupTake,
-                        SortBy = WarehouseSortBy.Name,
-                        SortDescending = false,
-                        IncludeInactive = false
+                        Take = WarehouseLookupTake,
+                        SelectableOnly = true
                     });
-            _warehouses = result.Items.ToList();
+            _warehouses = warehouses.ToList();
         }
         catch (Exception exception)
         {

@@ -16,7 +16,7 @@
                        Disabled="IsLoadingWarehouses"
                        HelperText="@Localizer["InventoryLedger.IncludesInactiveWarehouses"]"
                        Class="min-width-300">
-                @foreach (WarehouseDetails warehouse in Warehouses)
+                @foreach (WarehouseLookupItem warehouse in Warehouses)
                 {
                     <MudSelectItem T="Guid?" Value="@((Guid?)warehouse.Id)">
                         @WarehouseDisplayFormatter.GetName(warehouse.Name, Localizer)
@@ -139,7 +139,7 @@
     private const string AdjustmentTransactionType = "Adjustment";
 
     [Parameter]
-    public IReadOnlyList<WarehouseDetails> Warehouses { get; set; } = [];
+    public IReadOnlyList<WarehouseLookupItem> Warehouses { get; set; } = [];
 
     [Parameter]
     public Guid? SelectedWarehouseId { get; set; }

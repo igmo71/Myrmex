@@ -14,7 +14,6 @@ namespace Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryTransferPages;
 
 public partial class Index
 {
-    private const int LookupTake = 100;
     private const int AutocompleteTake = 20;
 
     [Inject]
@@ -34,7 +33,7 @@ public partial class Index
 
     private InventoryTransferGrid? _inventoryTransferGrid;
 
-    private List<WarehouseDetails> _warehouses = [];
+    private List<WarehouseLookupItem> _warehouses = [];
 
     private Guid? _selectedWarehouseId;
     private string? _selectedStatus;
@@ -199,19 +198,14 @@ public partial class Index
 
         try
         {
-            ListWarehousesRequest request = new()
-            {
-                Skip = 0,
-                Take = LookupTake,
-                SortBy = WarehouseSortBy.Name,
-                SortDescending = false,
-                IncludeInactive = false
-            };
+            IReadOnlyList<WarehouseLookupItem> warehouses = await WmsTopologyApiClient
+                .LookupWarehousesAsync(new LookupWarehousesRequest
+                {
+                    Take = AutocompleteTake,
+                    SelectableOnly = true
+                });
 
-            ListResult<WarehouseDetails> result = await WmsTopologyApiClient
-                .ListWarehousesAsync(request);
-
-            _warehouses = result.Items.ToList();
+            _warehouses = warehouses.ToList();
         }
         catch (Exception exception)
         {
