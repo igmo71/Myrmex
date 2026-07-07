@@ -264,9 +264,13 @@ public sealed class InventoryBalanceEndpointTests
         builder.Services.AddSingleton<IQueryDispatcher>(queryDispatcher);
         builder.Services.AddSingleton<ICommandDispatcher>(
             commandDispatcher ?? new UnsupportedCommandDispatcher());
+        builder.Services.AddTestAuthentication();
 
         WebApplication app = builder.Build();
-        app.MapGroup("/api/wms/inventory").MapInventoryBalanceEndpoints();
+        app.UseTestAuthentication();
+        app.MapGroup("/api/wms/inventory")
+            .RequireAuthorization(Myrmex.AspNetCore.Security.MyrmexAuthorizationPolicies.WmsOperator)
+            .MapInventoryBalanceEndpoints();
 
         return app;
     }

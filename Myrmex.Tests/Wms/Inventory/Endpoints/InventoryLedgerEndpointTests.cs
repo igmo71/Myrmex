@@ -162,9 +162,13 @@ public sealed class InventoryLedgerEndpointTests
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Services.AddSingleton<IQueryDispatcher>(queryDispatcher);
         builder.Services.AddSingleton<ICommandDispatcher, UnsupportedCommandDispatcher>();
+        builder.Services.AddTestAuthentication();
 
         WebApplication app = builder.Build();
-        app.MapGroup("/api/wms/inventory").MapInventoryLedgerEndpoints();
+        app.UseTestAuthentication();
+        app.MapGroup("/api/wms/inventory")
+            .RequireAuthorization(Myrmex.AspNetCore.Security.MyrmexAuthorizationPolicies.WmsOperator)
+            .MapInventoryLedgerEndpoints();
 
         return app;
     }

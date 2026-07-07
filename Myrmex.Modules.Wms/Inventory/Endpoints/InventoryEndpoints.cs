@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Myrmex.AspNetCore.Security;
 
 namespace Myrmex.Modules.Wms.Inventory.Endpoints;
 
@@ -10,7 +11,8 @@ internal static class InventoryEndpoints
     {
         var group = endpoints
             .MapGroup("/api/wms/inventory")
-            .WithTags("Wms Inventory");
+            .WithTags("Wms Inventory")
+            .RequireAuthorization(MyrmexAuthorizationPolicies.WmsOperator);
 
         group.MapInventoryBalanceEndpoints();
         group.MapInventoryAdjustmentEndpoints();

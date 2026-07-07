@@ -104,9 +104,13 @@ public sealed class InventoryAdjustmentEndpointTests
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Services.AddSingleton<ICommandDispatcher>(commandDispatcher);
+        builder.Services.AddTestAuthentication();
 
         WebApplication app = builder.Build();
-        app.MapGroup("/api/wms/inventory").MapInventoryAdjustmentEndpoints();
+        app.UseTestAuthentication();
+        app.MapGroup("/api/wms/inventory")
+            .RequireAuthorization(Myrmex.AspNetCore.Security.MyrmexAuthorizationPolicies.WmsOperator)
+            .MapInventoryAdjustmentEndpoints();
 
         return app;
     }

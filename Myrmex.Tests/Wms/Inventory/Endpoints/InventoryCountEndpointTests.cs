@@ -14,7 +14,6 @@ using Myrmex.Shared.Common;
 using Myrmex.Shared.Wms.Inventory;
 using System.Net;
 using System.Net.Http.Json;
-using System.Security.Claims;
 using System.Text.Json;
 
 namespace Myrmex.Tests.Wms.Inventory.Endpoints;
@@ -71,6 +70,38 @@ public sealed class InventoryCountEndpointTests
                 cancellationToken);
 
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.Null(dispatcher.CreateCommand);
+        }
+        finally
+        {
+            await app.StopAsync(cancellationToken);
+        }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public async Task CreateInventoryCountAsync_WhenActorClaimIsMissingOrEmpty_Returns403WithoutDispatch(
+        string? actorId)
+    {
+        RecordingCommandDispatcher dispatcher = new(CreateDetails());
+        await using WebApplication app = CreateApp(
+            dispatcher,
+            authenticated: true,
+            actorId: actorId);
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await app.StartAsync(cancellationToken);
+
+        try
+        {
+            using HttpClient client = CreateClient(app);
+            using HttpResponseMessage response = await client.PostAsJsonAsync(
+                "/api/wms/inventory/counts",
+                new CreateInventoryCountRequest(Guid.NewGuid(), null),
+                cancellationToken);
+
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
             Assert.Null(dispatcher.CreateCommand);
         }
         finally
@@ -591,28 +622,24 @@ public sealed class InventoryCountEndpointTests
     private static WebApplication CreateApp(
         RecordingCommandDispatcher commandDispatcher,
         bool authenticated,
-        RecordingQueryDispatcher? queryDispatcher = null)
+        RecordingQueryDispatcher? queryDispatcher = null,
+        string? actorId = "actor-sub")
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Services.AddSingleton<ICommandDispatcher>(commandDispatcher);
         builder.Services.AddSingleton<IQueryDispatcher>(
             queryDispatcher ?? new RecordingQueryDispatcher(CreateDetails()));
+        builder.Services.AddTestAuthentication(
+            authenticated,
+            actorId,
+            useSubjectClaim: true);
 
         WebApplication app = builder.Build();
-
-        if (authenticated)
-        {
-            app.Use(async (context, next) =>
-            {
-                context.User = new ClaimsPrincipal(new ClaimsIdentity(
-                    [new Claim("sub", "actor-sub")],
-                    authenticationType: "Test"));
-                await next();
-            });
-        }
-
-        app.MapGroup("/api/wms/inventory").MapInventoryCountEndpoints();
+        app.UseTestAuthentication();
+        app.MapGroup("/api/wms/inventory")
+            .RequireAuthorization(Myrmex.AspNetCore.Security.MyrmexAuthorizationPolicies.WmsOperator)
+            .MapInventoryCountEndpoints();
         return app;
     }
 

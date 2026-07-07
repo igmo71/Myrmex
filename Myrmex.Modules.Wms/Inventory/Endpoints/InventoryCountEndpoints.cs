@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Routing;
 using Myrmex.AppDispatching.CommandDispatching;
 using Myrmex.AppDispatching.QueryDispatching;
 using Myrmex.AspNetCore.Results;
-using Myrmex.AspNetCore.Security;
+using Myrmex.Core.Application.Security;
 using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Inventory.Features.InventoryCounts;
@@ -90,21 +90,14 @@ internal static class InventoryCountEndpoints
 
     private static async Task<IResult> CreateInventoryCountAsync(
         CreateInventoryCountRequest request,
-        HttpContext httpContext,
+        IActorContext actorContext,
         ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken = default)
     {
-        string? actorId = httpContext.GetActorId();
-
-        if (actorId is null)
-        {
-            return UnauthorizedResult();
-        }
-
         var command = new CreateInventoryCount.Command(
             request.WarehouseId,
             request.Reason,
-            actorId);
+            actorContext.ActorId);
 
         ServiceResult<InventoryCountDetails> result = await commandDispatcher
             .DispatchAsync<CreateInventoryCount.Command, ServiceResult<InventoryCountDetails>>(
@@ -117,20 +110,14 @@ internal static class InventoryCountEndpoints
     private static async Task<IResult> CompleteInventoryCountAsync(
         Guid inventoryCountId,
         ChangeInventoryCountStatusRequest request,
-        HttpContext httpContext,
+        IActorContext actorContext,
         ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken = default)
     {
-        string? actorId = httpContext.GetActorId();
-        if (actorId is null)
-        {
-            return UnauthorizedResult();
-        }
-
         var command = new CompleteInventoryCount.Command(
             inventoryCountId,
             request.ExpectedCountVersion,
-            actorId);
+            actorContext.ActorId);
         ServiceResult<InventoryCountDetails> result = await commandDispatcher
             .DispatchAsync<CompleteInventoryCount.Command, ServiceResult<InventoryCountDetails>>(
                 command,
@@ -141,20 +128,14 @@ internal static class InventoryCountEndpoints
     private static async Task<IResult> CancelInventoryCountAsync(
         Guid inventoryCountId,
         ChangeInventoryCountStatusRequest request,
-        HttpContext httpContext,
+        IActorContext actorContext,
         ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken = default)
     {
-        string? actorId = httpContext.GetActorId();
-        if (actorId is null)
-        {
-            return UnauthorizedResult();
-        }
-
         var command = new CancelInventoryCount.Command(
             inventoryCountId,
             request.ExpectedCountVersion,
-            actorId);
+            actorContext.ActorId);
         ServiceResult<InventoryCountDetails> result = await commandDispatcher
             .DispatchAsync<CancelInventoryCount.Command, ServiceResult<InventoryCountDetails>>(
                 command,
@@ -166,21 +147,15 @@ internal static class InventoryCountEndpoints
         Guid inventoryCountId,
         Guid lineId,
         ApplyInventoryCountLineRequest request,
-        HttpContext httpContext,
+        IActorContext actorContext,
         ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken = default)
     {
-        string? actorId = httpContext.GetActorId();
-        if (actorId is null)
-        {
-            return UnauthorizedResult();
-        }
-
         var command = new ApplyInventoryCountLine.Command(
             inventoryCountId,
             lineId,
             request.ExpectedLineVersion,
-            actorId);
+            actorContext.ActorId);
         ServiceResult<InventoryCountDetails> result = await commandDispatcher
             .DispatchAsync<ApplyInventoryCountLine.Command, ServiceResult<InventoryCountDetails>>(
                 command,
@@ -192,21 +167,15 @@ internal static class InventoryCountEndpoints
         Guid inventoryCountId,
         Guid lineId,
         SupersedeInventoryCountLineRequest request,
-        HttpContext httpContext,
+        IActorContext actorContext,
         ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken = default)
     {
-        string? actorId = httpContext.GetActorId();
-        if (actorId is null)
-        {
-            return UnauthorizedResult();
-        }
-
         var command = new SupersedeInventoryCountLine.Command(
             inventoryCountId,
             lineId,
             request.ExpectedLineVersion,
-            actorId);
+            actorContext.ActorId);
         ServiceResult<InventoryCountDetails> result = await commandDispatcher
             .DispatchAsync<SupersedeInventoryCountLine.Command, ServiceResult<InventoryCountDetails>>(
                 command,
@@ -232,23 +201,16 @@ internal static class InventoryCountEndpoints
     private static async Task<IResult> AddInventoryCountLineAsync(
         Guid inventoryCountId,
         AddInventoryCountLineRequest request,
-        HttpContext httpContext,
+        IActorContext actorContext,
         ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken = default)
     {
-        string? actorId = httpContext.GetActorId();
-
-        if (actorId is null)
-        {
-            return UnauthorizedResult();
-        }
-
         var command = new AddInventoryCountLine.Command(
             inventoryCountId,
             request.StockKeepingUnitId,
             request.StorageLocationId,
             request.ExpectedCountVersion,
-            actorId);
+            actorContext.ActorId);
 
         ServiceResult<InventoryCountDetails> result = await commandDispatcher
             .DispatchAsync<AddInventoryCountLine.Command, ServiceResult<InventoryCountDetails>>(
@@ -262,22 +224,15 @@ internal static class InventoryCountEndpoints
         Guid inventoryCountId,
         Guid lineId,
         string? expectedLineVersion,
-        HttpContext httpContext,
+        IActorContext actorContext,
         ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken = default)
     {
-        string? actorId = httpContext.GetActorId();
-
-        if (actorId is null)
-        {
-            return UnauthorizedResult();
-        }
-
         var command = new RemoveInventoryCountLine.Command(
             inventoryCountId,
             lineId,
             expectedLineVersion,
-            actorId);
+            actorContext.ActorId);
 
         ServiceResult<InventoryCountDetails> result = await commandDispatcher
             .DispatchAsync<RemoveInventoryCountLine.Command, ServiceResult<InventoryCountDetails>>(
@@ -291,24 +246,17 @@ internal static class InventoryCountEndpoints
         Guid inventoryCountId,
         Guid lineId,
         RecordInventoryCountLineRequest request,
-        HttpContext httpContext,
+        IActorContext actorContext,
         ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken = default)
     {
-        string? actorId = httpContext.GetActorId();
-
-        if (actorId is null)
-        {
-            return UnauthorizedResult();
-        }
-
         var command = new RecordInventoryCountLine.Command(
             inventoryCountId,
             lineId,
             request.CountedQuantity,
             request.Comment,
             request.ExpectedLineVersion,
-            actorId);
+            actorContext.ActorId);
 
         ServiceResult<InventoryCountDetails> result = await commandDispatcher
             .DispatchAsync<RecordInventoryCountLine.Command, ServiceResult<InventoryCountDetails>>(
@@ -318,10 +266,4 @@ internal static class InventoryCountEndpoints
         return result.ToHttpResult();
     }
 
-    private static IResult UnauthorizedResult()
-    {
-        return ServiceResult<InventoryCountDetails>
-            .Fail(ServiceError.Unauthorized())
-            .ToHttpResult();
-    }
 }
