@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
-using Microsoft.Extensions.Logging;
 using Myrmex.AppDispatching.CommandDispatching;
 using Myrmex.AppDispatching.QueryDispatching;
 using Myrmex.Core.Application;
@@ -79,14 +78,18 @@ public sealed class InventoryCountEndpointTests
         }
     }
 
-    [Fact]
-    public async Task CreateInventoryCountAsync_WhenActorClaimIsMissing_Returns500WithoutDispatch()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public async Task CreateInventoryCountAsync_WhenActorClaimIsMissingOrEmpty_Returns403WithoutDispatch(
+        string? actorId)
     {
         RecordingCommandDispatcher dispatcher = new(CreateDetails());
         await using WebApplication app = CreateApp(
             dispatcher,
             authenticated: true,
-            actorId: null);
+            actorId: actorId);
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         await app.StartAsync(cancellationToken);
 
@@ -98,7 +101,7 @@ public sealed class InventoryCountEndpointTests
                 new CreateInventoryCountRequest(Guid.NewGuid(), null),
                 cancellationToken);
 
-            Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
             Assert.Null(dispatcher.CreateCommand);
         }
         finally
@@ -624,18 +627,15 @@ public sealed class InventoryCountEndpointTests
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
-        builder.Logging.ClearProviders();
         builder.Services.AddSingleton<ICommandDispatcher>(commandDispatcher);
         builder.Services.AddSingleton<IQueryDispatcher>(
             queryDispatcher ?? new RecordingQueryDispatcher(CreateDetails()));
-        builder.Services.AddProblemDetails();
         builder.Services.AddTestAuthentication(
             authenticated,
             actorId,
             useSubjectClaim: true);
 
         WebApplication app = builder.Build();
-        app.UseExceptionHandler();
         app.UseTestAuthentication();
         app.MapGroup("/api/wms/inventory")
             .RequireAuthorization(Myrmex.AspNetCore.Security.MyrmexAuthorizationPolicies.WmsOperator)

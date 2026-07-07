@@ -34,7 +34,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(
         MyrmexAuthorizationPolicies.WmsOperator,
-        policy => policy.RequireAuthenticatedUser());
+        MyrmexAuthorizationPolicies.ConfigureWmsOperator);
 
 builder.Services.AddWmsModule(builder.Configuration);
 builder.Services.AddOneCIntegration(builder.Configuration);

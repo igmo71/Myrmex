@@ -39,7 +39,7 @@ internal static class TestAuthentication
         {
             options.AddPolicy(
                 MyrmexAuthorizationPolicies.WmsOperator,
-                policy => policy.RequireAuthenticatedUser());
+                MyrmexAuthorizationPolicies.ConfigureWmsOperator);
         });
 
         return services;

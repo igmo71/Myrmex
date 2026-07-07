@@ -86,7 +86,7 @@ public sealed class DevelopmentActorAuthenticationTests
         {
             options.AddPolicy(
                 MyrmexAuthorizationPolicies.WmsOperator,
-                policy => policy.RequireAuthenticatedUser());
+                MyrmexAuthorizationPolicies.ConfigureWmsOperator);
         });
 
         WebApplication app = builder.Build();
