@@ -14,7 +14,6 @@ namespace Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryBalancePages;
 
 public partial class Index
 {
-    private const int LookupTake = 100;
     private const int AutocompleteTake = 20;
 
     [Inject]
@@ -37,29 +36,23 @@ public partial class Index
 
     private InventoryBalanceGrid? _inventoryBalanceGrid;
 
-    private List<WarehouseDetails> _warehouses = [];
-
+    private WarehouseLookupItem? _selectedWarehouse;
     private Guid? _selectedWarehouseId;
     private StorageLocationLookupItem? _selectedStorageLocation;
     private StockKeepingUnitLookupItem? _selectedStockKeepingUnit;
 
-    private bool _isLoadingWarehouses;
     private string? _errorMessage;
     private int _storageLocationSearchVersion;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadWarehousesAsync();
-    }
 
     private Task ReloadAsync()
     {
         return ReloadInventoryBalancesAsync();
     }
 
-    private async Task OnWarehouseChanged(Guid? value)
+    private async Task OnWarehouseChanged(WarehouseLookupItem? value)
     {
-        _selectedWarehouseId = value;
+        _selectedWarehouse = value;
+        _selectedWarehouseId = value?.Id;
         _selectedStorageLocation = null;
         _storageLocationSearchVersion++;
 
@@ -138,35 +131,29 @@ public partial class Index
             ?? Task.CompletedTask;
     }
 
-    private async Task LoadWarehousesAsync()
+    private async Task<IEnumerable<WarehouseLookupItem>> SearchWarehousesAsync(
+        string value,
+        CancellationToken cancellationToken)
     {
-        _isLoadingWarehouses = true;
-        _errorMessage = null;
-
         try
         {
-            ListWarehousesRequest request = new()
-            {
-                Skip = 0,
-                Take = LookupTake,
-                SortBy = WarehouseSortBy.Name,
-                SortDescending = false,
-                IncludeInactive = false
-            };
-
-            ListResult<WarehouseDetails> result = await WmsTopologyApiClient
-                .ListWarehousesAsync(request);
-
-            _warehouses = result.Items.ToList();
+            return await WmsTopologyApiClient.LookupWarehousesAsync(
+                new LookupWarehousesRequest
+                {
+                    SearchText = value,
+                    Take = AutocompleteTake,
+                    SelectableOnly = true
+                },
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return [];
         }
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
-            _warehouses = [];
-        }
-        finally
-        {
-            _isLoadingWarehouses = false;
+            return [];
         }
     }
 

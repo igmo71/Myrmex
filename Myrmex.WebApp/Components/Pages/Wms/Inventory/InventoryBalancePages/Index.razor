@@ -19,8 +19,7 @@
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.Add"
-                           OnClick="OpenInitialCountAsync"
-                           Disabled="_isLoadingWarehouses">
+                           OnClick="OpenInitialCountAsync">
                     @Localizer["InventoryBalance.InitialCount"]
                 </MudButton>
 
@@ -40,14 +39,13 @@
             </MudAlert>
         }
 
-        <InventoryBalanceFilters Warehouses="@_warehouses"
-                                 SelectedWarehouseId="@_selectedWarehouseId"
-                                 SelectedWarehouseIdChanged="OnWarehouseChanged"
+        <InventoryBalanceFilters SelectedWarehouse="@_selectedWarehouse"
+                                 SelectedWarehouseChanged="OnWarehouseChanged"
+                                 SearchWarehouses="SearchWarehousesAsync"
                                  SelectedStorageLocation="@_selectedStorageLocation"
                                  SelectedStorageLocationChanged="OnStorageLocationChanged"
                                  SelectedStockKeepingUnit="@_selectedStockKeepingUnit"
                                  SelectedStockKeepingUnitChanged="OnStockKeepingUnitChanged"
-                                 IsLoadingWarehouses="@_isLoadingWarehouses"
                                  SearchStockKeepingUnits="SearchStockKeepingUnitsAsync"
                                  SearchStorageLocations="SearchStorageLocationsAsync" />
 

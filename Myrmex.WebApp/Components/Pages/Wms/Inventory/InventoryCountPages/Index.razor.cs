@@ -11,7 +11,7 @@ namespace Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryCountPages;
 
 public partial class Index
 {
-    private const int LookupTake = 100;
+    private const int AutocompleteTake = 20;
 
     [Inject] private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = default!;
     [Inject] private WmsTopologyApiClient WmsTopologyApiClient { get; set; } = default!;
@@ -19,15 +19,12 @@ public partial class Index
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
 
     private InventoryCountGrid? _inventoryCountGrid;
-    private List<WarehouseDetails> _warehouses = [];
+    private WarehouseLookupItem? _selectedWarehouse;
     private Guid? _selectedWarehouseId;
     private string? _selectedStatus;
     private DateTime? _createdFrom;
     private DateTime? _createdTo;
-    private bool _isLoadingWarehouses;
     private string? _errorMessage;
-
-    protected override Task OnInitializedAsync() => LoadWarehousesAsync();
 
     private async Task<GridData<InventoryCountListItem>> LoadInventoryCountsAsync(
         InventoryCountGridRequest gridRequest,
@@ -69,31 +66,29 @@ public partial class Index
         }
     }
 
-    private async Task LoadWarehousesAsync()
+    private async Task<IEnumerable<WarehouseLookupItem>> SearchWarehousesAsync(
+        string value,
+        CancellationToken cancellationToken)
     {
-        _isLoadingWarehouses = true;
         try
         {
-            ListResult<WarehouseDetails> result =
-                await WmsTopologyApiClient.ListWarehousesAsync(
-                    new ListWarehousesRequest
+            return await WmsTopologyApiClient.LookupWarehousesAsync(
+                    new LookupWarehousesRequest
                     {
-                        Skip = 0,
-                        Take = LookupTake,
-                        SortBy = WarehouseSortBy.Name,
-                        SortDescending = false,
-                        IncludeInactive = false
-                    });
-            _warehouses = result.Items.ToList();
+                        SearchText = value,
+                        Take = AutocompleteTake,
+                        SelectableOnly = true
+                    },
+                    cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return [];
         }
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
-            _warehouses = [];
-        }
-        finally
-        {
-            _isLoadingWarehouses = false;
+            return [];
         }
     }
 
@@ -138,9 +133,10 @@ public partial class Index
         await ReloadAsync();
     }
 
-    private async Task OnWarehouseChanged(Guid? value)
+    private async Task OnWarehouseChanged(WarehouseLookupItem? value)
     {
-        _selectedWarehouseId = value;
+        _selectedWarehouse = value;
+        _selectedWarehouseId = value?.Id;
         await ResetAndReloadAsync();
     }
 

@@ -31,9 +31,9 @@
             </MudAlert>
         }
 
-        <InventoryTransferFilters Warehouses="@_warehouses"
-                                  SelectedWarehouseId="@_selectedWarehouseId"
-                                  SelectedWarehouseIdChanged="OnWarehouseChanged"
+        <InventoryTransferFilters SelectedWarehouse="@_selectedWarehouse"
+                                  SelectedWarehouseChanged="OnWarehouseChanged"
+                                  SearchWarehouses="SearchWarehousesAsync"
                                   SelectedStatus="@_selectedStatus"
                                   SelectedStatusChanged="OnStatusChanged"
                                   HasTransitLocation="@_hasTransitLocation"
@@ -50,7 +50,6 @@
                                   SelectedSourceStorageLocationChanged="OnSourceStorageLocationChanged"
                                   SelectedDestinationStorageLocation="@_selectedDestinationStorageLocation"
                                   SelectedDestinationStorageLocationChanged="OnDestinationStorageLocationChanged"
-                                  IsLoadingWarehouses="@_isLoadingWarehouses"
                                   SearchStockKeepingUnits="SearchStockKeepingUnitsAsync"
                                   SearchStorageLocations="SearchStorageLocationsAsync"
                                   ReloadRequested="ReloadAsync" />

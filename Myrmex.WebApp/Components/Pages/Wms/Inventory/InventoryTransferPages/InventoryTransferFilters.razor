@@ -6,23 +6,31 @@
 <MudPaper Class="pa-4">
     <MudStack Spacing="2">
         <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
-            <MudSelect T="Guid?"
-                       Label="@Localizer["Common.Warehouse"]"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       Clearable="true"
-                       Value="SelectedWarehouseId"
-                       ValueChanged="OnWarehouseChanged"
-                       Disabled="IsLoadingWarehouses"
-                       HelperText="&#160;"
-                       Class="min-width-300">
-                @foreach (WarehouseDetails warehouse in Warehouses)
-                {
-                    <MudSelectItem T="Guid?" Value="@((Guid?)warehouse.Id)">
-                        @WarehouseDisplayFormatter.GetName(warehouse.Name, Localizer)
-                    </MudSelectItem>
-                }
-            </MudSelect>
+            <MudAutocomplete T="WarehouseLookupItem"
+                             Label="@Localizer["Common.Warehouse"]"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Clearable="true"
+                             ShowProgressIndicator="true"
+                             MinCharacters="0"
+                             DebounceInterval="300"
+                             MaxItems="20"
+                             ResetValueOnEmptyText="true"
+                             CoerceText="false"
+                             CoerceValue="false"
+                             Value="SelectedWarehouse"
+                             ValueChanged="OnWarehouseChanged"
+                             SearchFunc="SearchWarehouses"
+                             ToStringFunc="FormatWarehouse"
+                             HelperText="&#160;"
+                             Class="min-width-300">
+                <ItemTemplate>
+                    <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                </ItemTemplate>
+                <NoItemsTemplate>
+                    <MudText>@Localizer["Warehouse.NoneFound"]</MudText>
+                </NoItemsTemplate>
+            </MudAutocomplete>
 
             <MudSelect T="string"
                        Label="@Localizer["Common.Status"]"
@@ -126,7 +134,7 @@
                              ValueChanged="OnSourceStorageLocationChanged"
                              SearchFunc="SearchStorageLocations"
                              ToStringFunc="FormatStorageLocation"
-                             Disabled="SelectedWarehouseId is null"
+                             Disabled="SelectedWarehouse is null"
                              HelperText="@StorageLocationHelperText"
                              Class="min-width-300">
                 <ItemTemplate>
@@ -153,7 +161,7 @@
                              ValueChanged="OnDestinationStorageLocationChanged"
                              SearchFunc="SearchStorageLocations"
                              ToStringFunc="FormatStorageLocation"
-                             Disabled="SelectedWarehouseId is null"
+                             Disabled="SelectedWarehouse is null"
                              HelperText="@StorageLocationHelperText"
                              Class="min-width-300">
                 <ItemTemplate>
@@ -175,13 +183,14 @@
 
 @code {
     [Parameter]
-    public IReadOnlyList<WarehouseDetails> Warehouses { get; set; } = [];
+    public WarehouseLookupItem? SelectedWarehouse { get; set; }
 
     [Parameter]
-    public Guid? SelectedWarehouseId { get; set; }
+    public EventCallback<WarehouseLookupItem?> SelectedWarehouseChanged { get; set; }
 
     [Parameter]
-    public EventCallback<Guid?> SelectedWarehouseIdChanged { get; set; }
+    public Func<string, CancellationToken, Task<IEnumerable<WarehouseLookupItem>>> SearchWarehouses { get; set; } =
+        (_, _) => Task.FromResult(Enumerable.Empty<WarehouseLookupItem>());
 
     [Parameter]
     public string? SelectedStatus { get; set; }
@@ -232,9 +241,6 @@
     public EventCallback<StorageLocationLookupItem?> SelectedDestinationStorageLocationChanged { get; set; }
 
     [Parameter]
-    public bool IsLoadingWarehouses { get; set; }
-
-    [Parameter]
     public Func<string, CancellationToken, Task<IEnumerable<StockKeepingUnitLookupItem>>> SearchStockKeepingUnits { get; set; } =
         (_, _) => Task.FromResult(Enumerable.Empty<StockKeepingUnitLookupItem>());
 
@@ -246,9 +252,9 @@
     public EventCallback ReloadRequested { get; set; }
 
     private string? StorageLocationHelperText =>
-        SelectedWarehouseId is null ? Localizer["Common.SelectWarehouseFirst"].Value : null;
+        SelectedWarehouse is null ? Localizer["Common.SelectWarehouseFirst"].Value : null;
 
-    private async Task OnWarehouseChanged(Guid? value) => await SelectedWarehouseIdChanged.InvokeAsync(value);
+    private async Task OnWarehouseChanged(WarehouseLookupItem? value) => await SelectedWarehouseChanged.InvokeAsync(value);
 
     private async Task OnStatusChanged(string? value) => await SelectedStatusChanged.InvokeAsync(value);
 
@@ -273,6 +279,9 @@
 
     private static string FormatStorageLocation(StorageLocationLookupItem? storageLocation) =>
         storageLocation is null ? string.Empty : $"{storageLocation.Code} - {storageLocation.Name}";
+
+    private static string FormatWarehouse(WarehouseLookupItem? warehouse) =>
+        warehouse is null ? string.Empty : $"{warehouse.Code} - {warehouse.Name}";
 
     private static string FormatStockKeepingUnit(StockKeepingUnitLookupItem? stockKeepingUnit) =>
         stockKeepingUnit is null ? string.Empty : $"{stockKeepingUnit.Code} - {stockKeepingUnit.Name}";

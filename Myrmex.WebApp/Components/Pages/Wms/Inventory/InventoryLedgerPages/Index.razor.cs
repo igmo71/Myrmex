@@ -14,7 +14,6 @@ namespace Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryLedgerPages;
 
 public partial class Index
 {
-    private const int LookupTake = 100;
     private const int AutocompleteTake = 20;
     private const string LedgerRoute = "/wms/inventory/ledger";
 
@@ -47,8 +46,7 @@ public partial class Index
 
     private InventoryLedgerGrid? _inventoryLedgerGrid;
 
-    private List<WarehouseDetails> _warehouses = [];
-
+    private WarehouseLookupItem? _selectedWarehouse;
     private Guid? _selectedWarehouseId;
     private StorageLocationLookupItem? _selectedStorageLocation;
     private StockKeepingUnitLookupItem? _selectedStockKeepingUnit;
@@ -57,7 +55,6 @@ public partial class Index
     private DateTime? _occurredToDate;
 
     private bool _isInitializing = true;
-    private bool _isLoadingWarehouses;
     private bool _isRouteStateBlockingLedgerRequests;
     private string? _errorMessage;
     private string? _routeValidationMessage;
@@ -78,8 +75,6 @@ public partial class Index
 
         try
         {
-            await LoadWarehousesAsync();
-
             if (HasRoutedFilters)
             {
                 await HydrateRoutedFiltersAsync();
@@ -96,9 +91,10 @@ public partial class Index
         return ReloadInventoryLedgerAsync();
     }
 
-    private async Task OnWarehouseChanged(Guid? value)
+    private async Task OnWarehouseChanged(WarehouseLookupItem? value)
     {
-        _selectedWarehouseId = value;
+        _selectedWarehouse = value;
+        _selectedWarehouseId = value?.Id;
         _selectedStorageLocation = null;
         _storageLocationSearchVersion++;
         ClearRouteBlockingState();
@@ -149,6 +145,7 @@ public partial class Index
     private async Task ClearFiltersAsync()
     {
         _selectedWarehouseId = null;
+        _selectedWarehouse = null;
         _selectedStorageLocation = null;
         _selectedStockKeepingUnit = null;
         _selectedTransactionType = string.Empty;
@@ -267,35 +264,29 @@ public partial class Index
             ?? Task.CompletedTask;
     }
 
-    private async Task LoadWarehousesAsync()
+    private async Task<IEnumerable<WarehouseLookupItem>> SearchWarehousesAsync(
+        string value,
+        CancellationToken cancellationToken)
     {
-        _isLoadingWarehouses = true;
-        _errorMessage = null;
-
         try
         {
-            ListWarehousesRequest request = new()
-            {
-                Skip = 0,
-                Take = LookupTake,
-                SortBy = WarehouseSortBy.Name,
-                SortDescending = false,
-                IncludeInactive = true
-            };
-
-            ListResult<WarehouseDetails> result = await WmsTopologyApiClient
-                .ListWarehousesAsync(request);
-
-            _warehouses = result.Items.ToList();
+            return await WmsTopologyApiClient.LookupWarehousesAsync(
+                new LookupWarehousesRequest
+                {
+                    SearchText = value,
+                    Take = AutocompleteTake,
+                    SelectableOnly = false
+                },
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return [];
         }
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
-            _warehouses = [];
-        }
-        finally
-        {
-            _isLoadingWarehouses = false;
+            return [];
         }
     }
 
@@ -323,7 +314,8 @@ public partial class Index
 
             if (resolvedWarehouseId is Guid warehouseId)
             {
-                WarehouseDetails warehouse = await ResolveWarehouseAsync(warehouseId);
+                WarehouseLookupItem warehouse = await ResolveWarehouseAsync(warehouseId);
+                _selectedWarehouse = warehouse;
                 _selectedWarehouseId = warehouse.Id;
             }
 
@@ -352,22 +344,14 @@ public partial class Index
         }
     }
 
-    private async Task<WarehouseDetails> ResolveWarehouseAsync(Guid warehouseId)
+    private async Task<WarehouseLookupItem> ResolveWarehouseAsync(Guid warehouseId)
     {
-        WarehouseDetails? warehouse = _warehouses.SingleOrDefault(x => x.Id == warehouseId);
-
-        if (warehouse is not null)
-        {
-            return warehouse;
-        }
-
-        warehouse = await WmsTopologyApiClient.GetWarehouseByIdAsync(warehouseId);
-        _warehouses.Add(warehouse);
-        _warehouses = _warehouses
-            .OrderBy(x => x.Code, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        return warehouse;
+        WarehouseDetails details = await WmsTopologyApiClient.GetWarehouseByIdAsync(warehouseId);
+        return new WarehouseLookupItem(
+            details.Id,
+            details.Code,
+            details.Name,
+            details.IsActive);
     }
 
     private async Task<StockKeepingUnitLookupItem> ResolveStockKeepingUnitLookupItemAsync(Guid stockKeepingUnitId)
