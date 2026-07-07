@@ -33,7 +33,7 @@ public partial class Index
 
     private InventoryTransferGrid? _inventoryTransferGrid;
 
-    private List<WarehouseLookupItem> _warehouses = [];
+    private WarehouseLookupItem? _selectedWarehouse;
 
     private Guid? _selectedWarehouseId;
     private string? _selectedStatus;
@@ -45,23 +45,18 @@ public partial class Index
     private StorageLocationLookupItem? _selectedSourceStorageLocation;
     private StorageLocationLookupItem? _selectedDestinationStorageLocation;
 
-    private bool _isLoadingWarehouses;
     private string? _errorMessage;
     private int _storageLocationSearchVersion;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadWarehousesAsync();
-    }
 
     private Task ReloadAsync()
     {
         return ReloadInventoryTransfersAsync();
     }
 
-    private async Task OnWarehouseChanged(Guid? value)
+    private async Task OnWarehouseChanged(WarehouseLookupItem? value)
     {
-        _selectedWarehouseId = value;
+        _selectedWarehouse = value;
+        _selectedWarehouseId = value?.Id;
         _selectedSourceStorageLocation = null;
         _selectedDestinationStorageLocation = null;
         _storageLocationSearchVersion++;
@@ -191,30 +186,29 @@ public partial class Index
             ?? Task.CompletedTask;
     }
 
-    private async Task LoadWarehousesAsync()
+    private async Task<IEnumerable<WarehouseLookupItem>> SearchWarehousesAsync(
+        string value,
+        CancellationToken cancellationToken)
     {
-        _isLoadingWarehouses = true;
-        _errorMessage = null;
-
         try
         {
-            IReadOnlyList<WarehouseLookupItem> warehouses = await WmsTopologyApiClient
-                .LookupWarehousesAsync(new LookupWarehousesRequest
+            return await WmsTopologyApiClient.LookupWarehousesAsync(
+                new LookupWarehousesRequest
                 {
+                    SearchText = value,
                     Take = AutocompleteTake,
                     SelectableOnly = true
-                });
-
-            _warehouses = warehouses.ToList();
+                },
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return [];
         }
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
-            _warehouses = [];
-        }
-        finally
-        {
-            _isLoadingWarehouses = false;
+            return [];
         }
     }
 

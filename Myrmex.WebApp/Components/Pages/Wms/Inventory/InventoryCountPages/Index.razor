@@ -25,16 +25,15 @@
             <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
         }
 
-        <InventoryCountFilters Warehouses="@_warehouses"
-                               SelectedWarehouseId="@_selectedWarehouseId"
-                               SelectedWarehouseIdChanged="OnWarehouseChanged"
+        <InventoryCountFilters SelectedWarehouse="@_selectedWarehouse"
+                               SelectedWarehouseChanged="OnWarehouseChanged"
+                               SearchWarehouses="SearchWarehousesAsync"
                                SelectedStatus="@_selectedStatus"
                                SelectedStatusChanged="OnStatusChanged"
                                CreatedFrom="@_createdFrom"
                                CreatedFromChanged="OnCreatedFromChanged"
                                CreatedTo="@_createdTo"
                                CreatedToChanged="OnCreatedToChanged"
-                               IsLoadingWarehouses="@_isLoadingWarehouses"
                                ReloadRequested="ReloadAsync" />
 
         <InventoryCountGrid @ref="_inventoryCountGrid"

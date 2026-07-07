@@ -49,9 +49,9 @@
         }
         else
         {
-            <InventoryLedgerFilters Warehouses="@_warehouses"
-                                    SelectedWarehouseId="@_selectedWarehouseId"
-                                    SelectedWarehouseIdChanged="OnWarehouseChanged"
+            <InventoryLedgerFilters SelectedWarehouse="@_selectedWarehouse"
+                                    SelectedWarehouseChanged="OnWarehouseChanged"
+                                    SearchWarehouses="SearchWarehousesAsync"
                                     SelectedStorageLocation="@_selectedStorageLocation"
                                     SelectedStorageLocationChanged="OnStorageLocationChanged"
                                     SelectedStockKeepingUnit="@_selectedStockKeepingUnit"
@@ -62,7 +62,6 @@
                                     OccurredFromDateChanged="OnOccurredFromDateChanged"
                                     OccurredToDate="@_occurredToDate"
                                     OccurredToDateChanged="OnOccurredToDateChanged"
-                                    IsLoadingWarehouses="@_isLoadingWarehouses"
                                     SearchStockKeepingUnits="SearchStockKeepingUnitsAsync"
                                     SearchStorageLocations="SearchStorageLocationsAsync"
                                     ClearRequested="ClearFiltersAsync" />

@@ -46,8 +46,7 @@ public partial class Index
 
     private InventoryLedgerGrid? _inventoryLedgerGrid;
 
-    private List<WarehouseLookupItem> _warehouses = [];
-
+    private WarehouseLookupItem? _selectedWarehouse;
     private Guid? _selectedWarehouseId;
     private StorageLocationLookupItem? _selectedStorageLocation;
     private StockKeepingUnitLookupItem? _selectedStockKeepingUnit;
@@ -56,7 +55,6 @@ public partial class Index
     private DateTime? _occurredToDate;
 
     private bool _isInitializing = true;
-    private bool _isLoadingWarehouses;
     private bool _isRouteStateBlockingLedgerRequests;
     private string? _errorMessage;
     private string? _routeValidationMessage;
@@ -77,8 +75,6 @@ public partial class Index
 
         try
         {
-            await LoadWarehousesAsync();
-
             if (HasRoutedFilters)
             {
                 await HydrateRoutedFiltersAsync();
@@ -95,9 +91,10 @@ public partial class Index
         return ReloadInventoryLedgerAsync();
     }
 
-    private async Task OnWarehouseChanged(Guid? value)
+    private async Task OnWarehouseChanged(WarehouseLookupItem? value)
     {
-        _selectedWarehouseId = value;
+        _selectedWarehouse = value;
+        _selectedWarehouseId = value?.Id;
         _selectedStorageLocation = null;
         _storageLocationSearchVersion++;
         ClearRouteBlockingState();
@@ -148,6 +145,7 @@ public partial class Index
     private async Task ClearFiltersAsync()
     {
         _selectedWarehouseId = null;
+        _selectedWarehouse = null;
         _selectedStorageLocation = null;
         _selectedStockKeepingUnit = null;
         _selectedTransactionType = string.Empty;
@@ -266,30 +264,29 @@ public partial class Index
             ?? Task.CompletedTask;
     }
 
-    private async Task LoadWarehousesAsync()
+    private async Task<IEnumerable<WarehouseLookupItem>> SearchWarehousesAsync(
+        string value,
+        CancellationToken cancellationToken)
     {
-        _isLoadingWarehouses = true;
-        _errorMessage = null;
-
         try
         {
-            IReadOnlyList<WarehouseLookupItem> warehouses = await WmsTopologyApiClient
-                .LookupWarehousesAsync(new LookupWarehousesRequest
+            return await WmsTopologyApiClient.LookupWarehousesAsync(
+                new LookupWarehousesRequest
                 {
+                    SearchText = value,
                     Take = AutocompleteTake,
                     SelectableOnly = false
-                });
-
-            _warehouses = warehouses.ToList();
+                },
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return [];
         }
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
-            _warehouses = [];
-        }
-        finally
-        {
-            _isLoadingWarehouses = false;
+            return [];
         }
     }
 
@@ -318,6 +315,7 @@ public partial class Index
             if (resolvedWarehouseId is Guid warehouseId)
             {
                 WarehouseLookupItem warehouse = await ResolveWarehouseAsync(warehouseId);
+                _selectedWarehouse = warehouse;
                 _selectedWarehouseId = warehouse.Id;
             }
 
@@ -348,26 +346,12 @@ public partial class Index
 
     private async Task<WarehouseLookupItem> ResolveWarehouseAsync(Guid warehouseId)
     {
-        WarehouseLookupItem? warehouse = _warehouses.SingleOrDefault(x => x.Id == warehouseId);
-
-        if (warehouse is not null)
-        {
-            return warehouse;
-        }
-
         WarehouseDetails details = await WmsTopologyApiClient.GetWarehouseByIdAsync(warehouseId);
-        warehouse = new WarehouseLookupItem(
+        return new WarehouseLookupItem(
             details.Id,
             details.Code,
             details.Name,
             details.IsActive);
-        _warehouses.Add(warehouse);
-        _warehouses = _warehouses
-            .OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(x => x.Code, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        return warehouse;
     }
 
     private async Task<StockKeepingUnitLookupItem> ResolveStockKeepingUnitLookupItemAsync(Guid stockKeepingUnitId)

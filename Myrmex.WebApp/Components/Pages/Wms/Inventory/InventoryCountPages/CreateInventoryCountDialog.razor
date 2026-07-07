@@ -11,20 +11,30 @@
     <DialogContent>
         <MudForm @ref="_form">
             <MudStack Spacing="3">
-                <MudSelect T="Guid?"
-                           Label="@Localizer["Common.Warehouse"]"
-                           Variant="Variant.Outlined"
-                           Required="true"
-                           RequiredError="@Localizer["Common.WarehouseRequired"]"
-                           Disabled="_isLoading"
-                           @bind-Value="_warehouseId">
-                    @foreach (WarehouseLookupItem warehouse in _warehouses)
-                    {
-                        <MudSelectItem T="Guid?" Value="@((Guid?)warehouse.Id)">
-                            @WarehouseDisplayFormatter.GetName(warehouse.Name, Localizer)
-                        </MudSelectItem>
-                    }
-                </MudSelect>
+                <MudAutocomplete T="WarehouseLookupItem"
+                                 Label="@Localizer["Common.Warehouse"]"
+                                 Variant="Variant.Outlined"
+                                 Required="true"
+                                 RequiredError="@Localizer["Common.WarehouseRequired"]"
+                                 Clearable="true"
+                                 ShowProgressIndicator="true"
+                                 MinCharacters="0"
+                                 DebounceInterval="300"
+                                 MaxItems="20"
+                                 ResetValueOnEmptyText="true"
+                                 CoerceText="false"
+                                 CoerceValue="false"
+                                 Value="_selectedWarehouse"
+                                 ValueChanged="OnWarehouseChanged"
+                                 SearchFunc="SearchWarehousesAsync"
+                                 ToStringFunc="FormatWarehouse">
+                    <ItemTemplate>
+                        <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                    </ItemTemplate>
+                    <NoItemsTemplate>
+                        <MudText>@Localizer["Warehouse.NoneFound"]</MudText>
+                    </NoItemsTemplate>
+                </MudAutocomplete>
 
                 <MudTextField T="string"
                               Label="@Localizer["InventoryCount.ReasonOrDescription"]"
@@ -46,7 +56,7 @@
         <MudButton Color="Color.Primary"
                    Variant="Variant.Filled"
                    OnClick="SaveAsync"
-                   Disabled="_isSaving || _isLoading">
+                   Disabled="_isSaving">
             @Localizer["Common.Create"]
         </MudButton>
     </DialogActions>
@@ -63,38 +73,45 @@
     private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = null!;
 
     private MudForm? _form;
-    private const int WarehouseLookupTake = 20;
+    private const int AutocompleteTake = 20;
 
-    private List<WarehouseLookupItem> _warehouses = [];
+    private WarehouseLookupItem? _selectedWarehouse;
     private Guid? _warehouseId;
     private string? _reason;
     private string? _errorMessage;
-    private bool _isLoading;
     private bool _isSaving;
 
-    protected override async Task OnInitializedAsync()
+    private async Task<IEnumerable<WarehouseLookupItem>> SearchWarehousesAsync(
+        string value,
+        CancellationToken cancellationToken)
     {
-        _isLoading = true;
-
         try
         {
-            IReadOnlyList<WarehouseLookupItem> warehouses = await WmsTopologyApiClient
-                .LookupWarehousesAsync(
+            return await WmsTopologyApiClient.LookupWarehousesAsync(
                 new LookupWarehousesRequest
                 {
-                    Take = WarehouseLookupTake,
+                    SearchText = value,
+                    Take = AutocompleteTake,
                     SelectableOnly = true
-                });
-            _warehouses = warehouses.ToList();
+                },
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return [];
         }
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
+            return [];
         }
-        finally
-        {
-            _isLoading = false;
-        }
+    }
+
+    private Task OnWarehouseChanged(WarehouseLookupItem? value)
+    {
+        _selectedWarehouse = value;
+        _warehouseId = value?.Id;
+        return Task.CompletedTask;
     }
 
     private async Task SaveAsync()
@@ -139,4 +156,7 @@
     }
 
     private void Cancel() => MudDialog.Cancel();
+
+    private static string FormatWarehouse(WarehouseLookupItem? warehouse) =>
+        warehouse is null ? string.Empty : $"{warehouse.Code} - {warehouse.Name}";
 }

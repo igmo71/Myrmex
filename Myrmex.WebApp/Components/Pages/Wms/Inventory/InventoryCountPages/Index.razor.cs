@@ -11,7 +11,7 @@ namespace Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryCountPages;
 
 public partial class Index
 {
-    private const int WarehouseLookupTake = 20;
+    private const int AutocompleteTake = 20;
 
     [Inject] private WmsInventoryApiClient WmsInventoryApiClient { get; set; } = default!;
     [Inject] private WmsTopologyApiClient WmsTopologyApiClient { get; set; } = default!;
@@ -19,15 +19,12 @@ public partial class Index
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
 
     private InventoryCountGrid? _inventoryCountGrid;
-    private List<WarehouseLookupItem> _warehouses = [];
+    private WarehouseLookupItem? _selectedWarehouse;
     private Guid? _selectedWarehouseId;
     private string? _selectedStatus;
     private DateTime? _createdFrom;
     private DateTime? _createdTo;
-    private bool _isLoadingWarehouses;
     private string? _errorMessage;
-
-    protected override Task OnInitializedAsync() => LoadWarehousesAsync();
 
     private async Task<GridData<InventoryCountListItem>> LoadInventoryCountsAsync(
         InventoryCountGridRequest gridRequest,
@@ -69,28 +66,29 @@ public partial class Index
         }
     }
 
-    private async Task LoadWarehousesAsync()
+    private async Task<IEnumerable<WarehouseLookupItem>> SearchWarehousesAsync(
+        string value,
+        CancellationToken cancellationToken)
     {
-        _isLoadingWarehouses = true;
         try
         {
-            IReadOnlyList<WarehouseLookupItem> warehouses =
-                await WmsTopologyApiClient.LookupWarehousesAsync(
+            return await WmsTopologyApiClient.LookupWarehousesAsync(
                     new LookupWarehousesRequest
                     {
-                        Take = WarehouseLookupTake,
+                        SearchText = value,
+                        Take = AutocompleteTake,
                         SelectableOnly = true
-                    });
-            _warehouses = warehouses.ToList();
+                    },
+                    cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return [];
         }
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
-            _warehouses = [];
-        }
-        finally
-        {
-            _isLoadingWarehouses = false;
+            return [];
         }
     }
 
@@ -135,9 +133,10 @@ public partial class Index
         await ReloadAsync();
     }
 
-    private async Task OnWarehouseChanged(Guid? value)
+    private async Task OnWarehouseChanged(WarehouseLookupItem? value)
     {
-        _selectedWarehouseId = value;
+        _selectedWarehouse = value;
+        _selectedWarehouseId = value?.Id;
         await ResetAndReloadAsync();
     }
 
