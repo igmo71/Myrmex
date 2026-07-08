@@ -63,18 +63,18 @@
 
 ### Ticket issuance and typed-client propagation
 
-- [ ] T024 [P] Write ticket-issuer tests for fresh persistent roles, deleted/disallowed users, two-minute expiry, correct scheme, cancellation, and exclusion of passwords/raw browser-cookie data in `Myrmex.Tests/Identity/IdentityApiSessionTicketIssuerTests.cs`
-- [ ] T025 Implement fresh user/role reload and protected nonpersistent `Myrmex.ApiSession` ticket creation in `Myrmex.Identity/Infrastructure/Sessions/IIdentityApiSessionTicketIssuer.cs` and `Myrmex.Identity/Infrastructure/Sessions/IdentityApiSessionTicketIssuer.cs`
-- [ ] T026 [P] Write delegating-handler tests proving `AuthenticationStateProvider` use, cancellation propagation, one internal API-session cookie, no raw browser-cookie forwarding, no identity/role headers, no bearer token, and fail-closed anonymous/missing-ID behavior in `Myrmex.Tests/Identity/IdentityApiAuthenticationHandlerTests.cs`
-- [ ] T027 Implement the circuit-safe outbound handler without `IHttpContextAccessor` in `Myrmex.WebApp/Identity/IdentityApiAuthenticationHandler.cs`
-- [ ] T028 Attach the handler to protected WMS topology, catalog, inventory, OneC, and Identity typed clients while leaving intentionally public clients uncredentialed in `Myrmex.WebApp/Program.cs`
+- [X] T024 [P] Write ticket-issuer tests for fresh persistent roles, deleted/disallowed users, two-minute expiry, correct scheme, cancellation, and exclusion of passwords/raw browser-cookie data in `Myrmex.Tests/Identity/IdentityApiSessionTicketIssuerTests.cs`
+- [X] T025 Implement fresh user/role reload and protected nonpersistent `Myrmex.ApiSession` ticket creation in `Myrmex.Identity/Infrastructure/Sessions/IIdentityApiSessionTicketIssuer.cs` and `Myrmex.Identity/Infrastructure/Sessions/IdentityApiSessionTicketIssuer.cs`
+- [X] T026 [P] Write delegating-handler tests proving `AuthenticationStateProvider` use, cancellation propagation, one internal API-session cookie, no raw browser-cookie forwarding, no identity/role headers, no bearer token, and fail-closed anonymous/missing-ID behavior in `Myrmex.Tests/Identity/IdentityApiAuthenticationHandlerTests.cs`
+- [X] T027 Implement the circuit-safe outbound handler without `IHttpContextAccessor` in `Myrmex.WebApp/Identity/IdentityApiAuthenticationHandler.cs`
+- [X] T028 Attach the handler to protected WMS topology, catalog, inventory, OneC, and Identity typed clients while leaving intentionally public clients uncredentialed in `Myrmex.WebApp/Program.cs`
 
 ### Two-host proof of the boundary
 
-- [ ] T029 Create a two-host test fixture with shared test Identity storage, shared temporary Data Protection application/key ring, production API-session scheme, WebApp handler composition, and a protected actor-echo endpoint in `Myrmex.Tests/Identity/IdentitySessionBoundaryFixture.cs`
-- [ ] T030 Write two-host success/policy tests for `WmsOperator`, `MyrmexAdmin`, unprivileged users, current-role reload, and exact `IActorContext.ActorId` propagation in `Myrmex.Tests/Identity/IdentitySessionBoundaryTests.cs`
-- [ ] T031 Write two-host rejection tests for anonymous, missing-ID, unknown user, expired, tampered, wrong-key, wrong-application-name, wrong-scheme, and production DevelopmentActor fallback attempts in `Myrmex.Tests/Identity/IdentitySessionBoundaryTests.cs`
-- [ ] T032 Add an architecture assertion that production code contains no raw browser-cookie forwarding, trusted identity headers, JWT bearer registration, or anonymous ApiService bypass in `Myrmex.Tests/Identity/IdentitySessionArchitectureTests.cs`
+- [X] T029 Create a two-host test fixture with shared test Identity storage, shared temporary Data Protection application/key ring, production API-session scheme, WebApp handler composition, and a protected actor-echo endpoint in `Myrmex.Tests/Identity/IdentitySessionBoundaryFixture.cs`
+- [X] T030 Write two-host success/policy tests for `WmsOperator`, `MyrmexAdmin`, unprivileged users, current-role reload, and exact `IActorContext.ActorId` propagation in `Myrmex.Tests/Identity/IdentitySessionBoundaryTests.cs`
+- [X] T031 Write two-host rejection tests for anonymous, missing-ID, unknown user, expired, tampered, wrong-key, wrong-application-name, wrong-scheme, and production DevelopmentActor fallback attempts in `Myrmex.Tests/Identity/IdentitySessionBoundaryTests.cs`
+- [X] T032 Add an architecture assertion that production code contains no raw browser-cookie forwarding, trusted identity headers, JWT bearer registration, or anonymous ApiService bypass in `Myrmex.Tests/Identity/IdentitySessionArchitectureTests.cs`
 
 **Checkpoint**: The separate WebApp application cookie and ApiService API-session cookie boundary is implemented and proven end-to-end before UI stories begin.
 
