@@ -20,12 +20,12 @@
 
 **Purpose**: Establish the dedicated Identity capability and compile-time boundaries without implementing authentication behavior.
 
-- [ ] T001 Create `Myrmex.Identity/Myrmex.Identity.csproj` with the Application, Infrastructure, Persistence, and Persistence/Migrations directories, and add the project to `Myrmex.slnx`
-- [ ] T002 Add required project/package references for Identity, EF Core SQL Server, Identity EF stores, Data Protection EF persistence, dispatching, and host composition in `Myrmex.Identity/Myrmex.Identity.csproj`, `Myrmex.WebApp/Myrmex.WebApp.csproj`, `Myrmex.ApiService/Myrmex.ApiService.csproj`, and `Myrmex.Tests/Myrmex.Tests.csproj`
-- [ ] T003 [P] Add stable `MyrmexAdmin` and `WmsOperator` role constants in `Myrmex.Shared/Identity/IdentityRoleNames.cs`
-- [ ] T004 [P] Add `CreateIdentityUserRequest` and non-sensitive `IdentityUserDetails` transport records in `Myrmex.Shared/Identity/CreateIdentityUserRequest.cs` and `Myrmex.Shared/Identity/IdentityUserDetails.cs`
-- [ ] T005 [P] Add non-secret Identity, API-session, Data Protection certificate, and initial-admin configuration sections with bootstrap disabled in `Myrmex.ApiService/appsettings.json`, `Myrmex.ApiService/appsettings.Development.json`, `Myrmex.WebApp/appsettings.json`, and `Myrmex.WebApp/appsettings.Development.json`
-- [ ] T006 Confirm ApiService has no external AppHost endpoint and wire only the required private service/database references in `Myrmex.AppHost/AppHost.cs`
+- [X] T001 Create `Myrmex.Identity/Myrmex.Identity.csproj` with the Application, Infrastructure, Persistence, and Persistence/Migrations directories, and add the project to `Myrmex.slnx`
+- [X] T002 Add required project/package references for Identity, EF Core SQL Server, Identity EF stores, Data Protection EF persistence, dispatching, and host composition in `Myrmex.Identity/Myrmex.Identity.csproj`, `Myrmex.WebApp/Myrmex.WebApp.csproj`, `Myrmex.ApiService/Myrmex.ApiService.csproj`, and `Myrmex.Tests/Myrmex.Tests.csproj`
+- [X] T003 [P] Add stable `MyrmexAdmin` and `WmsOperator` role constants in `Myrmex.Shared/Identity/IdentityRoleNames.cs`
+- [X] T004 [P] Add `CreateIdentityUserRequest` and non-sensitive `IdentityUserDetails` transport records in `Myrmex.Shared/Identity/CreateIdentityUserRequest.cs` and `Myrmex.Shared/Identity/IdentityUserDetails.cs`
+- [X] T005 [P] Add non-secret Identity, API-session, Data Protection certificate, and initial-admin configuration sections with bootstrap disabled in `Myrmex.ApiService/appsettings.json`, `Myrmex.ApiService/appsettings.Development.json`, `Myrmex.WebApp/appsettings.json`, and `Myrmex.WebApp/appsettings.Development.json`
+- [X] T006 Confirm ApiService has no external AppHost endpoint and wire only the required private service/database references in `Myrmex.AppHost/AppHost.cs`
 
 ---
 
