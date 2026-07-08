@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Authentication;
 using Myrmex.AppDispatching;
 using Myrmex.AspNetCore.Security;
 using Myrmex.Core.Application.Security;
+using Myrmex.Identity.Infrastructure;
 using Myrmex.Integrations.OneC;
 using Myrmex.Integrations.OneC.Endpoints;
 using Myrmex.Modules.Wms;
@@ -22,14 +22,13 @@ builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IActorContext, HttpContextActorContext>();
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = MyrmexAuthenticationSchemes.DevelopmentActor;
-    options.DefaultChallengeScheme = MyrmexAuthenticationSchemes.DevelopmentActor;
-})
-    .AddScheme<AuthenticationSchemeOptions, DevelopmentActorAuthenticationHandler>(
-        MyrmexAuthenticationSchemes.DevelopmentActor,
-        _ => { });
+builder.Services.AddMyrmexIdentity(builder.Configuration);
+builder.Services.AddMyrmexIdentityDataProtection(
+    builder.Configuration,
+    builder.Environment);
+builder.Services.AddMyrmexIdentityApiAuthentication(
+    builder.Configuration,
+    builder.Environment);
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(
@@ -84,7 +83,8 @@ app.Run();
 
 static void LogEnvironmentAndActor(WebApplication app)
 {
-    if (app.Configuration.GetValue<bool>(
+    if ((app.Environment.IsDevelopment() || app.Environment.IsStaging()) &&
+        app.Configuration.GetValue<bool>(
             $"{DevelopmentActorAuthenticationHandler.ConfigurationSectionName}:Enabled"))
     {
         string actorId = app.Configuration[

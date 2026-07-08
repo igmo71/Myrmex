@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Localization;
 using MudBlazor.Services;
 using MudBlazor.Translations;
+using Myrmex.Identity.Infrastructure;
 using Myrmex.ServiceDefaults;
 using Myrmex.WebApp;
 using Myrmex.WebApp.Components;
@@ -28,6 +29,12 @@ builder.AddRedisOutputCache("cache");
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddMyrmexIdentity(builder.Configuration);
+builder.Services.AddMyrmexIdentityDataProtection(
+    builder.Configuration,
+    builder.Environment);
+builder.Services.AddMyrmexIdentityWebAppAuthentication();
 
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 builder.Services.Configure<RequestLocalizationOptions>(options =>

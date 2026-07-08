@@ -46,13 +46,13 @@
 
 ### Data Protection and scheme configuration
 
-- [ ] T013 [P] Define shared Data Protection application-name, certificate, API-session lifetime, and production validation options in `Myrmex.Identity/Infrastructure/Configuration/IdentityDataProtectionOptions.cs` and `Myrmex.Identity/Infrastructure/Configuration/IdentityDataProtectionOptionsValidator.cs`
-- [ ] T014 [P] Write option-validation tests proving production rejects absent certificate protection while Development can use explicit development configuration in `Myrmex.Tests/Identity/IdentityDataProtectionOptionsTests.cs`
-- [ ] T015 Persist the shared key ring through `MyrmexIdentityDbContext`, protect production key XML with the configured X.509 certificate, and fail closed on invalid production configuration in `Myrmex.Identity/Infrastructure/IdentityDataProtectionExtensions.cs`
-- [ ] T016 Add distinct browser and API-session scheme/cookie constants without JWT or identity-header schemes in `Myrmex.AspNetCore/Security/MyrmexAuthenticationSchemes.cs`
-- [ ] T017 [P] Write host authentication configuration tests proving WebApp defaults to the Identity application cookie, ApiService defaults to `Myrmex.ApiSession`, API challenges return 401 rather than redirects, forbidden requests return 403, and Production has no DevelopmentActor fallback in `Myrmex.Tests/Identity/IdentityHostAuthenticationTests.cs`
-- [ ] T018 Configure the WebApp Identity application cookie independently from the API-session scheme in `Myrmex.Identity/Infrastructure/IdentityWebAppAuthenticationExtensions.cs` and `Myrmex.WebApp/Program.cs`
-- [ ] T019 Configure ApiService `Myrmex.ApiSession` cookie authentication with a two-minute absolute ticket lifetime, no sliding expiration, and status-code events in `Myrmex.Identity/Infrastructure/IdentityApiAuthenticationExtensions.cs` and `Myrmex.ApiService/Program.cs`
+- [X] T013 [P] Define shared Data Protection application-name, certificate, API-session lifetime, and production validation options in `Myrmex.Identity/Infrastructure/Configuration/IdentityDataProtectionOptions.cs` and `Myrmex.Identity/Infrastructure/Configuration/IdentityDataProtectionOptionsValidator.cs`
+- [X] T014 [P] Write option-validation tests proving production rejects absent certificate protection while Development can use explicit development configuration in `Myrmex.Tests/Identity/IdentityDataProtectionOptionsTests.cs`
+- [X] T015 Persist the shared key ring through `MyrmexIdentityDbContext`, protect production key XML with the configured X.509 certificate, and fail closed on invalid production configuration in `Myrmex.Identity/Infrastructure/IdentityDataProtectionExtensions.cs`
+- [X] T016 Add distinct browser and API-session scheme/cookie constants without JWT or identity-header schemes in `Myrmex.AspNetCore/Security/MyrmexAuthenticationSchemes.cs`
+- [X] T017 [P] Write host authentication configuration tests proving WebApp defaults to the Identity application cookie, ApiService defaults to `Myrmex.ApiSession`, API challenges return 401 rather than redirects, forbidden requests return 403, and Production has no DevelopmentActor fallback in `Myrmex.Tests/Identity/IdentityHostAuthenticationTests.cs`
+- [X] T018 Configure the WebApp Identity application cookie independently from the API-session scheme in `Myrmex.Identity/Infrastructure/IdentityWebAppAuthenticationExtensions.cs` and `Myrmex.WebApp/Program.cs`
+- [X] T019 Configure ApiService `Myrmex.ApiSession` cookie authentication with a two-minute absolute ticket lifetime, no sliding expiration, and status-code events in `Myrmex.Identity/Infrastructure/IdentityApiAuthenticationExtensions.cs` and `Myrmex.ApiService/Program.cs`
 
 ### Policies and stable actor identity
 
