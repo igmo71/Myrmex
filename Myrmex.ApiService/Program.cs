@@ -33,7 +33,10 @@ builder.Services.AddMyrmexIdentityApiAuthentication(
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(
         MyrmexAuthorizationPolicies.WmsOperator,
-        MyrmexAuthorizationPolicies.ConfigureWmsOperator);
+        MyrmexAuthorizationPolicies.ConfigureWmsOperator)
+    .AddPolicy(
+        MyrmexAuthorizationPolicies.MyrmexAdmin,
+        MyrmexAuthorizationPolicies.ConfigureMyrmexAdmin);
 
 builder.Services.AddWmsModule(builder.Configuration);
 builder.Services.AddOneCIntegration(builder.Configuration);

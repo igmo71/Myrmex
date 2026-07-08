@@ -21,15 +21,18 @@ public sealed class HttpContextActorContext(IHttpContextAccessor httpContextAcce
                     "Actor context requires an authenticated principal.");
             }
 
-            string? actorId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                ?? principal.FindFirst("sub")?.Value;
-            if (string.IsNullOrWhiteSpace(actorId))
+            string[] userIds = principal.FindAll(ClaimTypes.NameIdentifier)
+                .Select(claim => claim.Value)
+                .ToArray();
+            if (userIds.Length != 1 ||
+                !Guid.TryParse(userIds[0], out Guid userId) ||
+                userId == Guid.Empty)
             {
                 throw new InvalidOperationException(
-                    "The authenticated principal does not contain an actor identifier claim.");
+                    "The authenticated principal does not contain one valid Identity user ID.");
             }
 
-            return actorId.Trim();
+            return userId.ToString();
         }
     }
 }

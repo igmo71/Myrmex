@@ -56,10 +56,10 @@
 
 ### Policies and stable actor identity
 
-- [ ] T020 [P] Write authorization-policy tests for anonymous, missing/invalid user ID, unprivileged, `WmsOperator`, and `MyrmexAdmin` principals in `Myrmex.Tests/AspNetCore/Security/MyrmexAuthorizationPolicyTests.cs`
-- [ ] T021 Strengthen `WmsOperator`, add `MyrmexAdmin`, and require a parseable non-empty Identity user ID plus the correct role set in `Myrmex.AspNetCore/Security/MyrmexAuthorizationPolicies.cs`
-- [ ] T022 [P] Extend actor-context tests to prove the stable Identity user ID is returned and email/display-name-only principals fail in `Myrmex.Tests/AspNetCore/Security/HttpContextActorContextTests.cs`
-- [ ] T023 Preserve stable user-ID-only actor resolution and reject missing/mutable identity claims in `Myrmex.AspNetCore/Security/HttpContextActorContext.cs`
+- [X] T020 [P] Write authorization-policy tests for anonymous, missing/invalid user ID, unprivileged, `WmsOperator`, and `MyrmexAdmin` principals in `Myrmex.Tests/AspNetCore/Security/MyrmexAuthorizationPolicyTests.cs`
+- [X] T021 Strengthen `WmsOperator`, add `MyrmexAdmin`, and require a parseable non-empty Identity user ID plus the correct role set in `Myrmex.AspNetCore/Security/MyrmexAuthorizationPolicies.cs`
+- [X] T022 [P] Extend actor-context tests to prove the stable Identity user ID is returned and email/display-name-only principals fail in `Myrmex.Tests/AspNetCore/Security/HttpContextActorContextTests.cs`
+- [X] T023 Preserve stable user-ID-only actor resolution and reject missing/mutable identity claims in `Myrmex.AspNetCore/Security/HttpContextActorContext.cs`
 
 ### Ticket issuance and typed-client propagation
 
