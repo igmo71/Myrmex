@@ -92,6 +92,8 @@ public sealed class IdentityApiSessionTicketIssuer(
         ClaimsPrincipal principal,
         out Guid userId)
     {
+        userId = Guid.Empty;
+
         string[] values = principal.FindAll(ClaimTypes.NameIdentifier)
             .Select(claim => claim.Value)
             .ToArray();
