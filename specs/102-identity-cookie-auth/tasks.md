@@ -37,12 +37,12 @@
 
 ### Identity persistence foundation
 
-- [ ] T007 [P] Define GUID-keyed `MyrmexUser` with bounded optional display name in `Myrmex.Identity/Persistence/MyrmexUser.cs`
-- [ ] T008 [P] Define GUID-keyed `MyrmexRole` in `Myrmex.Identity/Persistence/MyrmexRole.cs`
-- [ ] T009 Implement `MyrmexIdentityDbContext` with Identity user/role stores and `IDataProtectionKeyContext` in `Myrmex.Identity/Persistence/MyrmexIdentityDbContext.cs`
-- [ ] T010 Add Identity table naming, `identity` schema, display-name bounds, normalized identity uniqueness, role relationships, and Data Protection key mappings in `Myrmex.Identity/Persistence/Configurations/IdentityModelConfiguration.cs`
-- [ ] T011 Write persistence tests protecting GUID actor identity, normalized email/username uniqueness, separate Identity schema ownership, and Data Protection key mapping in `Myrmex.Tests/Identity/IdentityPersistenceTests.cs`
-- [ ] T012 Implement Identity persistence/service registration against `ConnectionStrings:MyrmexDatabase` without runtime auto-migration in `Myrmex.Identity/Infrastructure/IdentityServiceCollectionExtensions.cs`
+- [X] T007 [P] Define GUID-keyed `MyrmexUser` with bounded optional display name in `Myrmex.Identity/Persistence/MyrmexUser.cs`
+- [X] T008 [P] Define GUID-keyed `MyrmexRole` in `Myrmex.Identity/Persistence/MyrmexRole.cs`
+- [X] T009 Implement `MyrmexIdentityDbContext` with Identity user/role stores and `IDataProtectionKeyContext` in `Myrmex.Identity/Persistence/MyrmexIdentityDbContext.cs`
+- [X] T010 Add Identity table naming, `identity` schema, display-name bounds, normalized identity uniqueness, role relationships, and Data Protection key mappings in `Myrmex.Identity/Persistence/Configurations/IdentityModelConfiguration.cs`
+- [X] T011 Write persistence tests protecting GUID actor identity, normalized email/username uniqueness, separate Identity schema ownership, and Data Protection key mapping in `Myrmex.Tests/Identity/IdentityPersistenceTests.cs`
+- [X] T012 Implement Identity persistence/service registration against `ConnectionStrings:MyrmexDatabase` without runtime auto-migration in `Myrmex.Identity/Infrastructure/IdentityServiceCollectionExtensions.cs`
 
 ### Data Protection and scheme configuration
 
