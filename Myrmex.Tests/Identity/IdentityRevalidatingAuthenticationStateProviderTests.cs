@@ -10,6 +10,8 @@ namespace Myrmex.Tests.Identity;
 
 public sealed class IdentityRevalidatingAuthenticationStateProviderTests
 {
+    private static readonly string databaseName = $"myrmex-revalidation-{Guid.NewGuid():N}";
+
     [Fact]
     public async Task ValidateAuthenticationStateAsync_WithDeletedUser_ReturnsFalse()
     {
@@ -95,9 +97,13 @@ public sealed class IdentityRevalidatingAuthenticationStateProviderTests
             ServiceCollection services = [];
             services.AddLogging();
             services.AddHttpContextAccessor();
+
+            services
+                .AddAuthentication()
+                .AddCookie(IdentityConstants.ApplicationScheme);
+
             services.AddDbContext<MyrmexIdentityDbContext>(options =>
-                options.UseInMemoryDatabase(
-                    $"myrmex-revalidation-{Guid.NewGuid():N}"));
+                options.UseInMemoryDatabase(databaseName));
             services.AddIdentityCore<MyrmexUser>()
                 .AddRoles<MyrmexRole>()
                 .AddSignInManager()
