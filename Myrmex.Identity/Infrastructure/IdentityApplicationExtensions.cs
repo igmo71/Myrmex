@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -13,21 +11,18 @@ public static class IdentityApplicationExtensions
 {
     public static IServiceCollection AddMyrmexIdentityBootstrap(
         this IServiceCollection services,
-        IConfiguration configuration,
-        IHostEnvironment environment)
+        IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
-        ArgumentNullException.ThrowIfNull(environment);
 
         services.AddOptions<InitialAdminOptions>()
             .Bind(configuration.GetSection(InitialAdminOptions.SectionName))
             .ValidateOnStart();
         services.TryAddEnumerable(
-            ServiceDescriptor.Singleton<IValidateOptions<InitialAdminOptions>>(
-                serviceProvider => new InitialAdminOptionsValidator(
-                    environment,
-                    serviceProvider.GetRequiredService<IOptions<IdentityOptions>>())));
+            ServiceDescriptor.Singleton<
+                IValidateOptions<InitialAdminOptions>,
+                InitialAdminOptionsValidator>());
 
         services.TryAddScoped<IIdentityRoleInitializer, IdentityRoleInitializer>();
         services.TryAddScoped<

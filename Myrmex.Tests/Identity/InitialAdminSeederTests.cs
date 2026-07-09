@@ -165,13 +165,15 @@ public sealed class InitialAdminSeederTests
             InitialAdminOptions options,
             bool failRoleAssignment = false)
         {
+            string databaseName = $"myrmex-bootstrap-{Guid.NewGuid():N}";
+
             ListLoggerProvider loggerProvider = new();
             ServiceCollection services = [];
             services.AddLogging(builder => builder.AddProvider(loggerProvider));
             services.AddHttpContextAccessor();
             services.AddDbContext<MyrmexIdentityDbContext>(builder =>
                 builder
-                    .UseInMemoryDatabase($"myrmex-bootstrap-{Guid.NewGuid():N}")
+                    .UseInMemoryDatabase(databaseName)
                     .ConfigureWarnings(warnings => warnings.Ignore(
                         InMemoryEventId.TransactionIgnoredWarning)));
             services.AddIdentityCore<MyrmexUser>()
