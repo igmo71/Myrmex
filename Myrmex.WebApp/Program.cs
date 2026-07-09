@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor.Services;
 using MudBlazor.Translations;
 using Myrmex.AspNetCore.Security;
@@ -32,6 +33,9 @@ builder.AddRedisOutputCache("cache");
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddScoped<
+    AuthenticationStateProvider,
+    IdentityRevalidatingAuthenticationStateProvider>();
 
 builder.Services.AddMyrmexIdentity(builder.Configuration);
 builder.Services.AddMyrmexIdentityDataProtection(

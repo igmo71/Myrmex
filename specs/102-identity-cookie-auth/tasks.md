@@ -89,12 +89,12 @@
 ### Tests for User Story 1
 
 - [X] T033 [P] [US1] Write HTTP account-flow tests for valid/invalid login, application-cookie issuance, antiforgery, safe local return URL, external return rejection, logout, and post-logout denial in `Myrmex.Tests/Identity/WebAppAccountFlowTests.cs`
-- [ ] T034 [P] [US1] Write route-authorization tests for anonymous login redirect, authenticated protected-page access, and access-denied routing in `Myrmex.Tests/Identity/WebAppRouteAuthorizationTests.cs`
-- [ ] T035 [P] [US1] Write authentication-state revalidation tests for deleted users and changed security stamps in `Myrmex.Tests/Identity/IdentityRevalidatingAuthenticationStateProviderTests.cs`
+- [X] T034 [P] [US1] Write route-authorization tests for anonymous login redirect, authenticated protected-page access, and access-denied routing in `Myrmex.Tests/Identity/WebAppRouteAuthorizationTests.cs`
+- [X] T035 [P] [US1] Write authentication-state revalidation tests for deleted users and changed security stamps in `Myrmex.Tests/Identity/IdentityRevalidatingAuthenticationStateProviderTests.cs`
 
 ### Implementation for User Story 1
 
-- [ ] T036 [US1] Implement periodic Identity security-stamp revalidation for interactive circuits in `Myrmex.WebApp/Identity/IdentityRevalidatingAuthenticationStateProvider.cs`
+- [X] T036 [US1] Implement periodic Identity security-stamp revalidation for interactive circuits in `Myrmex.WebApp/Identity/IdentityRevalidatingAuthenticationStateProvider.cs`
 - [X] T037 [US1] Configure cascading authentication state, authentication middleware, authorization middleware, and account endpoint composition in `Myrmex.WebApp/Program.cs`
 - [X] T038 [US1] Make root render mode respect account-route interactive exclusion so cookie-changing pages receive normal HTTP responses in `Myrmex.WebApp/Components/App.razor`
 - [X] T039 [US1] Implement localized non-interactive login GET/POST flow with antiforgery, generic credential errors, safe local return URLs, and no self-registration in `Myrmex.WebApp/Components/Account/Login.razor`
