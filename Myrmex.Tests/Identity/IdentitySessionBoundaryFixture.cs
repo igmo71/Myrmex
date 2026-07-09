@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Myrmex.AspNetCore.Security;
@@ -223,9 +222,7 @@ internal sealed class IdentitySessionBoundaryFixture : IAsyncDisposable
         builder.Services.AddDataProtection()
             .SetApplicationName(ApplicationName)
             .PersistKeysToFileSystem(new DirectoryInfo(KeyPath));
-        builder.Services.AddMyrmexIdentityApiAuthentication(
-            builder.Configuration,
-            builder.Environment);
+        builder.Services.AddMyrmexIdentityApiAuthentication(builder.Configuration);
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<IActorContext, HttpContextActorContext>();
         builder.Services.AddAuthorizationBuilder()
@@ -267,9 +264,7 @@ internal sealed class IdentitySessionBoundaryFixture : IAsyncDisposable
         services.AddDataProtection()
             .SetApplicationName(ApplicationName)
             .PersistKeysToFileSystem(new DirectoryInfo(KeyPath));
-        services.AddMyrmexIdentityApiAuthentication(
-            CreateConfiguration(),
-            new TestHostEnvironment());
+        services.AddMyrmexIdentityApiAuthentication(CreateConfiguration());
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<IIdentityApiSessionTicketIssuer, IdentityApiSessionTicketIssuer>();
         services.AddScoped<MutableAuthenticationStateProvider>();
@@ -314,13 +309,5 @@ internal sealed class IdentitySessionBoundaryFixture : IAsyncDisposable
 
         public override Task<AuthenticationState> GetAuthenticationStateAsync() =>
             Task.FromResult(new AuthenticationState(Principal));
-    }
-
-    private sealed class TestHostEnvironment : IHostEnvironment
-    {
-        public string EnvironmentName { get; set; } = Environments.Production;
-        public string ApplicationName { get; set; } = "Myrmex.Tests";
-        public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 }

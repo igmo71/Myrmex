@@ -19,7 +19,6 @@ namespace Myrmex.Tests.Identity;
 public sealed class WebAppAccountFlowTests
 {
     private const string Password = "Myrmex1!";
-    private static readonly string databaseName = $"myrmex-account-flow-{Guid.NewGuid():N}";
 
     [Fact]
     public async Task Login_WithExistingUserAndValidPassword_IssuesApplicationCookie()
@@ -168,6 +167,8 @@ public sealed class WebAppAccountFlowTests
 
         public static async Task<AccountTestApp> CreateAsync()
         {
+            string databaseName = $"myrmex-account-flow-{Guid.NewGuid():N}";
+
             WebApplicationBuilder builder = WebApplication.CreateBuilder();
             builder.WebHost.UseUrls("http://127.0.0.1:0");
             builder.Services.AddLogging();

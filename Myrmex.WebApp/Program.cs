@@ -84,12 +84,6 @@ builder.Services.AddScoped<WmsInventoryApiClient>(services => new(
         "WmsInventoryApiClient",
         new Uri("https+http://apiservice"))));
 
-builder.Services.AddHttpClient("IdentityApiClient");
-builder.Services.AddScoped<IdentityApiClient>(services => new(
-    services.GetRequiredService<ProtectedApiClientFactory>().CreateClient(
-        "IdentityApiClient",
-        new Uri("https+http://apiservice"))));
-
 #pragma warning disable EXTEXP0001
 builder.Services.AddHttpClient("OneCIntegrationApiClient")
 .RemoveAllResilienceHandlers(); // Long-running import calls must not be cut by default Aspire HTTP resilience timeout.

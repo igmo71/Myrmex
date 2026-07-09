@@ -10,8 +10,6 @@ namespace Myrmex.Tests.Identity;
 
 public sealed class IdentityRevalidatingAuthenticationStateProviderTests
 {
-    private static readonly string databaseName = $"myrmex-revalidation-{Guid.NewGuid():N}";
-
     [Fact]
     public async Task ValidateAuthenticationStateAsync_WithDeletedUser_ReturnsFalse()
     {
@@ -94,6 +92,8 @@ public sealed class IdentityRevalidatingAuthenticationStateProviderTests
 
         public static RevalidationTestHost Create()
         {
+            string databaseName = $"myrmex-revalidation-{Guid.NewGuid():N}";
+
             ServiceCollection services = [];
             services.AddLogging();
             services.AddHttpContextAccessor();

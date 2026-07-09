@@ -15,7 +15,6 @@ public sealed class InitialAdminSeeder(
     UserManager<MyrmexUser> userManager,
     IInitialAdminRoleAssigner roleAssigner,
     ILogger<InitialAdminSeeder> logger)
-    : IInitialAdminSeeder
 {
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> EmailLocks =
         new(StringComparer.Ordinal);

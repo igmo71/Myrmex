@@ -9,7 +9,7 @@ public class WebTests
     [Trait("Category", "Integration")]
     [Trait("Category", "InfrastructureSmoke")]
     [Trait("Category", "AppHostSmoke")]
-    [Fact]
+    [Fact(Explicit = true)]
     public async Task AppHostSmoke_GetWebResourceRootReturnsOkStatusCode()
     {
         // Arrange

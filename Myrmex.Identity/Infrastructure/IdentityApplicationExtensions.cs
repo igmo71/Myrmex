@@ -24,11 +24,11 @@ public static class IdentityApplicationExtensions
                 IValidateOptions<InitialAdminOptions>,
                 InitialAdminOptionsValidator>());
 
-        services.TryAddScoped<IIdentityRoleInitializer, IdentityRoleInitializer>();
+        services.TryAddScoped<IdentityRoleInitializer>();
         services.TryAddScoped<
             IInitialAdminRoleAssigner,
             UserManagerInitialAdminRoleAssigner>();
-        services.TryAddScoped<IInitialAdminSeeder, InitialAdminSeeder>();
+        services.TryAddScoped<InitialAdminSeeder>();
 
         return services;
     }
@@ -40,10 +40,10 @@ public static class IdentityApplicationExtensions
         ArgumentNullException.ThrowIfNull(host);
 
         using IServiceScope scope = host.Services.CreateScope();
-        IIdentityRoleInitializer roleInitializer = scope.ServiceProvider
-            .GetRequiredService<IIdentityRoleInitializer>();
-        IInitialAdminSeeder adminSeeder = scope.ServiceProvider
-            .GetRequiredService<IInitialAdminSeeder>();
+        IdentityRoleInitializer roleInitializer = scope.ServiceProvider
+            .GetRequiredService<IdentityRoleInitializer>();
+        InitialAdminSeeder adminSeeder = scope.ServiceProvider
+            .GetRequiredService<InitialAdminSeeder>();
 
         try
         {

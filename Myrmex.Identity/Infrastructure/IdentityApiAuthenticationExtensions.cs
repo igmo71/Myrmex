@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Myrmex.AspNetCore.Security;
 using Myrmex.Identity.Infrastructure.Configuration;
 
@@ -13,12 +12,10 @@ public static class IdentityApiAuthenticationExtensions
 {
     public static IServiceCollection AddMyrmexIdentityApiAuthentication(
         this IServiceCollection services,
-        IConfiguration configuration,
-        IHostEnvironment environment)
+        IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
-        ArgumentNullException.ThrowIfNull(environment);
 
         IdentityDataProtectionOptions identityOptions =
             IdentityDataProtectionOptions.FromConfiguration(configuration);

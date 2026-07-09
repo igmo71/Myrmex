@@ -26,9 +26,7 @@ builder.Services.AddMyrmexIdentity(builder.Configuration);
 builder.Services.AddMyrmexIdentityDataProtection(
     builder.Configuration,
     builder.Environment);
-builder.Services.AddMyrmexIdentityApiAuthentication(
-    builder.Configuration,
-    builder.Environment);
+builder.Services.AddMyrmexIdentityApiAuthentication(builder.Configuration);
 builder.Services.AddMyrmexIdentityBootstrap(builder.Configuration);
 
 builder.Services.AddAuthorizationBuilder()

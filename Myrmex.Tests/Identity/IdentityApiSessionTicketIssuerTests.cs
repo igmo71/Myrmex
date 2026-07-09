@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Myrmex.AspNetCore.Security;
 using Myrmex.Identity.Infrastructure;
@@ -17,9 +15,6 @@ namespace Myrmex.Tests.Identity;
 
 public sealed class IdentityApiSessionTicketIssuerTests
 {
-    private static readonly string _identityDatabaseName =
-        $"myrmex-session-boundary-identity-{Guid.NewGuid():N}";
-
     [Fact]
     public async Task IssueAsync_ReloadsCurrentPersistentRoles()
     {
@@ -146,19 +141,20 @@ public sealed class IdentityApiSessionTicketIssuerTests
 
     private static ServiceProvider CreateProvider(TimeProvider? timeProvider = null)
     {
+        string identityDatabaseName =
+            $"myrmex-session-ticket-identity-{Guid.NewGuid():N}";
+
         ServiceCollection services = new();
         services.AddLogging();
         services.AddHttpContextAccessor();
         services.AddDbContext<MyrmexIdentityDbContext>(options =>
-            options.UseInMemoryDatabase(_identityDatabaseName));
+            options.UseInMemoryDatabase(identityDatabaseName));
         services.AddIdentityCore<MyrmexUser>()
             .AddRoles<MyrmexRole>()
             .AddSignInManager()
             .AddEntityFrameworkStores<MyrmexIdentityDbContext>();
         services.AddDataProtection();
-        services.AddMyrmexIdentityApiAuthentication(
-            CreateConfiguration(),
-            new TestHostEnvironment());
+        services.AddMyrmexIdentityApiAuthentication(CreateConfiguration());
         services.AddSingleton(timeProvider ?? TimeProvider.System);
         services.AddScoped<IIdentityApiSessionTicketIssuer, IdentityApiSessionTicketIssuer>();
         return services.BuildServiceProvider();
@@ -214,11 +210,4 @@ public sealed class IdentityApiSessionTicketIssuerTests
         public override DateTimeOffset GetUtcNow() => now;
     }
 
-    private sealed class TestHostEnvironment : IHostEnvironment
-    {
-        public string EnvironmentName { get; set; } = Environments.Production;
-        public string ApplicationName { get; set; } = "Myrmex.Tests";
-        public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
-    }
 }

@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Myrmex.AspNetCore.Security;
@@ -42,9 +41,7 @@ public sealed class IdentityHostAuthenticationTests
     {
         IConfiguration configuration = CreateConfiguration();
         ServiceCollection services = new();
-        services.AddMyrmexIdentityApiAuthentication(
-            configuration,
-            new TestHostEnvironment(Environments.Production));
+        services.AddMyrmexIdentityApiAuthentication(configuration);
 
         using ServiceProvider provider = services.BuildServiceProvider();
         AuthenticationOptions options = provider
@@ -88,9 +85,7 @@ public sealed class IdentityHostAuthenticationTests
             new WebApplicationOptions { EnvironmentName = environmentName });
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Configuration.AddConfiguration(CreateConfiguration());
-        builder.Services.AddMyrmexIdentityApiAuthentication(
-            builder.Configuration,
-            builder.Environment);
+        builder.Services.AddMyrmexIdentityApiAuthentication(builder.Configuration);
         builder.Services.AddAuthorization();
 
         WebApplication app = builder.Build();
@@ -121,14 +116,4 @@ public sealed class IdentityHostAuthenticationTests
         return new HttpClient { BaseAddress = new Uri(address) };
     }
 
-    private sealed class TestHostEnvironment(string environmentName) : IHostEnvironment
-    {
-        public string EnvironmentName { get; set; } = environmentName;
-
-        public string ApplicationName { get; set; } = "Myrmex.Tests";
-
-        public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
-
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
-    }
 }

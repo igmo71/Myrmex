@@ -9,7 +9,6 @@ namespace Myrmex.Identity.Application.Bootstrap;
 public sealed class IdentityRoleInitializer(
     RoleManager<MyrmexRole> roleManager,
     ILogger<IdentityRoleInitializer> logger)
-    : IIdentityRoleInitializer
 {
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> RoleLocks =
         new(StringComparer.Ordinal);

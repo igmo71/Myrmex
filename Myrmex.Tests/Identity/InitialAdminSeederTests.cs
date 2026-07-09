@@ -181,13 +181,13 @@ public sealed class InitialAdminSeederTests
                 .AddSignInManager()
                 .AddEntityFrameworkStores<MyrmexIdentityDbContext>();
             services.AddSingleton(Options.Create(options));
-            services.AddScoped<IIdentityRoleInitializer, IdentityRoleInitializer>();
+            services.AddScoped<IdentityRoleInitializer>();
             services.AddScoped<IInitialAdminRoleAssigner>(
                 _ => failRoleAssignment
                     ? new FailingInitialAdminRoleAssigner()
                     : new UserManagerInitialAdminRoleAssigner(
                         _.GetRequiredService<UserManager<MyrmexUser>>()));
-            services.AddScoped<IInitialAdminSeeder, InitialAdminSeeder>();
+            services.AddScoped<InitialAdminSeeder>();
 
             return new BootstrapTestHost(
                 services.BuildServiceProvider(),
@@ -204,7 +204,7 @@ public sealed class InitialAdminSeederTests
         {
             using IServiceScope scope = _services.CreateScope();
             await scope.ServiceProvider
-                .GetRequiredService<IIdentityRoleInitializer>()
+                .GetRequiredService<IdentityRoleInitializer>()
                 .EnsureRolesAsync(TestContext.Current.CancellationToken);
         }
 
@@ -222,7 +222,7 @@ public sealed class InitialAdminSeederTests
         {
             using IServiceScope scope = _services.CreateScope();
             return await scope.ServiceProvider
-                .GetRequiredService<IInitialAdminSeeder>()
+                .GetRequiredService<InitialAdminSeeder>()
                 .SeedAsync(TestContext.Current.CancellationToken);
         }
 
