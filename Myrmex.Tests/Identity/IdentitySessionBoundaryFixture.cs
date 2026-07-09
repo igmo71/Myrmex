@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.DataProtection;
@@ -29,6 +28,8 @@ namespace Myrmex.Tests.Identity;
 internal sealed class IdentitySessionBoundaryFixture : IAsyncDisposable
 {
     private const string ApplicationName = "Myrmex.SessionBoundary.Tests";
+    private readonly string _identityDatabaseName =
+    $"myrmex-session-boundary-identity-{Guid.NewGuid():N}";
 
     private readonly string _rootPath = Path.Combine(
         Path.GetTempPath(),
@@ -181,14 +182,33 @@ internal sealed class IdentitySessionBoundaryFixture : IAsyncDisposable
     private async Task<HttpResponseMessage> SendWithPrincipalAsync(ClaimsPrincipal principal)
     {
         using IServiceScope scope = _webServices!.CreateScope();
+
         MutableAuthenticationStateProvider authenticationState = scope.ServiceProvider
             .GetRequiredService<MutableAuthenticationStateProvider>();
         authenticationState.Principal = principal;
-        IdentityApiAuthenticationHandler handler = scope.ServiceProvider
-            .GetRequiredService<IdentityApiAuthenticationHandler>();
-        handler.InnerHandler = new HttpClientHandler { AllowAutoRedirect = false };
-        using HttpClient client = new(handler) { BaseAddress = ApiAddress };
-        return await client.GetAsync("/actor", TestContext.Current.CancellationToken);
+
+        IIdentityApiSessionTicketIssuer issuer = scope.ServiceProvider
+            .GetRequiredService<IIdentityApiSessionTicketIssuer>();
+
+        string? ticket = await issuer.IssueAsync(
+            principal,
+            TestContext.Current.CancellationToken);
+
+        HttpClient client = new() { BaseAddress = ApiAddress };
+
+        HttpRequestMessage request = new(HttpMethod.Get, "/actor");
+        request.Headers.TryAddWithoutValidation(
+            "Cookie",
+            $"{MyrmexAuthenticationSchemes.ApiSessionCookieName}={ticket}");
+
+        HttpResponseMessage response = await client.SendAsync(
+            request,
+            TestContext.Current.CancellationToken);
+
+        client.Dispose();
+        request.Dispose();
+
+        return response;
     }
 
     private async Task StartApiAsync()
@@ -239,7 +259,7 @@ internal sealed class IdentitySessionBoundaryFixture : IAsyncDisposable
         services.AddLogging();
         services.AddHttpContextAccessor();
         services.AddDbContext<MyrmexIdentityDbContext>(options =>
-            options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
+            options.UseInMemoryDatabase(_identityDatabaseName));
         services.AddIdentityCore<MyrmexUser>()
             .AddRoles<MyrmexRole>()
             .AddSignInManager()

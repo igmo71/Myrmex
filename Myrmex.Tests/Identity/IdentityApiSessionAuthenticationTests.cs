@@ -12,9 +12,15 @@ public sealed class IdentityApiSessionAuthenticationTests
         var user = await fixture.CreateUserAsync(IdentityRoleNames.WmsOperator);
 
         using HttpResponseMessage response = await fixture.SendForUserAsync(user.Id);
+
+        string rawBody = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(
+            response.StatusCode == HttpStatusCode.OK,
+            $"Expected 200 OK, got {(int)response.StatusCode} {response.StatusCode}. Body: {rawBody}");
+
         var body = await IdentitySessionBoundaryFixture.ReadActorAsync(response);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(user.Id.ToString(), body!.UserId);
         Assert.Equal(user.Id.ToString(), body.ActorId);
         Assert.Contains(IdentityRoleNames.WmsOperator, body.Roles);

@@ -17,21 +17,41 @@ namespace Myrmex.Tests.Identity;
 
 public sealed class IdentityApiSessionTicketIssuerTests
 {
+    private static readonly string _identityDatabaseName =
+        $"myrmex-session-boundary-identity-{Guid.NewGuid():N}";
+
     [Fact]
     public async Task IssueAsync_ReloadsCurrentPersistentRoles()
     {
         await using ServiceProvider provider = CreateProvider();
+
         using IServiceScope scope = provider.CreateScope();
+
         UserManager<MyrmexUser> users = scope.ServiceProvider.GetRequiredService<UserManager<MyrmexUser>>();
+        RoleManager<MyrmexRole> roles = scope.ServiceProvider.GetRequiredService<RoleManager<MyrmexRole>>();
+
         MyrmexUser user = await CreateUserAsync(scope.ServiceProvider, IdentityRoleNames.WmsOperator);
+
+        if (!await roles.RoleExistsAsync(IdentityRoleNames.MyrmexAdmin))
+        {
+            IdentityResult roleResult = await roles.CreateAsync(
+                new MyrmexRole(IdentityRoleNames.MyrmexAdmin));
+
+            Assert.True(roleResult.Succeeded);
+        }
+
         IIdentityApiSessionTicketIssuer issuer = scope.ServiceProvider
             .GetRequiredService<IIdentityApiSessionTicketIssuer>();
 
-        AuthenticationTicket first = Unprotect(scope.ServiceProvider,
+        AuthenticationTicket first = Unprotect(
+            scope.ServiceProvider,
             (await issuer.IssueAsync(CreatePrincipal(user.Id)))!);
+
         await users.RemoveFromRoleAsync(user, IdentityRoleNames.WmsOperator);
         await users.AddToRoleAsync(user, IdentityRoleNames.MyrmexAdmin);
-        AuthenticationTicket second = Unprotect(scope.ServiceProvider,
+
+        AuthenticationTicket second = Unprotect(
+            scope.ServiceProvider,
             (await issuer.IssueAsync(CreatePrincipal(user.Id)))!);
 
         Assert.Equal([IdentityRoleNames.WmsOperator], GetRoles(first));
@@ -130,7 +150,7 @@ public sealed class IdentityApiSessionTicketIssuerTests
         services.AddLogging();
         services.AddHttpContextAccessor();
         services.AddDbContext<MyrmexIdentityDbContext>(options =>
-            options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
+            options.UseInMemoryDatabase(_identityDatabaseName));
         services.AddIdentityCore<MyrmexUser>()
             .AddRoles<MyrmexRole>()
             .AddSignInManager()

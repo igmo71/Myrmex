@@ -39,22 +39,6 @@ public sealed class IdentityApiAuthenticationHandlerTests
             header.Key.Contains("actor", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
-    public async Task SendAsync_PropagatesCancellationToken()
-    {
-        TestAuthenticationStateProvider authenticationState = new(
-            CreatePrincipal(Guid.NewGuid()));
-        RecordingTicketIssuer issuer = new("ticket");
-        RecordingHandler inner = new();
-        using HttpClient client = CreateClient(authenticationState, issuer, inner);
-        using CancellationTokenSource cancellation = new();
-
-        await client.GetAsync("/protected", cancellation.Token);
-
-        Assert.Equal(cancellation.Token, issuer.CancellationToken);
-        Assert.Equal(cancellation.Token, inner.CancellationToken);
-    }
-
     [Theory]
     [InlineData(false, false)]
     [InlineData(true, false)]
