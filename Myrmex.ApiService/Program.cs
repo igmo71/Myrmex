@@ -48,8 +48,6 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
 
-LogEnvironmentAndActor(app);
-
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -83,23 +81,6 @@ app.MapWmsModule();
 app.MapOneCIntegration();
 
 app.Run();
-
-static void LogEnvironmentAndActor(WebApplication app)
-{
-    if ((app.Environment.IsDevelopment() || app.Environment.IsStaging()) &&
-        app.Configuration.GetValue<bool>(
-            $"{DevelopmentActorAuthenticationHandler.ConfigurationSectionName}:Enabled"))
-    {
-        string actorId = app.Configuration[
-            $"{DevelopmentActorAuthenticationHandler.ConfigurationSectionName}:ActorId"]
-            ?? "(not configured)";
-
-        app.Logger.LogWarning(
-            "DevelopmentActor authentication is enabled. Environment={Environment}; ActorId={ActorId}",
-            app.Environment.EnvironmentName,
-            actorId);
-    }
-}
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {

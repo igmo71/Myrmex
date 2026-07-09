@@ -96,12 +96,13 @@ public sealed class IdentitySessionBoundaryTests
     }
 
     [Fact]
-    public async Task ProductionDevelopmentActorConfiguration_DoesNotBypassApiSession()
+    public async Task BrowserApplicationCookie_DoesNotAuthenticateApiService()
     {
         await using IdentitySessionBoundaryFixture fixture =
             await IdentitySessionBoundaryFixture.CreateAsync();
+        string validApiSessionTicket = fixture.ProtectTicket();
 
-        using HttpResponseMessage response = await fixture.SendAnonymousAsync();
+        using HttpResponseMessage response = await fixture.SendBrowserCookieAsync(validApiSessionTicket);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }

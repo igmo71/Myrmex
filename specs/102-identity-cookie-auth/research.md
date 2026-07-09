@@ -111,16 +111,16 @@ The handler reloads user and role state for each outgoing request rather than tr
 - WebApp writes Identity storage directly for admin creation: rejected because server-side authorization and the application-service boundary must remain authoritative.
 - Full user-management endpoints: rejected as out of scope.
 
-## Decision 9: Development and test authentication
+## Decision 9: Test authentication
 
-**Decision**: Register DevelopmentActor only when configuration explicitly enables it and the environment is Development or Staging. When enabled, it emits both the stable actor claim and `WmsOperator` role so the strengthened policy remains usable. Identity/API-session cookies remain production defaults. Keep a separate configurable test-only authentication scheme with explicit actor and role options for endpoint tests.
+**Decision**: Remove the temporary development/staging actor authentication path. Identity/API-session cookies are the only application authentication path for protected ApiService access. Keep a separate configurable test-only authentication scheme with explicit stable GUID actor and role options for endpoint tests.
 
-**Rationale**: Existing development and focused endpoint tests remain usable without exposing a production fallback or coupling tests to password login.
+**Rationale**: The real WebApp-issued `Myrmex.ApiSession` boundary is now implemented and tested, so retaining a development application scheme adds bypass risk and duplicate behavior. Focused endpoint tests remain usable through test-only authentication without coupling tests to password login.
 
 **Alternatives considered**:
 
-- Remove DevelopmentActor now: safe but outside the requested cleanup scope.
-- Let DevelopmentActor remain the default in non-production automatically: rejected because explicit enablement is required.
+- Keep a development/staging actor shortcut: rejected because the real Identity/API-session path now exists and should be the only application path.
+- Let non-production tests use login UI flows only: rejected as too broad for focused endpoint tests.
 
 ## Decision 10: Test ownership
 

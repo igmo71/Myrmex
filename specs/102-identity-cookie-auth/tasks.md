@@ -50,7 +50,7 @@
 - [X] T014 [P] Write option-validation tests proving production rejects absent certificate protection while Development can use explicit development configuration in `Myrmex.Tests/Identity/IdentityDataProtectionOptionsTests.cs`
 - [X] T015 Persist the shared key ring through `MyrmexIdentityDbContext`, protect production key XML with the configured X.509 certificate, and fail closed on invalid production configuration in `Myrmex.Identity/Infrastructure/IdentityDataProtectionExtensions.cs`
 - [X] T016 Add distinct browser and API-session scheme/cookie constants without JWT or identity-header schemes in `Myrmex.AspNetCore/Security/MyrmexAuthenticationSchemes.cs`
-- [X] T017 [P] Write host authentication configuration tests proving WebApp defaults to the Identity application cookie, ApiService defaults to `Myrmex.ApiSession`, API challenges return 401 rather than redirects, forbidden requests return 403, and Production has no DevelopmentActor fallback in `Myrmex.Tests/Identity/IdentityHostAuthenticationTests.cs`
+- [X] T017 [P] Write host authentication configuration tests proving WebApp defaults to the Identity application cookie, ApiService defaults to `Myrmex.ApiSession`, API challenges return 401 rather than redirects, and forbidden requests return 403 in `Myrmex.Tests/Identity/IdentityHostAuthenticationTests.cs`
 - [X] T018 Configure the WebApp Identity application cookie independently from the API-session scheme in `Myrmex.Identity/Infrastructure/IdentityWebAppAuthenticationExtensions.cs` and `Myrmex.WebApp/Program.cs`
 - [X] T019 Configure ApiService `Myrmex.ApiSession` cookie authentication with a two-minute absolute ticket lifetime, no sliding expiration, and status-code events in `Myrmex.Identity/Infrastructure/IdentityApiAuthenticationExtensions.cs` and `Myrmex.ApiService/Program.cs`
 
@@ -73,7 +73,7 @@
 
 - [X] T029 Create a two-host test fixture with shared test Identity storage, shared temporary Data Protection application/key ring, production API-session scheme, WebApp handler composition, and a protected actor-echo endpoint in `Myrmex.Tests/Identity/IdentitySessionBoundaryFixture.cs`
 - [X] T030 Write two-host success/policy tests for `WmsOperator`, `MyrmexAdmin`, unprivileged users, current-role reload, and exact `IActorContext.ActorId` propagation in `Myrmex.Tests/Identity/IdentitySessionBoundaryTests.cs`
-- [X] T031 Write two-host rejection tests for anonymous, missing-ID, unknown user, expired, tampered, wrong-key, wrong-application-name, wrong-scheme, and production DevelopmentActor fallback attempts in `Myrmex.Tests/Identity/IdentitySessionBoundaryTests.cs`
+- [X] T031 Write two-host rejection tests for anonymous, missing-ID, unknown user, expired, tampered, wrong-key, wrong-application-name, wrong-scheme, and browser application cookie attempts in `Myrmex.Tests/Identity/IdentitySessionBoundaryTests.cs`
 - [X] T032 Add an architecture assertion that production code contains no raw browser-cookie forwarding, trusted identity headers, JWT bearer registration, or anonymous ApiService bypass in `Myrmex.Tests/Identity/IdentitySessionArchitectureTests.cs`
 
 **Checkpoint**: The separate WebApp application cookie and ApiService API-session cookie boundary is implemented and proven end-to-end before UI stories begin.
@@ -124,7 +124,7 @@
 ### Implementation for User Story 2
 
 - [ ] T049 [US2] Audit and preserve `WmsOperator` policy requirements on all existing WMS, OneC, and demo-data endpoint groups in `Myrmex.Modules.Wms/WmsModule.cs`, `Myrmex.Integrations/OneC/Endpoints/OneCEndpoints.cs`, and `Myrmex.Modules.Wms/DemoData/Endpoints/DemoDataAdminEndpoints.cs`
-- [ ] T050 [US2] Map protected-client 401 and 403 responses to the existing WebApp authentication/access-denied behavior without DevelopmentActor retry in `Myrmex.WebApp/Wms/Api/WmsApiClientHttp.cs` and `Myrmex.WebApp/Identity/ProtectedApiAuthorizationHandler.cs`
+- [ ] T050 [US2] Map protected-client 401 and 403 responses to the existing WebApp authentication/access-denied behavior without retrying through any bypass in `Myrmex.WebApp/Wms/Api/WmsApiClientHttp.cs` and `Myrmex.WebApp/Identity/ProtectedApiAuthorizationHandler.cs`
 - [ ] T051 [US2] Developer-controlled manual checkpoint: request role-matrix and access-denied validation from `specs/102-identity-cookie-auth/quickstart.md`; do not start AppHost automatically
 
 **Checkpoint**: User Stories 1 and 2 provide production sign-in plus independently enforced role authorization.
@@ -183,23 +183,23 @@
 
 ---
 
-## Phase 7: User Story 5 — Retain Explicit Non-Production Test Access (Priority: P3)
+## Phase 7: User Story 5 — Test-Only Authentication Support (Priority: P3)
 
-**Goal**: Explicit Development/Staging actor support and test authentication remain usable without becoming a production default or bypass.
+**Goal**: Test authentication remains usable for focused endpoint tests without becoming an application authentication path or production fallback.
 
-**Independent Test**: Verify DevelopmentActor succeeds only when explicitly enabled in Development/Staging with stable actor and `WmsOperator` role, fails in Production, and test principals can independently select actor/roles.
+**Independent Test**: Verify test principals can independently select stable GUID actor IDs and roles while production hosts expose only Identity/API-session authentication.
 
 ### Tests for User Story 5
 
-- [ ] T072 [P] [US5] Extend DevelopmentActor tests for explicit enablement, allowed environments, `WmsOperator` role claim, missing actor ID, and production refusal in `Myrmex.Tests/AspNetCore/Security/DevelopmentActorAuthenticationTests.cs`
-- [ ] T073 [P] [US5] Extend test-authentication helper tests for configurable user ID and role sets, including unprivileged and admin principals, in `Myrmex.Tests/Testing/TestAuthenticationTests.cs`
+- [X] T072 [P] [US5] Remove the obsolete development/staging actor authentication tests and replace coverage with real Identity/API-session acceptance and browser-cookie rejection tests in `Myrmex.Tests/Identity/IdentityApiSessionAuthenticationTests.cs`
+- [X] T073 [P] [US5] Preserve test-authentication helper support for configurable stable GUID user ID and role sets, including unprivileged and admin principals, in `Myrmex.Tests/Testing/TestAuthentication.cs`
 
 ### Implementation for User Story 5
 
-- [ ] T074 [US5] Add the `WmsOperator` role claim while preserving stable actor claims and explicit environment/configuration gates in `Myrmex.AspNetCore/Security/DevelopmentActorAuthenticationHandler.cs`
-- [ ] T075 [US5] Register DevelopmentActor only for explicitly enabled Development/Staging and update test authentication to accept explicit roles without any production fallback in `Myrmex.ApiService/Program.cs` and `Myrmex.Tests/Testing/TestAuthentication.cs`
+- [X] T074 [US5] Remove the development/staging actor authentication handler and scheme constant from `Myrmex.AspNetCore/Security/`
+- [X] T075 [US5] Remove development/staging actor registration and configuration from `Myrmex.ApiService/Program.cs`, ApiService appsettings, and deployment configuration while keeping test authentication test-only
 
-**Checkpoint**: Non-production shortcuts remain explicit and testable while production uses only Identity/API-session authentication.
+**Checkpoint**: Production and non-production application hosts use only Identity/API-session authentication for protected ApiService access; focused tests use a separate test-only scheme.
 
 ---
 
@@ -228,7 +228,7 @@
 - **Phase 4 — US2 Role Enforcement**: Depends on Phase 2 and can be implemented alongside US1, though combined acceptance uses the US1 login flow.
 - **Phase 5 — US3 Bootstrap**: Depends on Phase 2 and can proceed independently from US1/US2.
 - **Phase 6 — US4 User Creation**: Depends on Phase 2 for API security and role constants; endpoint/handler work can proceed independently, while full WebApp acceptance depends on US1 and a provisioned admin from US3 or test setup.
-- **Phase 7 — US5 Non-Production Access**: Depends on Phase 2 policy/scheme work and should follow conflicting edits to `Myrmex.ApiService/Program.cs`.
+- **Phase 7 — US5 Test-Only Authentication Support**: Depends on Phase 2 policy/scheme work and should follow conflicting edits to `Myrmex.ApiService/Program.cs`.
 - **Phase 8 — Polish/Validation**: Depends on all selected user stories.
 
 ### User Story Dependency Graph
@@ -255,7 +255,7 @@ US1 + US2       -> complete authenticated WMS authorization journey
 - Complete the two-host boundary tests before account UI work.
 - Keep shared transport records separate from Identity internal commands and persistence types.
 - ApiService remains the final policy/actor authority even when WebApp hides inaccessible UI.
-- Never substitute DevelopmentActor, anonymous access, identity headers, raw browser-cookie forwarding, or JWT when API-session issuance fails.
+- Never substitute anonymous access, identity headers, raw browser-cookie forwarding, JWT, or development-only bypasses when API-session issuance fails.
 
 ### Parallel Opportunities
 
@@ -264,7 +264,7 @@ US1 + US2       -> complete authenticated WMS authorization journey
 - T013–T014, T020, T022, T024, and T026 target separate files and can be prepared in parallel after their model dependencies exist.
 - US1, US2, US3, and the backend portion of US4 can begin in parallel after Phase 2.
 - Localization tasks T044 and T070 can run alongside their corresponding UI implementation when resource-key contracts are agreed.
-- US5 tests T072–T073 can run in parallel before the shared registration updates.
+- US5 tests T072–T073 can run in parallel before removing the obsolete registration path.
 - Final audits T076–T077 can run in parallel.
 
 ---
@@ -308,8 +308,8 @@ Task T070: Admin UI localization resources in Myrmex.WebApp/Resources/Localizati
 ### User Story 5
 
 ```text
-Task T072: DevelopmentActor environment/role tests in Myrmex.Tests/AspNetCore/Security/DevelopmentActorAuthenticationTests.cs
-Task T073: Configurable test-principal tests in Myrmex.Tests/Testing/TestAuthenticationTests.cs
+Task T072: Identity/API-session acceptance and browser-cookie rejection tests in Myrmex.Tests/Identity/IdentityApiSessionAuthenticationTests.cs
+Task T073: Configurable test-principal support in Myrmex.Tests/Testing/TestAuthentication.cs
 ```
 
 ---
@@ -321,7 +321,7 @@ Task T073: Configurable test-principal tests in Myrmex.Tests/Testing/TestAuthent
 1. Complete Phase 1 project/contracts setup.
 2. Complete all of Phase 2 in order.
 3. Stop if the two-host boundary matrix does not prove distinct cookies, protected ticket validation, exact actor ID, 401/403 behavior, and forbidden-mechanism absence.
-4. Do not compensate for boundary failures with raw browser cookies, headers, JWT, anonymous access, or DevelopmentActor fallback.
+4. Do not compensate for boundary failures with raw browser cookies, headers, JWT, anonymous access, or development-only bypasses.
 
 ### MVP First
 

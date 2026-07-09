@@ -22,7 +22,7 @@ Before running, verify implementation matches [session-boundary.md](contracts/se
 - `AuthenticationStateProvider` rather than circuit `IHttpContextAccessor`;
 - account routes excluded from interactive routing so login/logout can issue/delete cookies on normal HTTP responses;
 - fresh user/role reload before ticket issuance;
-- ApiService 401/403 status behavior and no production DevelopmentActor fallback.
+- ApiService 401/403 status behavior and no development-auth fallback.
 
 ## 2. Build and automated tests
 
@@ -39,8 +39,8 @@ Required automated evidence:
 - create-user tests cover validation, duplicate identity, authorization, and role-assignment rollback;
 - two-host boundary tests prove typed WebApp call → protected cookie → ApiService authentication/policy → actor ID;
 - tampered, expired, wrong-key, and wrong-scheme tickets return 401;
-- removed roles are reflected on the next outgoing WebApp API request.
-- explicitly enabled DevelopmentActor/test principals carry roles required by the strengthened policy, while production cannot select those schemes.
+- removed roles are reflected on the next outgoing WebApp API request;
+- browser application cookies sent directly to ApiService are ignored and protected endpoints return 401.
 
 ## 3. Review and apply migration
 
@@ -133,7 +133,7 @@ Verify ApiService is not externally published as a browser entry point. Navigate
 
 - Identity application cookie is WebApp default.
 - `Myrmex.ApiSession` is ApiService production default and returns 401/403, not redirects.
-- DevelopmentActor is unavailable unless explicitly enabled in Development/Staging.
+- No development-auth application scheme is registered.
 - No default admin email/password is committed.
 - Data Protection keys persist and are shared only by WebApp/ApiService.
 - Production Data Protection key XML is encrypted at rest and both hosts can load the configured certificate without logging its secret material.

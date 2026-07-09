@@ -29,7 +29,7 @@ public static class IdentityApiAuthenticationExtensions
                 "The API-session cookie lifetime must be exactly two minutes.");
         }
 
-        AuthenticationBuilder authentication = services
+        services
             .AddAuthentication(options =>
             {
                 options.DefaultScheme = MyrmexAuthenticationSchemes.ApiSession;
@@ -64,18 +64,6 @@ public static class IdentityApiAuthenticationExtensions
                         }
                     };
                 });
-
-        bool developmentActorEnabled = configuration.GetValue<bool>(
-            $"{DevelopmentActorAuthenticationHandler.ConfigurationSectionName}:Enabled");
-        if (developmentActorEnabled &&
-            (environment.IsDevelopment() || environment.IsStaging()))
-        {
-            authentication.AddScheme<
-                AuthenticationSchemeOptions,
-                DevelopmentActorAuthenticationHandler>(
-                MyrmexAuthenticationSchemes.DevelopmentActor,
-                _ => { });
-        }
 
         return services;
     }

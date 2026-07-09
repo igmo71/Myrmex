@@ -9,7 +9,7 @@ This guide validates the completed feature against `spec.md`, `data-model.md`, a
 - Apply all existing WMS migrations before validation. This feature is expected to add no migration.
 - Run one `Myrmex.ApiService` instance. The demo-operation gate is process-local.
 - Ensure no users or integrations are changing the demo database during clear/seed validation.
-- Use an authenticated actor. The existing Development actor may be enabled for local validation.
+- Use an authenticated Identity user with a role authorized for the demo-data endpoints.
 
 ## 2. Configure local demo support
 
@@ -21,8 +21,6 @@ PowerShell example for the current process:
 $env:Myrmex__Wms__DemoData__Enabled = 'true'
 $env:Myrmex__Wms__DemoData__AllowClear = 'true'
 $env:Myrmex__Wms__DemoData__ClearConfirmation = 'CLEAR-MYRMEX-DEMO'
-$env:Myrmex__DevelopmentActor__Enabled = 'true'
-$env:Myrmex__DevelopmentActor__ActorId = 'demo-admin'
 ```
 
 The equivalent JSON shape is:
@@ -180,7 +178,7 @@ With clear enabled, submit an empty/missing confirmation and then a wrong value.
 
 ### Missing actor
 
-Disable the development actor and call either registered route without authenticated claims. Expected: 401 and no data access or mutation.
+Call either registered route without authenticated claims. Expected: 401 and no data access or mutation.
 
 ### Concurrent operation
 
@@ -202,8 +200,6 @@ After validation:
 Remove-Item Env:Myrmex__Wms__DemoData__Enabled -ErrorAction SilentlyContinue
 Remove-Item Env:Myrmex__Wms__DemoData__AllowClear -ErrorAction SilentlyContinue
 Remove-Item Env:Myrmex__Wms__DemoData__ClearConfirmation -ErrorAction SilentlyContinue
-Remove-Item Env:Myrmex__DevelopmentActor__Enabled -ErrorAction SilentlyContinue
-Remove-Item Env:Myrmex__DevelopmentActor__ActorId -ErrorAction SilentlyContinue
 ```
 
 Do not use the clear endpoint against any database whose contents must be preserved.

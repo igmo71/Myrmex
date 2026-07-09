@@ -112,6 +112,21 @@ internal sealed class IdentitySessionBoundaryFixture : IAsyncDisposable
         return response;
     }
 
+    public async Task<HttpResponseMessage> SendBrowserCookieAsync(string cookieValue)
+    {
+        HttpClient client = new() { BaseAddress = ApiAddress };
+        HttpRequestMessage request = new(HttpMethod.Get, "/actor");
+        request.Headers.TryAddWithoutValidation(
+            "Cookie",
+            $"{MyrmexAuthenticationSchemes.WebAppIdentityCookieName}={cookieValue}");
+        HttpResponseMessage response = await client.SendAsync(
+            request,
+            TestContext.Current.CancellationToken);
+        client.Dispose();
+        request.Dispose();
+        return response;
+    }
+
     public string ProtectTicket(
         string applicationName = ApplicationName,
         string scheme = MyrmexAuthenticationSchemes.ApiSession,
@@ -183,7 +198,7 @@ internal sealed class IdentitySessionBoundaryFixture : IAsyncDisposable
             EnvironmentName = Environments.Production
         });
         builder.WebHost.UseUrls("http://127.0.0.1:0");
-        IConfiguration configuration = CreateConfiguration(developmentActorEnabled: true);
+        IConfiguration configuration = CreateConfiguration();
         builder.Configuration.AddConfiguration(configuration);
         builder.Services.AddDataProtection()
             .SetApplicationName(ApplicationName)
@@ -244,12 +259,10 @@ internal sealed class IdentitySessionBoundaryFixture : IAsyncDisposable
         _webServices = services.BuildServiceProvider();
     }
 
-    private static IConfiguration CreateConfiguration(bool developmentActorEnabled = false) =>
+    private static IConfiguration CreateConfiguration() =>
         new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["Myrmex:Identity:ApiSession:LifetimeMinutes"] = "2",
-            ["Myrmex:DevelopmentActor:Enabled"] = developmentActorEnabled.ToString(),
-            ["Myrmex:DevelopmentActor:ActorId"] = Guid.NewGuid().ToString()
+            ["Myrmex:Identity:ApiSession:LifetimeMinutes"] = "2"
         }).Build();
 
     public async ValueTask DisposeAsync()

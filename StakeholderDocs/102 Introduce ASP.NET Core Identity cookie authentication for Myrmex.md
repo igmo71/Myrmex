@@ -147,16 +147,15 @@ AND
 
 Do not introduce fine-grained warehouse permissions in this issue.
 
-## DevelopmentActor
+## Development/test authentication
 
-The existing DevelopmentActor authentication scheme may remain temporarily.
+The temporary development/staging actor authentication scheme is removed.
 
 Rules:
 
-* DevelopmentActor must never be the production default authentication path.
-* DevelopmentActor may remain available only for Development/Staging and only when explicitly enabled by configuration.
-* Production must use Identity cookie authentication.
-* Removing DevelopmentActor entirely may be handled by a later cleanup issue.
+* Application hosts must use Identity cookie authentication in WebApp and internal API-session cookie authentication in ApiService.
+* Focused endpoint tests may use a separate test-only authentication helper with explicit stable GUID actor IDs and role claims.
+* No development-auth bypass may be registered as an application authentication path.
 
 ## Login and Account UI Scope
 
@@ -276,7 +275,7 @@ Do not place Identity tables inside the WMS DbContext.
 * tenant/organization-level permissions.
 * audit dashboard.
 * replacing all existing authorization policies.
-* removing DevelopmentActor entirely.
+* removing the test-only authentication helper used by focused endpoint tests.
 
 ## Functional Requirements
 
@@ -332,9 +331,9 @@ A `MyrmexAdmin` can create a new user and assign one or more supported roles.
 
 A non-admin user cannot access the user creation UI/API.
 
-### FR-012: DevelopmentActor remains non-production shortcut
+### FR-012: Test-only authentication remains isolated
 
-DevelopmentActor may remain enabled only in explicit Development/Staging configuration and must not be the production default.
+Focused endpoint tests may use an isolated test authentication helper, but application hosts must not register a development-auth bypass.
 
 ## UX Requirements
 
@@ -362,7 +361,7 @@ Do not introduce a large admin area in this issue.
 * Passwords never logged.
 * Initial admin seeding must be explicit.
 * Authentication cookies should use secure ASP.NET Core defaults.
-* Production must not depend on DevelopmentActor.
+* Production must not depend on development-auth bypasses.
 * Authorization must remain enforced server-side.
 * API endpoints must not trust client-side UI visibility as authorization.
 * User id used as actor id must be stable and non-empty.
@@ -399,7 +398,7 @@ Existing endpoint tests should remain supported through test authentication help
 * Minimal admin-only user creation exists.
 * No hidden production default credentials exist.
 * JWT Bearer is not introduced in this issue.
-* DevelopmentActor is not used as the production default.
+* No development-auth bypass is registered as an application authentication path.
 * Build and relevant tests pass.
 
 ## Notes for Specification

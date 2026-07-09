@@ -82,25 +82,6 @@ public sealed class IdentityHostAuthenticationTests
         Assert.Null(forbid.Headers.Location);
     }
 
-    [Fact]
-    public async Task ProductionDoesNotRegisterDevelopmentActorFallback()
-    {
-        IConfiguration configuration = CreateConfiguration(developmentActorEnabled: true);
-        ServiceCollection services = new();
-        services.AddMyrmexIdentityApiAuthentication(
-            configuration,
-            new TestHostEnvironment(Environments.Production));
-
-        using ServiceProvider provider = services.BuildServiceProvider();
-        IAuthenticationSchemeProvider schemes = provider
-            .GetRequiredService<IAuthenticationSchemeProvider>();
-
-        AuthenticationScheme? developmentActor = await schemes.GetSchemeAsync(
-            MyrmexAuthenticationSchemes.DevelopmentActor);
-
-        Assert.Null(developmentActor);
-    }
-
     private static WebApplication CreateApiApp(string environmentName)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(
@@ -124,18 +105,13 @@ public sealed class IdentityHostAuthenticationTests
         return app;
     }
 
-    private static IConfiguration CreateConfiguration(
-        bool developmentActorEnabled = false)
-    {
-        return new ConfigurationBuilder()
+    private static IConfiguration CreateConfiguration() =>
+        new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Myrmex:Identity:ApiSession:LifetimeMinutes"] = "2",
-                ["Myrmex:DevelopmentActor:Enabled"] = developmentActorEnabled.ToString(),
-                ["Myrmex:DevelopmentActor:ActorId"] = "dev-operator"
+                ["Myrmex:Identity:ApiSession:LifetimeMinutes"] = "2"
             })
             .Build();
-    }
 
     private static HttpClient CreateClient(WebApplication app)
     {

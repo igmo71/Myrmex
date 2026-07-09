@@ -39,7 +39,7 @@ For each typed-client request to ApiService, `IdentityApiAuthenticationHandler` 
 8. Add only the API-session cookie to the internal request and never log its value.
 9. Propagate cancellation through all Identity reads and the outgoing request.
 
-Anonymous calls to endpoints intentionally allowed by ApiService may proceed without a ticket. Protected WebApp API clients fail closed when no authenticated session can be issued; they never add DevelopmentActor or identity headers.
+Anonymous calls to endpoints intentionally allowed by ApiService may proceed without a ticket. Protected WebApp API clients fail closed when no authenticated session can be issued; they never add development-auth bypasses or identity headers.
 
 ## Validation contract
 
@@ -51,7 +51,7 @@ ApiService MUST:
 4. Apply endpoint authorization after authentication.
 5. Return 403 for a valid principal that lacks the required role.
 6. Resolve `IActorContext.ActorId` only from the stable Identity user-id claim.
-7. Never fall back to DevelopmentActor in production.
+7. Never fall back to a development-auth bypass.
 
 ## Test matrix
 
@@ -69,7 +69,7 @@ ApiService MUST:
 | Expired ticket | Any protected policy | 401 |
 | Ticket protected with different key/application name/scheme | Any protected policy | 401 |
 | Role removed before next WebApp API request | WmsOperator | newly issued principal lacks role; 403 |
-| DevelopmentActor enabled in Production | Any | registration/configuration refused; no fallback |
+| Browser application cookie sent directly to ApiService | Any protected policy | 401 |
 
 ## Integration-test shape
 
