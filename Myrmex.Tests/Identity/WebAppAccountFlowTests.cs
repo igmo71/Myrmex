@@ -19,6 +19,7 @@ namespace Myrmex.Tests.Identity;
 public sealed class WebAppAccountFlowTests
 {
     private const string Password = "Myrmex1!";
+    private static readonly string databaseName = $"myrmex-account-flow-{Guid.NewGuid():N}";
 
     [Fact]
     public async Task Login_WithExistingUserAndValidPassword_IssuesApplicationCookie()
@@ -66,9 +67,12 @@ public sealed class WebAppAccountFlowTests
             login.Headers.Location?.OriginalString,
             StringComparison.Ordinal);
         Assert.Equal(HttpStatusCode.Redirect, protectedResponse.StatusCode);
+
+        Assert.NotNull(protectedResponse.Headers.Location);
+
         Assert.StartsWith(
             "/account/login",
-            protectedResponse.Headers.Location?.OriginalString,
+            protectedResponse.Headers.Location.PathAndQuery,
             StringComparison.Ordinal);
     }
 
@@ -119,9 +123,12 @@ public sealed class WebAppAccountFlowTests
         Assert.Equal(HttpStatusCode.Redirect, logout.StatusCode);
         Assert.Equal("/", logout.Headers.Location?.OriginalString);
         Assert.Equal(HttpStatusCode.Redirect, protectedResponse.StatusCode);
+
+        Assert.NotNull(protectedResponse.Headers.Location);
+
         Assert.StartsWith(
             "/account/login",
-            protectedResponse.Headers.Location?.OriginalString,
+            protectedResponse.Headers.Location.PathAndQuery,
             StringComparison.Ordinal);
     }
 
@@ -165,7 +172,7 @@ public sealed class WebAppAccountFlowTests
             builder.WebHost.UseUrls("http://127.0.0.1:0");
             builder.Services.AddLogging();
             builder.Services.AddDbContext<MyrmexIdentityDbContext>(options =>
-                options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
+                options.UseInMemoryDatabase(databaseName));
             builder.Services.AddIdentityCore<MyrmexUser>()
                 .AddRoles<MyrmexRole>()
                 .AddSignInManager()
