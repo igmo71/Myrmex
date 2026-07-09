@@ -139,17 +139,17 @@
 
 ### Tests for User Story 3
 
-- [ ] T052 [P] [US3] Write initial-admin option tests for disabled defaults, enabled missing email/password, invalid email/password, and production secret requirements in `Myrmex.Tests/Identity/InitialAdminOptionsTests.cs`
-- [ ] T053 [P] [US3] Write role-initialization and bootstrap tests for first run, existing user, missing admin role, repeated runs, concurrent runs, no password overwrite, rollback, and password-free logs in `Myrmex.Tests/Identity/InitialAdminSeederTests.cs`
+- [X] T052 [P] [US3] Write initial-admin option tests for disabled defaults, enabled missing email/password, invalid email/password, and production secret requirements in `Myrmex.Tests/Identity/InitialAdminOptionsTests.cs`
+- [X] T053 [P] [US3] Write role-initialization and bootstrap tests for first run, existing user, missing admin role, repeated runs, concurrent runs, no password overwrite, rollback, and password-free logs in `Myrmex.Tests/Identity/InitialAdminSeederTests.cs`
 
 ### Implementation for User Story 3
 
-- [ ] T054 [P] [US3] Implement conditional initial-admin configuration and fail-fast validation in `Myrmex.Identity/Application/Bootstrap/InitialAdminOptions.cs` and `Myrmex.Identity/Application/Bootstrap/InitialAdminOptionsValidator.cs`
-- [ ] T055 [US3] Implement idempotent creation of `MyrmexAdmin` and `WmsOperator` roles in `Myrmex.Identity/Application/Bootstrap/IdentityRoleInitializer.cs`
-- [ ] T056 [US3] Implement transactional, concurrency-safe initial-admin creation/role assignment without password replacement in `Myrmex.Identity/Application/Bootstrap/InitialAdminSeeder.cs`
-- [ ] T057 [US3] Make ApiService the single role/bootstrap startup owner after schema availability without automatic migration in `Myrmex.Identity/Infrastructure/IdentityApplicationExtensions.cs` and `Myrmex.ApiService/Program.cs`
-- [ ] T058 [US3] Add bootstrap outcome logging that excludes passwords, hashes, protected tickets, and certificate secrets in `Myrmex.Identity/Application/Bootstrap/InitialAdminSeeder.cs`
-- [ ] T059 [US3] Document only non-secret bootstrap keys and secret-source requirements in `Myrmex.ApiService/appsettings.json` and `specs/102-identity-cookie-auth/quickstart.md`
+- [X] T054 [P] [US3] Implement conditional initial-admin configuration and fail-fast validation in `Myrmex.Identity/Application/Bootstrap/InitialAdminOptions.cs` and `Myrmex.Identity/Application/Bootstrap/InitialAdminOptionsValidator.cs`
+- [X] T055 [US3] Implement idempotent creation of `MyrmexAdmin` and `WmsOperator` roles in `Myrmex.Identity/Application/Bootstrap/IdentityRoleInitializer.cs`
+- [X] T056 [US3] Implement transactional, concurrency-safe initial-admin creation/role assignment without password replacement in `Myrmex.Identity/Application/Bootstrap/InitialAdminSeeder.cs`
+- [X] T057 [US3] Make ApiService the single role/bootstrap startup owner after schema availability without automatic migration in `Myrmex.Identity/Infrastructure/IdentityApplicationExtensions.cs` and `Myrmex.ApiService/Program.cs`
+- [X] T058 [US3] Add bootstrap outcome logging that excludes passwords, hashes, protected tickets, and certificate secrets in `Myrmex.Identity/Application/Bootstrap/InitialAdminSeeder.cs`
+- [X] T059 [US3] Document only non-secret bootstrap keys and secret-source requirements in `Myrmex.ApiService/appsettings.json` and `specs/102-identity-cookie-auth/quickstart.md`
 
 **Checkpoint**: The first administrator can be created safely and repeatedly without a production default credential.
 

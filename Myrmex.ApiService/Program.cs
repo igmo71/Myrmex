@@ -29,6 +29,9 @@ builder.Services.AddMyrmexIdentityDataProtection(
 builder.Services.AddMyrmexIdentityApiAuthentication(
     builder.Configuration,
     builder.Environment);
+builder.Services.AddMyrmexIdentityBootstrap(
+    builder.Configuration,
+    builder.Environment);
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(
@@ -44,6 +47,8 @@ builder.Services.AddOneCIntegration(builder.Configuration);
 builder.Services.AddMyrmexAppDispatching(typeof(WmsModule).Assembly);
 
 var app = builder.Build();
+
+await app.RunMyrmexIdentityBootstrapAsync();
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();

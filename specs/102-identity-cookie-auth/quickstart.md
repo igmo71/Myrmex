@@ -68,7 +68,21 @@ dotnet ef database update `
 
 ## 4. Configure initial administrator safely
 
-Use a secret source. Conceptual environment variables:
+Committed `appsettings*.json` files document only non-secret initial-admin keys:
+
+- `Myrmex:Identity:InitialAdmin:Enabled`
+- `Myrmex:Identity:InitialAdmin:Email`
+- `Myrmex:Identity:InitialAdmin:DisplayName`
+
+Bootstrap is disabled by default. Do not commit `Myrmex:Identity:InitialAdmin:Password`
+or any password value. Supply the password only through a secret source such as
+.NET User Secrets, environment variables, or deployment secret configuration.
+
+ApiService is the single startup owner for Identity role initialization and optional
+initial-admin bootstrap. It does not run migrations or `EnsureCreated`; the Identity
+migration must already be applied to `ConnectionStrings:MyrmexDatabase`.
+
+Conceptual environment variables:
 
 ```powershell
 $env:Myrmex__Identity__InitialAdmin__Enabled = 'true'
