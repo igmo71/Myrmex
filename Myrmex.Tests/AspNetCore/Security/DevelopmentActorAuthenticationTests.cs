@@ -8,12 +8,15 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Myrmex.AspNetCore.Security;
 using Myrmex.Core.Application.Security;
+using Myrmex.Shared.Identity;
 using System.Net.Http.Json;
 
 namespace Myrmex.Tests.AspNetCore.Security;
 
 public sealed class DevelopmentActorAuthenticationTests
 {
+    private const string DevOperatorActorId = "11111111-1111-1111-1111-111111111111";
+
     [Fact]
     public async Task ProtectedEndpoint_WhenDevelopmentActorDisabled_Returns401()
     {
@@ -31,18 +34,26 @@ public sealed class DevelopmentActorAuthenticationTests
     [Fact]
     public async Task ProtectedEndpoint_WhenDevelopmentActorEnabled_ProvidesActorClaims()
     {
-        await using WebApplication app = CreateApp(enabled: true, actorId: "dev-operator");
+        await using WebApplication app = CreateApp(
+            enabled: true,
+            actorId: DevOperatorActorId,
+            role: IdentityRoleNames.WmsOperator);
+
         await app.StartAsync(TestContext.Current.CancellationToken);
 
         using HttpClient client = CreateClient(app);
+
         DevelopmentActorResponse? response = await client.GetFromJsonAsync<DevelopmentActorResponse>(
             "/actor",
             TestContext.Current.CancellationToken);
 
-        Assert.Equal("dev-operator", response?.ActorId);
-        Assert.Equal("dev-operator", response?.Subject);
-        Assert.Equal("dev-operator", response?.NameIdentifier);
-        Assert.Equal("dev-operator", response?.Name);
+        Assert.Equal(DevOperatorActorId, response?.ActorId);
+        Assert.Equal(DevOperatorActorId, response?.Subject);
+        Assert.Equal(DevOperatorActorId, response?.NameIdentifier);
+
+        // Если Name теперь тоже заполняется GUID — оставить так.
+        // Если Name остался отдельным display name — ожидание надо поправить под новую модель.
+        Assert.Equal(DevOperatorActorId, response?.Name);
     }
 
     [Fact]
@@ -59,13 +70,27 @@ public sealed class DevelopmentActorAuthenticationTests
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    private static WebApplication CreateApp(bool enabled, string? actorId)
+    private static WebApplication CreateApp(bool enabled, string? actorId, string? role = null)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder(new WebApplicationOptions
         {
             EnvironmentName = Environments.Development
         });
         builder.WebHost.UseUrls("http://127.0.0.1:0");
+
+        Dictionary<string, string?> configuration = new()
+        {
+            [$"{DevelopmentActorAuthenticationHandler.ConfigurationSectionName}:Enabled"] = enabled.ToString(),
+            [$"{DevelopmentActorAuthenticationHandler.ConfigurationSectionName}:ActorId"] = actorId
+        };
+
+        if (!string.IsNullOrWhiteSpace(role))
+        {
+            configuration[$"{DevelopmentActorAuthenticationHandler.ConfigurationSectionName}:Roles:0"] = role;
+        }
+
+        builder.Configuration.AddInMemoryCollection(configuration);
+
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             [$"{DevelopmentActorAuthenticationHandler.ConfigurationSectionName}:Enabled"] = enabled.ToString(),

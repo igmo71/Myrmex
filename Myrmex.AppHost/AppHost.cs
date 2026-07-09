@@ -2,15 +2,15 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var cache = builder.AddRedis("cache");
 
-var sqlServer = builder.AddSqlServer("sql")
-    .WithLifetime(ContainerLifetime.Persistent)
-    .WithDataVolume("myrmex-sql-data");
-var myrmexDatabase = sqlServer.AddDatabase("MyrmexDatabase");
+var myrmexDatabase = builder.AddConnectionString("MyrmexDatabase");
 
 var apiService = builder.AddProject<Projects.Myrmex_ApiService>("apiservice")
     .WithHttpHealthCheck("/health")
     .WithReference(myrmexDatabase)
-    .WaitFor(myrmexDatabase);
+    .WithEnvironment("Myrmex__Integrations__OneC__Username",
+        builder.Configuration["Myrmex:Integrations:OneC:Username"])
+    .WithEnvironment("Myrmex__Integrations__OneC__Password",
+        builder.Configuration["Myrmex:Integrations:OneC:Password"]);
 
 builder.AddProject<Projects.Myrmex_WebApp>("webapp")
     .WithExternalHttpEndpoints()
@@ -18,7 +18,6 @@ builder.AddProject<Projects.Myrmex_WebApp>("webapp")
     .WithReference(cache)
     .WaitFor(cache)
     .WithReference(myrmexDatabase)
-    .WaitFor(myrmexDatabase)
     .WithReference(apiService)
     .WaitFor(apiService);
 

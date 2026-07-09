@@ -7,9 +7,10 @@ public class WebTests
     private static readonly TimeSpan AppHostStartupTimeout = TimeSpan.FromMinutes(5);
 
     [Trait("Category", "Integration")]
+    [Trait("Category", "InfrastructureSmoke")]
     [Trait("Category", "AppHostSmoke")]
     [Fact]
-    public async Task GetWebResourceRootReturnsOkStatusCode()
+    public async Task AppHostSmoke_GetWebResourceRootReturnsOkStatusCode()
     {
         // Arrange
         var cancellationToken = TestContext.Current.CancellationToken;
