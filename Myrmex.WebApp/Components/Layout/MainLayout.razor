@@ -22,9 +22,31 @@
                        Color="Color.Inherit"
                        OnClick="@DarkModeToggle" />
 
-        <MudIconButton Icon="@Icons.Material.Filled.MoreVert"
-                       Color="Color.Inherit"
-                       Edge="Edge.End" />
+        <AuthorizeView>
+            <Authorized Context="authState">
+                <MudText Typo="Typo.body2" Class="mx-3">
+                    @GetCurrentUserDisplayName(authState.User)
+                </MudText>
+                <form method="post" action="/account/logout">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="/" />
+                    <MudButton ButtonType="ButtonType.Submit"
+                               Variant="Variant.Text"
+                               Color="Color.Inherit"
+                               StartIcon="@Icons.Material.Filled.Logout">
+                        @Localizer["Account.Logout"]
+                    </MudButton>
+                </form>
+            </Authorized>
+            <NotAuthorized>
+                <MudButton Href="/account/login"
+                           Variant="Variant.Text"
+                           Color="Color.Inherit"
+                           StartIcon="@Icons.Material.Filled.Login">
+                    @Localizer["Account.Login"]
+                </MudButton>
+            </NotAuthorized>
+        </AuthorizeView>
     </MudAppBar>
 
     <MudDrawer id="nav-drawer"
@@ -63,4 +85,10 @@
     private string DarkLightModeButtonIcon => _isDarkMode
         ? Icons.Material.Outlined.LightMode
         : Icons.Material.Outlined.DarkMode;
+
+    private static string GetCurrentUserDisplayName(ClaimsPrincipal user) =>
+        user.Identity?.Name
+        ?? user.FindFirst(ClaimTypes.Email)?.Value
+        ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+        ?? string.Empty;
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Localization;
 using MudBlazor.Services;
 using MudBlazor.Translations;
+using Myrmex.AspNetCore.Security;
 using Myrmex.Identity.Infrastructure;
 using Myrmex.ServiceDefaults;
 using Myrmex.WebApp;
@@ -30,12 +31,20 @@ builder.AddRedisOutputCache("cache");
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddMyrmexIdentity(builder.Configuration);
 builder.Services.AddMyrmexIdentityDataProtection(
     builder.Configuration,
     builder.Environment);
 builder.Services.AddMyrmexIdentityWebAppAuthentication();
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy(
+        MyrmexAuthorizationPolicies.WmsOperator,
+        MyrmexAuthorizationPolicies.ConfigureWmsOperator)
+    .AddPolicy(
+        MyrmexAuthorizationPolicies.MyrmexAdmin,
+        MyrmexAuthorizationPolicies.ConfigureMyrmexAdmin);
 builder.Services.AddScoped<ProtectedApiClientFactory>();
 
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
@@ -106,11 +115,15 @@ app.UseHttpsRedirection();
 
 app.UseRequestLocalization();
 
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseAntiforgery();
 
 app.UseOutputCache();
 
 app.MapStaticAssets();
+
+app.MapMyrmexIdentityWebAppAccountEndpoints();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

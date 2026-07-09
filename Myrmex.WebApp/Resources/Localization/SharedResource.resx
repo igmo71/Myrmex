@@ -386,4 +386,21 @@
   <data name="Zone.ReactivateError" xml:space="preserve"><value>Zone reactivation failed.</value></data>
   <data name="Zone.SelectWarehousePrompt" xml:space="preserve"><value>Select a warehouse to view zones.</value></data>
   <data name="Zone.Updated" xml:space="preserve"><value>Zone updated.</value></data>
+  <data name="Account.AccessDenied.Description" xml:space="preserve"><value>You do not have permission to access this page.</value></data>
+  <data name="Account.AccessDenied.Heading" xml:space="preserve"><value>Access denied</value></data>
+  <data name="Account.AccessDenied.PageTitle" xml:space="preserve"><value>Access denied</value></data>
+  <data name="Account.Login" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Account.Login.Description" xml:space="preserve"><value>Sign in with an existing Myrmex account.</value></data>
+  <data name="Account.Login.Heading" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Account.Login.InvalidCredentials" xml:space="preserve"><value>Invalid username/email or password.</value></data>
+  <data name="Account.Login.PageTitle" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Account.Login.Password" xml:space="preserve"><value>Password</value></data>
+  <data name="Account.Login.RememberMe" xml:space="preserve"><value>Remember me</value></data>
+  <data name="Account.Login.Submit" xml:space="preserve"><value>Sign in</value></data>
+  <data name="Account.Login.UserNameOrEmail" xml:space="preserve"><value>Username or email</value></data>
+  <data name="Account.Logout" xml:space="preserve"><value>Sign out</value></data>
+  <data name="Account.Logout.Description" xml:space="preserve"><value>Sign out of the current Myrmex session.</value></data>
+  <data name="Account.Logout.Heading" xml:space="preserve"><value>Sign out</value></data>
+  <data name="Account.Logout.PageTitle" xml:space="preserve"><value>Sign out</value></data>
+  <data name="Account.Logout.Submit" xml:space="preserve"><value>Sign out</value></data>
 </root>

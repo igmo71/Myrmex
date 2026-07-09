@@ -1,0 +1,22 @@
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        AuthenticationState authenticationState =
+            await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        string relativeUrl = Navigation.ToBaseRelativePath(Navigation.Uri);
+        string returnUrl = "/" + relativeUrl;
+
+        if (authenticationState.User.Identity?.IsAuthenticated == true)
+        {
+            Navigation.NavigateTo("/account/access-denied", forceLoad: true);
+            return;
+        }
+
+        Navigation.NavigateTo(
+            $"/account/login?returnUrl={Uri.EscapeDataString(returnUrl)}",
+            forceLoad: true);
+    }
+}

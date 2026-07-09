@@ -35,6 +35,7 @@ Required automated evidence:
 
 - policy matrix passes for operator, admin, unprivileged, missing-ID, and anonymous principals;
 - actor context resolves exactly the Identity GUID;
+- account flow tests cover existing-user login, invalid password rejection, external return URL rejection, and logout clearing the WebApp application session;
 - initial-admin bootstrap tests cover disabled, invalid, create, existing, repeated, and concurrent execution;
 - create-user tests cover validation, duplicate identity, authorization, and role-assignment rollback;
 - two-host boundary tests prove typed WebApp call → protected cookie → ApiService authentication/policy → actor ID;

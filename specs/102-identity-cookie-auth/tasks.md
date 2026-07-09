@@ -88,21 +88,21 @@
 
 ### Tests for User Story 1
 
-- [ ] T033 [P] [US1] Write HTTP account-flow tests for valid/invalid login, application-cookie issuance, antiforgery, safe local return URL, external return rejection, logout, and post-logout denial in `Myrmex.Tests/Identity/WebAppAccountFlowTests.cs`
+- [X] T033 [P] [US1] Write HTTP account-flow tests for valid/invalid login, application-cookie issuance, antiforgery, safe local return URL, external return rejection, logout, and post-logout denial in `Myrmex.Tests/Identity/WebAppAccountFlowTests.cs`
 - [ ] T034 [P] [US1] Write route-authorization tests for anonymous login redirect, authenticated protected-page access, and access-denied routing in `Myrmex.Tests/Identity/WebAppRouteAuthorizationTests.cs`
 - [ ] T035 [P] [US1] Write authentication-state revalidation tests for deleted users and changed security stamps in `Myrmex.Tests/Identity/IdentityRevalidatingAuthenticationStateProviderTests.cs`
 
 ### Implementation for User Story 1
 
 - [ ] T036 [US1] Implement periodic Identity security-stamp revalidation for interactive circuits in `Myrmex.WebApp/Identity/IdentityRevalidatingAuthenticationStateProvider.cs`
-- [ ] T037 [US1] Configure cascading authentication state, authentication middleware, authorization middleware, and account endpoint composition in `Myrmex.WebApp/Program.cs`
-- [ ] T038 [US1] Make root render mode respect account-route interactive exclusion so cookie-changing pages receive normal HTTP responses in `Myrmex.WebApp/Components/App.razor`
-- [ ] T039 [US1] Implement localized non-interactive login GET/POST flow with antiforgery, generic credential errors, safe local return URLs, and no self-registration in `Myrmex.WebApp/Components/Account/Login.razor`
-- [ ] T040 [US1] Implement localized non-interactive antiforgery-protected logout flow in `Myrmex.WebApp/Components/Account/Logout.razor`
-- [ ] T041 [P] [US1] Implement localized access-denied page in `Myrmex.WebApp/Components/Account/AccessDenied.razor`
-- [ ] T042 [US1] Replace plain route rendering with authorized route handling and login/access-denied navigation in `Myrmex.WebApp/Components/Routes.razor` and `Myrmex.WebApp/Components/Account/RedirectToLogin.razor`
-- [ ] T043 [US1] Add signed-in user identity, admin-aware navigation visibility, and POST logout control in `Myrmex.WebApp/Components/Layout/MainLayout.razor` and `Myrmex.WebApp/Components/Layout/NavMenu.razor`
-- [ ] T044 [P] [US1] Add neutral, `en-US`, and `ru-RU` login/logout/access-denied/current-user resource keys in `Myrmex.WebApp/Resources/Localization/SharedResource.resx`, `Myrmex.WebApp/Resources/Localization/SharedResource.en-US.resx`, and `Myrmex.WebApp/Resources/Localization/SharedResource.ru-RU.resx`
+- [X] T037 [US1] Configure cascading authentication state, authentication middleware, authorization middleware, and account endpoint composition in `Myrmex.WebApp/Program.cs`
+- [X] T038 [US1] Make root render mode respect account-route interactive exclusion so cookie-changing pages receive normal HTTP responses in `Myrmex.WebApp/Components/App.razor`
+- [X] T039 [US1] Implement localized non-interactive login GET/POST flow with antiforgery, generic credential errors, safe local return URLs, and no self-registration in `Myrmex.WebApp/Components/Account/Login.razor`
+- [X] T040 [US1] Implement localized non-interactive antiforgery-protected logout flow in `Myrmex.WebApp/Components/Account/Logout.razor`
+- [X] T041 [P] [US1] Implement localized access-denied page in `Myrmex.WebApp/Components/Account/AccessDenied.razor`
+- [X] T042 [US1] Replace plain route rendering with authorized route handling and login/access-denied navigation in `Myrmex.WebApp/Components/Routes.razor` and `Myrmex.WebApp/Components/Account/RedirectToLogin.razor`
+- [X] T043 [US1] Add signed-in user identity and POST logout control in `Myrmex.WebApp/Components/Layout/MainLayout.razor`; admin-aware navigation remains with admin UI task T069
+- [X] T044 [P] [US1] Add neutral, `en-US`, and `ru-RU` login/logout/access-denied/current-user resource keys in `Myrmex.WebApp/Resources/Localization/SharedResource.resx`, `Myrmex.WebApp/Resources/Localization/SharedResource.en-US.resx`, and `Myrmex.WebApp/Resources/Localization/SharedResource.ru-RU.resx`
 - [ ] T045 [US1] Developer-controlled manual checkpoint: request validation of the complete operator login → protected typed-client call → ApiService actor ID → logout flow from `specs/102-identity-cookie-auth/quickstart.md`; record corrections there without starting AppHost automatically
 
 **Checkpoint**: User Story 1 works independently as the first production browser authentication path.
