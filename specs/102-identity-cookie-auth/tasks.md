@@ -117,14 +117,14 @@
 
 ### Tests for User Story 2
 
-- [ ] T046 [P] [US2] Add representative WMS authorization integration cases for anonymous, unprivileged, operator, and admin API-session principals in `Myrmex.Tests/Wms/Authorization/WmsAuthorizationEndpointTests.cs`
-- [ ] T047 [P] [US2] Add representative OneC and demo-data authorization cases, including no operation on denial, in `Myrmex.Tests/Integrations/Authorization/IntegrationAuthorizationEndpointTests.cs` and `Myrmex.Tests/Wms/DemoData/WmsDemoDataAuthorizationTests.cs`
-- [ ] T048 [P] [US2] Add WebApp API error tests preserving authentication-required versus forbidden outcomes without converting them to generic success or retry in `Myrmex.Tests/Identity/ProtectedApiAuthorizationErrorTests.cs`
+- [X] T046 [P] [US2] Add representative WMS authorization integration cases for anonymous, unprivileged, operator, and admin API-session principals in `Myrmex.Tests/Wms/Authorization/WmsAuthorizationEndpointTests.cs`
+- [X] T047 [P] [US2] Add representative OneC and demo-data authorization cases, including no operation on denial, in `Myrmex.Tests/Integrations/Authorization/IntegrationAuthorizationEndpointTests.cs` and `Myrmex.Tests/Wms/DemoData/WmsDemoDataAuthorizationTests.cs`
+- [X] T048 [P] [US2] Add WebApp API error tests preserving authentication-required versus forbidden outcomes without converting them to generic success or retry in `Myrmex.Tests/Identity/ProtectedApiAuthorizationErrorTests.cs`
 
 ### Implementation for User Story 2
 
-- [ ] T049 [US2] Audit and preserve `WmsOperator` policy requirements on all existing WMS, OneC, and demo-data endpoint groups in `Myrmex.Modules.Wms/WmsModule.cs`, `Myrmex.Integrations/OneC/Endpoints/OneCEndpoints.cs`, and `Myrmex.Modules.Wms/DemoData/Endpoints/DemoDataAdminEndpoints.cs`
-- [ ] T050 [US2] Map protected-client 401 and 403 responses to the existing WebApp authentication/access-denied behavior without retrying through any bypass in `Myrmex.WebApp/Wms/Api/WmsApiClientHttp.cs` and `Myrmex.WebApp/Identity/ProtectedApiAuthorizationHandler.cs`
+- [X] T049 [US2] Audit and preserve `WmsOperator` policy requirements on all existing WMS, OneC, and demo-data endpoint groups in `Myrmex.Modules.Wms/WmsModule.cs`, `Myrmex.Integrations/OneC/Endpoints/OneCEndpoints.cs`, and `Myrmex.Modules.Wms/DemoData/Endpoints/DemoDataAdminEndpoints.cs`
+- [X] T050 [US2] Map protected-client 401 and 403 responses to the existing WebApp authentication/access-denied behavior without retrying through any bypass in `Myrmex.WebApp/Wms/Api/WmsApiClientHttp.cs` and `Myrmex.WebApp/Identity/ProtectedApiAuthorizationHandler.cs`
 - [ ] T051 [US2] Developer-controlled manual checkpoint: request role-matrix and access-denied validation from `specs/102-identity-cookie-auth/quickstart.md`; do not start AppHost automatically
 
 **Checkpoint**: User Stories 1 and 2 provide production sign-in plus independently enforced role authorization.

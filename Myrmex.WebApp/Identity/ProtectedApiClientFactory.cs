@@ -16,7 +16,11 @@ public sealed class ProtectedApiClientFactory(
         IdentityApiAuthenticationHandler authenticationHandler =
             ActivatorUtilities.CreateInstance<IdentityApiAuthenticationHandler>(
                 scopedServices);
-        authenticationHandler.InnerHandler = new NonDisposingHandler(innerHandler);
+        ProtectedApiAuthorizationHandler authorizationHandler =
+            ActivatorUtilities.CreateInstance<ProtectedApiAuthorizationHandler>(
+                scopedServices);
+        authorizationHandler.InnerHandler = new NonDisposingHandler(innerHandler);
+        authenticationHandler.InnerHandler = authorizationHandler;
 
         HttpClient client = new(authenticationHandler)
         {
