@@ -2,7 +2,9 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var cache = builder.AddRedis("cache");
 
-var sqlServer = builder.AddSqlServer("sql");
+var sqlServer = builder.AddSqlServer("sql")
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithDataVolume("myrmex-sql-data");
 var myrmexDatabase = sqlServer.AddDatabase("MyrmexDatabase");
 
 var apiService = builder.AddProject<Projects.Myrmex_ApiService>("apiservice")
@@ -18,7 +20,6 @@ builder.AddProject<Projects.Myrmex_WebApp>("webapp")
     .WithReference(myrmexDatabase)
     .WaitFor(myrmexDatabase)
     .WithReference(apiService)
-    .WaitFor(apiService)
-    ;
+    .WaitFor(apiService);
 
 builder.Build().Run();

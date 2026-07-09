@@ -4,9 +4,10 @@ namespace Myrmex.Tests;
 
 public class WebTests
 {
-    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan AppHostStartupTimeout = TimeSpan.FromMinutes(5);
 
     [Trait("Category", "Integration")]
+    [Trait("Category", "AppHostSmoke")]
     [Fact]
     public async Task GetWebResourceRootReturnsOkStatusCode()
     {
@@ -27,12 +28,12 @@ public class WebTests
             clientBuilder.AddStandardResilienceHandler();
         });
 
-        await using var app = await appHost.BuildAsync(cancellationToken).WaitAsync(DefaultTimeout, cancellationToken);
-        await app.StartAsync(cancellationToken).WaitAsync(DefaultTimeout, cancellationToken);
+        await using var app = await appHost.BuildAsync(cancellationToken).WaitAsync(AppHostStartupTimeout, cancellationToken);
+        await app.StartAsync(cancellationToken).WaitAsync(AppHostStartupTimeout, cancellationToken);
 
         // Act
         var httpClient = app.CreateHttpClient("webapp");
-        await app.ResourceNotifications.WaitForResourceHealthyAsync("webapp", cancellationToken).WaitAsync(DefaultTimeout, cancellationToken);
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("webapp", cancellationToken).WaitAsync(AppHostStartupTimeout, cancellationToken);
         var response = await httpClient.GetAsync("/", cancellationToken);
 
         // Assert
