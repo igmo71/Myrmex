@@ -40,7 +40,11 @@ public sealed class IdentityUserEndpointTests
         Assert.Equal($"/api/identity/users/{details.Id}", response.Headers.Location?.ToString());
         IdentityUserDetails? body = await response.Content
             .ReadFromJsonAsync<IdentityUserDetails>(TestContext.Current.CancellationToken);
-        Assert.Equal(details, body);
+        Assert.NotNull(body);
+        Assert.Equal(details.Id, body.Id);
+        Assert.Equal(details.Email, body.Email);
+        Assert.Equal(details.DisplayName, body.DisplayName);
+        Assert.Equal(details.Roles.ToArray(), body.Roles.ToArray());
         Assert.Equal(1, dispatcher.CallCount);
         Assert.Equal("operator@example.com", dispatcher.LastCommand?.Email);
         Assert.Equal("Myrmex1!", dispatcher.LastCommand?.TemporaryPassword);

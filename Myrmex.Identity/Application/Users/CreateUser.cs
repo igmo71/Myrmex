@@ -85,16 +85,30 @@ public static class CreateUser
                         return MapCreateFailure(createResult);
                     }
 
-                    IdentityResult roleResult = await userManager.AddToRolesAsync(
-                        user,
-                        validation.Roles);
+                    async Task<ServiceResult<IdentityUserDetails>> RollbackRoleAssignmentFailureAsync()
+                    {
+                        await userManager.DeleteAsync(user);
+                        await transaction.RollbackAsync(CancellationToken.None);
+                        return RoleAssignmentFailed();
+                    }
+
+                    IdentityResult roleResult;
+                    try
+                    {
+                        roleResult = await userManager.AddToRolesAsync(
+                            user,
+                            validation.Roles);
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        return await RollbackRoleAssignmentFailureAsync();
+                    }
+
                     cancellationToken.ThrowIfCancellationRequested();
 
                     if (!roleResult.Succeeded)
                     {
-                        await userManager.DeleteAsync(user);
-                        await transaction.RollbackAsync(cancellationToken);
-                        return RoleAssignmentFailed();
+                        return await RollbackRoleAssignmentFailureAsync();
                     }
 
                     await transaction.CommitAsync(cancellationToken);

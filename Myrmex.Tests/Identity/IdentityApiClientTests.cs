@@ -35,7 +35,11 @@ public sealed class IdentityApiClientTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(details, result.Value);
+        Assert.NotNull(result.Value);
+        Assert.Equal(details.Id, result.Value.Id);
+        Assert.Equal(details.Email, result.Value.Email);
+        Assert.Equal(details.DisplayName, result.Value.DisplayName);
+        Assert.Equal(details.Roles, result.Value.Roles);
         Assert.Equal(HttpMethod.Post, handler.RequestMethod);
         Assert.Equal("/api/identity/users", handler.RequestPath);
         using JsonDocument body = JsonDocument.Parse(handler.RequestBody);
