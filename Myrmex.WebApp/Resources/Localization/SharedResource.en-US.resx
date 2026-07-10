@@ -403,4 +403,22 @@
   <data name="Account.Logout.Heading" xml:space="preserve"><value>Sign out</value></data>
   <data name="Account.Logout.PageTitle" xml:space="preserve"><value>Sign out</value></data>
   <data name="Account.Logout.Submit" xml:space="preserve"><value>Sign out</value></data>
+  <data name="Nav.Admin" xml:space="preserve"><value>Administration</value></data>
+  <data name="Nav.AdminUsersCreate" xml:space="preserve"><value>Create user</value></data>
+  <data name="Identity.Role.MyrmexAdmin" xml:space="preserve"><value>Administrator</value></data>
+  <data name="Identity.Role.WmsOperator" xml:space="preserve"><value>WMS operator</value></data>
+  <data name="IdentityUsers.Create.ApiUnavailable" xml:space="preserve"><value>Identity API is unavailable.</value></data>
+  <data name="IdentityUsers.Create.DisplayName" xml:space="preserve"><value>Display name</value></data>
+  <data name="IdentityUsers.Create.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="IdentityUsers.Create.Error" xml:space="preserve"><value>User creation failed.</value></data>
+  <data name="IdentityUsers.Create.Heading" xml:space="preserve"><value>Create user</value></data>
+  <data name="IdentityUsers.Create.PageTitle" xml:space="preserve"><value>Create user</value></data>
+  <data name="IdentityUsers.Create.Roles" xml:space="preserve"><value>Roles</value></data>
+  <data name="IdentityUsers.Create.Saving" xml:space="preserve"><value>Saving...</value></data>
+  <data name="IdentityUsers.Create.Submit" xml:space="preserve"><value>Create</value></data>
+  <data name="IdentityUsers.Create.Success" xml:space="preserve"><value>User {0} created.</value></data>
+  <data name="IdentityUsers.Create.TemporaryPassword" xml:space="preserve"><value>Temporary password</value></data>
+  <data name="IdentityUsers.Create.Validation.EmailRequired" xml:space="preserve"><value>Email is required.</value></data>
+  <data name="IdentityUsers.Create.Validation.RolesRequired" xml:space="preserve"><value>Select at least one role.</value></data>
+  <data name="IdentityUsers.Create.Validation.TemporaryPasswordRequired" xml:space="preserve"><value>Temporary password is required.</value></data>
 </root>

@@ -163,20 +163,20 @@
 
 ### Tests for User Story 4
 
-- [ ] T060 [P] [US4] Write create-user handler/persistence tests for normalization, duplicate identity, password validation, supported roles, atomic multi-role assignment, cancellation, and rollback in `Myrmex.Tests/Identity/CreateUserTests.cs`
-- [ ] T061 [P] [US4] Write endpoint contract tests for 201/400/401/403/409 responses, ProblemDetails, serialization, and no sensitive output in `Myrmex.Tests/Identity/IdentityUserEndpointTests.cs`
-- [ ] T062 [P] [US4] Write WebApp client tests for request body, cancellation, and `ApiResult<IdentityUserDetails>` error mapping in `Myrmex.Tests/Identity/IdentityApiClientTests.cs`
+- [X] T060 [P] [US4] Write create-user handler/persistence tests for normalization, duplicate identity, password validation, supported roles, atomic multi-role assignment, cancellation, and rollback in `Myrmex.Tests/Identity/CreateUserTests.cs`
+- [X] T061 [P] [US4] Write endpoint contract tests for 201/400/401/403/409 responses, ProblemDetails, serialization, and no sensitive output in `Myrmex.Tests/Identity/IdentityUserEndpointTests.cs`
+- [X] T062 [P] [US4] Write WebApp client tests for request body, cancellation, and `ApiResult<IdentityUserDetails>` error mapping in `Myrmex.Tests/Identity/IdentityApiClientTests.cs`
 
 ### Implementation for User Story 4
 
-- [ ] T063 [US4] Implement explicit `CreateUser.Command`, validation, transaction, user creation, current-role assignment, and non-sensitive result mapping in `Myrmex.Identity/Application/Users/CreateUser.cs`
-- [ ] T064 [US4] Register the Identity application handler assembly with existing dispatching in `Myrmex.ApiService/Program.cs`
-- [ ] T065 [US4] Implement `POST /api/identity/users` with `MyrmexAdmin` policy and existing ProblemDetails conventions in `Myrmex.Identity/Infrastructure/Endpoints/IdentityUserEndpoints.cs`
-- [ ] T066 [US4] Map the Identity endpoint group from ApiService in `Myrmex.Identity/Infrastructure/IdentityEndpointRouteBuilderExtensions.cs` and `Myrmex.ApiService/Program.cs`
-- [ ] T067 [US4] Implement the typed create-user client in `Myrmex.WebApp/Identity/IdentityApiClient.cs` and register it through the protected API-session handler in `Myrmex.WebApp/Program.cs`
-- [ ] T068 [US4] Implement localized admin-only create-user form, supported-role selection, validation, saving state, and non-sensitive errors in `Myrmex.WebApp/Components/Pages/Admin/Users/Create.razor`
-- [ ] T069 [US4] Protect `/admin/users/create` with the admin role and expose navigation only to admins in `Myrmex.WebApp/Components/Pages/Admin/Users/Create.razor` and `Myrmex.WebApp/Components/Layout/NavMenu.razor`
-- [ ] T070 [P] [US4] Add neutral, `en-US`, and `ru-RU` user-creation, role-label, validation, success, and error resources in `Myrmex.WebApp/Resources/Localization/SharedResource.resx`, `Myrmex.WebApp/Resources/Localization/SharedResource.en-US.resx`, and `Myrmex.WebApp/Resources/Localization/SharedResource.ru-RU.resx`
+- [X] T063 [US4] Implement explicit `CreateUser.Command`, validation, transaction, user creation, current-role assignment, and non-sensitive result mapping in `Myrmex.Identity/Application/Users/CreateUser.cs`
+- [X] T064 [US4] Register the Identity application handler assembly with existing dispatching in `Myrmex.ApiService/Program.cs`
+- [X] T065 [US4] Implement `POST /api/identity/users` with `MyrmexAdmin` policy and existing ProblemDetails conventions in `Myrmex.Identity/Infrastructure/Endpoints/IdentityUserEndpoints.cs`
+- [X] T066 [US4] Map the Identity endpoint group from ApiService in `Myrmex.Identity/Infrastructure/IdentityEndpointRouteBuilderExtensions.cs` and `Myrmex.ApiService/Program.cs`
+- [X] T067 [US4] Implement the typed create-user client in `Myrmex.WebApp/Identity/IdentityApiClient.cs` and register it through the protected API-session handler in `Myrmex.WebApp/Program.cs`
+- [X] T068 [US4] Implement localized admin-only create-user form, supported-role selection, validation, saving state, and non-sensitive errors in `Myrmex.WebApp/Components/Pages/Admin/Users/Create.razor`
+- [X] T069 [US4] Protect `/admin/users/create` with the admin role and expose navigation only to admins in `Myrmex.WebApp/Components/Pages/Admin/Users/Create.razor` and `Myrmex.WebApp/Components/Layout/NavMenu.razor`
+- [X] T070 [P] [US4] Add neutral, `en-US`, and `ru-RU` user-creation, role-label, validation, success, and error resources in `Myrmex.WebApp/Resources/Localization/SharedResource.resx`, `Myrmex.WebApp/Resources/Localization/SharedResource.en-US.resx`, and `Myrmex.WebApp/Resources/Localization/SharedResource.ru-RU.resx`
 - [ ] T071 [US4] Developer-controlled manual checkpoint: request validation of admin creation, operator denial, duplicate identity, unsupported roles, and created-user sign-in from `specs/102-identity-cookie-auth/quickstart.md`; do not start AppHost automatically
 
 **Checkpoint**: Administrators can provision named users while ApiService remains the final authorization authority.

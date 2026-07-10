@@ -1,5 +1,6 @@
 using Myrmex.AppDispatching;
 using Myrmex.AspNetCore.Security;
+using Myrmex.Identity.Application.Users;
 using Myrmex.Core.Application.Security;
 using Myrmex.Identity.Infrastructure;
 using Myrmex.Integrations.OneC;
@@ -40,7 +41,9 @@ builder.Services.AddAuthorizationBuilder()
 builder.Services.AddWmsModule(builder.Configuration);
 builder.Services.AddOneCIntegration(builder.Configuration);
 
-builder.Services.AddMyrmexAppDispatching(typeof(WmsModule).Assembly);
+builder.Services.AddMyrmexAppDispatching(
+    typeof(WmsModule).Assembly,
+    typeof(CreateUser).Assembly);
 
 var app = builder.Build();
 
@@ -80,6 +83,7 @@ app.MapDefaultEndpoints();
 
 app.MapWmsModule();
 app.MapOneCIntegration();
+app.MapMyrmexIdentityEndpoints();
 
 app.Run();
 

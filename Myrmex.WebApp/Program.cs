@@ -51,6 +51,12 @@ builder.Services.AddAuthorizationBuilder()
         MyrmexAuthorizationPolicies.ConfigureMyrmexAdmin);
 builder.Services.AddScoped<ProtectedApiClientFactory>();
 
+builder.Services.AddHttpClient("IdentityApiClient");
+builder.Services.AddScoped<IdentityApiClient>(services => new(
+    services.GetRequiredService<ProtectedApiClientFactory>().CreateClient(
+        "IdentityApiClient",
+        new Uri("https+http://apiservice"))));
+
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {

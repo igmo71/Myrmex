@@ -1314,4 +1314,22 @@
   <data name="Account.Logout.Submit" xml:space="preserve">
     <value>Выйти</value>
   </data>
+  <data name="Nav.Admin" xml:space="preserve"><value>Администрирование</value></data>
+  <data name="Nav.AdminUsersCreate" xml:space="preserve"><value>Создать пользователя</value></data>
+  <data name="Identity.Role.MyrmexAdmin" xml:space="preserve"><value>Администратор</value></data>
+  <data name="Identity.Role.WmsOperator" xml:space="preserve"><value>Оператор WMS</value></data>
+  <data name="IdentityUsers.Create.ApiUnavailable" xml:space="preserve"><value>Identity API недоступен.</value></data>
+  <data name="IdentityUsers.Create.DisplayName" xml:space="preserve"><value>Отображаемое имя</value></data>
+  <data name="IdentityUsers.Create.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="IdentityUsers.Create.Error" xml:space="preserve"><value>Не удалось создать пользователя.</value></data>
+  <data name="IdentityUsers.Create.Heading" xml:space="preserve"><value>Создать пользователя</value></data>
+  <data name="IdentityUsers.Create.PageTitle" xml:space="preserve"><value>Создать пользователя</value></data>
+  <data name="IdentityUsers.Create.Roles" xml:space="preserve"><value>Роли</value></data>
+  <data name="IdentityUsers.Create.Saving" xml:space="preserve"><value>Сохранение...</value></data>
+  <data name="IdentityUsers.Create.Submit" xml:space="preserve"><value>Создать</value></data>
+  <data name="IdentityUsers.Create.Success" xml:space="preserve"><value>Пользователь {0} создан.</value></data>
+  <data name="IdentityUsers.Create.TemporaryPassword" xml:space="preserve"><value>Временный пароль</value></data>
+  <data name="IdentityUsers.Create.Validation.EmailRequired" xml:space="preserve"><value>Email обязателен.</value></data>
+  <data name="IdentityUsers.Create.Validation.RolesRequired" xml:space="preserve"><value>Выберите хотя бы одну роль.</value></data>
+  <data name="IdentityUsers.Create.Validation.TemporaryPasswordRequired" xml:space="preserve"><value>Временный пароль обязателен.</value></data>
 </root>
