@@ -6,16 +6,36 @@ This guide validates the completed feature. Commands are developer-controlled; d
 
 - SQL Server connection configured as `ConnectionStrings:MyrmexDatabase` for both WebApp and ApiService.
 - HTTPS/service discovery available through AppHost or equivalent deployment routing.
-- Identity migration generated and reviewed in `Myrmex.Identity/Persistence/Migrations`.
+- Identity migration generated, reviewed, and applied by the developer when runtime validation is needed. Migration generation and database update remain manual steps; do not run them from automation.
 - Initial administrator password supplied through user-secrets, environment variables, or deployment secret configuration. Do not put it in committed settings or command history.
 - Production Data Protection certificate configuration supplied securely and available to both WebApp and ApiService; certificate/private-key material is not committed.
 - ApiService remains private; WebApp is the browser entry point.
+
+Implemented Identity configuration keys:
+
+| Key | Owner | Notes |
+|---|---|---|
+| `ConnectionStrings:MyrmexDatabase` | WebApp and ApiService | Existing SQL Server database; Identity and Data Protection persistence use this connection. |
+| `Myrmex:Identity:ApiSession:LifetimeMinutes` | WebApp and ApiService | Must be exactly `2`. |
+| `Myrmex:Identity:DataProtection:ApplicationName` | WebApp and ApiService | Must match on both hosts; current committed value is `Myrmex`. |
+| `Myrmex:Identity:DataProtection:AllowUnprotectedKeysInDevelopment` | WebApp and ApiService | Allowed only in `Development`; committed Development value is `true`, non-Development value is `false`. |
+| `Myrmex:Identity:DataProtection:Certificate:Thumbprint` | WebApp and ApiService | Required outside Development unless the development opt-out applies; identifies a certificate with a private key. |
+| `Myrmex:Identity:DataProtection:Certificate:StoreName` | WebApp and ApiService | Current committed value is `My`. |
+| `Myrmex:Identity:DataProtection:Certificate:StoreLocation` | WebApp and ApiService | Current committed value is `CurrentUser`. |
+| `Myrmex:Identity:InitialAdmin:Enabled` | ApiService bootstrap | Defaults to `false`. |
+| `Myrmex:Identity:InitialAdmin:Email` | ApiService bootstrap | Required only when bootstrap is enabled. |
+| `Myrmex:Identity:InitialAdmin:DisplayName` | ApiService bootstrap | Optional and non-secret. |
+| `Myrmex:Identity:InitialAdmin:Password` | ApiService bootstrap | Required only when bootstrap is enabled; secret source only, never committed. |
 
 ## 1. Review the explicit session boundary
 
 Before running, verify implementation matches [session-boundary.md](contracts/session-boundary.md):
 
-- distinct browser application and internal API-session cookie schemes;
+- distinct browser application and internal API-session cookie schemes:
+  - WebApp browser scheme: `Identity.Application`;
+  - WebApp browser cookie name: `.Myrmex.Identity.Application`;
+  - ApiService scheme: `Myrmex.ApiSession`;
+  - internal API-session cookie name: `Myrmex.ApiSession`;
 - API-session lifetime is two minutes, absolute, nonpersistent;
 - shared persisted Data Protection key ring/application name;
 - production key ring encrypted at rest with shared deployment certificate protection;
@@ -25,6 +45,8 @@ Before running, verify implementation matches [session-boundary.md](contracts/se
 - ApiService 401/403 status behavior and no development-auth fallback.
 
 ## 2. Build and automated tests
+
+These commands are developer-controlled validation commands. Do not run them automatically.
 
 ```powershell
 dotnet build Myrmex.slnx -nologo
@@ -45,7 +67,37 @@ Required automated evidence:
 - removed roles are reflected on the next outgoing WebApp API request;
 - browser application cookies sent directly to ApiService are ignored and protected endpoints return 401.
 
-## 3. Review and apply migration
+## 3. Review Data Protection certificate setup
+
+Outside Development, WebApp and ApiService must be able to load the same X.509 certificate with a private key from the configured store. The application code reads:
+
+- store name: `Myrmex:Identity:DataProtection:Certificate:StoreName`;
+- store location: `Myrmex:Identity:DataProtection:Certificate:StoreLocation`;
+- thumbprint: `Myrmex:Identity:DataProtection:Certificate:Thumbprint`.
+
+Manual Windows setup example for a developer-controlled certificate:
+
+```powershell
+$cert = New-SelfSignedCertificate `
+  -DnsName 'myrmex.local' `
+  -CertStoreLocation 'Cert:\CurrentUser\My' `
+  -KeyExportPolicy Exportable `
+  -KeySpec Signature
+
+$cert.Thumbprint
+```
+
+Use a deployment-approved certificate source for production. Install the certificate, including its private key, into the configured store for both WebApp and ApiService identities. Then set the thumbprint through user-secrets, environment variables, or deployment secret configuration:
+
+```powershell
+$env:Myrmex__Identity__DataProtection__Certificate__Thumbprint = '<certificate-thumbprint>'
+$env:Myrmex__Identity__DataProtection__Certificate__StoreName = 'My'
+$env:Myrmex__Identity__DataProtection__Certificate__StoreLocation = 'CurrentUser'
+```
+
+Do not commit certificate files, private keys, exported PFX files, or thumbprints that reveal production deployment details. Clear temporary environment variables after validation.
+
+## 4. Review and apply migration
 
 Generate only if the reviewed migration is not already present:
 
@@ -66,7 +118,7 @@ dotnet ef database update `
   --context MyrmexIdentityDbContext
 ```
 
-## 4. Configure initial administrator safely
+## 5. Configure initial administrator safely
 
 Committed `appsettings*.json` files document only non-secret initial-admin keys:
 
@@ -104,7 +156,7 @@ Positive/idempotency validation:
 3. Restart at least twice.
 4. Expected: no duplicate user and no password reset.
 
-## 5. Run through AppHost
+## 6. Run through AppHost
 
 ```powershell
 dotnet run --project Myrmex.AppHost\Myrmex.AppHost.csproj
@@ -112,7 +164,7 @@ dotnet run --project Myrmex.AppHost\Myrmex.AppHost.csproj
 
 Verify ApiService is not externally published as a browser entry point. Navigate only to the WebApp endpoint.
 
-## 6. Manual account and authorization scenarios
+## 7. Manual account and authorization scenarios
 
 ### Anonymous
 
@@ -141,12 +193,25 @@ Verify ApiService is not externally published as a browser entry point. Navigate
 3. Remove the operator role while the session remains open, then trigger another API call.
 4. Expected: the fresh propagated principal lacks the role and ApiService returns 403; no operation executes.
 
+Expected protected ApiService outcomes:
+
+| Request state | Expected status | Expected operation behavior |
+|---|---:|---|
+| No `Myrmex.ApiSession` cookie | 401 | Endpoint handler is not executed. |
+| Expired, malformed, tampered, wrong-scheme, wrong-key, or wrong-application protected ticket | 401 | Endpoint handler is not executed. |
+| Browser `.Myrmex.Identity.Application` cookie sent directly to ApiService | 401 | Browser Identity cookie is ignored by ApiService. |
+| Valid API-session ticket without required role | 403 | Endpoint handler is not executed. |
+| Valid `WmsOperator` API-session ticket to WMS/OneC/demo-data protected operation | Success | ApiService resolves `IActorContext.ActorId` from the Identity GUID claim. |
+| Valid `MyrmexAdmin` API-session ticket to WMS/OneC/demo-data protected operation | Success | Admin satisfies WMS operator policy. |
+| Valid `WmsOperator` API-session ticket to `/api/identity/users` | 403 | User creation is not executed. |
+| Valid `MyrmexAdmin` API-session ticket to `/api/identity/users` | 201 on valid input | Response contains only `id`, `email`, `displayName`, and `roles`. |
+
 ### Access denied and localization
 
 1. Verify login, logout, access-denied, current-user, and create-user UI in `ru-RU` and `en-US`.
 2. Expected: all text is localized; role codes and API identifiers remain stable and untranslated.
 
-## 7. Production configuration review
+## 8. Production configuration review
 
 - Identity application cookie is WebApp default.
 - `Myrmex.ApiSession` is ApiService production default and returns 401/403, not redirects.
@@ -156,4 +221,5 @@ Verify ApiService is not externally published as a browser entry point. Navigate
 - Production Data Protection key XML is encrypted at rest and both hosts can load the configured certificate without logging its secret material.
 - ApiService has no external ingress.
 - HTTPS is enforced for browser and internal service traffic.
-- Logs contain no password, protected ticket, cookie, key material, or password-validation details.
+- Logs and public error responses contain no submitted passwords, password hashes, protected tickets, cookie values, Data Protection key material, or certificate private-key material.
+- Login failures remain generic. Duplicate identity feedback is limited to the admin-only create-user path and does not expose password or protected-session material.
