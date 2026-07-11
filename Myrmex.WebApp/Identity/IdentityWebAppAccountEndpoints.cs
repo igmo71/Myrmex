@@ -12,12 +12,12 @@ public static class IdentityWebAppAccountEndpoints
         ArgumentNullException.ThrowIfNull(endpoints);
 
         endpoints.MapPost(
-                "/account/login",
+                "/account/login-submit",
                 LoginAsync)
             .AllowAnonymous();
 
         endpoints.MapPost(
-                "/account/logout",
+                "/account/logout-submit",
                 LogoutAsync)
             .RequireAuthorization();
 

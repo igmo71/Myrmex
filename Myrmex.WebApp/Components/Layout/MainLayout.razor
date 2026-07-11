@@ -27,16 +27,11 @@
                 <MudText Typo="Typo.body2" Class="mx-3">
                     @GetCurrentUserDisplayName(authState.User)
                 </MudText>
-                <form method="post" action="/account/logout">
-                    <AntiforgeryToken />
-                    <input type="hidden" name="ReturnUrl" value="/" />
-                    <MudButton ButtonType="ButtonType.Submit"
-                               Variant="Variant.Text"
-                               Color="Color.Inherit"
-                               StartIcon="@Icons.Material.Filled.Logout">
-                        @Localizer["Account.Logout"]
-                    </MudButton>
-                </form>
+                <MudButton Href="/account/logout"
+                           Variant="Variant.Text"
+                           StartIcon="@Icons.Material.Filled.Logout">
+                    @Localizer["Account.Logout.Submit"]
+                </MudButton>
             </Authorized>
             <NotAuthorized>
                 <MudButton Href="/account/login"
