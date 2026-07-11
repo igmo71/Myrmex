@@ -1,0 +1,79 @@
+@page "/account/login"
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+@inject IStringLocalizer<SharedResource> Localizer
+
+<PageTitle>@Localizer["Account.Login.PageTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="1">
+        <MudStack Spacing="3">
+            <div>
+                <MudText Typo="Typo.h4" GutterBottom="true">
+                    @Localizer["Account.Login.Heading"]
+                </MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    @Localizer["Account.Login.Description"]
+                </MudText>
+            </div>
+
+            @if (LoginFailed)
+            {
+                <MudAlert Severity="Severity.Error">
+                    @Localizer["Account.Login.InvalidCredentials"]
+                </MudAlert>
+            }
+
+            <form method="post" action="/account/login-submit" @formname="loginForm">
+                <AntiforgeryToken />
+                <input type="hidden" name="ReturnUrl" value="@NormalizedReturnUrl" />
+
+                <MudStack Spacing="3">
+                    <label>
+                        <MudText Typo="Typo.body2" Class="mb-1">
+                            @Localizer["Account.Login.UserNameOrEmail"]
+                        </MudText>
+                        <input name="UserNameOrEmail"
+                               class="mud-input-root mud-input-root-outlined px-3 py-2 w-100"
+                               required
+                               autofocus />
+                    </label>
+
+                    <label>
+                        <MudText Typo="Typo.body2" Class="mb-1">
+                            @Localizer["Account.Login.Password"]
+                        </MudText>
+                        <input name="Password"
+                               type="password"
+                               class="mud-input-root mud-input-root-outlined px-3 py-2 w-100"
+                               required />
+                    </label>
+
+                    <label class="d-flex align-center gap-2">
+                        <input type="checkbox" name="RememberMe" value="true" />
+                        <span>@Localizer["Account.Login.RememberMe"]</span>
+                    </label>
+
+                    <MudButton ButtonType="ButtonType.Submit"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Login"
+                               FullWidth="true">
+                        @Localizer["Account.Login.Submit"]
+                    </MudButton>
+                </MudStack>
+            </form>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery(Name = "loginFailed")]
+    private bool LoginFailed { get; set; }
+
+    private string NormalizedReturnUrl =>
+        IdentityWebAppAccountEndpoints.NormalizeReturnUrl(ReturnUrl);
+}

@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Authentication;
 using Myrmex.AppDispatching;
 using Myrmex.AspNetCore.Security;
+using Myrmex.Identity.Application.Users;
 using Myrmex.Core.Application.Security;
+using Myrmex.Identity.Infrastructure;
 using Myrmex.Integrations.OneC;
 using Myrmex.Integrations.OneC.Endpoints;
 using Myrmex.Modules.Wms;
@@ -22,31 +23,34 @@ builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IActorContext, HttpContextActorContext>();
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = MyrmexAuthenticationSchemes.DevelopmentActor;
-    options.DefaultChallengeScheme = MyrmexAuthenticationSchemes.DevelopmentActor;
-})
-    .AddScheme<AuthenticationSchemeOptions, DevelopmentActorAuthenticationHandler>(
-        MyrmexAuthenticationSchemes.DevelopmentActor,
-        _ => { });
+builder.Services.AddMyrmexIdentity(builder.Configuration);
+builder.Services.AddMyrmexIdentityDataProtection(
+    builder.Configuration,
+    builder.Environment);
+builder.Services.AddMyrmexIdentityApiAuthentication(builder.Configuration);
+builder.Services.AddMyrmexIdentityBootstrap(builder.Configuration);
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(
         MyrmexAuthorizationPolicies.WmsOperator,
-        MyrmexAuthorizationPolicies.ConfigureWmsOperator);
+        MyrmexAuthorizationPolicies.ConfigureWmsOperator)
+    .AddPolicy(
+        MyrmexAuthorizationPolicies.MyrmexAdmin,
+        MyrmexAuthorizationPolicies.ConfigureMyrmexAdmin);
 
 builder.Services.AddWmsModule(builder.Configuration);
 builder.Services.AddOneCIntegration(builder.Configuration);
 
-builder.Services.AddMyrmexAppDispatching(typeof(WmsModule).Assembly);
+builder.Services.AddMyrmexAppDispatching(
+    typeof(WmsModule).Assembly,
+    typeof(CreateUser).Assembly);
 
 var app = builder.Build();
 
+await app.RunMyrmexIdentityBootstrapAsync();
+
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
-
-LogEnvironmentAndActor(app);
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -79,24 +83,9 @@ app.MapDefaultEndpoints();
 
 app.MapWmsModule();
 app.MapOneCIntegration();
+app.MapMyrmexIdentityEndpoints();
 
 app.Run();
-
-static void LogEnvironmentAndActor(WebApplication app)
-{
-    if (app.Configuration.GetValue<bool>(
-            $"{DevelopmentActorAuthenticationHandler.ConfigurationSectionName}:Enabled"))
-    {
-        string actorId = app.Configuration[
-            $"{DevelopmentActorAuthenticationHandler.ConfigurationSectionName}:ActorId"]
-            ?? "(not configured)";
-
-        app.Logger.LogWarning(
-            "DevelopmentActor authentication is enabled. Environment={Environment}; ActorId={ActorId}",
-            app.Environment.EnvironmentName,
-            actorId);
-    }
-}
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {

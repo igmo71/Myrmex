@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Myrmex.AspNetCore.Security;
 using Myrmex.Core.Application.Security;
+using Myrmex.Shared.Identity;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 
@@ -13,11 +14,14 @@ internal static class TestAuthentication
 {
     private const string Scheme = "Test";
 
+    public const string DefaultActorId = "018f0000-0000-7000-8000-00000000a001";
+
     public static IServiceCollection AddTestAuthentication(
         this IServiceCollection services,
         bool authenticated = true,
-        string? actorId = "actor-sub",
-        bool useSubjectClaim = false)
+        string? actorId = DefaultActorId,
+        bool useSubjectClaim = false,
+        IReadOnlyCollection<string>? roles = null)
     {
         services.AddHttpContextAccessor();
         services.AddScoped<IActorContext, HttpContextActorContext>();
@@ -34,12 +38,16 @@ internal static class TestAuthentication
                     options.Authenticated = authenticated;
                     options.ActorId = actorId;
                     options.UseSubjectClaim = useSubjectClaim;
+                    options.Roles = roles ?? [IdentityRoleNames.WmsOperator];
                 });
         services.AddAuthorization(options =>
         {
             options.AddPolicy(
                 MyrmexAuthorizationPolicies.WmsOperator,
                 MyrmexAuthorizationPolicies.ConfigureWmsOperator);
+            options.AddPolicy(
+                MyrmexAuthorizationPolicies.MyrmexAdmin,
+                MyrmexAuthorizationPolicies.ConfigureMyrmexAdmin);
         });
 
         return services;
@@ -59,6 +67,8 @@ internal static class TestAuthentication
         public string? ActorId { get; set; }
 
         public bool UseSubjectClaim { get; set; }
+
+        public IReadOnlyCollection<string> Roles { get; set; } = [IdentityRoleNames.WmsOperator];
     }
 
     private sealed class TestAuthenticationHandler(
@@ -80,6 +90,11 @@ internal static class TestAuthentication
                 claims.Add(new Claim(
                     Options.UseSubjectClaim ? "sub" : ClaimTypes.NameIdentifier,
                     Options.ActorId));
+            }
+
+            foreach (string role in Options.Roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
             }
 
             ClaimsPrincipal principal = new(

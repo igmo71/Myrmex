@@ -1,0 +1,39 @@
+@page "/account/logout"
+@attribute [Authorize]
+@attribute [ExcludeFromInteractiveRouting]
+@inject IStringLocalizer<SharedResource> Localizer
+
+<PageTitle>@Localizer["Account.Logout.PageTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="1">
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h4">
+                @Localizer["Account.Logout.Heading"]
+            </MudText>
+            <MudText>
+                @Localizer["Account.Logout.Description"]
+            </MudText>
+
+            <form method="post" action="/account/logout-submit" @formname="logoutForm">
+                <AntiforgeryToken />
+                <input type="hidden" name="ReturnUrl" value="@NormalizedReturnUrl" />
+
+                <MudButton ButtonType="ButtonType.Submit"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Logout">
+                    @Localizer["Account.Logout.Submit"]
+                </MudButton>
+            </form>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    private string? ReturnUrl { get; set; }
+
+    private string NormalizedReturnUrl =>
+        IdentityWebAppAccountEndpoints.NormalizeReturnUrl(ReturnUrl);
+}

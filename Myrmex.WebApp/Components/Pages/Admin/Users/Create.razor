@@ -1,0 +1,164 @@
+@page "/admin/users/create"
+@attribute [Authorize(Roles = IdentityRoleNames.MyrmexAdmin)]
+@rendermode InteractiveServer
+@inject IdentityApiClient ApiClient
+@inject IStringLocalizer<SharedResource> Localizer
+
+<PageTitle>@Localizer["IdentityUsers.Create.PageTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-6">
+    <MudText Typo="Typo.h4" GutterBottom="true">@Localizer["IdentityUsers.Create.Heading"]</MudText>
+
+    <MudStack Spacing="3">
+        <MudTextField T="string"
+                      @bind-Value="_email"
+                      Label="@Localizer["IdentityUsers.Create.Email"]"
+                      Required="true"
+                      Disabled="@_isSaving" />
+        <MudTextField T="string"
+                      @bind-Value="_displayName"
+                      Label="@Localizer["IdentityUsers.Create.DisplayName"]"
+                      Disabled="@_isSaving" />
+        <MudTextField T="string"
+                      @bind-Value="_temporaryPassword"
+                      Label="@Localizer["IdentityUsers.Create.TemporaryPassword"]"
+                      InputType="InputType.Password"
+                      Required="true"
+                      Disabled="@_isSaving" />
+
+        <MudStack Spacing="1">
+            <MudText Typo="Typo.subtitle1">@Localizer["IdentityUsers.Create.Roles"]</MudText>
+            <MudCheckBox T="bool"
+                         @bind-Value="_myrmexAdminSelected"
+                         Label="@Localizer["Identity.Role.MyrmexAdmin"]"
+                         Disabled="@_isSaving" />
+            <MudCheckBox T="bool"
+                         @bind-Value="_wmsOperatorSelected"
+                         Label="@Localizer["Identity.Role.WmsOperator"]"
+                         Disabled="@_isSaving" />
+        </MudStack>
+
+        @if (_validationErrors.Count > 0)
+        {
+            <MudAlert Severity="Severity.Warning">
+                <MudList T="string" Dense="true">
+                    @foreach (string error in _validationErrors)
+                    {
+                        <MudListItem T="string">@error</MudListItem>
+                    }
+                </MudList>
+            </MudAlert>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+        }
+
+        @if (_createdUser is not null)
+        {
+            <MudAlert Severity="Severity.Success">
+                @Localizer["IdentityUsers.Create.Success", _createdUser.Email]
+            </MudAlert>
+        }
+
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Disabled="@_isSaving"
+                       OnClick="CreateUserAsync">
+                @(Localizer[_isSaving ? "IdentityUsers.Create.Saving" : "IdentityUsers.Create.Submit"])
+            </MudButton>
+        </MudStack>
+    </MudStack>
+</MudContainer>
+
+@code {
+    private string? _email;
+    private string? _displayName;
+    private string? _temporaryPassword;
+    private bool _myrmexAdminSelected;
+    private bool _wmsOperatorSelected = true;
+    private bool _isSaving;
+    private string? _errorMessage;
+    private IdentityUserDetails? _createdUser;
+    private readonly List<string> _validationErrors = [];
+
+    private async Task CreateUserAsync()
+    {
+        _validationErrors.Clear();
+        _errorMessage = null;
+        _createdUser = null;
+
+        IReadOnlyList<string> roles = GetSelectedRoles();
+        Validate(roles);
+        if (_validationErrors.Count > 0)
+        {
+            return;
+        }
+
+        _isSaving = true;
+        try
+        {
+            CreateIdentityUserRequest request = new(
+                _email,
+                _displayName,
+                _temporaryPassword,
+                roles);
+
+            ApiResult<IdentityUserDetails> result = await ApiClient.CreateUserAsync(request);
+            if (result.IsSuccess && result.Value is not null)
+            {
+                _createdUser = result.Value;
+                _temporaryPassword = null;
+            }
+            else
+            {
+                _errorMessage = result.Error?.Message
+                    ?? Localizer["IdentityUsers.Create.Error"];
+            }
+        }
+        catch (Exception)
+        {
+            _errorMessage = Localizer["IdentityUsers.Create.ApiUnavailable"];
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void Validate(IReadOnlyList<string> roles)
+    {
+        if (string.IsNullOrWhiteSpace(_email))
+        {
+            _validationErrors.Add(Localizer["IdentityUsers.Create.Validation.EmailRequired"]);
+        }
+
+        if (string.IsNullOrWhiteSpace(_temporaryPassword))
+        {
+            _validationErrors.Add(Localizer["IdentityUsers.Create.Validation.TemporaryPasswordRequired"]);
+        }
+
+        if (roles.Count == 0)
+        {
+            _validationErrors.Add(Localizer["IdentityUsers.Create.Validation.RolesRequired"]);
+        }
+    }
+
+    private IReadOnlyList<string> GetSelectedRoles()
+    {
+        List<string> roles = [];
+        if (_myrmexAdminSelected)
+        {
+            roles.Add(IdentityRoleNames.MyrmexAdmin);
+        }
+
+        if (_wmsOperatorSelected)
+        {
+            roles.Add(IdentityRoleNames.WmsOperator);
+        }
+
+        return roles;
+    }
+}

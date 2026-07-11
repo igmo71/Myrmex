@@ -16,8 +16,6 @@ services:
       ConnectionStrings__MyrmexDatabase: "${MYRMEX_DB_CONNECTION}"    
       Myrmex__Integrations__OneC__Username: "${MYRMEX_ONEC_USERNAME}"
       Myrmex__Integrations__OneC__Password: "${MYRMEX_ONEC_PASSWORD}" 
-      Myrmex__DevelopmentActor__Enabled: "${MYRMEX_DEVELOPMENT_ACTOR_ENABLED}"
-      Myrmex__DevelopmentActor__ActorId: "${MYRMEX_DEVELOPMENT_ACTOR_ID}"
       Myrmex__Wms__DemoData__Enabled: "true"
       Myrmex__Wms__DemoData__AllowClear: "true"
       Myrmex__Wms__DemoData__ClearConfirmation: "y"

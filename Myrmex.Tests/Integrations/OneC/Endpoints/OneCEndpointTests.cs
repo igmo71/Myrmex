@@ -249,7 +249,7 @@ public sealed class OneCEndpointTests
         builder.Services.AddSingleton(client);
         builder.Services.AddSingleton(importService ?? new StubImportService(CreateImportResponse("warehouses")));
         builder.Services.AddSingleton<TimeProvider>(new FixedTimeProvider(CheckedAtUtc));
-        builder.Services.AddTestAuthentication(authenticated, actorId: "operator");
+        builder.Services.AddTestAuthentication(authenticated);
 
         WebApplication app = builder.Build();
         app.UseTestAuthentication();

@@ -81,4 +81,18 @@
 		</MudNavLink>
 	</MudNavGroup>
 
+	<AuthorizeView Roles="@IdentityRoleNames.MyrmexAdmin">
+		<Authorized>
+			<MudNavGroup Title="@(Localizer["Nav.Admin"])"
+						 Icon="@Icons.Material.Filled.AdminPanelSettings"
+						 Expanded="true">
+				<MudNavLink Href="admin/users/create"
+							Match="NavLinkMatch.Prefix"
+							Icon="@Icons.Material.Filled.PersonAdd">
+					@Localizer["Nav.AdminUsersCreate"]
+				</MudNavLink>
+			</MudNavGroup>
+		</Authorized>
+	</AuthorizeView>
+
 </MudNavMenu>

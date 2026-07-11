@@ -39,7 +39,7 @@ public sealed class InventoryCountEndpointTests
 
             response.EnsureSuccessStatusCode();
             Assert.NotNull(dispatcher.CreateCommand);
-            Assert.Equal("actor-sub", dispatcher.CreateCommand.ActorId);
+            Assert.Equal(TestAuthentication.DefaultActorId, dispatcher.CreateCommand.ActorId);
             Assert.Equal(details.Warehouse.Id, dispatcher.CreateCommand.WarehouseId);
 
             using JsonDocument json = JsonDocument.Parse(
@@ -132,7 +132,7 @@ public sealed class InventoryCountEndpointTests
                 cancellationToken);
             addResponse.EnsureSuccessStatusCode();
             Assert.NotNull(dispatcher.AddCommand);
-            Assert.Equal("actor-sub", dispatcher.AddCommand.ActorId);
+            Assert.Equal(TestAuthentication.DefaultActorId, dispatcher.AddCommand.ActorId);
             Assert.Equal(details.Id, dispatcher.AddCommand.InventoryCountId);
 
             using HttpResponseMessage removeResponse = await client.DeleteAsync(
@@ -142,7 +142,7 @@ public sealed class InventoryCountEndpointTests
             removeResponse.EnsureSuccessStatusCode();
             Assert.NotNull(dispatcher.RemoveCommand);
             Assert.Equal(line.LineVersion, dispatcher.RemoveCommand.ExpectedLineVersion);
-            Assert.Equal("actor-sub", dispatcher.RemoveCommand.ActorId);
+            Assert.Equal(TestAuthentication.DefaultActorId, dispatcher.RemoveCommand.ActorId);
         }
         finally
         {
@@ -213,7 +213,7 @@ public sealed class InventoryCountEndpointTests
             Assert.Equal(12, dispatcher.RecordCommand.CountedQuantity);
             Assert.Equal("Two units behind pallet", dispatcher.RecordCommand.Comment);
             Assert.Equal(line.LineVersion, dispatcher.RecordCommand.ExpectedLineVersion);
-            Assert.Equal("actor-sub", dispatcher.RecordCommand.ActorId);
+            Assert.Equal(TestAuthentication.DefaultActorId, dispatcher.RecordCommand.ActorId);
 
             using JsonDocument json = JsonDocument.Parse(
                 await response.Content.ReadAsStringAsync(cancellationToken));
@@ -309,7 +309,7 @@ public sealed class InventoryCountEndpointTests
             applyResponse.EnsureSuccessStatusCode();
             Assert.NotNull(dispatcher.ApplyCommand);
             Assert.Equal(line.LineVersion, dispatcher.ApplyCommand.ExpectedLineVersion);
-            Assert.Equal("actor-sub", dispatcher.ApplyCommand.ActorId);
+            Assert.Equal(TestAuthentication.DefaultActorId, dispatcher.ApplyCommand.ActorId);
 
             using HttpResponseMessage supersedeResponse = await client.PostAsJsonAsync(
                 $"/api/wms/inventory/counts/{details.Id}/lines/{line.Id}/supersede",
@@ -318,7 +318,7 @@ public sealed class InventoryCountEndpointTests
             supersedeResponse.EnsureSuccessStatusCode();
             Assert.NotNull(dispatcher.SupersedeCommand);
             Assert.Equal(line.LineVersion, dispatcher.SupersedeCommand.ExpectedLineVersion);
-            Assert.Equal("actor-sub", dispatcher.SupersedeCommand.ActorId);
+            Assert.Equal(TestAuthentication.DefaultActorId, dispatcher.SupersedeCommand.ActorId);
         }
         finally
         {
@@ -409,7 +409,7 @@ public sealed class InventoryCountEndpointTests
             Assert.NotNull(dispatcher.CompleteCommand);
             Assert.Equal(details.Id, dispatcher.CompleteCommand.InventoryCountId);
             Assert.Equal(details.CountVersion, dispatcher.CompleteCommand.ExpectedCountVersion);
-            Assert.Equal("actor-sub", dispatcher.CompleteCommand.ActorId);
+            Assert.Equal(TestAuthentication.DefaultActorId, dispatcher.CompleteCommand.ActorId);
 
             using HttpResponseMessage cancelResponse = await client.PostAsJsonAsync(
                 $"/api/wms/inventory/counts/{details.Id}/cancel",
@@ -423,7 +423,7 @@ public sealed class InventoryCountEndpointTests
             Assert.NotNull(dispatcher.CancelCommand);
             Assert.Equal(details.Id, dispatcher.CancelCommand.InventoryCountId);
             Assert.Equal(details.CountVersion, dispatcher.CancelCommand.ExpectedCountVersion);
-            Assert.Equal("actor-sub", dispatcher.CancelCommand.ActorId);
+            Assert.Equal(TestAuthentication.DefaultActorId, dispatcher.CancelCommand.ActorId);
         }
         finally
         {
@@ -623,7 +623,7 @@ public sealed class InventoryCountEndpointTests
         RecordingCommandDispatcher commandDispatcher,
         bool authenticated,
         RecordingQueryDispatcher? queryDispatcher = null,
-        string? actorId = "actor-sub")
+        string? actorId = TestAuthentication.DefaultActorId)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
@@ -632,8 +632,7 @@ public sealed class InventoryCountEndpointTests
             queryDispatcher ?? new RecordingQueryDispatcher(CreateDetails()));
         builder.Services.AddTestAuthentication(
             authenticated,
-            actorId,
-            useSubjectClaim: true);
+            actorId);
 
         WebApplication app = builder.Build();
         app.UseTestAuthentication();
@@ -669,7 +668,7 @@ public sealed class InventoryCountEndpointTests
             UpdatedAtUtc: null,
             CompletedAtUtc: null,
             CancelledAtUtc: null,
-            "actor-sub",
+            TestAuthentication.DefaultActorId,
             CompletedByActorId: null,
             CancelledByActorId: null,
             new InventoryCountDetails.WarehouseInfo(warehouseId, "MAIN", "Main Warehouse"),

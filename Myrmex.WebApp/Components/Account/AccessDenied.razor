@@ -1,0 +1,16 @@
+@page "/account/access-denied"
+@attribute [AllowAnonymous]
+@inject IStringLocalizer<SharedResource> Localizer
+
+<PageTitle>@Localizer["Account.AccessDenied.PageTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudAlert Severity="Severity.Warning" Variant="Variant.Filled">
+        <MudText Typo="Typo.h5" GutterBottom="true">
+            @Localizer["Account.AccessDenied.Heading"]
+        </MudText>
+        <MudText>
+            @Localizer["Account.AccessDenied.Description"]
+        </MudText>
+    </MudAlert>
+</MudContainer>
