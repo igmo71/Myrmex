@@ -18,7 +18,7 @@ internal sealed class SynchronizationOptions
         [10, 30, 120, 600, 1800, 3600, 10800];
 }
 
-internal sealed class IntegrationSynchronizationOptionsValidator
+internal sealed class SynchronizationOptionsValidator
     : IValidateOptions<SynchronizationOptions>
 {
     public ValidateOptionsResult Validate(

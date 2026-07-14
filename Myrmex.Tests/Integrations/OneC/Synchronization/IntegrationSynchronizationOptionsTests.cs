@@ -105,7 +105,7 @@ public sealed class IntegrationSynchronizationOptionsTests
             .SetValue(options, 0);
 
         ValidateOptionsResult result =
-            new IntegrationSynchronizationOptionsValidator()
+            new SynchronizationOptionsValidator()
                 .Validate(null, options);
 
         Assert.True(result.Failed);
@@ -124,7 +124,7 @@ public sealed class IntegrationSynchronizationOptionsTests
         options.RetryDelaysSeconds = [10, delay];
 
         ValidateOptionsResult result =
-            new IntegrationSynchronizationOptionsValidator()
+            new SynchronizationOptionsValidator()
                 .Validate(null, options);
 
         Assert.True(result.Failed);
@@ -140,7 +140,7 @@ public sealed class IntegrationSynchronizationOptionsTests
         options.RetryDelaysSeconds = [];
 
         ValidateOptionsResult result =
-            new IntegrationSynchronizationOptionsValidator()
+            new SynchronizationOptionsValidator()
                 .Validate(null, options);
 
         Assert.True(result.Succeeded);

@@ -39,7 +39,7 @@ public static class OneCIntegrationModule
         services.AddOptions<SynchronizationOptions>()
             .Bind(configuration.GetSection(SynchronizationOptions.SectionName))
             .ValidateOnStart();
-        services.AddSingleton<IValidateOptions<SynchronizationOptions>, IntegrationSynchronizationOptionsValidator>();
+        services.AddSingleton<IValidateOptions<SynchronizationOptions>, SynchronizationOptionsValidator>();
 
         services.TryAddSingleton(TimeProvider.System);
 
