@@ -1,4 +1,6 @@
 <!-- SPECKIT START -->
+Active feature plan: `specs/104-external-integration-synchronization-foundation/plan.md`.
+
 Durable project guidance lives in `.specify/memory/`. Read only the files relevant to the task:
 
 - `constitution.md` for stable principles and governance.

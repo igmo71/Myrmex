@@ -1,0 +1,88 @@
+# Quickstart: External Integration Synchronization Foundation
+
+This guide describes developer-controlled validation for the planned feature. Do not run builds, tests, application startup, database updates, EF migration generation, or EF migration application automatically.
+
+## Prerequisites
+
+- Development database available through `ConnectionStrings:MyrmexDatabase`.
+- Integration schema migration generated, reviewed, and applied by the developer.
+- Disposable development-only integration API key supplied through local development configuration.
+- Existing Identity/API-session configuration remains valid for current WMS operator 1C administration endpoints.
+
+## Recommended Validation Commands
+
+Run only when the developer is ready:
+
+```powershell
+dotnet build XMS.slnx -nologo -v:minimal
+dotnet test Myrmex.Tests\Myrmex.Tests.csproj --filter "FullyQualifiedName~Integrations"
+```
+
+If migration work is explicitly requested later, generate and apply integration migrations through the repository's normal EF workflow; runtime startup must not silently create or update schema.
+
+## Scenario 1: Accepted Receiving Notification
+
+1. Start ApiService with a disposable development API key.
+2. Send:
+
+   ```http
+   POST /api/integrations/1c/receiving-orders/changed
+   Authorization: ApiKey <development-secret>
+   Content-Type: application/json
+   ```
+
+   ```json
+   {
+     "Ref_Key": "80066011-d7c7-11ef-bac8-00155d01d112",
+     "DataVersion": "AAAAAAAaKtk=",
+     "Number": "UT-00001004",
+     "Date": "2025-01-21T10:15:36"
+   }
+   ```
+
+3. Expect empty `202 Accepted`.
+4. Verify one durable synchronization request exists with `EntityType = ReceivingOrder`, configured `SourceSystem`, configured `SourceInstance`, decoded binary data version, optional diagnostics, and `Pending` or later processor-owned lifecycle state.
+
+## Scenario 2: Duplicate Notification
+
+1. Repeat the same request at least five times.
+2. Expect empty `202 Accepted` every time.
+3. Verify duplicate delivery does not change lifecycle state, attempt count, retry schedule, timestamps, or last error.
+
+## Scenario 3: Contract Validation Failure
+
+1. Send a notification with invalid Base64 `DataVersion`.
+2. Expect a non-`202` validation response.
+3. Verify no synchronization request is created.
+
+## Scenario 4: Authentication Boundary
+
+1. Call a notification endpoint with no API key or a wrong API key.
+2. Expect authentication/authorization failure and no synchronization request.
+3. Call `/api/integrations/1c/connection/test` with the integration API key.
+4. Expect the existing WMS operator route to reject the machine credential.
+5. Call the same connection-test endpoint with an eligible WMS operator or administrator API session.
+6. Expect the existing route behavior to remain intact.
+
+## Scenario 5: Processor Lifecycle
+
+1. Accept a receiving or shipping notification with no document-specific handler registered.
+2. Let the processor run.
+3. Verify the request becomes `Deferred`, not `Completed`.
+4. Simulate a registered handler completing successfully.
+5. Verify the request becomes `Completed` and records completion time.
+6. Simulate transient and permanent failures.
+7. Verify retry schedule, exhausted retries, and terminal `Failed` behavior.
+
+## Scenario 6: Wake-Up and Restart Recovery
+
+1. Accept a notification and suppress or ignore the wake-up signal.
+2. Verify fallback SQL polling still discovers the request within one polling interval.
+3. Leave a request in `Processing` and restart the application after the processing timeout.
+4. Verify the request becomes eligible for recovery according to retry rules.
+
+## Expected Artifacts
+
+- See [data-model.md](./data-model.md) for entities, fields, uniqueness, and lifecycle rules.
+- See [contracts/onec-change-notifications.md](./contracts/onec-change-notifications.md) for external HTTP contracts.
+- See [contracts/synchronization-lifecycle.md](./contracts/synchronization-lifecycle.md) for processor and retry behavior.
