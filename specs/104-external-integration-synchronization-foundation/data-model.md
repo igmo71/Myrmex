@@ -53,7 +53,7 @@ Durable provider-neutral technical record of one accepted external entity versio
 - `ExternalId`: Provider-neutral canonical external object identifier. Persistence type: `nvarchar(128)`. For 1C, store `Ref_Key` as canonical GUID `D` format after validation.
 - `ExternalDataVersion`: Binary decoded source version marker. Persistence type: `varbinary(128)`.
 - `ExternalDocumentNumber`: Optional diagnostic number from `Number`. Persistence type: `nvarchar(64)`.
-- `ExternalDocumentDate`: Optional diagnostic date from `Date`.
+- `ExternalDocumentDate`: Optional diagnostic date from `Date`. Runtime type is source-local `DateTime` with `Kind = Unspecified`; persistence type is SQL Server `datetime2`. It is diagnostic only and is never automatically converted to UTC.
 - `Trigger`: Reason request was created. First value: change notification.
 - `Status`: Lifecycle state.
 - `ReceivedAtUtc`: Time Myrmex accepted the notification.
@@ -87,21 +87,26 @@ ExternalId nvarchar(128) = 256 bytes
 ExternalDataVersion varbinary(128) = 128 bytes
 ```
 
-Only violations of the named idempotency unique constraint are handled as duplicate notification intake. Other persistence failures remain failures and must not return successful duplicate responses.
+Only violations of the named idempotency unique constraint are handled as duplicate notification intake. Duplicate handling first verifies a SQL Server duplicate-key error category, then verifies the failure identifies `UX_integration_synchronization_requests_idempotency`. Other persistence failures remain failures and must not return successful duplicate responses.
+
+### Table and Index Names
+
+- Table: `integration.synchronization_requests`
+- Idempotency unique index: `UX_integration_synchronization_requests_idempotency`
 
 ### Status Transitions
 
 ```text
+Pending -> Deferred
 Pending -> Processing
 Processing -> Completed
-Processing -> Deferred
 Processing -> Pending
 Processing -> Failed
 ```
 
 - `Pending`: Eligible for processing now or after `NextAttemptAtUtc`.
 - `Processing`: Currently selected by the processor.
-- `Deferred`: Infrastructure processed the request but no document-specific handler is registered; request remains replayable.
+- `Deferred`: No document-specific handler is registered; request remains replayable and no processing attempt has started.
 - `Completed`: Registered handler completed successfully.
 - `Failed`: Terminal technical failure after configured retries or permanent contract/processing error.
 
@@ -121,7 +126,7 @@ Operational worker that discovers eligible requests and drives lifecycle transit
 
 - Durable pending synchronization requests.
 - Bounded in-process wake-up signal.
-- Configured polling interval, batch size, request timeout, processing timeout, and retry delays.
+- Configured polling interval, batch size, `ProcessingAttemptTimeoutSeconds`, processing timeout, and retry delays.
 - Optional registered document-specific handlers.
 
 ### Behavior Rules
@@ -131,7 +136,8 @@ Operational worker that discovers eligible requests and drives lifecycle transit
 - Process eligible work in configurable batches.
 - After each wake-up signal, process eligible SQL batches until no immediately eligible work remains.
 - Recover abandoned `Processing` records after the configured processing timeout.
-- Mark unsupported requests `Deferred`, not `Completed`.
+- Resolve whether a document-specific handler exists before transitioning to `Processing`.
+- When no handler exists, transition directly from `Pending` to `Deferred`, do not increment `AttemptCount`, do not set `ProcessingStartedAtUtc`, and do not consume a retry delay.
 - For transient technical failures, record attempt/error and schedule the next attempt from configured retry delays.
 - For permanent failures or exhausted retries, mark `Failed`.
 

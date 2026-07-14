@@ -93,7 +93,7 @@ If migration work is explicitly requested later, generate and apply integration 
 
 1. Send duplicate HTTP notifications for the same source/version concurrently.
 2. Verify the database unique constraint is authoritative and only one synchronization request exists.
-3. Verify only violation of the named idempotency unique constraint is treated as duplicate intake.
+3. Verify only SQL Server duplicate-key failures that identify `UX_integration_synchronization_requests_idempotency` are treated as duplicate intake.
 4. Verify unrelated persistence failures are surfaced as failures and are not returned as successful duplicates.
 
 ## Expected Artifacts

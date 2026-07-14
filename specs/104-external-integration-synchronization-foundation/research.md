@@ -49,7 +49,7 @@
 
 ## Decision: Bounded idempotency columns use canonical strings plus binary source version
 
-**Decision**: Store `ExternalId` as a canonical bounded string, not as a database `uniqueidentifier`. For 1C, validate `Ref_Key` as a non-empty GUID and store its canonical `D` string form. Use bounded SQL Server column sizes for the unique index: `SourceSystem nvarchar(32)`, `SourceInstance nvarchar(128)`, `EntityType nvarchar(32)`, `ExternalId nvarchar(128)`, and `ExternalDataVersion varbinary(128)`. Bound `ExternalDocumentNumber` as `nvarchar(64)` and `LastError` as `nvarchar(2048)`.
+**Decision**: Store `ExternalId` as a canonical bounded string, not as a database `uniqueidentifier`. For 1C, validate `Ref_Key` as a non-empty GUID and store its canonical `D` string form. Following repository schema/table/index naming conventions, use table `integration.synchronization_requests` and unique index `UX_integration_synchronization_requests_idempotency`. Use bounded SQL Server column sizes for the unique index: `SourceSystem nvarchar(32)`, `SourceInstance nvarchar(128)`, `EntityType nvarchar(32)`, `ExternalId nvarchar(128)`, and `ExternalDataVersion varbinary(128)`. Bound `ExternalDocumentNumber` as `nvarchar(64)`, `ExternalDocumentDate` as `datetime2`, and `LastError` as `nvarchar(2048)`.
 
 **Rationale**: 1C supplies GUID identifiers in the first slice, but the synchronization request is provider-neutral and later external systems may not use GUID identifiers. Canonical strings preserve provider-neutrality while first-slice validation still rejects invalid 1C references. The composite unique key is physically valid on SQL Server: the bounded key columns require at most 768 bytes, below the 1700-byte nonclustered index key limit.
 
@@ -60,7 +60,7 @@
 
 ## Decision: SQL uniqueness enforces idempotent intake
 
-**Decision**: Enforce uniqueness over `SourceSystem`, `SourceInstance`, `EntityType`, `ExternalId`, and `ExternalDataVersion`; handle concurrent duplicate HTTP requests by preserving one durable synchronization request and returning empty `202 Accepted` for duplicates. Only violation of the named idempotency unique constraint is treated as a duplicate; unrelated persistence failures remain failures and are not converted to success.
+**Decision**: Enforce uniqueness over `SourceSystem`, `SourceInstance`, `EntityType`, `ExternalId`, and `ExternalDataVersion`; handle concurrent duplicate HTTP requests by preserving one durable synchronization request and returning empty `202 Accepted` for duplicates. Duplicate handling first verifies a SQL Server duplicate-key error category, then verifies the failure identifies `UX_integration_synchronization_requests_idempotency`. Unrelated persistence failures remain failures and are not converted to success.
 
 **Rationale**: The database uniqueness constraint is the durable idempotency boundary. It prevents duplicates even when duplicate requests arrive concurrently and avoids relying on in-memory coordination.
 
@@ -71,7 +71,7 @@
 
 ## Decision: SQL polling is reliable; bounded channel is only a coalescing wake-up signal
 
-**Decision**: Use a bounded in-process channel with capacity 1, `DropWrite` behavior when full, multiple writers, and one reader only to wake the processor after commit. The channel carries no synchronization request payload. After each wake-up, the processor scans SQL batches until no immediately eligible work remains. The processor still scans SQL immediately on startup and on a configurable fallback interval.
+**Decision**: Use a bounded in-process channel with capacity 1, `DropWrite` behavior when full, many signal writers, and one reader only to wake the processor after commit. The channel carries no synchronization request payload. After each wake-up, the processor scans SQL batches until no immediately eligible work remains. The processor still scans SQL immediately on startup and on a configurable fallback interval.
 
 **Rationale**: SQL is the durable queue. Wake-up signals can be lost or delayed without losing work because polling and startup scanning discover committed requests.
 
@@ -82,9 +82,9 @@
 
 ## Decision: Explicit lifecycle states with `Deferred` for unsupported handlers
 
-**Decision**: Use `Pending`, `Processing`, `Deferred`, `Completed`, and `Failed`; reserve `Superseded` for later. When no document-specific handler is registered, transition to `Deferred`, not `Completed`.
+**Decision**: Use `Pending`, `Processing`, `Deferred`, `Completed`, and `Failed`; reserve `Superseded` for later. Resolve whether a document-specific handler exists before transitioning to `Processing`. When no handler is registered, transition directly from `Pending` to `Deferred`, without incrementing `AttemptCount`, setting `ProcessingStartedAtUtc`, or consuming a retry delay.
 
-**Rationale**: The first slice must not claim receiving/shipping synchronization succeeded just because infrastructure selected the request. `Deferred` preserves replayable state for later handlers.
+**Rationale**: The first slice must not claim receiving/shipping synchronization succeeded just because infrastructure selected the request. `Deferred` preserves replayable state for later handlers without counting unsupported work as a processing attempt.
 
 **Alternatives considered**:
 

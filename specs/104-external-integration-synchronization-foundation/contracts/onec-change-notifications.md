@@ -51,6 +51,8 @@ Content-Type: application/json
 
 Exact JSON names are canonical contract names enforced through explicit JSON property mapping for this contract. Do not change global ApiService JSON case-sensitivity. Unknown JSON properties are ignored.
 
+Accepted `Date` values are represented as source-local `DateTime` values with `Kind = Unspecified`, persisted as SQL Server `datetime2`, used only as diagnostic data, and never automatically converted to UTC.
+
 ### Accepted Response
 
 ```http
@@ -113,4 +115,4 @@ Duplicate receipt:
 - may send only a best-effort wake-up signal when the existing request is `Pending`;
 - does not act as replay, repair, or retry reset.
 
-The database unique constraint is authoritative. Only violation of the named idempotency unique constraint is handled as a duplicate; unrelated persistence failures must not be treated as successful duplicates.
+The database unique constraint is authoritative. Duplicate handling first verifies a SQL Server duplicate-key error category, then verifies the failure identifies `UX_integration_synchronization_requests_idempotency`. No other persistence failure is treated as successful duplicate intake.

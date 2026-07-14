@@ -2,7 +2,7 @@
 
 ## Durable Queue Boundary
 
-SQL persistence is the durable queue and source of truth. The in-process channel is only a best-effort wake-up signal and never carries reliability guarantees.
+SQL persistence is the durable queue and source of truth. The synchronization request table is `integration.synchronization_requests`. The in-process channel is only a best-effort wake-up signal and never carries reliability guarantees.
 
 The wake-up channel is a coalescing signal:
 
@@ -28,7 +28,7 @@ validate
 |--------|---------|
 | `Pending` | Eligible for processing now or after `NextAttemptAtUtc`. |
 | `Processing` | Currently selected by the synchronization processor. |
-| `Deferred` | Infrastructure processed the request but no document-specific handler is registered; request remains replayable. |
+| `Deferred` | No document-specific handler is registered; request remains replayable and no processing attempt has started. |
 | `Completed` | A registered handler completed successfully. |
 | `Failed` | Terminal technical failure after configured retries or permanent contract/processing error. |
 
@@ -46,7 +46,7 @@ validate
 | Outcome | Lifecycle Effect |
 |---------|------------------|
 | Registered handler completes | `Processing` -> `Completed` |
-| No document-specific handler registered | `Processing` -> `Deferred` |
+| No document-specific handler registered | `Pending` -> `Deferred`; do not increment `AttemptCount`, do not set `ProcessingStartedAtUtc`, and do not consume a retry delay. |
 | Transient technical failure with retries remaining | attempt recorded, next retry scheduled |
 | Retry delays exhausted | `Processing` -> `Failed` |
 | Permanent validation or processing error | `Processing` -> `Failed` |
@@ -91,4 +91,4 @@ Duplicate HTTP notification receipt must not alter the existing lifecycle state.
 
 Duplicate receipt never schedules retry, resets attempts, clears errors, restarts processing, transitions status, or acts as replay/repair.
 
-Only violation of the named idempotency unique constraint is handled as duplicate intake. Unrelated persistence failures remain failures and must not return empty `202 Accepted` as though they were duplicates.
+Duplicate handling first verifies a SQL Server duplicate-key error category, then verifies the failure identifies `UX_integration_synchronization_requests_idempotency`. Unrelated persistence failures remain failures and must not return empty `202 Accepted` as though they were duplicates.
