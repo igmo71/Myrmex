@@ -137,10 +137,11 @@ The integration foundation processes accepted synchronization requests through a
 - **FR-029**: The processor MUST scan for eligible work immediately on application startup and on a configurable fallback polling interval.
 - **FR-030**: The processor MUST process eligible work in configurable batches.
 - **FR-031**: The processor MUST recover abandoned `Processing` requests after a configurable processing timeout.
-- **FR-032**: Retry behavior MUST be configurable through explicit retry delays, and the final number of attempts MAY be derived from the configured delay collection.
+- **FR-032**: Retry behavior MUST be configurable through explicit retry delays; an empty `RetryDelaysSeconds` collection is valid, permits one initial processing attempt and no retries, and causes a transient failure of that attempt to transition the request to `Failed`.
 - **FR-033**: The system MUST distinguish transient technical failures from permanent validation failures and unsupported-handler outcomes.
 - **FR-034**: The feature MUST preserve enough synchronization request information for later controlled replay, while not implementing replay in this slice.
 - **FR-035**: The first slice MUST NOT automatically delete, archive, or clean up completed, deferred, or failed synchronization requests.
+- **FR-036**: The integration slice MUST participate in the existing Myrmex platform readiness endpoint by verifying integration persistence through `IntegrationDbContext`, validated required integration configuration, and registration of a synchronization worker that can enter its processing loop.
 
 ### Domain Rules *(mandatory when feature changes domain behavior)*
 
@@ -170,12 +171,13 @@ The integration foundation processes accepted synchronization requests through a
 
 ### Observability & Error Handling *(mandatory when feature exposes runtime behavior)*
 
-- **OE-001**: Contract validation failures MUST identify the invalid or missing notification field without exposing configured API keys or other secrets.
+- **OE-001**: Contract validation failures MUST identify the invalid or missing notification field without exposing configured API keys, other secrets, or internal exception details.
 - **OE-002**: Authentication and authorization failures MUST be distinguishable from malformed-contract failures and from accepted duplicate notifications.
 - **OE-003**: Accepted synchronization requests MUST retain enough source, entity, version, timing, lifecycle, attempt, retry, and last-error data for operators to troubleshoot later processing behavior.
 - **OE-004**: Processor failures MUST record whether the outcome was transient, permanent, unsupported-handler, or retry-exhausted.
 - **OE-005**: Startup scanning, fallback polling, wake-up signaling, abandoned-work recovery, and retry exhaustion MUST provide diagnostics sufficient to investigate stuck or repeatedly failing synchronization requests.
 - **OE-006**: Diagnostics MUST NOT log integration API keys, external credentials, or other secret material.
+- **OE-007**: Readiness checks MUST use the existing platform `/health` endpoint and MUST NOT expose API keys, connection strings, external credentials, queue contents, synchronization-request details, or internal exception details.
 
 ### Scope Boundaries
 
@@ -214,6 +216,7 @@ The integration foundation processes accepted synchronization requests through a
 - **SC-008**: Across representative processing outcomes, 100% of transient failure, permanent failure, unsupported-handler, successful-handler, and retry-exhausted cases end in the expected lifecycle state with diagnostic data retained.
 - **SC-009**: Existing WMS-operator 1C connection-test and manual import operations remain inaccessible to the integration API key and remain accessible to eligible WMS operator or administrator identities in the authorization acceptance matrix.
 - **SC-010**: No accepted notification requires WMS domain ownership of synchronization queue data, receiving documents, or shipping documents during this slice.
+- **SC-011**: Integration readiness coverage verifies that `IntegrationDbContext` can reach persistence, required integration options have passed validation, and the synchronization worker is registered and can enter its processing loop, without exposing secrets or synchronization-request details.
 
 ## Assumptions
 

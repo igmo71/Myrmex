@@ -84,7 +84,7 @@ The endpoint must not return `202 Accepted` when:
 - `Number` exceeds 64 characters.
 - `Date` is malformed.
 
-Validation failures use the repository's normal ProblemDetails-style response behavior and must not expose configured API keys or external credentials.
+Validation failures use the repository's normal ProblemDetails-style response behavior. The response identifies the applicable invalid or missing field (`Ref_Key`, `DataVersion`, `Number`, or `Date`) without exposing configured API keys, external credentials, or internal exception details.
 
 ## Server-Side Values
 

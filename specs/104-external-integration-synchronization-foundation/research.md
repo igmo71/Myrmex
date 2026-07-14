@@ -80,6 +80,17 @@
 - Channel carries queue records: rejected because the channel has no reliability guarantee.
 - RabbitMQ or an Outbox: rejected as out of scope and unnecessary for the first synchronization foundation.
 
+## Decision: Integration readiness reuses platform health endpoints
+
+**Decision**: Reuse the existing ServiceDefaults health endpoints: ApiService calls `AddServiceDefaults()` and `MapDefaultEndpoints()`, which expose `/health` readiness and `/alive` liveness in Development/Staging, and AppHost already probes ApiService at `/health`. The integration slice registers readiness checks into the existing `/health` pipeline instead of adding a separate public integration health endpoint. Readiness covers `IntegrationDbContext` persistence reachability, required integration options validation, and `IntegrationSynchronizationWorker` registration/loop readiness without exposing API keys, connection strings, external credentials, queue contents, synchronization-request details, or internal exception details.
+
+**Rationale**: This satisfies the constitution health-check requirement while preserving the repository's platform endpoint conventions and avoiding additional public surface area.
+
+**Alternatives considered**:
+
+- Separate `/api/integrations/1c/health` endpoint: rejected because ServiceDefaults already provides the platform readiness contract.
+- Liveness-gated integration checks on `/alive`: rejected because `/alive` is the platform self liveness probe and should not depend on SQL or integration configuration.
+
 ## Decision: Explicit lifecycle states with `Deferred` for unsupported handlers
 
 **Decision**: Use `Pending`, `Processing`, `Deferred`, `Completed`, and `Failed`; reserve `Superseded` for later. Resolve whether a document-specific handler exists before transitioning to `Processing`. When no handler is registered, transition directly from `Pending` to `Deferred`, without incrementing `AttemptCount`, setting `ProcessingStartedAtUtc`, or consuming a retry delay.

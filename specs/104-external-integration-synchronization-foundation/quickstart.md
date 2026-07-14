@@ -103,6 +103,13 @@ If migration work is explicitly requested later, generate and apply integration 
 4. Verify the failed Added entity is detached or otherwise cleared from EF tracking before loading the existing record and the failed insert is not retried.
 5. Verify unrelated persistence failures are surfaced as failures and are not returned as successful duplicates.
 
+## Scenario 8: Platform Readiness Participation
+
+1. Use the existing ApiService `/health` readiness endpoint supplied by `Myrmex.ServiceDefaults`; do not add a separate integration-specific public health endpoint.
+2. Verify integration readiness covers `IntegrationDbContext` persistence reachability, required integration options validation, and `IntegrationSynchronizationWorker` registration/loop readiness.
+3. Verify `/alive` remains the platform liveness check and does not depend on integration persistence.
+4. Verify readiness responses do not expose API keys, connection strings, external credentials, queue contents, synchronization-request details, or internal exception details.
+
 ## Expected Artifacts
 
 - See [data-model.md](./data-model.md) for entities, fields, uniqueness, and lifecycle rules.

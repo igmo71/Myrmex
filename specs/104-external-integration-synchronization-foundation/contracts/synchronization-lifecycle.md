@@ -42,6 +42,18 @@ validate
 - Wake-up signals may be lost, delayed, or processed after the HTTP response; polling still discovers committed work.
 - Batch size is configurable.
 
+## Readiness Participation
+
+The integration slice reuses the existing Myrmex platform health endpoints. ApiService maps `/health` as readiness and `/alive` as liveness through `Myrmex.ServiceDefaults`; AppHost already probes ApiService with `/health`.
+
+Integration readiness coverage registers checks into the existing `/health` readiness pipeline and does not add a separate public integration health endpoint. Readiness must verify:
+
+- `IntegrationDbContext` can reach integration persistence;
+- required integration configuration has passed validation;
+- `IntegrationSynchronizationWorker` is registered and can enter its processing loop.
+
+Readiness output must not expose API keys, connection strings, external credentials, queue contents, synchronization-request details, or internal exception details.
+
 ## Handler Outcomes
 
 | Outcome | Lifecycle Effect |
