@@ -133,6 +133,7 @@ Operational worker that discovers eligible requests and drives lifecycle transit
 
 - Scan immediately on application startup.
 - Poll on a configurable fallback interval even when no wake-up signal arrives.
+- Each startup and fallback-polling processing pass first performs abandoned `Processing` recovery, then queries and processes currently eligible requests.
 - Process eligible work in configurable batches.
 - After each wake-up signal, process eligible SQL batches until no immediately eligible work remains.
 - Recover abandoned `Processing` records after the configured processing timeout.
@@ -162,9 +163,13 @@ Configuration that determines when transiently failed work becomes eligible agai
 ### Validation Rules
 
 - Values must be positive where applicable.
+- `RetryDelaysSeconds = []` is valid.
+- An empty `RetryDelaysSeconds` collection permits one initial processing attempt and no retries.
+- With empty `RetryDelaysSeconds`, a transient failure of the initial attempt becomes terminal `Failed`.
+- Options validation rejects non-positive retry-delay elements but does not reject an empty collection.
 - `AttemptCount` increments when a processing attempt starts.
 - The first processing attempt has `AttemptCount = 1`.
 - `N` configured retry delays permit `N + 1` total processing attempts.
-- After attempt 1 fails transiently, `RetryDelaysSeconds[0]` determines the next eligibility time.
+- After attempt 1 fails transiently and a retry delay exists, `RetryDelaysSeconds[0]` determines the next eligibility time.
 - `Deferred` unsupported-handler outcomes do not consume retry delays.
 - Retry delays distinguish transient technical failures from permanent failures and unsupported-handler outcomes.

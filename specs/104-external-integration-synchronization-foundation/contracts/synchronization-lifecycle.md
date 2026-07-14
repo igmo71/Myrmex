@@ -38,6 +38,7 @@ validate
 
 - Processor scans SQL immediately on application startup.
 - Processor scans SQL on a configurable fallback interval.
+- Each startup and fallback-polling processing pass first invokes abandoned `Processing` recovery, then queries and processes currently eligible requests.
 - Wake-up signals may be lost, delayed, or processed after the HTTP response; polling still discovers committed work.
 - Batch size is configurable.
 
@@ -73,7 +74,9 @@ The first slice uses explicit retry delays in seconds. Preliminary configuration
 - `AttemptCount` increments when a processing attempt starts.
 - The first processing attempt has `AttemptCount = 1`.
 - `N` configured retry delays permit `N + 1` total processing attempts.
-- After attempt 1 fails transiently, `RetryDelaysSeconds[0]` determines the next eligibility time.
+- After attempt 1 fails transiently and a retry delay exists, `RetryDelaysSeconds[0]` determines the next eligibility time.
+- `RetryDelaysSeconds = []` is valid, permits one initial processing attempt and no retries, and makes a transient failure of that attempt terminal `Failed`.
+- Options validation rejects non-positive retry-delay elements but does not reject an empty collection.
 - `Deferred` unsupported-handler outcomes do not consume retry delays.
 
 ## Abandoned Processing Recovery

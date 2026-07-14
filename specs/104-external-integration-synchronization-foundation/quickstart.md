@@ -80,6 +80,7 @@ If migration work is explicitly requested later, generate and apply integration 
 8. Verify `AttemptCount` increments when an attempt starts, the first attempt is `1`, `N` retry delays allow `N + 1` attempts, and `Deferred` outcomes do not consume retry delays.
 9. Verify the `Pending` to `Processing` transition, incremented `AttemptCount`, and `ProcessingStartedAtUtc` are committed before handler invocation.
 10. Verify `ProcessingAttemptTimeoutSeconds` is treated as a transient failure, while host-shutdown cancellation leaves the durable record `Processing` for abandoned recovery without scheduling a normal handler retry.
+11. Configure `RetryDelaysSeconds = []` and verify one initial attempt is allowed, no retry is scheduled, and a transient failure becomes terminal `Failed`.
 
 ## Scenario 6: Wake-Up and Restart Recovery
 
@@ -90,8 +91,9 @@ If migration work is explicitly requested later, generate and apply integration 
 5. Verify the processor drains eligible SQL batches until no immediately eligible work remains after a wake-up.
 6. Leave a request in `Processing` and restart the application after the processing timeout.
 7. Verify the abandoned attempt remains included in `AttemptCount`.
-8. Verify the request returns to immediately eligible `Pending` with `ProcessingStartedAtUtc` cleared when retry opportunities remain.
-9. Verify the request becomes `Failed` with bounded non-secret `LastError` when retry opportunities are exhausted.
+8. Verify startup and fallback-polling passes invoke abandoned `Processing` recovery before querying and processing currently eligible requests.
+9. Verify the request returns to immediately eligible `Pending` with `ProcessingStartedAtUtc` cleared when retry opportunities remain.
+10. Verify the request becomes `Failed` with bounded non-secret `LastError` when retry opportunities are exhausted.
 
 ## Scenario 7: Concurrent Duplicate Intake
 

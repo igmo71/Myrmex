@@ -41,7 +41,7 @@
 - [ ] T018 Create SQL Server duplicate-key classifier for UX_integration_synchronization_requests_idempotency in Myrmex.Integrations\Synchronization\SqlServerDuplicateSynchronizationRequestDetector.cs
 - [ ] T019 Create IntegrationSynchronizationWakeUpSignal with bounded capacity 1, DropWrite, many signal writers, one reader, and no request payload in Myrmex.Integrations\Synchronization\IntegrationSynchronizationWakeUpSignal.cs
 - [ ] T020 [P] Add persistence mapping tests for bounded SQL column types and named unique index in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationPersistenceTests.cs
-- [ ] T021 [P] Add options validation tests for missing/empty API key, empty and over-length SourceSystem, empty and over-length SourceInstance, non-positive polling/batch/timeout values, non-positive retry delays, and documented empty retry-delay behavior in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationOptionsTests.cs
+- [ ] T021 [P] Add options validation tests for missing/empty API key, empty and over-length SourceSystem, empty and over-length SourceInstance, non-positive polling/batch/timeout values, non-positive retry-delay elements, and valid empty RetryDelaysSeconds allowing one attempt with no retries in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationOptionsTests.cs
 
 **Checkpoint**: Integration authentication, persistence, configuration, wake-up signaling, and constants are ready for story work after the developer-controlled migration checkpoint is satisfied.
 
@@ -109,7 +109,8 @@
 - [ ] T041 [US3] Detach the failed Added entity or otherwise clear the failed insert from EF tracking before loading the existing record, without retrying the failed insert, in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
 - [ ] T042 [US3] Implement duplicate intake result that loads existing lifecycle state without mutating it in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
 - [ ] T043 [US3] Emit best-effort wake-up signal only for duplicate Pending requests in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
-- [ ] T044 [US3] Add diagnostics for duplicate notification detection without exposing new/existing state to callers in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
+- [ ] T044 [US3] Map newly inserted synchronization requests and accepted duplicate synchronization requests to the same empty 202 Accepted response without exposing which result occurred in Myrmex.Integrations\OneC\Endpoints\OneCNotificationEndpoints.cs
+- [ ] T045 [US3] Add diagnostics for duplicate notification detection without exposing new/existing state to callers in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
 
 **Checkpoint**: User Story 3 is independently functional and duplicate delivery cannot mutate existing lifecycle state.
 
@@ -123,26 +124,26 @@
 
 ### Tests for User Story 4
 
-- [ ] T045 [P] [US4] Add lifecycle tests for Pending-to-Deferred unsupported-handler behavior without AttemptCount, ProcessingStartedAtUtc, or retry consumption in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationProcessorTests.cs
-- [ ] T046 [US4] Add lifecycle tests for durable Pending-to-Processing attempt start, AttemptCount increment, ProcessingStartedAtUtc, commit before handler invocation, Processing-to-Completed success, and completion timestamp recording in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationProcessorTests.cs
-- [ ] T047 [P] [US4] Add retry tests for RetryDelaysSeconds[0], N+1 attempts, transient retry, exhausted retry, permanent failure, and ProcessingAttemptTimeoutSeconds as a transient failure in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationRetryTests.cs
-- [ ] T048 [P] [US4] Add cancellation tests proving host-shutdown cancellation leaves durable records Processing for abandoned recovery and does not schedule a normal handler retry in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationCancellationTests.cs
-- [ ] T049 [P] [US4] Add wake-up channel tests for capacity 1, DropWrite, no payload, and draining SQL batches until none are eligible in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationWakeUpTests.cs
-- [ ] T050 [P] [US4] Add abandoned Processing recovery tests for preserved AttemptCount, immediate Pending eligibility when retries remain, Failed when retries are exhausted, cleared ProcessingStartedAtUtc when requeued, and bounded non-secret LastError in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationRecoveryTests.cs
+- [ ] T046 [P] [US4] Add lifecycle tests for Pending-to-Deferred unsupported-handler behavior without AttemptCount, ProcessingStartedAtUtc, or retry consumption in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationProcessorTests.cs
+- [ ] T047 [US4] Add lifecycle tests for durable Pending-to-Processing attempt start, AttemptCount increment, ProcessingStartedAtUtc, commit before handler invocation, Processing-to-Completed success, and completion timestamp recording in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationProcessorTests.cs
+- [ ] T048 [P] [US4] Add retry tests for RetryDelaysSeconds[0], N+1 attempts, empty RetryDelaysSeconds allowing one attempt with no retries, transient failure becoming terminal Failed when no retry delay exists, exhausted retry, permanent failure, and ProcessingAttemptTimeoutSeconds as a transient failure in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationRetryTests.cs
+- [ ] T049 [P] [US4] Add cancellation tests proving host-shutdown cancellation leaves durable records Processing for abandoned recovery and does not schedule a normal handler retry in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationCancellationTests.cs
+- [ ] T050 [P] [US4] Add wake-up channel tests for capacity 1, DropWrite, no payload, and draining SQL batches until none are eligible in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationWakeUpTests.cs
+- [ ] T051 [P] [US4] Add abandoned Processing recovery tests for preserved AttemptCount, immediate Pending eligibility when retries remain, Failed when retries are exhausted, cleared ProcessingStartedAtUtc when requeued, and bounded non-secret LastError in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationRecoveryTests.cs
 
 ### Implementation for User Story 4
 
-- [ ] T051 [P] [US4] Define IIntegrationSynchronizationHandler and handler resolution abstractions in Myrmex.Integrations\Synchronization\IIntegrationSynchronizationHandler.cs
-- [ ] T052 [US4] Implement eligible request query and batch selection in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
-- [ ] T053 [US4] Implement direct Pending-to-Deferred transition before processing starts when no handler exists in Myrmex.Integrations\Synchronization\IntegrationSynchronizationProcessor.cs
-- [ ] T054 [US4] Implement durable Processing attempt start by transitioning Pending to Processing, incrementing AttemptCount, setting ProcessingStartedAtUtc, and committing before invoking the document handler in Myrmex.Integrations\Synchronization\IntegrationSynchronizationProcessor.cs
-- [ ] T055 [US4] Implement Completed, Pending retry, Failed terminal transitions, ProcessingAttemptTimeoutSeconds transient failure handling, and host-shutdown cancellation behavior in Myrmex.Integrations\Synchronization\IntegrationSynchronizationProcessor.cs
-- [ ] T056 [US4] Implement retry schedule calculation from RetryDelaysSeconds in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRetryPolicy.cs
-- [ ] T057 [US4] Implement abandoned Processing recovery after ProcessingTimeoutSeconds with AttemptCount preserved, immediate Pending eligibility when retries remain, Failed when exhausted, ProcessingStartedAtUtc cleared when requeued, and bounded non-secret LastError in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
-- [ ] T058 [US4] Implement hosted service startup scan, fallback polling, wake-up read loop, and drain-until-no-eligible-work behavior in Myrmex.Integrations\Synchronization\IntegrationSynchronizationWorker.cs
-- [ ] T059 [US4] Register IntegrationSynchronizationWorker and handler collection in Myrmex.Integrations\OneC\OneCIntegrationModule.cs
-- [ ] T060 [US4] Add worker-loop diagnostics for startup scan, polling, wake-up, and drain cycles in Myrmex.Integrations\Synchronization\IntegrationSynchronizationWorker.cs
-- [ ] T061 [US4] Add lifecycle and outcome diagnostics for transitions, retries, defer, failure, completion, and recovery in Myrmex.Integrations\Synchronization\IntegrationSynchronizationProcessor.cs
+- [ ] T052 [P] [US4] Define IIntegrationSynchronizationHandler and handler resolution abstractions in Myrmex.Integrations\Synchronization\IIntegrationSynchronizationHandler.cs
+- [ ] T053 [US4] Implement eligible request query and batch selection in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
+- [ ] T054 [US4] Implement direct Pending-to-Deferred transition before processing starts when no handler exists in Myrmex.Integrations\Synchronization\IntegrationSynchronizationProcessor.cs
+- [ ] T055 [US4] Implement durable Processing attempt start by transitioning Pending to Processing, incrementing AttemptCount, setting ProcessingStartedAtUtc, and committing before invoking the document handler in Myrmex.Integrations\Synchronization\IntegrationSynchronizationProcessor.cs
+- [ ] T056 [US4] Implement Completed, Pending retry, Failed terminal transitions, ProcessingAttemptTimeoutSeconds transient failure handling, host-shutdown cancellation behavior, and empty RetryDelaysSeconds transient-failure terminal behavior in Myrmex.Integrations\Synchronization\IntegrationSynchronizationProcessor.cs
+- [ ] T057 [US4] Implement retry schedule calculation from RetryDelaysSeconds, including empty collections permitting one attempt and no retries, in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRetryPolicy.cs
+- [ ] T058 [US4] Implement abandoned Processing recovery after ProcessingTimeoutSeconds with AttemptCount preserved, immediate Pending eligibility when retries remain, Failed when exhausted, ProcessingStartedAtUtc cleared when requeued, and bounded non-secret LastError in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
+- [ ] T059 [US4] Implement hosted service startup scan and fallback polling so each pass invokes store abandoned-Processing recovery before querying and processing currently eligible requests; keep wake-up read loop drain-until-no-eligible-work behavior in Myrmex.Integrations\Synchronization\IntegrationSynchronizationWorker.cs
+- [ ] T060 [US4] Register IntegrationSynchronizationWorker and handler collection in Myrmex.Integrations\OneC\OneCIntegrationModule.cs
+- [ ] T061 [US4] Add worker-loop diagnostics for startup scan, polling, wake-up, and drain cycles in Myrmex.Integrations\Synchronization\IntegrationSynchronizationWorker.cs
+- [ ] T062 [US4] Add lifecycle and outcome diagnostics for transitions, retries, defer, failure, completion, and recovery in Myrmex.Integrations\Synchronization\IntegrationSynchronizationProcessor.cs
 
 **Checkpoint**: User Story 4 is independently functional and durable requests are processed, deferred, retried, recovered, or failed through the recoverable lifecycle.
 
@@ -152,10 +153,10 @@
 
 **Purpose**: Final validation guidance, cleanup, and documentation consistency.
 
-- [ ] T062 [P] Update quickstart validation notes for final option names and expected outcomes in specs\104-external-integration-synchronization-foundation\quickstart.md
-- [ ] T063 [P] Review integration diagnostics for secret exposure in Myrmex.Integrations\OneC and Myrmex.Integrations\Synchronization
-- [ ] T064 [P] Review public endpoint names and OpenAPI summaries for notification endpoints in Myrmex.Integrations\OneC\Endpoints\OneCNotificationEndpoints.cs
-- [ ] T065 Document developer-controlled migration generation and application steps in specs\104-external-integration-synchronization-foundation\quickstart.md
+- [ ] T063 [P] Update quickstart validation notes for final option names and expected outcomes in specs\104-external-integration-synchronization-foundation\quickstart.md
+- [ ] T064 [P] Review integration diagnostics for secret exposure in Myrmex.Integrations\OneC and Myrmex.Integrations\Synchronization
+- [ ] T065 [P] Review public endpoint names and OpenAPI summaries for notification endpoints in Myrmex.Integrations\OneC\Endpoints\OneCNotificationEndpoints.cs
+- [ ] T066 Document developer-controlled migration generation and application steps in specs\104-external-integration-synchronization-foundation\quickstart.md
 
 ---
 
@@ -218,12 +219,12 @@ Task: T039 concurrent endpoint duplicate tests in Myrmex.Tests\Integrations\OneC
 ### User Story 4
 
 ```text
-Task: T045 unsupported-handler lifecycle tests in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationProcessorTests.cs
-Task: T047 retry and timeout tests in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationRetryTests.cs
-Task: T048 host-shutdown cancellation tests in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationCancellationTests.cs
-Task: T049 wake-up channel tests in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationWakeUpTests.cs
-Task: T050 recovery tests in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationRecoveryTests.cs
-Task: T051 handler abstractions in Myrmex.Integrations\Synchronization\IIntegrationSynchronizationHandler.cs
+Task: T046 unsupported-handler lifecycle tests in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationProcessorTests.cs
+Task: T048 retry and timeout tests in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationRetryTests.cs
+Task: T049 host-shutdown cancellation tests in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationCancellationTests.cs
+Task: T050 wake-up channel tests in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationWakeUpTests.cs
+Task: T051 recovery tests in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationRecoveryTests.cs
+Task: T052 handler abstractions in Myrmex.Integrations\Synchronization\IIntegrationSynchronizationHandler.cs
 ```
 
 ---

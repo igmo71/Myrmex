@@ -71,7 +71,7 @@
 
 ## Decision: SQL polling is reliable; bounded channel is only a coalescing wake-up signal
 
-**Decision**: Use a bounded in-process channel with capacity 1, `DropWrite` behavior when full, many signal writers, and one reader only to wake the processor after commit. The channel carries no synchronization request payload. After each wake-up, the processor scans SQL batches until no immediately eligible work remains. The processor still scans SQL immediately on startup and on a configurable fallback interval.
+**Decision**: Use a bounded in-process channel with capacity 1, `DropWrite` behavior when full, many signal writers, and one reader only to wake the processor after commit. The channel carries no synchronization request payload. After each wake-up, the processor scans SQL batches until no immediately eligible work remains. The processor still scans SQL immediately on startup and on a configurable fallback interval; each startup and fallback-polling pass first invokes abandoned `Processing` recovery, then queries and processes currently eligible requests.
 
 **Rationale**: SQL is the durable queue. Wake-up signals can be lost or delayed without losing work because polling and startup scanning discover committed requests.
 
@@ -93,7 +93,7 @@
 
 ## Decision: Retry attempts derive from explicit delay collection
 
-**Decision**: Configure polling interval, batch size, processing-attempt timeout, processing timeout, and explicit retry delays in seconds. `AttemptCount` increments when a processing attempt starts; the first attempt has `AttemptCount = 1`. The processor durably commits the `Pending` to `Processing` transition, incremented `AttemptCount`, and `ProcessingStartedAtUtc` before invoking a handler. `N` configured retry delays permit `N + 1` total processing attempts. After attempt 1 fails transiently, `RetryDelaysSeconds[0]` determines the next eligibility time. `ProcessingAttemptTimeoutSeconds` is a transient failure and follows the configured retry policy. Host-shutdown cancellation leaves the durable record `Processing` for abandoned-processing recovery and does not schedule a normal handler retry. `Deferred` unsupported-handler outcomes do not consume retry delays.
+**Decision**: Configure polling interval, batch size, processing-attempt timeout, processing timeout, and explicit retry delays in seconds. `AttemptCount` increments when a processing attempt starts; the first attempt has `AttemptCount = 1`. The processor durably commits the `Pending` to `Processing` transition, incremented `AttemptCount`, and `ProcessingStartedAtUtc` before invoking a handler. `N` configured retry delays permit `N + 1` total processing attempts. `RetryDelaysSeconds = []` is valid, permits one initial processing attempt and no retries, and makes a transient failure of that attempt terminal `Failed`; options validation rejects non-positive delay elements but does not reject an empty collection. After attempt 1 fails transiently and a retry delay exists, `RetryDelaysSeconds[0]` determines the next eligibility time. `ProcessingAttemptTimeoutSeconds` is a transient failure and follows the configured retry policy. Host-shutdown cancellation leaves the durable record `Processing` for abandoned-processing recovery and does not schedule a normal handler retry. `Deferred` unsupported-handler outcomes do not consume retry delays.
 
 **Rationale**: Explicit delays are operationally transparent and avoid contradictory retry-count and delay settings. The behavior remains understandable for support and tests.
 
