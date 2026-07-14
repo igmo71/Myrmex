@@ -1,12 +1,12 @@
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Myrmex.AspNetCore.Security;
 using Myrmex.Integrations.OneC.Configuration;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Encodings.Web;
 
 namespace Myrmex.Integrations.OneC.Security;
 
@@ -56,15 +56,14 @@ internal sealed class IntegrationApiKeyAuthenticationHandler(
     }
 
     private static bool KeysMatch(
-        string presentedKey,
-        string configuredKey)
+    string presentedKey,
+    string configuredKey)
     {
-        byte[] presentedBytes = Encoding.UTF8.GetBytes(presentedKey);
-        byte[] configuredBytes = Encoding.UTF8.GetBytes(configuredKey);
+        byte[] presentedHash = SHA256.HashData(Encoding.UTF8.GetBytes(presentedKey));
+        byte[] configuredHash = SHA256.HashData(Encoding.UTF8.GetBytes(configuredKey));
 
-        return presentedBytes.Length == configuredBytes.Length &&
-            CryptographicOperations.FixedTimeEquals(
-                presentedBytes,
-                configuredBytes);
+        return CryptographicOperations.FixedTimeEquals(
+            presentedHash,
+            configuredHash);
     }
 }

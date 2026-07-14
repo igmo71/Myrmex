@@ -4,7 +4,7 @@ namespace Myrmex.Integrations.OneC.Configuration;
 
 internal sealed class OneCIntegrationApiKeyOptions
 {
-    public const string SectionName = "Myrmex:Integrations:OneC:ApiKey";
+    public const string SectionName = OneCOptions.SectionName;
     public const string DefaultSourceSystem = "OneC";
     public const int SourceSystemMaxLength = 32;
     public const int SourceInstanceMaxLength = 128;
