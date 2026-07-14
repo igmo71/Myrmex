@@ -1,6 +1,6 @@
 namespace Myrmex.Integrations.Synchronization;
 
-internal static class IntegrationSynchronizationTriggers
+internal static class SynchronizationTriggers
 {
     public const string ChangeNotification = "ChangeNotification";
 }

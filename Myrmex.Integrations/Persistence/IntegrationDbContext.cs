@@ -1,16 +1,18 @@
 using Microsoft.EntityFrameworkCore;
+using Myrmex.Integrations.Persistence.Configurations;
+using Myrmex.Integrations.Synchronization;
 
-namespace Myrmex.Integrations.Synchronization;
+namespace Myrmex.Integrations.Persistence;
 
 internal sealed class IntegrationDbContext(DbContextOptions<IntegrationDbContext> options)
     : DbContext(options)
 {
-    public DbSet<IntegrationSynchronizationRequest> SynchronizationRequests =>
-        Set<IntegrationSynchronizationRequest>();
+    public DbSet<SynchronizationRequest> SynchronizationRequests =>
+        Set<SynchronizationRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasDefaultSchema(IntegrationSynchronizationDatabaseNames.Schema);
+        modelBuilder.HasDefaultSchema(SynchronizationDatabaseNames.Schema);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(IntegrationDbContext).Assembly);
     }
 }

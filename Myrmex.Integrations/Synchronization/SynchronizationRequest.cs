@@ -1,6 +1,6 @@
 namespace Myrmex.Integrations.Synchronization;
 
-internal sealed class IntegrationSynchronizationRequest
+internal sealed class SynchronizationRequest
 {
     public const int SourceSystemMaxLength = 32;
     public const int SourceInstanceMaxLength = 128;
@@ -29,10 +29,10 @@ internal sealed class IntegrationSynchronizationRequest
     public DateTime? ExternalDocumentDate { get; set; }
 
     public string Trigger { get; set; } =
-        IntegrationSynchronizationTriggers.ChangeNotification;
+        SynchronizationTriggers.ChangeNotification;
 
-    public IntegrationSynchronizationStatus Status { get; set; } =
-        IntegrationSynchronizationStatus.Pending;
+    public SynchronizationStatus Status { get; set; } =
+        SynchronizationStatus.Pending;
 
     public DateTimeOffset ReceivedAtUtc { get; set; }
 

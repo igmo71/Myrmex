@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace Myrmex.Integrations.Synchronization;
+namespace Myrmex.Integrations.Persistence;
 
 internal sealed class IntegrationDbContextHealthCheck(
     IntegrationDbContext dbContext)

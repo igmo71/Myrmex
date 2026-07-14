@@ -10,7 +10,7 @@ using System.Text.Encodings.Web;
 
 namespace Myrmex.Integrations.OneC.Security;
 
-internal sealed class IntegrationApiKeyAuthenticationHandler(
+internal sealed class ApiKeyAuthenticationHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     IOptionsMonitor<OneCIntegrationApiKeyOptions> apiKeyOptions,
     ILoggerFactory logger,

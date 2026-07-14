@@ -1,6 +1,6 @@
 namespace Myrmex.Integrations.Synchronization;
 
-internal enum IntegrationSynchronizationStatus
+internal enum SynchronizationStatus
 {
     Pending = 0,
     Processing = 1,

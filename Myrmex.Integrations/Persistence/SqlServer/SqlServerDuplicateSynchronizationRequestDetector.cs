@@ -1,7 +1,8 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Myrmex.Integrations.Persistence.Configurations;
 
-namespace Myrmex.Integrations.Synchronization;
+namespace Myrmex.Integrations.Persistence.SqlServer;
 
 internal sealed class SqlServerDuplicateSynchronizationRequestDetector
 {
@@ -46,7 +47,7 @@ internal sealed class SqlServerDuplicateSynchronizationRequestDetector
 
     private static bool IdentifiesIdempotencyIndex(SqlException exception) =>
         exception.Message.Contains(
-            IntegrationSynchronizationDatabaseNames
+            SynchronizationDatabaseNames
                 .SynchronizationRequestIdempotencyUniqueIndex,
             StringComparison.Ordinal);
 }

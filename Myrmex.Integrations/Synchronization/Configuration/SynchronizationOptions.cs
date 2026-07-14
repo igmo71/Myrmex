@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Options;
 
-namespace Myrmex.Integrations.Synchronization;
+namespace Myrmex.Integrations.Synchronization.Configuration;
 
-internal sealed class IntegrationSynchronizationOptions
+internal sealed class SynchronizationOptions
 {
     public const string SectionName = "Myrmex:Integrations:Synchronization";
 
@@ -19,11 +19,11 @@ internal sealed class IntegrationSynchronizationOptions
 }
 
 internal sealed class IntegrationSynchronizationOptionsValidator
-    : IValidateOptions<IntegrationSynchronizationOptions>
+    : IValidateOptions<SynchronizationOptions>
 {
     public ValidateOptionsResult Validate(
         string? name,
-        IntegrationSynchronizationOptions options)
+        SynchronizationOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -31,26 +31,26 @@ internal sealed class IntegrationSynchronizationOptionsValidator
 
         AddPositiveFailure(
             failures,
-            nameof(IntegrationSynchronizationOptions.PollingIntervalSeconds),
+            nameof(SynchronizationOptions.PollingIntervalSeconds),
             options.PollingIntervalSeconds);
         AddPositiveFailure(
             failures,
-            nameof(IntegrationSynchronizationOptions.BatchSize),
+            nameof(SynchronizationOptions.BatchSize),
             options.BatchSize);
         AddPositiveFailure(
             failures,
-            nameof(IntegrationSynchronizationOptions.ProcessingAttemptTimeoutSeconds),
+            nameof(SynchronizationOptions.ProcessingAttemptTimeoutSeconds),
             options.ProcessingAttemptTimeoutSeconds);
         AddPositiveFailure(
             failures,
-            nameof(IntegrationSynchronizationOptions.ProcessingTimeoutSeconds),
+            nameof(SynchronizationOptions.ProcessingTimeoutSeconds),
             options.ProcessingTimeoutSeconds);
 
         if (options.RetryDelaysSeconds is null)
         {
             failures.Add(
-                $"{IntegrationSynchronizationOptions.SectionName}:" +
-                $"{nameof(IntegrationSynchronizationOptions.RetryDelaysSeconds)} " +
+                $"{SynchronizationOptions.SectionName}:" +
+                $"{nameof(SynchronizationOptions.RetryDelaysSeconds)} " +
                 "must be configured as a collection.");
         }
         else
@@ -60,8 +60,8 @@ internal sealed class IntegrationSynchronizationOptionsValidator
                 if (options.RetryDelaysSeconds[index] <= 0)
                 {
                     failures.Add(
-                        $"{IntegrationSynchronizationOptions.SectionName}:" +
-                        $"{nameof(IntegrationSynchronizationOptions.RetryDelaysSeconds)}[{index}] " +
+                        $"{SynchronizationOptions.SectionName}:" +
+                        $"{nameof(SynchronizationOptions.RetryDelaysSeconds)}[{index}] " +
                         "must be positive.");
                 }
             }
@@ -80,7 +80,7 @@ internal sealed class IntegrationSynchronizationOptionsValidator
         if (value <= 0)
         {
             failures.Add(
-                $"{IntegrationSynchronizationOptions.SectionName}:{propertyName} " +
+                $"{SynchronizationOptions.SectionName}:{propertyName} " +
                 "must be positive.");
         }
     }

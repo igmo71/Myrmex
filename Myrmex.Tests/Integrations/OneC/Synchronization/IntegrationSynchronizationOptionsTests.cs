@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 using Myrmex.Integrations.OneC.Configuration;
-using Myrmex.Integrations.Synchronization;
+using Myrmex.Integrations.Synchronization.Configuration;
 
 namespace Myrmex.Tests.Integrations.OneC.Synchronization;
 
@@ -92,15 +92,15 @@ public sealed class IntegrationSynchronizationOptionsTests
     }
 
     [Theory]
-    [InlineData(nameof(IntegrationSynchronizationOptions.PollingIntervalSeconds))]
-    [InlineData(nameof(IntegrationSynchronizationOptions.BatchSize))]
-    [InlineData(nameof(IntegrationSynchronizationOptions.ProcessingAttemptTimeoutSeconds))]
-    [InlineData(nameof(IntegrationSynchronizationOptions.ProcessingTimeoutSeconds))]
+    [InlineData(nameof(SynchronizationOptions.PollingIntervalSeconds))]
+    [InlineData(nameof(SynchronizationOptions.BatchSize))]
+    [InlineData(nameof(SynchronizationOptions.ProcessingAttemptTimeoutSeconds))]
+    [InlineData(nameof(SynchronizationOptions.ProcessingTimeoutSeconds))]
     public void SynchronizationOptions_RejectNonPositiveScalarValues(
         string propertyName)
     {
-        IntegrationSynchronizationOptions options = CreateSynchronizationOptions();
-        typeof(IntegrationSynchronizationOptions)
+        SynchronizationOptions options = CreateSynchronizationOptions();
+        typeof(SynchronizationOptions)
             .GetProperty(propertyName)!
             .SetValue(options, 0);
 
@@ -120,7 +120,7 @@ public sealed class IntegrationSynchronizationOptionsTests
     public void SynchronizationOptions_RejectNonPositiveRetryDelayElements(
         int delay)
     {
-        IntegrationSynchronizationOptions options = CreateSynchronizationOptions();
+        SynchronizationOptions options = CreateSynchronizationOptions();
         options.RetryDelaysSeconds = [10, delay];
 
         ValidateOptionsResult result =
@@ -136,7 +136,7 @@ public sealed class IntegrationSynchronizationOptionsTests
     [Fact]
     public void SynchronizationOptions_AcceptEmptyRetryDelays()
     {
-        IntegrationSynchronizationOptions options = CreateSynchronizationOptions();
+        SynchronizationOptions options = CreateSynchronizationOptions();
         options.RetryDelaysSeconds = [];
 
         ValidateOptionsResult result =
@@ -154,7 +154,7 @@ public sealed class IntegrationSynchronizationOptionsTests
             ApiKey = "development-only-key"
         };
 
-    private static IntegrationSynchronizationOptions CreateSynchronizationOptions() =>
+    private static SynchronizationOptions CreateSynchronizationOptions() =>
         new()
         {
             PollingIntervalSeconds = 60,

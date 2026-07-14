@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Myrmex.Integrations.Persistence;
+using Myrmex.Integrations.Persistence.Configurations;
 using Myrmex.Integrations.Synchronization;
 
 namespace Myrmex.Tests.Integrations.OneC.Synchronization;
@@ -13,17 +15,17 @@ public sealed class IntegrationSynchronizationPersistenceTests
             IntegrationSynchronizationTestHost.CreateModelDbContext();
 
         IEntityType entityType = dbContext.Model
-            .FindEntityType(typeof(IntegrationSynchronizationRequest))!;
+            .FindEntityType(typeof(SynchronizationRequest))!;
         IKey key = entityType.FindPrimaryKey()!;
 
         Assert.Equal(
-            IntegrationSynchronizationDatabaseNames.SynchronizationRequestsTable,
+            SynchronizationDatabaseNames.SynchronizationRequestsTable,
             entityType.GetTableName());
         Assert.Equal(
-            IntegrationSynchronizationDatabaseNames.Schema,
+            SynchronizationDatabaseNames.Schema,
             entityType.GetSchema());
         Assert.Equal(
-            IntegrationSynchronizationDatabaseNames.SynchronizationRequestPrimaryKey,
+            SynchronizationDatabaseNames.SynchronizationRequestPrimaryKey,
             key.GetName());
     }
 
@@ -34,48 +36,48 @@ public sealed class IntegrationSynchronizationPersistenceTests
             IntegrationSynchronizationTestHost.CreateModelDbContext();
 
         IEntityType entityType = dbContext.Model
-            .FindEntityType(typeof(IntegrationSynchronizationRequest))!;
+            .FindEntityType(typeof(SynchronizationRequest))!;
 
         IIndex index = Assert.Single(entityType.GetIndexes(), candidate =>
             candidate.GetDatabaseName() ==
-            IntegrationSynchronizationDatabaseNames
+            SynchronizationDatabaseNames
                 .SynchronizationRequestIdempotencyUniqueIndex);
 
         Assert.True(index.IsUnique);
         Assert.Equal(
             [
-                nameof(IntegrationSynchronizationRequest.SourceSystem),
-                nameof(IntegrationSynchronizationRequest.SourceInstance),
-                nameof(IntegrationSynchronizationRequest.EntityType),
-                nameof(IntegrationSynchronizationRequest.ExternalId),
-                nameof(IntegrationSynchronizationRequest.ExternalDataVersion)
+                nameof(SynchronizationRequest.SourceSystem),
+                nameof(SynchronizationRequest.SourceInstance),
+                nameof(SynchronizationRequest.EntityType),
+                nameof(SynchronizationRequest.ExternalId),
+                nameof(SynchronizationRequest.ExternalDataVersion)
             ],
             index.Properties.Select(property => property.Name).ToArray());
         AssertColumn(
             entityType,
-            nameof(IntegrationSynchronizationRequest.SourceSystem),
+            nameof(SynchronizationRequest.SourceSystem),
             "nvarchar(32)",
-            IntegrationSynchronizationRequest.SourceSystemMaxLength);
+            SynchronizationRequest.SourceSystemMaxLength);
         AssertColumn(
             entityType,
-            nameof(IntegrationSynchronizationRequest.SourceInstance),
+            nameof(SynchronizationRequest.SourceInstance),
             "nvarchar(128)",
-            IntegrationSynchronizationRequest.SourceInstanceMaxLength);
+            SynchronizationRequest.SourceInstanceMaxLength);
         AssertColumn(
             entityType,
-            nameof(IntegrationSynchronizationRequest.EntityType),
+            nameof(SynchronizationRequest.EntityType),
             "nvarchar(32)",
-            IntegrationSynchronizationRequest.EntityTypeMaxLength);
+            SynchronizationRequest.EntityTypeMaxLength);
         AssertColumn(
             entityType,
-            nameof(IntegrationSynchronizationRequest.ExternalId),
+            nameof(SynchronizationRequest.ExternalId),
             "nvarchar(128)",
-            IntegrationSynchronizationRequest.ExternalIdMaxLength);
+            SynchronizationRequest.ExternalIdMaxLength);
         AssertColumn(
             entityType,
-            nameof(IntegrationSynchronizationRequest.ExternalDataVersion),
+            nameof(SynchronizationRequest.ExternalDataVersion),
             "varbinary(128)",
-            IntegrationSynchronizationRequest.ExternalDataVersionMaxLength);
+            SynchronizationRequest.ExternalDataVersionMaxLength);
     }
 
     [Fact]
@@ -85,23 +87,23 @@ public sealed class IntegrationSynchronizationPersistenceTests
             IntegrationSynchronizationTestHost.CreateModelDbContext();
 
         IEntityType entityType = dbContext.Model
-            .FindEntityType(typeof(IntegrationSynchronizationRequest))!;
+            .FindEntityType(typeof(SynchronizationRequest))!;
 
         AssertColumn(
             entityType,
-            nameof(IntegrationSynchronizationRequest.ExternalDocumentNumber),
+            nameof(SynchronizationRequest.ExternalDocumentNumber),
             "nvarchar(64)",
-            IntegrationSynchronizationRequest.ExternalDocumentNumberMaxLength);
+            SynchronizationRequest.ExternalDocumentNumberMaxLength);
         Assert.Equal(
             "datetime2",
             entityType
-                .FindProperty(nameof(IntegrationSynchronizationRequest.ExternalDocumentDate))!
+                .FindProperty(nameof(SynchronizationRequest.ExternalDocumentDate))!
                 .GetColumnType());
         AssertColumn(
             entityType,
-            nameof(IntegrationSynchronizationRequest.LastError),
+            nameof(SynchronizationRequest.LastError),
             "nvarchar(2048)",
-            IntegrationSynchronizationRequest.LastErrorMaxLength);
+            SynchronizationRequest.LastErrorMaxLength);
     }
 
     private static void AssertColumn(

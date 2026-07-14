@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Myrmex.Integrations.Synchronization;
+using Myrmex.Integrations.Persistence;
 
 namespace Myrmex.Tests.Integrations.OneC.Synchronization;
 

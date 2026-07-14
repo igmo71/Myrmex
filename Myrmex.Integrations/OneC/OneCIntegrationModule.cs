@@ -10,15 +10,17 @@ using Myrmex.Integrations.OneC.Configuration;
 using Myrmex.Integrations.OneC.Imports;
 using Myrmex.Integrations.OneC.Security;
 using Myrmex.Integrations.OneC.Transport;
-using Myrmex.Integrations.Synchronization;
+using Myrmex.Integrations.Persistence;
+using Myrmex.Integrations.Persistence.SqlServer;
+using Myrmex.Integrations.Synchronization.Configuration;
+using Myrmex.Integrations.Synchronization.Processing;
 
 namespace Myrmex.Integrations.OneC;
 
 public static class OneCIntegrationModule
 {
     private const string DatabaseConnectionName = "MyrmexDatabase";
-    private const string IntegrationPersistenceHealthCheckName =
-        "integration-synchronization-db";
+    private const string IntegrationPersistenceHealthCheckName = "integration-synchronization-db";
 
     public static IServiceCollection AddOneCIntegration(
         this IServiceCollection services,
@@ -28,45 +30,52 @@ public static class OneCIntegrationModule
         ArgumentNullException.ThrowIfNull(configuration);
 
         services.Configure<OneCOptions>(configuration.GetSection(OneCOptions.SectionName));
+
         services.AddOptions<OneCIntegrationApiKeyOptions>()
             .Bind(configuration.GetSection(OneCIntegrationApiKeyOptions.SectionName))
             .ValidateOnStart();
-        services.AddSingleton<
-            IValidateOptions<OneCIntegrationApiKeyOptions>,
-            OneCIntegrationApiKeyOptionsValidator>();
-        services.AddOptions<IntegrationSynchronizationOptions>()
-            .Bind(configuration.GetSection(IntegrationSynchronizationOptions.SectionName))
+        services.AddSingleton<IValidateOptions<OneCIntegrationApiKeyOptions>, OneCIntegrationApiKeyOptionsValidator>();
+
+        services.AddOptions<SynchronizationOptions>()
+            .Bind(configuration.GetSection(SynchronizationOptions.SectionName))
             .ValidateOnStart();
-        services.AddSingleton<
-            IValidateOptions<IntegrationSynchronizationOptions>,
-            IntegrationSynchronizationOptionsValidator>();
+        services.AddSingleton<IValidateOptions<SynchronizationOptions>, IntegrationSynchronizationOptionsValidator>();
 
         services.TryAddSingleton(TimeProvider.System);
+
         services.AddDbContext<IntegrationDbContext>(options =>
             options.UseSqlServer(
                 configuration.GetConnectionString(DatabaseConnectionName)));
+
         services
             .AddAuthentication()
-            .AddScheme<AuthenticationSchemeOptions, IntegrationApiKeyAuthenticationHandler>(
+            .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
                 MyrmexAuthenticationSchemes.IntegrationApiKey,
                 options => { });
+
         services.AddAuthorizationBuilder()
             .AddPolicy(
                 MyrmexAuthorizationPolicies.OneCIntegration,
                 MyrmexAuthorizationPolicies.ConfigureOneCIntegration);
+
         services.AddHealthChecks()
             .AddCheck<IntegrationDbContextHealthCheck>(
                 IntegrationPersistenceHealthCheckName,
                 failureStatus: HealthStatus.Unhealthy);
-        services.AddSingleton<IntegrationSynchronizationWakeUpSignal>();
+
+        services.AddSingleton<SynchronizationWakeUp>();
+
         services.AddSingleton<SqlServerDuplicateSynchronizationRequestDetector>();
 
         services.AddHttpClient<IOneCODataClient, OneCODataClient>(client =>
         {
             client.Timeout = Timeout.InfiniteTimeSpan;
         });
+
         services.AddSingleton<OneCImportGate>();
+
         services.AddScoped<IOneCImportService, OneCImportService>();
+
         return services;
     }
 }

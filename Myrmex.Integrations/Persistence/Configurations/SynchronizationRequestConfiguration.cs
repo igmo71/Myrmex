@@ -1,48 +1,49 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Myrmex.Integrations.Synchronization;
 
-namespace Myrmex.Integrations.Synchronization;
+namespace Myrmex.Integrations.Persistence.Configurations;
 
-internal sealed class IntegrationSynchronizationRequestConfiguration
-    : IEntityTypeConfiguration<IntegrationSynchronizationRequest>
+internal sealed class SynchronizationRequestConfiguration
+    : IEntityTypeConfiguration<SynchronizationRequest>
 {
-    public void Configure(EntityTypeBuilder<IntegrationSynchronizationRequest> builder)
+    public void Configure(EntityTypeBuilder<SynchronizationRequest> builder)
     {
         builder.ToTable(
-            IntegrationSynchronizationDatabaseNames.SynchronizationRequestsTable);
+            SynchronizationDatabaseNames.SynchronizationRequestsTable);
 
         builder.HasKey(x => x.Id)
             .HasName(
-                IntegrationSynchronizationDatabaseNames
+                SynchronizationDatabaseNames
                     .SynchronizationRequestPrimaryKey);
 
         builder.Property(x => x.SourceSystem)
-            .HasMaxLength(IntegrationSynchronizationRequest.SourceSystemMaxLength)
+            .HasMaxLength(SynchronizationRequest.SourceSystemMaxLength)
             .HasColumnType("nvarchar(32)")
             .IsRequired();
 
         builder.Property(x => x.SourceInstance)
-            .HasMaxLength(IntegrationSynchronizationRequest.SourceInstanceMaxLength)
+            .HasMaxLength(SynchronizationRequest.SourceInstanceMaxLength)
             .HasColumnType("nvarchar(128)")
             .IsRequired();
 
         builder.Property(x => x.EntityType)
-            .HasMaxLength(IntegrationSynchronizationRequest.EntityTypeMaxLength)
+            .HasMaxLength(SynchronizationRequest.EntityTypeMaxLength)
             .HasColumnType("nvarchar(32)")
             .IsRequired();
 
         builder.Property(x => x.ExternalId)
-            .HasMaxLength(IntegrationSynchronizationRequest.ExternalIdMaxLength)
+            .HasMaxLength(SynchronizationRequest.ExternalIdMaxLength)
             .HasColumnType("nvarchar(128)")
             .IsRequired();
 
         builder.Property(x => x.ExternalDataVersion)
-            .HasMaxLength(IntegrationSynchronizationRequest.ExternalDataVersionMaxLength)
+            .HasMaxLength(SynchronizationRequest.ExternalDataVersionMaxLength)
             .HasColumnType("varbinary(128)")
             .IsRequired();
 
         builder.Property(x => x.ExternalDocumentNumber)
-            .HasMaxLength(IntegrationSynchronizationRequest.ExternalDocumentNumberMaxLength)
+            .HasMaxLength(SynchronizationRequest.ExternalDocumentNumberMaxLength)
             .HasColumnType("nvarchar(64)")
             .IsRequired(false);
 
@@ -51,13 +52,13 @@ internal sealed class IntegrationSynchronizationRequestConfiguration
             .IsRequired(false);
 
         builder.Property(x => x.Trigger)
-            .HasMaxLength(IntegrationSynchronizationRequest.TriggerMaxLength)
+            .HasMaxLength(SynchronizationRequest.TriggerMaxLength)
             .HasColumnType("nvarchar(32)")
             .IsRequired();
 
         builder.Property(x => x.Status)
             .HasConversion<string>()
-            .HasMaxLength(IntegrationSynchronizationRequest.StatusMaxLength)
+            .HasMaxLength(SynchronizationRequest.StatusMaxLength)
             .HasColumnType("nvarchar(32)")
             .IsRequired();
 
@@ -77,21 +78,21 @@ internal sealed class IntegrationSynchronizationRequestConfiguration
             .IsRequired(false);
 
         builder.Property(x => x.LastError)
-            .HasMaxLength(IntegrationSynchronizationRequest.LastErrorMaxLength)
+            .HasMaxLength(SynchronizationRequest.LastErrorMaxLength)
             .HasColumnType("nvarchar(2048)")
             .IsRequired(false);
 
         builder.HasIndex(x => new
-            {
-                x.SourceSystem,
-                x.SourceInstance,
-                x.EntityType,
-                x.ExternalId,
-                x.ExternalDataVersion
-            })
+        {
+            x.SourceSystem,
+            x.SourceInstance,
+            x.EntityType,
+            x.ExternalId,
+            x.ExternalDataVersion
+        })
             .IsUnique()
             .HasDatabaseName(
-                IntegrationSynchronizationDatabaseNames
+                SynchronizationDatabaseNames
                     .SynchronizationRequestIdempotencyUniqueIndex);
     }
 }

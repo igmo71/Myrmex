@@ -1,8 +1,8 @@
 using System.Threading.Channels;
 
-namespace Myrmex.Integrations.Synchronization;
+namespace Myrmex.Integrations.Synchronization.Processing;
 
-internal sealed class IntegrationSynchronizationWakeUpSignal
+internal sealed class SynchronizationWakeUp
 {
     private readonly Channel<bool> _channel = Channel.CreateBounded<bool>(
         new BoundedChannelOptions(1)
@@ -14,5 +14,5 @@ internal sealed class IntegrationSynchronizationWakeUpSignal
 
     public ChannelReader<bool> Reader => _channel.Reader;
 
-    public void Signal() => _channel.Writer.TryWrite(true);
+    public void Notify() => _channel.Writer.TryWrite(true);
 }
