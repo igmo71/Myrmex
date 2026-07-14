@@ -82,9 +82,9 @@
 
 ## Decision: Integration readiness reuses platform health endpoints
 
-**Decision**: Reuse the existing ServiceDefaults health endpoints: ApiService calls `AddServiceDefaults()` and `MapDefaultEndpoints()`, which expose `/health` readiness and `/alive` liveness in Development/Staging, and AppHost already probes ApiService at `/health`. The integration slice registers readiness checks into the existing `/health` pipeline instead of adding a separate public integration health endpoint. Readiness covers `IntegrationDbContext` persistence reachability, required integration options validation, and `IntegrationSynchronizationWorker` registration/loop readiness without exposing API keys, connection strings, external credentials, queue contents, synchronization-request details, or internal exception details.
+**Decision**: Reuse the existing ServiceDefaults health endpoints: ApiService calls `AddServiceDefaults()` and `MapDefaultEndpoints()`, which expose `/health` readiness and `/alive` liveness in Development/Staging, and AppHost already probes ApiService at `/health`. The integration slice registers only an `IntegrationDbContext` persistence reachability check into the existing `/health` pipeline instead of adding a separate public integration health endpoint. `/alive` remains independent from integration SQL availability. Required integration configuration stays covered by startup options validation, and worker registration/loop correctness stays covered by worker and lifecycle tests. Health output does not expose API keys, connection strings, external credentials, queue contents, synchronization-request details, or internal exception details.
 
-**Rationale**: This satisfies the constitution health-check requirement while preserving the repository's platform endpoint conventions and avoiding additional public surface area.
+**Rationale**: This satisfies the constitution health-check requirement for the integration-owned durable queue while preserving the repository's platform endpoint conventions, avoiding additional public surface area, and avoiding speculative in-memory readiness state.
 
 **Alternatives considered**:
 
