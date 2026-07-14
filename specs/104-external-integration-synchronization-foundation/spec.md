@@ -14,7 +14,7 @@
 
 - Q: Does duplicate notification receipt change lifecycle state, schedule retry, or trigger replay? -> A: No. The existing lifecycle state is preserved; only a duplicate of a `Pending` request may send a best-effort wake-up signal.
 - Q: Must Issue #104 implement an operational replay mechanism for `Deferred` or `Failed` requests? -> A: No. The foundation preserves replay information, but replay endpoints, UI, scheduled replay, and administrative commands are deferred to later synchronization features.
-- Q: Does the first slice support one configured 1C infobase/API key or multiple simultaneously active source identities? -> A: One configured 1C source instance and one active API key; `SourceInstance` remains server-assigned, persisted, and part of idempotency for future multi-instance support.
+- Q: Does the first slice support one configured 1C infobase/API key or multiple simultaneously active source identities? -> A: One configured 1C source instance and one active API key; `SourceInstance` remains server-assigned, persisted, and part of idempotency for future support for multiple external source instances.
 - Q: Is automatic retention cleanup required in Issue #104? -> A: No. Completed, deferred, and failed requests are not automatically deleted; cleanup and archival are deferred until operational volume and support requirements are known.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -99,7 +99,7 @@ The integration foundation processes accepted synchronization requests through a
 - The first slice supports exactly one configured 1C source instance and one active API key; requests must not expose multi-key or key-rotation behavior.
 - The current connection-test and manual import endpoints must remain operator-administered and must not silently become externally callable notification endpoints.
 - A notification accepted immediately before process shutdown must remain discoverable from durable storage after restart even if no wake-up signal was processed.
-- Two application instances receive the same external version at nearly the same time; at most one durable request exists for that source/version key, and the same request is not processed concurrently.
+- Two duplicate HTTP requests for the same external version arrive concurrently; the durable uniqueness constraint ensures at most one synchronization request exists for that source/version key.
 
 ## Requirements *(mandatory)*
 
@@ -139,8 +139,7 @@ The integration foundation processes accepted synchronization requests through a
 - **FR-032**: Retry behavior MUST be configurable through explicit retry delays, and the final number of attempts MAY be derived from the configured delay collection.
 - **FR-033**: The system MUST distinguish transient technical failures from permanent validation failures and unsupported-handler outcomes.
 - **FR-034**: The feature MUST preserve enough synchronization request information for later controlled replay, while not implementing replay in this slice.
-- **FR-035**: The processor MUST support safe claims when multiple application instances are running so the same request is not processed concurrently.
-- **FR-036**: The first slice MUST NOT automatically delete, archive, or clean up completed, deferred, or failed synchronization requests.
+- **FR-035**: The first slice MUST NOT automatically delete, archive, or clean up completed, deferred, or failed synchronization requests.
 
 ### Domain Rules *(mandatory when feature changes domain behavior)*
 
@@ -213,7 +212,6 @@ The integration foundation processes accepted synchronization requests through a
 - **SC-008**: Across representative processing outcomes, 100% of transient failure, permanent failure, unsupported-handler, successful-handler, and retry-exhausted cases end in the expected lifecycle state with diagnostic data retained.
 - **SC-009**: Existing WMS-operator 1C connection-test and manual import operations remain inaccessible to the integration API key and remain accessible to eligible WMS operator or administrator identities in the authorization acceptance matrix.
 - **SC-010**: No accepted notification requires WMS domain ownership of synchronization queue data, receiving documents, or shipping documents during this slice.
-- **SC-011**: In a two-instance acceptance test, no synchronization request is processed concurrently by more than one processor instance across at least 1,000 eligible requests.
 
 ## Assumptions
 
