@@ -16,17 +16,6 @@ Use the current branch.
 
 Do not create, rename, switch, or delete branches.
 
-This task is documentation and repository analysis only. Do not modify production code, tests, project files, configuration, migrations, or database schema. Do not run build, test, migration, database update, AppHost, Docker, or application startup commands.
-
-Read and follow:
-
-```text
-AGENTS.md
-.specify/memory/myrmex-development-workflow.md
-.specify/memory/myrmex-architecture.md
-.specify/memory/domain-persistence-guidelines.md
-```
-
 Inspect the current implementation, especially:
 
 ```text
