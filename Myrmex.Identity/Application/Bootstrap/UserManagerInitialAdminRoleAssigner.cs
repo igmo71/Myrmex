@@ -4,11 +4,11 @@ using Myrmex.Identity.Persistence;
 namespace Myrmex.Identity.Application.Bootstrap;
 
 public sealed class UserManagerInitialAdminRoleAssigner(
-    UserManager<MyrmexUser> userManager)
+    UserManager<AppUser> userManager)
     : IInitialAdminRoleAssigner
 {
     public async Task<IdentityResult> AddToRoleAsync(
-        MyrmexUser user,
+        AppUser user,
         string role,
         CancellationToken cancellationToken)
     {

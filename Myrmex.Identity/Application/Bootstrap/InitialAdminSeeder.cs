@@ -11,8 +11,8 @@ namespace Myrmex.Identity.Application.Bootstrap;
 
 public sealed class InitialAdminSeeder(
     IOptions<InitialAdminOptions> options,
-    MyrmexIdentityDbContext dbContext,
-    UserManager<MyrmexUser> userManager,
+    IdentityDbContext dbContext,
+    UserManager<AppUser> userManager,
     IInitialAdminRoleAssigner roleAssigner,
     ILogger<InitialAdminSeeder> logger)
 {
@@ -70,16 +70,16 @@ public sealed class InitialAdminSeeder(
         {
             await using IDbContextTransaction transaction =
                 await dbContext.Database.BeginTransactionAsync(cancellationToken);
-            MyrmexUser? createdUser = null;
+            AppUser? createdUser = null;
 
             try
             {
-                MyrmexUser? user = await userManager.FindByEmailAsync(email);
+                AppUser? user = await userManager.FindByEmailAsync(email);
                 cancellationToken.ThrowIfCancellationRequested();
 
                 if (user is null)
                 {
-                    user = new MyrmexUser
+                    user = new AppUser
                     {
                         Id = Guid.NewGuid(),
                         UserName = email,

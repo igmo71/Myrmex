@@ -29,7 +29,7 @@ public static class IdentityWebAppAccountEndpoints
 
     private static async Task<IResult> LoginAsync(
         HttpContext context,
-        SignInManager<MyrmexUser> signInManager,
+        SignInManager<AppUser> signInManager,
         IAntiforgery antiforgery)
     {
         await antiforgery.ValidateRequestAsync(context);
@@ -46,7 +46,7 @@ public static class IdentityWebAppAccountEndpoints
         if (!string.IsNullOrWhiteSpace(userNameOrEmail) &&
             !string.IsNullOrEmpty(password))
         {
-            MyrmexUser? user =
+            AppUser? user =
                 await signInManager.UserManager.FindByEmailAsync(userNameOrEmail) ??
                 await signInManager.UserManager.FindByNameAsync(userNameOrEmail);
 
@@ -76,7 +76,7 @@ public static class IdentityWebAppAccountEndpoints
 
     private static async Task<IResult> LogoutAsync(
         HttpContext context,
-        SignInManager<MyrmexUser> signInManager,
+        SignInManager<AppUser> signInManager,
         IAntiforgery antiforgery)
     {
         await antiforgery.ValidateRequestAsync(context);

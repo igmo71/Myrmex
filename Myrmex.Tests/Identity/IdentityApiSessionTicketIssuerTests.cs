@@ -22,15 +22,15 @@ public sealed class IdentityApiSessionTicketIssuerTests
 
         using IServiceScope scope = provider.CreateScope();
 
-        UserManager<MyrmexUser> users = scope.ServiceProvider.GetRequiredService<UserManager<MyrmexUser>>();
-        RoleManager<MyrmexRole> roles = scope.ServiceProvider.GetRequiredService<RoleManager<MyrmexRole>>();
+        UserManager<AppUser> users = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+        RoleManager<AppRole> roles = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
 
-        MyrmexUser user = await CreateUserAsync(scope.ServiceProvider, IdentityRoleNames.WmsOperator);
+        AppUser user = await CreateUserAsync(scope.ServiceProvider, IdentityRoleNames.WmsOperator);
 
         if (!await roles.RoleExistsAsync(IdentityRoleNames.MyrmexAdmin))
         {
             IdentityResult roleResult = await roles.CreateAsync(
-                new MyrmexRole(IdentityRoleNames.MyrmexAdmin));
+                new AppRole(IdentityRoleNames.MyrmexAdmin));
 
             Assert.True(roleResult.Succeeded);
         }
@@ -58,11 +58,11 @@ public sealed class IdentityApiSessionTicketIssuerTests
     {
         await using ServiceProvider provider = CreateProvider();
         using IServiceScope scope = provider.CreateScope();
-        UserManager<MyrmexUser> users = scope.ServiceProvider.GetRequiredService<UserManager<MyrmexUser>>();
+        UserManager<AppUser> users = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
         IIdentityApiSessionTicketIssuer issuer = scope.ServiceProvider
             .GetRequiredService<IIdentityApiSessionTicketIssuer>();
-        MyrmexUser deleted = await CreateUserAsync(scope.ServiceProvider, IdentityRoleNames.WmsOperator);
-        MyrmexUser locked = await CreateUserAsync(scope.ServiceProvider, IdentityRoleNames.WmsOperator);
+        AppUser deleted = await CreateUserAsync(scope.ServiceProvider, IdentityRoleNames.WmsOperator);
+        AppUser locked = await CreateUserAsync(scope.ServiceProvider, IdentityRoleNames.WmsOperator);
         await users.DeleteAsync(deleted);
         await users.SetLockoutEnabledAsync(locked, true);
         await users.SetLockoutEndDateAsync(locked, DateTimeOffset.UtcNow.AddHours(1));
@@ -77,7 +77,7 @@ public sealed class IdentityApiSessionTicketIssuerTests
         DateTimeOffset now = new(2026, 7, 8, 10, 0, 0, TimeSpan.Zero);
         await using ServiceProvider provider = CreateProvider(new FixedTimeProvider(now));
         using IServiceScope scope = provider.CreateScope();
-        MyrmexUser user = await CreateUserAsync(scope.ServiceProvider, IdentityRoleNames.WmsOperator);
+        AppUser user = await CreateUserAsync(scope.ServiceProvider, IdentityRoleNames.WmsOperator);
         IIdentityApiSessionTicketIssuer issuer = scope.ServiceProvider
             .GetRequiredService<IIdentityApiSessionTicketIssuer>();
         ClaimsPrincipal browserPrincipal = CreatePrincipal(
@@ -122,7 +122,7 @@ public sealed class IdentityApiSessionTicketIssuerTests
     {
         await using ServiceProvider provider = CreateProvider();
         using IServiceScope scope = provider.CreateScope();
-        MyrmexUser user = await CreateUserAsync(scope.ServiceProvider, IdentityRoleNames.WmsOperator);
+        AppUser user = await CreateUserAsync(scope.ServiceProvider, IdentityRoleNames.WmsOperator);
         IIdentityApiSessionTicketIssuer issuer = scope.ServiceProvider
             .GetRequiredService<IIdentityApiSessionTicketIssuer>();
         ClaimsPrincipal duplicate = new(new ClaimsIdentity(
@@ -147,12 +147,12 @@ public sealed class IdentityApiSessionTicketIssuerTests
         ServiceCollection services = new();
         services.AddLogging();
         services.AddHttpContextAccessor();
-        services.AddDbContext<MyrmexIdentityDbContext>(options =>
+        services.AddDbContext<IdentityDbContext>(options =>
             options.UseInMemoryDatabase(identityDatabaseName));
-        services.AddIdentityCore<MyrmexUser>()
-            .AddRoles<MyrmexRole>()
+        services.AddIdentityCore<AppUser>()
+            .AddRoles<AppRole>()
             .AddSignInManager()
-            .AddEntityFrameworkStores<MyrmexIdentityDbContext>();
+            .AddEntityFrameworkStores<IdentityDbContext>();
         services.AddDataProtection();
         services.AddMyrmexIdentityApiAuthentication(CreateConfiguration());
         services.AddSingleton(timeProvider ?? TimeProvider.System);
@@ -160,19 +160,19 @@ public sealed class IdentityApiSessionTicketIssuerTests
         return services.BuildServiceProvider();
     }
 
-    private static async Task<MyrmexUser> CreateUserAsync(
+    private static async Task<AppUser> CreateUserAsync(
         IServiceProvider services,
         string role)
     {
-        UserManager<MyrmexUser> users = services.GetRequiredService<UserManager<MyrmexUser>>();
-        RoleManager<MyrmexRole> roles = services.GetRequiredService<RoleManager<MyrmexRole>>();
+        UserManager<AppUser> users = services.GetRequiredService<UserManager<AppUser>>();
+        RoleManager<AppRole> roles = services.GetRequiredService<RoleManager<AppRole>>();
         if (!await roles.RoleExistsAsync(role))
         {
-            Assert.True((await roles.CreateAsync(new MyrmexRole(role))).Succeeded);
+            Assert.True((await roles.CreateAsync(new AppRole(role))).Succeeded);
         }
 
         string email = $"{Guid.NewGuid():N}@example.com";
-        MyrmexUser user = new()
+        AppUser user = new()
         {
             Id = Guid.NewGuid(),
             UserName = email,

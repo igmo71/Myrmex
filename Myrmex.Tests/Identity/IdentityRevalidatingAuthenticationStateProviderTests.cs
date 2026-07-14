@@ -15,7 +15,7 @@ public sealed class IdentityRevalidatingAuthenticationStateProviderTests
     {
         await using RevalidationTestHost host =
             RevalidationTestHost.Create();
-        MyrmexUser user = await host.CreateUserAsync();
+        AppUser user = await host.CreateUserAsync();
         ClaimsPrincipal principal = await host.CreatePrincipalAsync(user.Id);
 
         await host.DeleteUserAsync(user.Id);
@@ -28,7 +28,7 @@ public sealed class IdentityRevalidatingAuthenticationStateProviderTests
     {
         await using RevalidationTestHost host =
             RevalidationTestHost.Create();
-        MyrmexUser user = await host.CreateUserAsync();
+        AppUser user = await host.CreateUserAsync();
         ClaimsPrincipal principal = await host.CreatePrincipalAsync(user.Id);
 
         await host.UpdateSecurityStampAsync(user.Id);
@@ -41,7 +41,7 @@ public sealed class IdentityRevalidatingAuthenticationStateProviderTests
     {
         await using RevalidationTestHost host =
             RevalidationTestHost.Create();
-        MyrmexUser user = await host.CreateUserAsync();
+        AppUser user = await host.CreateUserAsync();
         ClaimsPrincipal principal = await host.CreatePrincipalAsync(user.Id);
 
         Assert.True(await host.ValidateAsync(principal));
@@ -102,23 +102,23 @@ public sealed class IdentityRevalidatingAuthenticationStateProviderTests
                 .AddAuthentication()
                 .AddCookie(IdentityConstants.ApplicationScheme);
 
-            services.AddDbContext<MyrmexIdentityDbContext>(options =>
+            services.AddDbContext<IdentityDbContext>(options =>
                 options.UseInMemoryDatabase(databaseName));
-            services.AddIdentityCore<MyrmexUser>()
-                .AddRoles<MyrmexRole>()
+            services.AddIdentityCore<AppUser>()
+                .AddRoles<AppRole>()
                 .AddSignInManager()
-                .AddEntityFrameworkStores<MyrmexIdentityDbContext>();
+                .AddEntityFrameworkStores<IdentityDbContext>();
 
             return new RevalidationTestHost(services.BuildServiceProvider());
         }
 
-        public async Task<MyrmexUser> CreateUserAsync()
+        public async Task<AppUser> CreateUserAsync()
         {
             using IServiceScope scope = _services.CreateScope();
-            UserManager<MyrmexUser> userManager = scope.ServiceProvider
-                .GetRequiredService<UserManager<MyrmexUser>>();
+            UserManager<AppUser> userManager = scope.ServiceProvider
+                .GetRequiredService<UserManager<AppUser>>();
             string email = $"{Guid.NewGuid():N}@example.com";
-            MyrmexUser user = new()
+            AppUser user = new()
             {
                 Id = Guid.NewGuid(),
                 UserName = email,
@@ -135,11 +135,11 @@ public sealed class IdentityRevalidatingAuthenticationStateProviderTests
         public async Task<ClaimsPrincipal> CreatePrincipalAsync(Guid userId)
         {
             using IServiceScope scope = _services.CreateScope();
-            UserManager<MyrmexUser> userManager = scope.ServiceProvider
-                .GetRequiredService<UserManager<MyrmexUser>>();
-            SignInManager<MyrmexUser> signInManager = scope.ServiceProvider
-                .GetRequiredService<SignInManager<MyrmexUser>>();
-            MyrmexUser user = await userManager.FindByIdAsync(userId.ToString())
+            UserManager<AppUser> userManager = scope.ServiceProvider
+                .GetRequiredService<UserManager<AppUser>>();
+            SignInManager<AppUser> signInManager = scope.ServiceProvider
+                .GetRequiredService<SignInManager<AppUser>>();
+            AppUser user = await userManager.FindByIdAsync(userId.ToString())
                 ?? throw new InvalidOperationException("Test user was not found.");
 
             return await signInManager.CreateUserPrincipalAsync(user);
@@ -148,9 +148,9 @@ public sealed class IdentityRevalidatingAuthenticationStateProviderTests
         public async Task DeleteUserAsync(Guid userId)
         {
             using IServiceScope scope = _services.CreateScope();
-            UserManager<MyrmexUser> userManager = scope.ServiceProvider
-                .GetRequiredService<UserManager<MyrmexUser>>();
-            MyrmexUser user = await userManager.FindByIdAsync(userId.ToString())
+            UserManager<AppUser> userManager = scope.ServiceProvider
+                .GetRequiredService<UserManager<AppUser>>();
+            AppUser user = await userManager.FindByIdAsync(userId.ToString())
                 ?? throw new InvalidOperationException("Test user was not found.");
 
             IdentityResult result = await userManager.DeleteAsync(user);
@@ -160,9 +160,9 @@ public sealed class IdentityRevalidatingAuthenticationStateProviderTests
         public async Task UpdateSecurityStampAsync(Guid userId)
         {
             using IServiceScope scope = _services.CreateScope();
-            UserManager<MyrmexUser> userManager = scope.ServiceProvider
-                .GetRequiredService<UserManager<MyrmexUser>>();
-            MyrmexUser user = await userManager.FindByIdAsync(userId.ToString())
+            UserManager<AppUser> userManager = scope.ServiceProvider
+                .GetRequiredService<UserManager<AppUser>>();
+            AppUser user = await userManager.FindByIdAsync(userId.ToString())
                 ?? throw new InvalidOperationException("Test user was not found.");
 
             IdentityResult result = await userManager.UpdateSecurityStampAsync(user);

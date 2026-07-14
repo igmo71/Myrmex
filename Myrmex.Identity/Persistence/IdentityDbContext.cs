@@ -5,9 +5,9 @@ using Myrmex.Identity.Persistence.Configurations;
 
 namespace Myrmex.Identity.Persistence;
 
-public sealed class MyrmexIdentityDbContext(
-    DbContextOptions<MyrmexIdentityDbContext> options)
-    : IdentityDbContext<MyrmexUser, MyrmexRole, Guid>(options),
+public sealed class IdentityDbContext(
+    DbContextOptions<IdentityDbContext> options)
+    : IdentityDbContext<AppUser, AppRole, Guid>(options),
         IDataProtectionKeyContext
 {
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;

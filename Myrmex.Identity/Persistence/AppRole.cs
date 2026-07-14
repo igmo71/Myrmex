@@ -2,13 +2,13 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Myrmex.Identity.Persistence;
 
-public sealed class MyrmexRole : IdentityRole<Guid>
+public sealed class AppRole : IdentityRole<Guid>
 {
-    public MyrmexRole()
+    public AppRole()
     {
     }
 
-    public MyrmexRole(string roleName)
+    public AppRole(string roleName)
         : base(roleName)
     {
     }

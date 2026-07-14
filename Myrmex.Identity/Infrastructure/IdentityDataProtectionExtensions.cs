@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -47,7 +46,7 @@ public static class IdentityDataProtectionExtensions
         IDataProtectionBuilder dataProtection = services
             .AddDataProtection()
             .SetApplicationName(options.DataProtection.ApplicationName.Trim())
-            .PersistKeysToDbContext<MyrmexIdentityDbContext>();
+            .PersistKeysToDbContext<IdentityDbContext>();
 
         string? thumbprint = options.DataProtection.Certificate.Thumbprint?.Trim();
         if (!string.IsNullOrWhiteSpace(thumbprint))

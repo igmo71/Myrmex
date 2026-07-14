@@ -24,14 +24,14 @@ public static class IdentityServiceCollectionExtensions
             ?? throw new InvalidOperationException(
                 $"Connection string '{DatabaseConnectionName}' is not configured.");
 
-        services.AddDbContext<MyrmexIdentityDbContext>(options =>
+        services.AddDbContext<IdentityDbContext>(options =>
             options.UseSqlServer(connectionString));
 
         services.AddHttpContextAccessor();
-        services.AddIdentityCore<MyrmexUser>()
-            .AddRoles<MyrmexRole>()
+        services.AddIdentityCore<AppUser>()
+            .AddRoles<AppRole>()
             .AddSignInManager()
-            .AddEntityFrameworkStores<MyrmexIdentityDbContext>();
+            .AddEntityFrameworkStores<IdentityDbContext>();
 
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<

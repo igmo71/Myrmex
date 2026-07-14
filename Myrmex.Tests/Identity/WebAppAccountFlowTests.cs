@@ -24,7 +24,7 @@ public sealed class WebAppAccountFlowTests
     public async Task Login_WithExistingUserAndValidPassword_IssuesApplicationCookie()
     {
         await using AccountTestApp app = await AccountTestApp.CreateAsync();
-        MyrmexUser user = await app.CreateUserAsync();
+        AppUser user = await app.CreateUserAsync();
         using HttpClient client = app.CreateClient();
         AntiforgeryPayload antiforgery = await app.GetAntiforgeryAsync(client);
 
@@ -48,7 +48,7 @@ public sealed class WebAppAccountFlowTests
     public async Task Login_WithInvalidPassword_DoesNotIssueApplicationCookie()
     {
         await using AccountTestApp app = await AccountTestApp.CreateAsync();
-        MyrmexUser user = await app.CreateUserAsync();
+        AppUser user = await app.CreateUserAsync();
         using HttpClient client = app.CreateClient();
         AntiforgeryPayload antiforgery = await app.GetAntiforgeryAsync(client);
 
@@ -79,7 +79,7 @@ public sealed class WebAppAccountFlowTests
     public async Task Login_WithExternalReturnUrl_RedirectsToHome()
     {
         await using AccountTestApp app = await AccountTestApp.CreateAsync();
-        MyrmexUser user = await app.CreateUserAsync();
+        AppUser user = await app.CreateUserAsync();
         using HttpClient client = app.CreateClient();
         AntiforgeryPayload antiforgery = await app.GetAntiforgeryAsync(client);
 
@@ -100,7 +100,7 @@ public sealed class WebAppAccountFlowTests
     public async Task Logout_ClearsApplicationCookie()
     {
         await using AccountTestApp app = await AccountTestApp.CreateAsync();
-        MyrmexUser user = await app.CreateUserAsync();
+        AppUser user = await app.CreateUserAsync();
         using HttpClient client = app.CreateClient();
         AntiforgeryPayload loginAntiforgery = await app.GetAntiforgeryAsync(client);
 
@@ -172,12 +172,12 @@ public sealed class WebAppAccountFlowTests
             WebApplicationBuilder builder = WebApplication.CreateBuilder();
             builder.WebHost.UseUrls("http://127.0.0.1:0");
             builder.Services.AddLogging();
-            builder.Services.AddDbContext<MyrmexIdentityDbContext>(options =>
+            builder.Services.AddDbContext<IdentityDbContext>(options =>
                 options.UseInMemoryDatabase(databaseName));
-            builder.Services.AddIdentityCore<MyrmexUser>()
-                .AddRoles<MyrmexRole>()
+            builder.Services.AddIdentityCore<AppUser>()
+                .AddRoles<AppRole>()
                 .AddSignInManager()
-                .AddEntityFrameworkStores<MyrmexIdentityDbContext>();
+                .AddEntityFrameworkStores<IdentityDbContext>();
             builder.Services.AddMyrmexIdentityWebAppAuthentication();
             builder.Services.Configure<CookieAuthenticationOptions>(
                 MyrmexAuthenticationSchemes.WebAppIdentity,
@@ -234,13 +234,13 @@ public sealed class WebAppAccountFlowTests
                 "The antiforgery endpoint did not return a token.");
         }
 
-        public async Task<MyrmexUser> CreateUserAsync()
+        public async Task<AppUser> CreateUserAsync()
         {
             using IServiceScope scope = _app.Services.CreateScope();
-            UserManager<MyrmexUser> userManager = scope.ServiceProvider
-                .GetRequiredService<UserManager<MyrmexUser>>();
+            UserManager<AppUser> userManager = scope.ServiceProvider
+                .GetRequiredService<UserManager<AppUser>>();
             string email = $"{Guid.NewGuid():N}@example.com";
-            MyrmexUser user = new()
+            AppUser user = new()
             {
                 Id = Guid.NewGuid(),
                 UserName = email,

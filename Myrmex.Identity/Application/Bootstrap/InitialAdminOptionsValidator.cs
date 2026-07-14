@@ -53,11 +53,11 @@ public sealed class InitialAdminOptionsValidator(
         }
 
         if (!string.IsNullOrWhiteSpace(options.DisplayName) &&
-            options.DisplayName.Trim().Length > MyrmexUser.MaxDisplayNameLength)
+            options.DisplayName.Trim().Length > AppUser.MaxDisplayNameLength)
         {
             failures.Add(
                 $"{InitialAdminOptions.SectionName}:DisplayName must not exceed " +
-                $"{MyrmexUser.MaxDisplayNameLength} characters.");
+                $"{AppUser.MaxDisplayNameLength} characters.");
         }
 
         if (environment.IsProduction() &&

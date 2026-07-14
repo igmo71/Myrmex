@@ -10,7 +10,7 @@ using Myrmex.Identity.Persistence;
 
 namespace Myrmex.Identity.Persistence.Migrations
 {
-    [DbContext(typeof(MyrmexIdentityDbContext))]
+    [DbContext(typeof(IdentityDbContext))]
     partial class MyrmexIdentityDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

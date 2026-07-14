@@ -11,24 +11,24 @@ public sealed class IdentityPersistenceTests
     [Fact]
     public void UserKey_UsesStableGuidIdentity()
     {
-        using MyrmexIdentityDbContext dbContext = CreateDbContext();
+        using IdentityDbContext dbContext = CreateDbContext();
 
-        IEntityType user = dbContext.Model.FindEntityType(typeof(MyrmexUser))!;
+        IEntityType user = dbContext.Model.FindEntityType(typeof(AppUser))!;
         IKey key = user.FindPrimaryKey()!;
 
         IProperty id = Assert.Single(key.Properties);
-        Assert.Equal(nameof(MyrmexUser.Id), id.Name);
+        Assert.Equal(nameof(AppUser.Id), id.Name);
         Assert.Equal(typeof(Guid), id.ClrType);
     }
 
     [Theory]
-    [InlineData(nameof(MyrmexUser.NormalizedEmail))]
-    [InlineData(nameof(MyrmexUser.NormalizedUserName))]
+    [InlineData(nameof(AppUser.NormalizedEmail))]
+    [InlineData(nameof(AppUser.NormalizedUserName))]
     public void NormalizedIdentity_HasUniqueIndex(string propertyName)
     {
-        using MyrmexIdentityDbContext dbContext = CreateDbContext();
+        using IdentityDbContext dbContext = CreateDbContext();
 
-        IEntityType user = dbContext.Model.FindEntityType(typeof(MyrmexUser))!;
+        IEntityType user = dbContext.Model.FindEntityType(typeof(AppUser))!;
 
         IIndex index = Assert.Single(
             user.GetIndexes(),
@@ -40,12 +40,12 @@ public sealed class IdentityPersistenceTests
     [Fact]
     public void IdentityModel_UsesOnlyIdentitySchema()
     {
-        using MyrmexIdentityDbContext dbContext = CreateDbContext();
+        using IdentityDbContext dbContext = CreateDbContext();
 
         Type[] identityEntityTypes =
         [
-            typeof(MyrmexUser),
-            typeof(MyrmexRole),
+            typeof(AppUser),
+            typeof(AppRole),
             typeof(IdentityUserClaim<Guid>),
             typeof(IdentityUserLogin<Guid>),
             typeof(IdentityUserToken<Guid>),
@@ -64,7 +64,7 @@ public sealed class IdentityPersistenceTests
     [Fact]
     public void DataProtectionKey_IsMappedToIdentityOwnedTable()
     {
-        using MyrmexIdentityDbContext dbContext = CreateDbContext();
+        using IdentityDbContext dbContext = CreateDbContext();
 
         IEntityType key = dbContext.Model.FindEntityType(typeof(DataProtectionKey))!;
 
@@ -73,15 +73,15 @@ public sealed class IdentityPersistenceTests
         Assert.False(key.FindProperty(nameof(DataProtectionKey.Xml))!.IsNullable);
     }
 
-    private static MyrmexIdentityDbContext CreateDbContext()
+    private static IdentityDbContext CreateDbContext()
     {
-        DbContextOptions<MyrmexIdentityDbContext> options =
-            new DbContextOptionsBuilder<MyrmexIdentityDbContext>()
+        DbContextOptions<IdentityDbContext> options =
+            new DbContextOptionsBuilder<IdentityDbContext>()
                 .UseSqlServer(
                     "Server=localhost;Database=MyrmexIdentityModelTests;" +
                     "Trusted_Connection=True;TrustServerCertificate=True")
                 .Options;
 
-        return new MyrmexIdentityDbContext(options);
+        return new IdentityDbContext(options);
     }
 }

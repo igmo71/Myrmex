@@ -12,8 +12,8 @@ using System.Security.Claims;
 namespace Myrmex.Identity.Infrastructure.Sessions;
 
 public sealed class IdentityApiSessionTicketIssuer(
-    MyrmexIdentityDbContext dbContext,
-    SignInManager<MyrmexUser> signInManager,
+    IdentityDbContext dbContext,
+    SignInManager<AppUser> signInManager,
     IOptionsMonitor<CookieAuthenticationOptions> cookieOptions,
     TimeProvider timeProvider)
     : IIdentityApiSessionTicketIssuer
@@ -31,7 +31,7 @@ public sealed class IdentityApiSessionTicketIssuer(
             return null;
         }
 
-        MyrmexUser? user = await dbContext.Users
+        AppUser? user = await dbContext.Users
             .AsNoTracking()
             .SingleOrDefaultAsync(candidate => candidate.Id == userId, cancellationToken);
         if (user is null ||
