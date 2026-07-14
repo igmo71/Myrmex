@@ -16,6 +16,7 @@
 - Q: Must Issue #104 implement an operational replay mechanism for `Deferred` or `Failed` requests? -> A: No. The foundation preserves replay information, but replay endpoints, UI, scheduled replay, and administrative commands are deferred to later synchronization features.
 - Q: Does the first slice support one configured 1C infobase/API key or multiple simultaneously active source identities? -> A: One configured 1C source instance and one active API key; `SourceInstance` remains server-assigned, persisted, and part of idempotency for future support for multiple external source instances.
 - Q: Is automatic retention cleanup required in Issue #104? -> A: No. Completed, deferred, and failed requests are not automatically deleted; cleanup and archival are deferred until operational volume and support requirements are known.
+- Q: How is the active integration API key stored for the first slice? -> A: Keep the active integration API key only in application configuration; use disposable local development configuration for development, protected uncommitted deployment environment or `.env` configuration for production, and do not persist keys in application data.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -111,7 +112,7 @@ The integration foundation processes accepted synchronization requests through a
 - **FR-004**: The system MUST authorize notification intake through a dedicated `MyrmexAuthorizationPolicies.OneCIntegration` policy that does not require Identity roles or a GUID user `NameIdentifier`.
 - **FR-005**: Existing 1C connection-test and manual import operations MUST remain protected by the WMS operator policy and MUST NOT be changed to integration API-key authentication.
 - **FR-006**: The system MUST resolve `SourceSystem` and `SourceInstance` from server-side integration identity configuration and MUST NOT accept either value from the notification body.
-- **FR-007**: The first slice MUST support one configured 1C source instance and one active integration API key.
+- **FR-007**: The first slice MUST support one configured 1C source instance and one active integration API key; the active integration API key MUST be supplied only through application configuration and MUST NOT be persisted in application data.
 - **FR-008**: The receiving-order notification endpoint MUST be `POST /api/integrations/1c/receiving-orders/changed`.
 - **FR-009**: The shipping-order notification endpoint MUST be `POST /api/integrations/1c/shipping-orders/changed`.
 - **FR-010**: Notification request bodies MUST use the exact JSON field names `Ref_Key`, `DataVersion`, `Number`, and `Date`.
@@ -188,11 +189,12 @@ The integration foundation processes accepted synchronization requests through a
 - UI, administration pages, replay endpoints, replay UI, scheduled replay, and administrative replay commands are out of scope.
 - Automatic cleanup, archival, or deletion of completed, deferred, or failed synchronization requests is out of scope.
 - Simultaneous multi-infobase configuration, multiple active integration API keys, and key-rotation workflows are out of scope.
+- API-key hashing infrastructure is out of scope for the first slice.
 - A generalized ERP integration framework, universal external-link model, and WMS-owned integration queue are out of scope.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Integration Source Identity**: A configured machine identity representing the one active 1C source instance allowed to send notifications in the first slice; includes source system, source instance, and active API-key authorization material without exposing secrets.
+- **Integration Source Identity**: A configured machine identity representing the one active 1C source instance allowed to send notifications in the first slice; includes source system and source instance, while the active API key is supplied through application configuration and not persisted as application data.
 - **1C Change Notification**: A public contract sent by 1C when an external receiving or shipping object changes; contains external reference key, guaranteed source data version, and optional diagnostic document number and source date.
 - **Integration Synchronization Request**: A durable provider-neutral technical record of one external entity version that needs synchronization processing; includes source identity, entity type, external identity, version, diagnostic document values, trigger, lifecycle state, timestamps, attempts, retry timing, and last error.
 - **Synchronization Processor**: The operational worker that finds eligible synchronization requests, transitions lifecycle state, invokes registered document-specific handlers when available, defers unsupported work, retries transient failures, and recovers abandoned processing.
@@ -217,7 +219,9 @@ The integration foundation processes accepted synchronization requests through a
 
 - The current branch already represents issue 104 work; this specify step must not create, rename, switch, or delete branches.
 - The first external source is 1C only, but the generic synchronization request identity remains provider-neutral enough to support later providers or source instances without changing accepted records.
-- The active integration API key and source instance configuration are deployment-provided; creating UI or operational key-rotation workflows is deferred.
+- For development, the active integration API key is a disposable development-only key supplied through local development configuration.
+- For production, the active integration API key is supplied through protected deployment environment variables or uncommitted `.env` configuration and is not committed to the repository or included in the application image.
+- API-key hashing and key-rotation infrastructure are not required in the first slice.
 - Standard application secret-handling practices apply to integration API keys and external credentials.
 - Existing API error conventions apply to malformed notification contracts, authentication failures, and authorization failures.
 - Existing project testing patterns are sufficient to validate authentication policy behavior, notification contract binding, persistence idempotency, lifecycle transitions, and processor recovery without introducing new broad test frameworks.
