@@ -31,8 +31,5 @@
 
 ## Notes
 
-- Validation passed on the first review iteration.
+- Validation iteration 1: PASS. Exact endpoint paths, JSON field names, authentication scheme name, authorization policy name, lifecycle state names, idempotency key, duplicate-delivery behavior, replay deferral, first-slice source/API-key cardinality, and cleanup deferral are retained as externally visible contract and repository boundary requirements from the stakeholder input and existing issue clarifications.
 - No unresolved clarification markers remain.
-- Endpoint paths, header format, named scheme/policy, lifecycle states, idempotency key, and retry configuration expectations are included because they are explicit externally observable or accepted boundary decisions from the stakeholder document.
-- Repository placement details are captured as ownership and boundary requirements; lower-level implementation design remains for `/speckit-plan`.
-- Clarification pass on 2026-07-14 confirmed duplicate notification side effects, replay scope, first-slice source/API-key cardinality, and retention cleanup scope; checklist remains fully passing.
