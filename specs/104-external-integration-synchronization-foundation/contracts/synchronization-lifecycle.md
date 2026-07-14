@@ -47,7 +47,10 @@ validate
 |---------|------------------|
 | Registered handler completes | `Processing` -> `Completed` |
 | No document-specific handler registered | `Pending` -> `Deferred`; do not increment `AttemptCount`, do not set `ProcessingStartedAtUtc`, and do not consume a retry delay. |
+| Registered handler selected | `Pending` -> `Processing`; increment `AttemptCount`, set `ProcessingStartedAtUtc`, and commit before invoking the handler. |
 | Transient technical failure with retries remaining | attempt recorded, next retry scheduled |
+| Processing attempt exceeds `ProcessingAttemptTimeoutSeconds` | transient technical failure that follows configured retry policy |
+| Host-shutdown cancellation | leave the durable record `Processing`; do not mark failed and do not schedule a normal handler retry |
 | Retry delays exhausted | `Processing` -> `Failed` |
 | Permanent validation or processing error | `Processing` -> `Failed` |
 
@@ -75,7 +78,11 @@ The first slice uses explicit retry delays in seconds. Preliminary configuration
 
 ## Abandoned Processing Recovery
 
-A request left in `Processing` beyond `ProcessingTimeoutSeconds` becomes eligible for recovery according to retry rules. This covers work left behind by application failure or restart.
+A request left in `Processing` beyond `ProcessingTimeoutSeconds` becomes eligible for recovery according to retry rules. This covers work left behind by application failure, restart, or host-shutdown cancellation.
+
+- The abandoned attempt remains included in `AttemptCount`.
+- If retry opportunities remain, transition to `Pending`, clear `ProcessingStartedAtUtc`, record bounded non-secret `LastError`, and make the request immediately eligible after recovery.
+- If retry opportunities are exhausted, transition to `Failed` and record bounded non-secret `LastError`.
 
 ## Duplicate Receipt
 
@@ -91,4 +98,4 @@ Duplicate HTTP notification receipt must not alter the existing lifecycle state.
 
 Duplicate receipt never schedules retry, resets attempts, clears errors, restarts processing, transitions status, or acts as replay/repair.
 
-Duplicate handling first verifies a SQL Server duplicate-key error category, then verifies the failure identifies `UX_integration_synchronization_requests_idempotency`. Unrelated persistence failures remain failures and must not return empty `202 Accepted` as though they were duplicates.
+Duplicate handling first verifies a SQL Server duplicate-key error category, then verifies the failure identifies `UX_integration_synchronization_requests_idempotency`. When duplicate insertion causes `SaveChanges` to fail, the failed `Added` entity must be detached or otherwise cleared from EF tracking before loading the existing record, and the failed insert must not be retried. Unrelated persistence failures remain failures and must not return empty `202 Accepted` as though they were duplicates.

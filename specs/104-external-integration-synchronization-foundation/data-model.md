@@ -87,7 +87,7 @@ ExternalId nvarchar(128) = 256 bytes
 ExternalDataVersion varbinary(128) = 128 bytes
 ```
 
-Only violations of the named idempotency unique constraint are handled as duplicate notification intake. Duplicate handling first verifies a SQL Server duplicate-key error category, then verifies the failure identifies `UX_integration_synchronization_requests_idempotency`. Other persistence failures remain failures and must not return successful duplicate responses.
+Only violations of the named idempotency unique constraint are handled as duplicate notification intake. Duplicate handling first verifies a SQL Server duplicate-key error category, then verifies the failure identifies `UX_integration_synchronization_requests_idempotency`. When `SaveChanges` fails from that duplicate insert, the failed `Added` entity must be detached or otherwise cleared from EF tracking before loading the existing record; the failed insert is not retried. Other persistence failures remain failures and must not return successful duplicate responses.
 
 ### Table and Index Names
 
@@ -138,6 +138,12 @@ Operational worker that discovers eligible requests and drives lifecycle transit
 - Recover abandoned `Processing` records after the configured processing timeout.
 - Resolve whether a document-specific handler exists before transitioning to `Processing`.
 - When no handler exists, transition directly from `Pending` to `Deferred`, do not increment `AttemptCount`, do not set `ProcessingStartedAtUtc`, and do not consume a retry delay.
+- When a handler exists, transition `Pending` to `Processing`, increment `AttemptCount`, set `ProcessingStartedAtUtc`, and durably commit those values before invoking the handler.
+- `ProcessingAttemptTimeoutSeconds` is treated as a transient processing failure and follows the configured retry policy.
+- Host-shutdown cancellation does not mark the request failed and does not schedule a normal handler retry; the durable record remains `Processing` for abandoned-processing recovery.
+- Abandoned `Processing` recovery keeps the abandoned attempt included in `AttemptCount`.
+- If retry opportunities remain during abandoned `Processing` recovery, transition the request to `Pending`, clear `ProcessingStartedAtUtc`, record bounded non-secret `LastError`, and make the request immediately eligible.
+- If retry opportunities are exhausted during abandoned `Processing` recovery, transition the request to `Failed` and record bounded non-secret `LastError`.
 - For transient technical failures, record attempt/error and schedule the next attempt from configured retry delays.
 - For permanent failures or exhausted retries, mark `Failed`.
 

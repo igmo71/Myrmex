@@ -115,4 +115,4 @@ Duplicate receipt:
 - may send only a best-effort wake-up signal when the existing request is `Pending`;
 - does not act as replay, repair, or retry reset.
 
-The database unique constraint is authoritative. Duplicate handling first verifies a SQL Server duplicate-key error category, then verifies the failure identifies `UX_integration_synchronization_requests_idempotency`. No other persistence failure is treated as successful duplicate intake.
+The database unique constraint is authoritative. Duplicate handling first verifies a SQL Server duplicate-key error category, then verifies the failure identifies `UX_integration_synchronization_requests_idempotency`. After a duplicate insert failure, the failed `Added` entity is detached or otherwise cleared from EF tracking before the existing record is loaded, and the failed insert is not retried. No other persistence failure is treated as successful duplicate intake.

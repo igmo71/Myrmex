@@ -60,7 +60,7 @@
 
 ## Decision: SQL uniqueness enforces idempotent intake
 
-**Decision**: Enforce uniqueness over `SourceSystem`, `SourceInstance`, `EntityType`, `ExternalId`, and `ExternalDataVersion`; handle concurrent duplicate HTTP requests by preserving one durable synchronization request and returning empty `202 Accepted` for duplicates. Duplicate handling first verifies a SQL Server duplicate-key error category, then verifies the failure identifies `UX_integration_synchronization_requests_idempotency`. Unrelated persistence failures remain failures and are not converted to success.
+**Decision**: Enforce uniqueness over `SourceSystem`, `SourceInstance`, `EntityType`, `ExternalId`, and `ExternalDataVersion`; handle concurrent duplicate HTTP requests by preserving one durable synchronization request and returning empty `202 Accepted` for duplicates. Duplicate handling first verifies a SQL Server duplicate-key error category, then verifies the failure identifies `UX_integration_synchronization_requests_idempotency`. After a duplicate insert failure, the failed `Added` entity is detached or otherwise cleared from EF tracking before loading the existing record, and the failed insert is not retried. Unrelated persistence failures remain failures and are not converted to success.
 
 **Rationale**: The database uniqueness constraint is the durable idempotency boundary. It prevents duplicates even when duplicate requests arrive concurrently and avoids relying on in-memory coordination.
 
@@ -93,7 +93,7 @@
 
 ## Decision: Retry attempts derive from explicit delay collection
 
-**Decision**: Configure polling interval, batch size, processing-attempt timeout, processing timeout, and explicit retry delays in seconds. `AttemptCount` increments when a processing attempt starts; the first attempt has `AttemptCount = 1`. `N` configured retry delays permit `N + 1` total processing attempts. After attempt 1 fails transiently, `RetryDelaysSeconds[0]` determines the next eligibility time. `Deferred` unsupported-handler outcomes do not consume retry delays.
+**Decision**: Configure polling interval, batch size, processing-attempt timeout, processing timeout, and explicit retry delays in seconds. `AttemptCount` increments when a processing attempt starts; the first attempt has `AttemptCount = 1`. The processor durably commits the `Pending` to `Processing` transition, incremented `AttemptCount`, and `ProcessingStartedAtUtc` before invoking a handler. `N` configured retry delays permit `N + 1` total processing attempts. After attempt 1 fails transiently, `RetryDelaysSeconds[0]` determines the next eligibility time. `ProcessingAttemptTimeoutSeconds` is a transient failure and follows the configured retry policy. Host-shutdown cancellation leaves the durable record `Processing` for abandoned-processing recovery and does not schedule a normal handler retry. `Deferred` unsupported-handler outcomes do not consume retry delays.
 
 **Rationale**: Explicit delays are operationally transparent and avoid contradictory retry-count and delay settings. The behavior remains understandable for support and tests.
 

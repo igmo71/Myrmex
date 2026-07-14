@@ -78,6 +78,8 @@ If migration work is explicitly requested later, generate and apply integration 
 6. Simulate transient and permanent failures.
 7. Verify retry schedule, exhausted retries, and terminal `Failed` behavior.
 8. Verify `AttemptCount` increments when an attempt starts, the first attempt is `1`, `N` retry delays allow `N + 1` attempts, and `Deferred` outcomes do not consume retry delays.
+9. Verify the `Pending` to `Processing` transition, incremented `AttemptCount`, and `ProcessingStartedAtUtc` are committed before handler invocation.
+10. Verify `ProcessingAttemptTimeoutSeconds` is treated as a transient failure, while host-shutdown cancellation leaves the durable record `Processing` for abandoned recovery without scheduling a normal handler retry.
 
 ## Scenario 6: Wake-Up and Restart Recovery
 
@@ -87,14 +89,17 @@ If migration work is explicitly requested later, generate and apply integration 
 4. Verify additional wake-up writes are dropped/coalesced without losing SQL-backed work.
 5. Verify the processor drains eligible SQL batches until no immediately eligible work remains after a wake-up.
 6. Leave a request in `Processing` and restart the application after the processing timeout.
-7. Verify the request becomes eligible for recovery according to retry rules.
+7. Verify the abandoned attempt remains included in `AttemptCount`.
+8. Verify the request returns to immediately eligible `Pending` with `ProcessingStartedAtUtc` cleared when retry opportunities remain.
+9. Verify the request becomes `Failed` with bounded non-secret `LastError` when retry opportunities are exhausted.
 
 ## Scenario 7: Concurrent Duplicate Intake
 
 1. Send duplicate HTTP notifications for the same source/version concurrently.
 2. Verify the database unique constraint is authoritative and only one synchronization request exists.
 3. Verify only SQL Server duplicate-key failures that identify `UX_integration_synchronization_requests_idempotency` are treated as duplicate intake.
-4. Verify unrelated persistence failures are surfaced as failures and are not returned as successful duplicates.
+4. Verify the failed Added entity is detached or otherwise cleared from EF tracking before loading the existing record and the failed insert is not retried.
+5. Verify unrelated persistence failures are surfaced as failures and are not returned as successful duplicates.
 
 ## Expected Artifacts
 
