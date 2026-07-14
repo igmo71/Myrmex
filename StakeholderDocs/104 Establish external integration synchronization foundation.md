@@ -65,6 +65,8 @@ Authorization: ApiKey <secret>
 * Preserve the existing Identity API-session cookie as the default authentication scheme.
 * Do not require Identity roles or a GUID `NameIdentifier` for the 1C machine principal.
 * Do not change existing administrative 1C endpoints to ApiKey authentication.
+* Resolve `SourceSystem` and `SourceInstance` server-side from the configured integration identity; do not accept them from the notification body.
+* The first slice supports one configured 1C source instance and one active API key.
 * Split routing so that:
 
   * current connection-test and manual import endpoints remain protected by `WmsOperator`;
@@ -122,7 +124,6 @@ CompletedAtUtc?
 AttemptCount
 NextAttemptAtUtc?
 LastError?
-ConcurrencyStamp
 ```
 
 Use stable internal `EntityType` values such as:
@@ -144,9 +145,11 @@ SourceSystem
 + ExternalDataVersion
 ```
 
-The first source instance may represent the current 1C infobase, but the model must not assume that only one infobase will ever exist.
+The first slice supports one configured 1C source instance and one active API key.
 
-Use an application-managed concurrency token rather than SQL Server-specific `rowversion`.
+`SourceInstance` is assigned by Myrmex from server-side configuration, persisted on every accepted synchronization request, and included in the idempotency key. It is never accepted from the notification body.
+
+The persistence model should remain compatible with future support for more than one 1C infobase, but simultaneous multi-infobase configuration, multiple active API keys, and key-rotation workflows are outside Issue #104.
 
 ## Processor lifecycle
 
@@ -165,7 +168,7 @@ Reserve `Superseded` as a possible later extension rather than requiring its imp
 Semantics:
 
 * `Pending`: eligible for processing now or after `NextAttemptAtUtc`.
-* `Processing`: claimed by one processor instance.
+* `Processing`: currently being processed by the background synchronization processor.
 * `Deferred`: the infrastructure processed the request but no document-specific handler is registered; the request remains replayable.
 * `Completed`: a registered handler completed successfully.
 * `Failed`: terminal technical failure after configured retries or a permanent contract/processing error.
@@ -191,9 +194,7 @@ validate
 * Scan immediately on application startup.
 * Use configurable fallback polling in seconds, with a preliminary default of 60 seconds.
 * Process available records in configurable batches.
-* Recover abandoned `Processing` records after a configurable processing timeout.
-* Support safe claims when multiple application instances are running.
-* Keep the claim implementation provider-neutral.
+* Recover abandoned `Processing` records after a configurable processing timeout, including records left behind by application failure or restart.
 
 ## Retry configuration
 
@@ -220,6 +221,9 @@ Differentiate transient technical failures from permanent validation or unsuppor
 * Return an empty `202 Accepted` only after durable commit.
 * Duplicate notification of the same external version also returns empty `202 Accepted`.
 * Do not expose whether the request was newly inserted or already existed.
+* Duplicate receipt preserves the existing request lifecycle state.
+* A duplicate of a `Pending` request may send only a best-effort wake-up signal.
+* Duplicate receipt must not schedule retry, reset attempts or errors, restart processing, transition status, or act as implicit replay or repair.
 * Authentication and malformed-contract failures must not return `202`.
 
 ## Scope boundaries
@@ -236,7 +240,12 @@ The first issue must not implement:
 * RabbitMQ;
 * an Outbox for outbound operations;
 * UI or administration pages;
+* replay endpoints, replay UI, scheduled replay, or administrative replay commands;
+* automatic cleanup, archival, or deletion of `Completed`, `Deferred`, or `Failed` synchronization requests;
+* simultaneous multi-infobase configuration, multiple active integration API keys, or key-rotation management;
 * a generalized ERP integration framework.
+
+The first slice must preserve enough synchronization-request information for later controlled replay, but it does not implement replay itself.
 
 ## Required stakeholder-document result
 
@@ -251,7 +260,7 @@ The document must include:
 7. Persistence model and idempotency rules.
 8. Processor state machine.
 9. Channel, polling, retry, and crash-recovery behavior.
-10. Multi-instance claim requirements.
+10. Duplicate-delivery behavior and lifecycle preservation.
 11. Explicit non-goals.
 12. Remaining research questions that genuinely cannot be resolved from the repository.
 
