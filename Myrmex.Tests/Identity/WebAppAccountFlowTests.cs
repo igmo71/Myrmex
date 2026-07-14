@@ -29,7 +29,7 @@ public sealed class WebAppAccountFlowTests
         AntiforgeryPayload antiforgery = await app.GetAntiforgeryAsync(client);
 
         using HttpResponseMessage login = await client.PostAsync(
-            "/account/login",
+            "/account/login-submit",
             CreateLoginForm(antiforgery, user.Email!, Password, "/protected"),
             TestContext.Current.CancellationToken);
         using HttpResponseMessage protectedResponse = await client.GetAsync(
@@ -53,7 +53,7 @@ public sealed class WebAppAccountFlowTests
         AntiforgeryPayload antiforgery = await app.GetAntiforgeryAsync(client);
 
         using HttpResponseMessage login = await client.PostAsync(
-            "/account/login",
+            "/account/login-submit",
             CreateLoginForm(antiforgery, user.Email!, "wrong-password", "/protected"),
             TestContext.Current.CancellationToken);
         using HttpResponseMessage protectedResponse = await client.GetAsync(
@@ -84,7 +84,7 @@ public sealed class WebAppAccountFlowTests
         AntiforgeryPayload antiforgery = await app.GetAntiforgeryAsync(client);
 
         using HttpResponseMessage login = await client.PostAsync(
-            "/account/login",
+            "/account/login-submit",
             CreateLoginForm(
                 antiforgery,
                 user.Email!,
@@ -105,14 +105,14 @@ public sealed class WebAppAccountFlowTests
         AntiforgeryPayload loginAntiforgery = await app.GetAntiforgeryAsync(client);
 
         using HttpResponseMessage login = await client.PostAsync(
-            "/account/login",
+            "/account/login-submit",
             CreateLoginForm(loginAntiforgery, user.Email!, Password, "/protected"),
             TestContext.Current.CancellationToken);
         login.EnsureSuccessOrRedirect();
 
         AntiforgeryPayload logoutAntiforgery = await app.GetAntiforgeryAsync(client);
         using HttpResponseMessage logout = await client.PostAsync(
-            "/account/logout",
+            "/account/logout-submit",
             CreateLogoutForm(logoutAntiforgery, "/"),
             TestContext.Current.CancellationToken);
         using HttpResponseMessage protectedResponse = await client.GetAsync(

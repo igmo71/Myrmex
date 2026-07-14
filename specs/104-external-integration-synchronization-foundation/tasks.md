@@ -12,9 +12,9 @@
 
 **Purpose**: Prepare integration feature structure without changing behavior.
 
-- [ ] T001 Create integration synchronization folder structure in Myrmex.Integrations\Synchronization and Myrmex.Tests\Integrations\OneC\Synchronization
-- [ ] T002 [P] Create placeholder configuration files in Myrmex.Integrations\OneC\Configuration\OneCIntegrationApiKeyOptions.cs and Myrmex.Integrations\Synchronization\IntegrationSynchronizationOptions.cs
-- [ ] T003 [P] Create placeholder test fixture file in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationTestHost.cs
+- [X] T001 Create integration synchronization folder structure in Myrmex.Integrations\Synchronization and Myrmex.Tests\Integrations\OneC\Synchronization
+- [X] T002 [P] Create placeholder configuration files in Myrmex.Integrations\OneC\Configuration\OneCIntegrationApiKeyOptions.cs and Myrmex.Integrations\Synchronization\IntegrationSynchronizationOptions.cs
+- [X] T003 [P] Create placeholder test fixture file in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationTestHost.cs
 
 ---
 
@@ -24,24 +24,24 @@
 
 **Critical**: No user story implementation can start until these tasks are complete. Migration-dependent SQL tests must wait until the developer confirms the integration migration is ready.
 
-- [ ] T004 Define Myrmex.IntegrationApiKey in Myrmex.AspNetCore\Security\MyrmexAuthenticationSchemes.cs
-- [ ] T005 Define MyrmexAuthorizationPolicies.OneCIntegration policy hook in Myrmex.AspNetCore\Security\MyrmexAuthorizationPolicies.cs
-- [ ] T006 Implement OneCIntegrationApiKeyOptions with bounded SourceSystem, bounded SourceInstance, plaintext key, and startup validation in Myrmex.Integrations\OneC\Configuration\OneCIntegrationApiKeyOptions.cs
-- [ ] T007 Implement IntegrationSynchronizationOptions with PollingIntervalSeconds, BatchSize, ProcessingAttemptTimeoutSeconds, ProcessingTimeoutSeconds, RetryDelaysSeconds, and non-positive/empty-delay validation in Myrmex.Integrations\Synchronization\IntegrationSynchronizationOptions.cs
-- [ ] T008 [P] Create IntegrationSynchronizationStatus enum in Myrmex.Integrations\Synchronization\IntegrationSynchronizationStatus.cs
-- [ ] T009 [P] Create IntegrationSynchronizationEntityType constants in Myrmex.Integrations\Synchronization\IntegrationSynchronizationEntityTypes.cs
-- [ ] T010 [P] Create IntegrationSynchronizationTrigger constants in Myrmex.Integrations\Synchronization\IntegrationSynchronizationTriggers.cs
-- [ ] T011 Create IntegrationSynchronizationRequest entity with bounded properties in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequest.cs
-- [ ] T012 Configure IntegrationSynchronizationRequest table integration.synchronization_requests, PK name, column types, and UX_integration_synchronization_requests_idempotency in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestConfiguration.cs
-- [ ] T013 Create IntegrationDbContext with integration default schema in Myrmex.Integrations\Synchronization\IntegrationDbContext.cs
-- [ ] T014 Implement IntegrationApiKeyAuthenticationHandler with constant-time plaintext comparison, no key claims, and no key exposure in diagnostics in Myrmex.Integrations\OneC\Security\IntegrationApiKeyAuthenticationHandler.cs
-- [ ] T015 Register Myrmex.IntegrationApiKey named scheme without changing the default Myrmex.ApiSession scheme and configure MyrmexAuthorizationPolicies.OneCIntegration to require only that scheme in Myrmex.Integrations\OneC\OneCIntegrationModule.cs and Myrmex.AspNetCore\Security\MyrmexAuthorizationPolicies.cs
-- [ ] T016 Register IntegrationDbContext, synchronization options, TimeProvider, authentication services, synchronization services, and the IntegrationDbContext persistence reachability check in the existing health-check pipeline in Myrmex.Integrations\OneC\OneCIntegrationModule.cs
+- [X] T004 Define Myrmex.IntegrationApiKey in Myrmex.AspNetCore\Security\MyrmexAuthenticationSchemes.cs
+- [X] T005 Define MyrmexAuthorizationPolicies.OneCIntegration policy hook in Myrmex.AspNetCore\Security\MyrmexAuthorizationPolicies.cs
+- [X] T006 Implement OneCIntegrationApiKeyOptions with bounded SourceSystem, bounded SourceInstance, plaintext key, and startup validation in Myrmex.Integrations\OneC\Configuration\OneCIntegrationApiKeyOptions.cs
+- [X] T007 Implement IntegrationSynchronizationOptions with PollingIntervalSeconds, BatchSize, ProcessingAttemptTimeoutSeconds, ProcessingTimeoutSeconds, RetryDelaysSeconds, and non-positive/empty-delay validation in Myrmex.Integrations\Synchronization\IntegrationSynchronizationOptions.cs
+- [X] T008 [P] Create IntegrationSynchronizationStatus enum in Myrmex.Integrations\Synchronization\IntegrationSynchronizationStatus.cs
+- [X] T009 [P] Create IntegrationSynchronizationEntityType constants in Myrmex.Integrations\Synchronization\IntegrationSynchronizationEntityTypes.cs
+- [X] T010 [P] Create IntegrationSynchronizationTrigger constants in Myrmex.Integrations\Synchronization\IntegrationSynchronizationTriggers.cs
+- [X] T011 Create IntegrationSynchronizationRequest entity with bounded properties in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequest.cs
+- [X] T012 Configure IntegrationSynchronizationRequest table integration.synchronization_requests, PK name, column types, and UX_integration_synchronization_requests_idempotency in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestConfiguration.cs
+- [X] T013 Create IntegrationDbContext with integration default schema in Myrmex.Integrations\Synchronization\IntegrationDbContext.cs
+- [X] T014 Implement IntegrationApiKeyAuthenticationHandler with constant-time plaintext comparison, no key claims, and no key exposure in diagnostics in Myrmex.Integrations\OneC\Security\IntegrationApiKeyAuthenticationHandler.cs
+- [X] T015 Register Myrmex.IntegrationApiKey named scheme without changing the default Myrmex.ApiSession scheme and configure MyrmexAuthorizationPolicies.OneCIntegration to require only that scheme in Myrmex.Integrations\OneC\OneCIntegrationModule.cs and Myrmex.AspNetCore\Security\MyrmexAuthorizationPolicies.cs
+- [X] T016 Register IntegrationDbContext, synchronization options, TimeProvider, authentication services, synchronization services, and the IntegrationDbContext persistence reachability check in the existing health-check pipeline in Myrmex.Integrations\OneC\OneCIntegrationModule.cs
 - [ ] T017 Developer-controlled migration checkpoint: developer generates, reviews, and applies the IntegrationDbContext migration in Myrmex.Integrations\Migrations; the agent must not generate or apply it, and migration-dependent SQL tests wait for developer confirmation
-- [ ] T018 Create SQL Server duplicate-key classifier for UX_integration_synchronization_requests_idempotency in Myrmex.Integrations\Synchronization\SqlServerDuplicateSynchronizationRequestDetector.cs
-- [ ] T019 Create IntegrationSynchronizationWakeUpSignal with bounded capacity 1, DropWrite, many signal writers, one reader, and no request payload in Myrmex.Integrations\Synchronization\IntegrationSynchronizationWakeUpSignal.cs
-- [ ] T020 [P] Add persistence mapping tests for bounded SQL column types and named unique index in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationPersistenceTests.cs
-- [ ] T021 [P] Add options validation tests for missing/empty API key, empty and over-length SourceSystem, empty and over-length SourceInstance, non-positive polling/batch/timeout values, non-positive retry-delay elements, and valid empty RetryDelaysSeconds allowing one attempt with no retries in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationOptionsTests.cs
+- [X] T018 Create SQL Server duplicate-key classifier for UX_integration_synchronization_requests_idempotency in Myrmex.Integrations\Synchronization\SqlServerDuplicateSynchronizationRequestDetector.cs
+- [X] T019 Create IntegrationSynchronizationWakeUpSignal with bounded capacity 1, DropWrite, many signal writers, one reader, and no request payload in Myrmex.Integrations\Synchronization\IntegrationSynchronizationWakeUpSignal.cs
+- [X] T020 [P] Add persistence mapping tests for bounded SQL column types and named unique index in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationPersistenceTests.cs
+- [X] T021 [P] Add options validation tests for missing/empty API key, empty and over-length SourceSystem, empty and over-length SourceInstance, non-positive polling/batch/timeout values, non-positive retry-delay elements, and valid empty RetryDelaysSeconds allowing one attempt with no retries in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationOptionsTests.cs
 
 **Checkpoint**: Integration authentication, persistence, configuration, wake-up signaling, and constants are ready for story work after the developer-controlled migration checkpoint is satisfied.
 

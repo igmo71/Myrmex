@@ -10,6 +10,8 @@ public static class MyrmexAuthorizationPolicies
 
     public const string MyrmexAdmin = IdentityRoleNames.MyrmexAdmin;
 
+    public const string OneCIntegration = "OneCIntegration";
+
     public static void ConfigureWmsOperator(AuthorizationPolicyBuilder policy)
     {
         ArgumentNullException.ThrowIfNull(policy);
@@ -28,6 +30,14 @@ public static class MyrmexAuthorizationPolicies
         policy.RequireAuthenticatedUser();
         policy.RequireAssertion(context => HasStableIdentityUserId(context.User));
         policy.RequireRole(IdentityRoleNames.MyrmexAdmin);
+    }
+
+    public static void ConfigureOneCIntegration(AuthorizationPolicyBuilder policy)
+    {
+        ArgumentNullException.ThrowIfNull(policy);
+
+        policy.AddAuthenticationSchemes(MyrmexAuthenticationSchemes.IntegrationApiKey);
+        policy.RequireAuthenticatedUser();
     }
 
     private static bool HasStableIdentityUserId(ClaimsPrincipal principal)
