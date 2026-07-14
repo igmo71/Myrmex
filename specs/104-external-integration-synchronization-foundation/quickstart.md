@@ -14,7 +14,7 @@ This guide describes developer-controlled validation for the planned feature. Do
 Run only when the developer is ready:
 
 ```powershell
-dotnet build XMS.slnx -nologo -v:minimal
+dotnet build Myrmex.slnx -nologo -v:minimal
 dotnet test Myrmex.Tests\Myrmex.Tests.csproj --filter "FullyQualifiedName~Integrations"
 ```
 
@@ -51,7 +51,7 @@ If migration work is explicitly requested later, generate and apply integration 
 
 ## Scenario 3: Contract Validation Failure
 
-1. Send a notification with invalid Base64 `DataVersion`.
+1. Send a notification with invalid Base64 `DataVersion`, an empty decoded `DataVersion`, an oversized decoded `DataVersion`, an invalid `Ref_Key`, an over-length `Number`, and a malformed `Date`.
 2. Expect a non-`202` validation response.
 3. Verify no synchronization request is created.
 
@@ -59,10 +59,14 @@ If migration work is explicitly requested later, generate and apply integration 
 
 1. Call a notification endpoint with no API key or a wrong API key.
 2. Expect authentication/authorization failure and no synchronization request.
-3. Call `/api/integrations/1c/connection/test` with the integration API key.
-4. Expect the existing WMS operator route to reject the machine credential.
-5. Call the same connection-test endpoint with an eligible WMS operator or administrator API session.
-6. Expect the existing route behavior to remain intact.
+3. Call a notification endpoint with only an Identity API-session cookie.
+4. Expect `OneCIntegration` authorization to reject it.
+5. Start with missing or empty configured API-key values.
+6. Expect startup options validation failure.
+7. Call `/api/integrations/1c/connection/test` with the integration API key.
+8. Expect the existing WMS operator route to reject the machine credential.
+9. Call the same connection-test endpoint with an eligible WMS operator or administrator API session.
+10. Expect the existing route behavior to remain intact.
 
 ## Scenario 5: Processor Lifecycle
 
@@ -73,13 +77,24 @@ If migration work is explicitly requested later, generate and apply integration 
 5. Verify the request becomes `Completed` and records completion time.
 6. Simulate transient and permanent failures.
 7. Verify retry schedule, exhausted retries, and terminal `Failed` behavior.
+8. Verify `AttemptCount` increments when an attempt starts, the first attempt is `1`, `N` retry delays allow `N + 1` attempts, and `Deferred` outcomes do not consume retry delays.
 
 ## Scenario 6: Wake-Up and Restart Recovery
 
 1. Accept a notification and suppress or ignore the wake-up signal.
 2. Verify fallback SQL polling still discovers the request within one polling interval.
-3. Leave a request in `Processing` and restart the application after the processing timeout.
-4. Verify the request becomes eligible for recovery according to retry rules.
+3. Fill the bounded capacity-1 wake-up channel.
+4. Verify additional wake-up writes are dropped/coalesced without losing SQL-backed work.
+5. Verify the processor drains eligible SQL batches until no immediately eligible work remains after a wake-up.
+6. Leave a request in `Processing` and restart the application after the processing timeout.
+7. Verify the request becomes eligible for recovery according to retry rules.
+
+## Scenario 7: Concurrent Duplicate Intake
+
+1. Send duplicate HTTP notifications for the same source/version concurrently.
+2. Verify the database unique constraint is authoritative and only one synchronization request exists.
+3. Verify only violation of the named idempotency unique constraint is treated as duplicate intake.
+4. Verify unrelated persistence failures are surfaced as failures and are not returned as successful duplicates.
 
 ## Expected Artifacts
 

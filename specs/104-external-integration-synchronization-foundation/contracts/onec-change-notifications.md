@@ -10,9 +10,16 @@ Authorization: ApiKey <secret>
 
 - Scheme name: `Myrmex.IntegrationApiKey`.
 - Authorization policy: `MyrmexAuthorizationPolicies.OneCIntegration`.
+- `OneCIntegration` authenticates only through `Myrmex.IntegrationApiKey`.
+- An Identity API-session cookie alone cannot satisfy `OneCIntegration`.
+- Registering `Myrmex.IntegrationApiKey` must not change the existing default authentication scheme.
 - The caller is a machine identity, not an ASP.NET Identity user.
 - The principal does not require Identity roles or a GUID `NameIdentifier`.
 - The active API key is read from application configuration and is not persisted in application data.
+- Missing or empty configured API-key values fail startup options validation.
+- The presented plaintext key is compared with the configured plaintext key using constant-time comparison.
+- The key is not logged, persisted, placed in claims, or exposed in errors.
+- API-key hashing and key-rotation infrastructure are not introduced in the first slice.
 
 ## Receiving Order Changed
 
@@ -37,10 +44,12 @@ Content-Type: application/json
 
 | Field | Required | Meaning |
 |-------|----------|---------|
-| `Ref_Key` | Yes | External 1C object identifier. |
-| `DataVersion` | Yes | Base64 source version marker used for idempotency and version tracking. |
-| `Number` | No | Diagnostic external document number. |
-| `Date` | No | Diagnostic source document date without source offset. |
+| `Ref_Key` | Yes | External 1C object identifier; must be a valid non-empty GUID. |
+| `DataVersion` | Yes | Base64 source version marker used for idempotency and version tracking; decoded value must be non-empty and no larger than 128 bytes. |
+| `Number` | No | Diagnostic external document number; maximum 64 characters. |
+| `Date` | No | Diagnostic source document date without source offset; malformed values are rejected. |
+
+Exact JSON names are canonical contract names enforced through explicit JSON property mapping for this contract. Do not change global ApiService JSON case-sensitivity. Unknown JSON properties are ignored.
 
 ### Accepted Response
 
@@ -68,9 +77,10 @@ The endpoint must not return `202 Accepted` when:
 - Authentication is missing or invalid.
 - Authorization fails.
 - The body is malformed JSON.
-- `Ref_Key` is missing.
-- `DataVersion` is missing.
-- `DataVersion` is not valid Base64.
+- `Ref_Key` is missing, empty, or not a valid non-empty GUID.
+- `DataVersion` is missing, empty, not valid Base64, decodes to an empty value, or exceeds 128 decoded bytes.
+- `Number` exceeds 64 characters.
+- `Date` is malformed.
 
 Validation failures use the repository's normal ProblemDetails-style response behavior and must not expose configured API keys or external credentials.
 
@@ -92,7 +102,7 @@ Accepted notification idempotency uses:
 SourceSystem
 + SourceInstance
 + EntityType
-+ Ref_Key
++ canonical Ref_Key GUID string
 + decoded DataVersion
 ```
 
@@ -102,3 +112,5 @@ Duplicate receipt:
 - preserves lifecycle state, attempts, retry timing, timestamps, and last error;
 - may send only a best-effort wake-up signal when the existing request is `Pending`;
 - does not act as replay, repair, or retry reset.
+
+The database unique constraint is authoritative. Only violation of the named idempotency unique constraint is handled as a duplicate; unrelated persistence failures must not be treated as successful duplicates.

@@ -25,9 +25,9 @@
 
 ## Decision: Add a named API-key authentication scheme without changing the default API session scheme
 
-**Decision**: Add `Myrmex.IntegrationApiKey` as a named authentication scheme and `MyrmexAuthorizationPolicies.OneCIntegration` as a dedicated policy for notification endpoints only. Preserve `Myrmex.ApiSession` as the ApiService default authentication scheme.
+**Decision**: Add `Myrmex.IntegrationApiKey` as a named authentication scheme and `MyrmexAuthorizationPolicies.OneCIntegration` as a dedicated policy for notification endpoints only. The policy authenticates only through `Myrmex.IntegrationApiKey`; an Identity API-session cookie alone cannot satisfy it. Preserve `Myrmex.ApiSession` as the ApiService default authentication scheme.
 
-**Rationale**: The external caller is a machine identity and must not be forced into ASP.NET Identity roles or GUID user identifiers. Existing 1C administrative routes remain user-operated and protected by the WMS operator policy.
+**Rationale**: The external caller is a machine identity and must not be forced into ASP.NET Identity roles or GUID user identifiers. Existing 1C administrative routes remain user-operated and protected by the WMS operator policy. Registering the named scheme must not change default authentication behavior for current endpoints.
 
 **Alternatives considered**:
 
@@ -37,9 +37,9 @@
 
 ## Decision: Configuration-only active API key for the first slice
 
-**Decision**: Supply the one active integration API key through application configuration only. Use a disposable local development key for development, protected uncommitted environment or `.env` configuration for production, and do not persist the key in application data.
+**Decision**: Supply the one active integration API key through application configuration only. Use a disposable local development key for development, protected uncommitted environment or `.env` configuration for production, and do not persist the key in application data. Missing or empty configured API-key values fail startup options validation. Compare the presented plaintext key with the configured plaintext key using constant-time comparison. Do not log, persist, place in claims, or expose the key in errors.
 
-**Rationale**: This matches the clarified first-slice security posture while avoiding premature key-rotation or key-hashing infrastructure. It keeps production secrets out of source control and application images.
+**Rationale**: This matches the clarified first-slice security posture while avoiding premature key-rotation or key-hashing infrastructure. It keeps production secrets out of source control and application images. Constant-time comparison avoids key length/content timing leaks within the chosen plaintext-configuration model.
 
 **Alternatives considered**:
 
@@ -47,9 +47,20 @@
 - Persist plaintext key material: rejected because the active key must not be stored as application data.
 - Build key rotation workflows now: rejected because key rotation is out of scope.
 
+## Decision: Bounded idempotency columns use canonical strings plus binary source version
+
+**Decision**: Store `ExternalId` as a canonical bounded string, not as a database `uniqueidentifier`. For 1C, validate `Ref_Key` as a non-empty GUID and store its canonical `D` string form. Use bounded SQL Server column sizes for the unique index: `SourceSystem nvarchar(32)`, `SourceInstance nvarchar(128)`, `EntityType nvarchar(32)`, `ExternalId nvarchar(128)`, and `ExternalDataVersion varbinary(128)`. Bound `ExternalDocumentNumber` as `nvarchar(64)` and `LastError` as `nvarchar(2048)`.
+
+**Rationale**: 1C supplies GUID identifiers in the first slice, but the synchronization request is provider-neutral and later external systems may not use GUID identifiers. Canonical strings preserve provider-neutrality while first-slice validation still rejects invalid 1C references. The composite unique key is physically valid on SQL Server: the bounded key columns require at most 768 bytes, below the 1700-byte nonclustered index key limit.
+
+**Alternatives considered**:
+
+- Store `ExternalId` as `uniqueidentifier`: rejected because it overfits the first 1C provider and weakens future provider-neutral persistence.
+- Leave key fields unbounded: rejected because SQL Server cannot reliably enforce a physically valid composite unique index over unbounded strings/binary values.
+
 ## Decision: SQL uniqueness enforces idempotent intake
 
-**Decision**: Enforce uniqueness over `SourceSystem`, `SourceInstance`, `EntityType`, `ExternalId`, and `ExternalDataVersion`; handle concurrent duplicate HTTP requests by preserving one durable synchronization request and returning empty `202 Accepted` for duplicates.
+**Decision**: Enforce uniqueness over `SourceSystem`, `SourceInstance`, `EntityType`, `ExternalId`, and `ExternalDataVersion`; handle concurrent duplicate HTTP requests by preserving one durable synchronization request and returning empty `202 Accepted` for duplicates. Only violation of the named idempotency unique constraint is treated as a duplicate; unrelated persistence failures remain failures and are not converted to success.
 
 **Rationale**: The database uniqueness constraint is the durable idempotency boundary. It prevents duplicates even when duplicate requests arrive concurrently and avoids relying on in-memory coordination.
 
@@ -58,9 +69,9 @@
 - In-memory duplicate tracking: rejected because it cannot survive restart and is not the source of truth.
 - Treat duplicate receipt as replay or repair: rejected by clarification; duplicate receipt must not mutate lifecycle state.
 
-## Decision: SQL polling is reliable; bounded channel is only a wake-up signal
+## Decision: SQL polling is reliable; bounded channel is only a coalescing wake-up signal
 
-**Decision**: Use a bounded in-process channel only to wake the processor after commit. The processor still scans SQL immediately on startup and on a configurable fallback interval.
+**Decision**: Use a bounded in-process channel with capacity 1, `DropWrite` behavior when full, multiple writers, and one reader only to wake the processor after commit. The channel carries no synchronization request payload. After each wake-up, the processor scans SQL batches until no immediately eligible work remains. The processor still scans SQL immediately on startup and on a configurable fallback interval.
 
 **Rationale**: SQL is the durable queue. Wake-up signals can be lost or delayed without losing work because polling and startup scanning discover committed requests.
 
@@ -82,7 +93,7 @@
 
 ## Decision: Retry attempts derive from explicit delay collection
 
-**Decision**: Configure polling interval, batch size, request timeout, processing timeout, and explicit retry delays in seconds. Derive the number of retry opportunities from the delay collection.
+**Decision**: Configure polling interval, batch size, processing-attempt timeout, processing timeout, and explicit retry delays in seconds. `AttemptCount` increments when a processing attempt starts; the first attempt has `AttemptCount = 1`. `N` configured retry delays permit `N + 1` total processing attempts. After attempt 1 fails transiently, `RetryDelaysSeconds[0]` determines the next eligibility time. `Deferred` unsupported-handler outcomes do not consume retry delays.
 
 **Rationale**: Explicit delays are operationally transparent and avoid contradictory retry-count and delay settings. The behavior remains understandable for support and tests.
 

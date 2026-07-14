@@ -14,7 +14,7 @@ Establish a durable integration-owned synchronization queue for 1C receiving and
 
 **Primary Dependencies**: ASP.NET Core Minimal APIs, ASP.NET Core authentication/authorization, EF Core 10 SQL Server provider, `System.Threading.Channels`, hosted background services, existing Myrmex command/query/result conventions where they fit.
 
-**Storage**: Existing `ConnectionStrings:MyrmexDatabase` SQL Server database; new integration-owned `IntegrationDbContext` with default schema `integration`; no WMS `DbContext` ownership of synchronization requests.
+**Storage**: Existing `ConnectionStrings:MyrmexDatabase` SQL Server database; new integration-owned `IntegrationDbContext` with default schema `integration`; no WMS `DbContext` ownership of synchronization requests. The idempotency unique index uses bounded SQL Server columns: `SourceSystem nvarchar(32)`, `SourceInstance nvarchar(128)`, `EntityType nvarchar(32)`, `ExternalId nvarchar(128)`, and `ExternalDataVersion varbinary(128)`, for a maximum key width of 768 bytes. Diagnostic fields are also bounded: `ExternalDocumentNumber nvarchar(64)` and `LastError nvarchar(2048)`.
 
 **Testing**: xUnit v3 through `Myrmex.Tests`, existing ASP.NET Core in-process endpoint test style, EF Core SQL Server persistence tests where provider-specific uniqueness/concurrency behavior matters, and lower-layer unit tests for contract parsing/lifecycle decisions.
 
@@ -22,9 +22,9 @@ Establish a durable integration-owned synchronization queue for 1C receiving and
 
 **Project Type**: Backend web service feature inside existing modular monolith; no WebApp UI.
 
-**Performance Goals**: Valid notification intake commits durable state and returns empty `202 Accepted`; processor discovers pending work within one configured polling interval after startup or wake-up; batch size and retry delays are configurable.
+**Performance Goals**: Valid notification intake commits durable state and returns empty `202 Accepted`; processor discovers pending work within one configured polling interval after startup or wake-up; batch size and retry delays are configurable. A bounded capacity-1 channel coalesces wake-up signals only.
 
-**Constraints**: Preserve `Myrmex.ApiSession` as default ApiService authentication; add `Myrmex.IntegrationApiKey` only for notification endpoints; preserve existing WMS operator protection for current 1C connection-test and manual import endpoints; do not persist active API keys in application data; do not add distributed processor-coordination requirements.
+**Constraints**: Preserve `Myrmex.ApiSession` as default ApiService authentication; add `Myrmex.IntegrationApiKey` only for notification endpoints; preserve existing WMS operator protection for current 1C connection-test and manual import endpoints; do not persist active API keys in application data; do not add distributed processor-coordination requirements. Missing or empty configured API keys fail startup options validation, and presented plaintext keys are compared with configured plaintext keys using constant-time comparison without logging, persisting, placing in claims, or exposing the key.
 
 **Scale/Scope**: First slice supports one configured 1C source instance and one active API key, while persisting `SourceInstance` in the idempotency key for future support for multiple external source instances.
 
@@ -91,7 +91,7 @@ Myrmex.Tests/
 - **Server-driven list behavior**: Not applicable; no list endpoint is introduced.
 - **Client/grid behavior**: Not applicable; no WebApp client or grid is introduced.
 - **Cancellation and errors**: Notification endpoints are write/action operations. Valid new and duplicate notifications return empty `202 Accepted` only after durable commit. Authentication/authorization failures use the normal auth pipeline. Malformed contracts use existing ProblemDetails-style validation behavior and must not expose secrets.
-- **Risk-based testing**: Protect exact JSON field binding, required fields, invalid Base64 rejection, API-key auth separation, existing WMS operator route preservation, durable uniqueness, duplicate lifecycle preservation, Date diagnostic handling, retry/lifecycle transitions, startup scan, wake-up fallback, and abandoned `Processing` recovery. Omit WebApp/API-client tests because no client/UI is added.
+- **Risk-based testing**: Protect exact JSON field binding through explicit JSON property mapping, required fields, GUID `Ref_Key` validation, non-empty bounded `DataVersion` decoding, malformed Date rejection, unknown-property tolerance, API-key auth separation, existing WMS operator route preservation, durable uniqueness, duplicate lifecycle preservation, Date diagnostic handling, retry/lifecycle transitions, startup scan, coalescing wake-up fallback, and abandoned `Processing` recovery. Omit WebApp/API-client tests because no client/UI is added.
 - **Existing pattern precedence**: Follow existing Minimal API endpoint grouping in `OneCEndpoints`, existing policy constants in `MyrmexAuthorizationPolicies`, existing scheme constants in `MyrmexAuthenticationSchemes`, existing options binding style in `OneCOptions`, existing `TimeProvider` injection, and WMS `DbContext` registration style while keeping the new context integration-owned.
 
 ## Complexity Tracking

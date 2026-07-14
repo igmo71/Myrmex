@@ -4,6 +4,14 @@
 
 SQL persistence is the durable queue and source of truth. The in-process channel is only a best-effort wake-up signal and never carries reliability guarantees.
 
+The wake-up channel is a coalescing signal:
+
+- bounded capacity 1;
+- `DropWrite` when full;
+- multiple writers and one reader;
+- no synchronization request payload;
+- after wake-up, process eligible SQL batches until no immediately eligible work remains.
+
 Endpoint intake order:
 
 ```text
@@ -53,13 +61,17 @@ The first slice uses explicit retry delays in seconds. Preliminary configuration
 {
   "PollingIntervalSeconds": 60,
   "BatchSize": 20,
-  "RequestTimeoutSeconds": 30,
+  "ProcessingAttemptTimeoutSeconds": 30,
   "ProcessingTimeoutSeconds": 300,
   "RetryDelaysSeconds": [10, 30, 120, 600, 1800, 3600, 10800]
 }
 ```
 
-The final number of attempts is derived from `RetryDelaysSeconds`.
+- `AttemptCount` increments when a processing attempt starts.
+- The first processing attempt has `AttemptCount = 1`.
+- `N` configured retry delays permit `N + 1` total processing attempts.
+- After attempt 1 fails transiently, `RetryDelaysSeconds[0]` determines the next eligibility time.
+- `Deferred` unsupported-handler outcomes do not consume retry delays.
 
 ## Abandoned Processing Recovery
 
@@ -78,3 +90,5 @@ Duplicate HTTP notification receipt must not alter the existing lifecycle state.
 | `Failed` | Preserve state. |
 
 Duplicate receipt never schedules retry, resets attempts, clears errors, restarts processing, transitions status, or acts as replay/repair.
+
+Only violation of the named idempotency unique constraint is handled as duplicate intake. Unrelated persistence failures remain failures and must not return empty `202 Accepted` as though they were duplicates.
