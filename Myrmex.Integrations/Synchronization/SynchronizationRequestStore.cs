@@ -76,4 +76,124 @@ internal sealed class SynchronizationRequestStore(
             throw new InvalidOperationException(
                 "The duplicate synchronization request could not be loaded.");
     }
+
+    public async Task<IReadOnlyList<SynchronizationRequest>> GetEligibleBatchAsync(
+        int batchSize,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken)
+    {
+        if (batchSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(batchSize),
+                "Batch size must be positive.");
+        }
+
+        return await dbContext.SynchronizationRequests
+            .AsNoTracking()
+            .Where(request =>
+                request.Status == SynchronizationStatus.Pending &&
+                (request.NextAttemptAtUtc == null ||
+                    request.NextAttemptAtUtc <= nowUtc))
+            .OrderBy(request => request.ReceivedAtUtc)
+            .ThenBy(request => request.Id)
+            .Take(batchSize)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task MarkDeferredAsync(
+        Guid requestId,
+        string lastError,
+        CancellationToken cancellationToken)
+    {
+        SynchronizationRequest request =
+            await LoadTrackedAsync(requestId, cancellationToken);
+        request.Status = SynchronizationStatus.Deferred;
+        request.NextAttemptAtUtc = null;
+        request.LastError = BoundLastError(lastError);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<SynchronizationRequest> StartProcessingAsync(
+        Guid requestId,
+        DateTimeOffset startedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        SynchronizationRequest request =
+            await LoadTrackedAsync(requestId, cancellationToken);
+        request.Status = SynchronizationStatus.Processing;
+        request.AttemptCount++;
+        request.ProcessingStartedAtUtc = startedAtUtc;
+        request.NextAttemptAtUtc = null;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        dbContext.Entry(request).State = EntityState.Detached;
+
+        return request;
+    }
+
+    public async Task MarkCompletedAsync(
+        Guid requestId,
+        DateTimeOffset completedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        SynchronizationRequest request =
+            await LoadTrackedAsync(requestId, cancellationToken);
+        request.Status = SynchronizationStatus.Completed;
+        request.CompletedAtUtc = completedAtUtc;
+        request.NextAttemptAtUtc = null;
+        request.LastError = null;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task MarkPendingRetryAsync(
+        Guid requestId,
+        DateTimeOffset nextAttemptAtUtc,
+        string lastError,
+        CancellationToken cancellationToken)
+    {
+        SynchronizationRequest request =
+            await LoadTrackedAsync(requestId, cancellationToken);
+        request.Status = SynchronizationStatus.Pending;
+        request.NextAttemptAtUtc = nextAttemptAtUtc;
+        request.LastError = BoundLastError(lastError);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task MarkFailedAsync(
+        Guid requestId,
+        string lastError,
+        CancellationToken cancellationToken)
+    {
+        SynchronizationRequest request =
+            await LoadTrackedAsync(requestId, cancellationToken);
+        request.Status = SynchronizationStatus.Failed;
+        request.NextAttemptAtUtc = null;
+        request.LastError = BoundLastError(lastError);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<SynchronizationRequest> LoadTrackedAsync(
+        Guid requestId,
+        CancellationToken cancellationToken) =>
+        await dbContext.SynchronizationRequests
+            .SingleAsync(
+                request => request.Id == requestId,
+                cancellationToken);
+
+    private static string BoundLastError(string lastError)
+    {
+        if (string.IsNullOrWhiteSpace(lastError))
+        {
+            return "Synchronization processing failed.";
+        }
+
+        return lastError.Length <= SynchronizationRequest.LastErrorMaxLength
+            ? lastError
+            : lastError[..SynchronizationRequest.LastErrorMaxLength];
+    }
 }
