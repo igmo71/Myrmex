@@ -13,11 +13,11 @@ public static class OneCNotificationEndpoints
 {
     private const string LoggerCategory = "Myrmex.Integrations.OneC.Notifications";
 
-    public static IEndpointRouteBuilder MapOneCNotificationEndpoints(
-        this IEndpointRouteBuilder endpoints)
+    public static IEndpointRouteBuilder MapOneCNotificationEndpoints(this IEndpointRouteBuilder endpoints)
     {
         RouteGroupBuilder group = endpoints
             .MapGroup("/api/integrations/1c")
+            .WithTags("Integrations 1C")
             .RequireAuthorization(MyrmexAuthorizationPolicies.OneCIntegration);
 
         group.MapPost(

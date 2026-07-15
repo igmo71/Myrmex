@@ -13,10 +13,9 @@ public static class OneCEndpoints
 {
     public static IEndpointRouteBuilder MapOneCIntegration(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapOneCNotificationEndpoints();
-
         RouteGroupBuilder group = endpoints
             .MapGroup("/api/integrations/1c")
+            .WithTags("Integrations 1C")
             .RequireAuthorization(MyrmexAuthorizationPolicies.WmsOperator);
 
         group.MapPost("/connection/test", TestConnectionAsync)
