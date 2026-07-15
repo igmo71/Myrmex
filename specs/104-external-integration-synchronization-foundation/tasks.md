@@ -55,20 +55,20 @@
 
 ### Tests for User Story 1
 
-- [ ] T022 [P] [US1] Add endpoint integration tests for receiving/shipping route binding, explicit canonical JSON mappings for Ref_Key, DataVersion, Number, and Date, unknown-property tolerance, unchanged global ApiService JSON settings, and authenticated empty 202 response in Myrmex.Tests\Integrations\OneC\Endpoints\OneCNotificationEndpointTests.cs
-- [ ] T023 [P] [US1] Add endpoint integration tests for invalid Ref_Key, missing Ref_Key, invalid Base64 DataVersion, empty decoded DataVersion, oversized DataVersion, over-length Number, malformed Date, and ProblemDetails-style responses identifying Ref_Key, DataVersion, Number, or Date without secrets or internal exception details in Myrmex.Tests\Integrations\OneC\Endpoints\OneCNotificationValidationTests.cs
-- [ ] T024 [P] [US1] Add persistence tests for source-local ExternalDocumentDate Kind=Unspecified and SQL datetime2 diagnostics in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationPersistenceTests.cs
+- [X] T022 [P] [US1] Add endpoint integration tests for receiving/shipping route binding, explicit canonical JSON mappings for Ref_Key, DataVersion, Number, and Date, unknown-property tolerance, unchanged global ApiService JSON settings, and authenticated empty 202 response in Myrmex.Tests\Integrations\OneC\Endpoints\OneCNotificationEndpointTests.cs
+- [X] T023 [P] [US1] Add endpoint integration tests for invalid Ref_Key, missing Ref_Key, invalid Base64 DataVersion, empty decoded DataVersion, oversized DataVersion, over-length Number, malformed Date, and ProblemDetails-style responses identifying Ref_Key, DataVersion, Number, or Date without secrets or internal exception details in Myrmex.Tests\Integrations\OneC\Endpoints\OneCNotificationValidationTests.cs
+- [X] T024 [P] [US1] Add persistence tests for source-local ExternalDocumentDate Kind=Unspecified and SQL datetime2 diagnostics in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationPersistenceTests.cs
 
 ### Implementation for User Story 1
 
-- [ ] T025 [P] [US1] Create OneCChangeNotificationRequest with explicit JSON property mappings in Myrmex.Integrations\OneC\Notifications\OneCChangeNotificationRequest.cs
-- [ ] T026 [P] [US1] Create OneCChangeNotificationValidator for Ref_Key, DataVersion, Number, Date, and decoded version bounds in Myrmex.Integrations\OneC\Notifications\OneCChangeNotificationValidator.cs
-- [ ] T027 [US1] Implement IntegrationSynchronizationRequestFactory to resolve SourceSystem, SourceInstance, EntityType, canonical ExternalId, decoded ExternalDataVersion, diagnostics, and ReceivedAtUtc in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestFactory.cs
-- [ ] T028 [US1] Implement IntegrationSynchronizationRequestStore insert-and-commit path for new synchronization requests in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
-- [ ] T029 [US1] Emit the best-effort IntegrationSynchronizationWakeUpSignal only after a newly inserted synchronization request has committed successfully in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
-- [ ] T030 [US1] Add receiving-orders/changed and shipping-orders/changed route handlers with MyrmexAuthorizationPolicies.OneCIntegration applied in Myrmex.Integrations\OneC\Endpoints\OneCNotificationEndpoints.cs
-- [ ] T031 [US1] Map OneC notification endpoints separately from WMS-operator admin routes in Myrmex.Integrations\OneC\Endpoints\OneCEndpoints.cs
-- [ ] T032 [US1] Add diagnostics for accepted notifications and validation failures without logging secrets in Myrmex.Integrations\OneC\Endpoints\OneCNotificationEndpoints.cs
+- [X] T025 [P] [US1] Create OneCChangeNotificationRequest with explicit JSON property mappings in Myrmex.Integrations\OneC\Notifications\OneCChangeNotificationRequest.cs
+- [X] T026 [P] [US1] Create OneCChangeNotificationValidator for Ref_Key, DataVersion, Number, Date, and decoded version bounds in Myrmex.Integrations\OneC\Notifications\OneCChangeNotificationValidator.cs
+- [X] T027 [US1] Implement SynchronizationRequestFactory to resolve SourceSystem, SourceInstance, EntityType, canonical ExternalId, decoded ExternalDataVersion, diagnostics, and ReceivedAtUtc in Myrmex.Integrations\Synchronization\SynchronizationRequestFactory.cs
+- [X] T028 [US1] Implement SynchronizationRequestStore insert-and-commit path for new synchronization requests in Myrmex.Integrations\Synchronization\SynchronizationRequestStore.cs
+- [X] T029 [US1] Emit the best-effort SynchronizationWakeUp only after a newly inserted synchronization request has committed successfully in Myrmex.Integrations\Synchronization\SynchronizationRequestStore.cs
+- [X] T030 [US1] Add receiving-orders/changed and shipping-orders/changed route handlers with MyrmexAuthorizationPolicies.OneCIntegration applied in Myrmex.Integrations\OneC\Endpoints\OneCNotificationEndpoints.cs
+- [X] T031 [US1] Map OneC notification endpoints separately from WMS-operator admin routes in Myrmex.Integrations\OneC\Endpoints\OneCEndpoints.cs
+- [X] T032 [US1] Add diagnostics for accepted notifications and validation failures without logging secrets in Myrmex.Integrations\OneC\Endpoints\OneCNotificationEndpoints.cs
 
 **Checkpoint**: User Story 1 is independently functional and testable as the authenticated durable intake MVP after the developer-controlled migration checkpoint is satisfied.
 

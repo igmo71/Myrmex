@@ -8,10 +8,12 @@ using Microsoft.Extensions.Options;
 using Myrmex.AspNetCore.Security;
 using Myrmex.Integrations.OneC.Configuration;
 using Myrmex.Integrations.OneC.Imports;
+using Myrmex.Integrations.OneC.Notifications;
 using Myrmex.Integrations.OneC.Security;
 using Myrmex.Integrations.OneC.Transport;
 using Myrmex.Integrations.Persistence;
 using Myrmex.Integrations.Persistence.SqlServer;
+using Myrmex.Integrations.Synchronization;
 using Myrmex.Integrations.Synchronization.Configuration;
 using Myrmex.Integrations.Synchronization.Processing;
 
@@ -64,6 +66,9 @@ public static class OneCIntegrationModule
                 failureStatus: HealthStatus.Unhealthy);
 
         services.AddSingleton<SynchronizationWakeUp>();
+        services.AddSingleton<OneCChangeNotificationValidator>();
+        services.AddScoped<SynchronizationRequestFactory>();
+        services.AddScoped<SynchronizationRequestStore>();
 
         services.AddSingleton<SqlServerDuplicateSynchronizationRequestDetector>();
 

@@ -1,5 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.Extensions.Options;
+using Myrmex.Integrations.OneC.Configuration;
+using Myrmex.Integrations.OneC.Notifications;
 using Myrmex.Integrations.Persistence;
 using Myrmex.Integrations.Persistence.Configurations;
 using Myrmex.Integrations.Synchronization;
@@ -104,6 +107,39 @@ public sealed class IntegrationSynchronizationPersistenceTests
             nameof(SynchronizationRequest.LastError),
             "nvarchar(2048)",
             SynchronizationRequest.LastErrorMaxLength);
+    }
+
+    [Fact]
+    public void RequestFactory_PreservesSourceLocalDocumentDateAsUnspecifiedDiagnosticData()
+    {
+        OneCChangeNotificationRequest notification = new()
+        {
+            RefKey = "80066011-d7c7-11ef-bac8-00155d01d112",
+            DataVersion = Convert.ToBase64String([1, 2, 3]),
+            Number = "UT-00001004",
+            Date = "2025-01-21T10:15:36"
+        };
+        OneCChangeNotificationValidationResult validation =
+            new OneCChangeNotificationValidator().Validate(notification);
+        Assert.True(validation.Succeeded);
+
+        SynchronizationRequestFactory factory = new(
+            Options.Create(new OneCIntegrationApiKeyOptions
+            {
+                SourceSystem = OneCIntegrationApiKeyOptions.DefaultSourceSystem,
+                SourceInstance = "main-infobase",
+                ApiKey = "development-only-key"
+            }),
+            TimeProvider.System);
+
+        SynchronizationRequest request = factory.Create(
+            notification,
+            validation,
+            SynchronizationEntityTypes.ReceivingOrder);
+
+        Assert.Equal(new DateTime(2025, 1, 21, 10, 15, 36), request.ExternalDocumentDate);
+        Assert.Equal(DateTimeKind.Unspecified, request.ExternalDocumentDate!.Value.Kind);
+        Assert.Equal("UT-00001004", request.ExternalDocumentNumber);
     }
 
     private static void AssertColumn(
