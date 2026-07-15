@@ -1,5 +1,3 @@
-using System.Net.Http.Json;
-using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -15,6 +13,8 @@ using Myrmex.Integrations.OneC.Security;
 using Myrmex.Integrations.Persistence;
 using Myrmex.Integrations.Synchronization;
 using Myrmex.Integrations.Synchronization.Processing;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Myrmex.Tests.Integrations.OneC.Endpoints;
 
@@ -99,8 +99,9 @@ public sealed class OneCNotificationValidationTests
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Services.AddLogging();
         builder.Services.AddProblemDetails();
+        string databaseName = Guid.NewGuid().ToString("N");
         builder.Services.AddDbContext<IntegrationDbContext>(options =>
-            options.UseInMemoryDatabase(Guid.NewGuid().ToString("N")));
+            options.UseInMemoryDatabase(databaseName));
         builder.Services.Configure<OneCIntegrationApiKeyOptions>(options =>
         {
             options.SourceSystem = OneCIntegrationApiKeyOptions.DefaultSourceSystem;

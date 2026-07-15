@@ -1,7 +1,7 @@
 using Myrmex.AppDispatching;
 using Myrmex.AspNetCore.Security;
-using Myrmex.Identity.Application.Users;
 using Myrmex.Core.Application.Security;
+using Myrmex.Identity.Application.Users;
 using Myrmex.Identity.Infrastructure;
 using Myrmex.Integrations.OneC;
 using Myrmex.Integrations.OneC.Endpoints;
@@ -83,6 +83,7 @@ app.MapDefaultEndpoints();
 
 app.MapWmsModule();
 app.MapOneCIntegration();
+app.MapOneCNotificationEndpoints();
 app.MapMyrmexIdentityEndpoints();
 
 app.Run();
