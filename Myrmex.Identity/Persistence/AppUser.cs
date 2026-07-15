@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Myrmex.Identity.Persistence;
 
-public sealed class MyrmexUser : IdentityUser<Guid>
+public sealed class AppUser : IdentityUser<Guid>
 {
     public const int MaxDisplayNameLength = 200;
 

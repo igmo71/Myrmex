@@ -171,22 +171,22 @@ public sealed class InitialAdminSeederTests
             ServiceCollection services = [];
             services.AddLogging(builder => builder.AddProvider(loggerProvider));
             services.AddHttpContextAccessor();
-            services.AddDbContext<MyrmexIdentityDbContext>(builder =>
+            services.AddDbContext<IdentityDbContext>(builder =>
                 builder
                     .UseInMemoryDatabase(databaseName)
                     .ConfigureWarnings(warnings => warnings.Ignore(
                         InMemoryEventId.TransactionIgnoredWarning)));
-            services.AddIdentityCore<MyrmexUser>()
-                .AddRoles<MyrmexRole>()
+            services.AddIdentityCore<AppUser>()
+                .AddRoles<AppRole>()
                 .AddSignInManager()
-                .AddEntityFrameworkStores<MyrmexIdentityDbContext>();
+                .AddEntityFrameworkStores<IdentityDbContext>();
             services.AddSingleton(Options.Create(options));
             services.AddScoped<IdentityRoleInitializer>();
             services.AddScoped<IInitialAdminRoleAssigner>(
                 _ => failRoleAssignment
                     ? new FailingInitialAdminRoleAssigner()
                     : new UserManagerInitialAdminRoleAssigner(
-                        _.GetRequiredService<UserManager<MyrmexUser>>()));
+                        _.GetRequiredService<UserManager<AppUser>>()));
             services.AddScoped<InitialAdminSeeder>();
 
             return new BootstrapTestHost(
@@ -211,10 +211,10 @@ public sealed class InitialAdminSeederTests
         public async Task EnsureRoleAsync(string roleName)
         {
             using IServiceScope scope = _services.CreateScope();
-            RoleManager<MyrmexRole> roleManager = scope.ServiceProvider
-                .GetRequiredService<RoleManager<MyrmexRole>>();
+            RoleManager<AppRole> roleManager = scope.ServiceProvider
+                .GetRequiredService<RoleManager<AppRole>>();
             IdentityResult result = await roleManager.CreateAsync(
-                new MyrmexRole(roleName));
+                new AppRole(roleName));
             Assert.True(result.Succeeded);
         }
 
@@ -229,9 +229,9 @@ public sealed class InitialAdminSeederTests
         public async Task CreateUserAsync(string email, string password)
         {
             using IServiceScope scope = _services.CreateScope();
-            UserManager<MyrmexUser> userManager = scope.ServiceProvider
-                .GetRequiredService<UserManager<MyrmexUser>>();
-            MyrmexUser user = new()
+            UserManager<AppUser> userManager = scope.ServiceProvider
+                .GetRequiredService<UserManager<AppUser>>();
+            AppUser user = new()
             {
                 Id = Guid.NewGuid(),
                 UserName = email,
@@ -247,16 +247,16 @@ public sealed class InitialAdminSeederTests
         {
             using IServiceScope scope = _services.CreateScope();
             return await scope.ServiceProvider
-                .GetRequiredService<RoleManager<MyrmexRole>>()
+                .GetRequiredService<RoleManager<AppRole>>()
                 .RoleExistsAsync(roleName);
         }
 
         public async Task<bool> UserIsInRoleAsync(string email, string role)
         {
             using IServiceScope scope = _services.CreateScope();
-            UserManager<MyrmexUser> userManager = scope.ServiceProvider
-                .GetRequiredService<UserManager<MyrmexUser>>();
-            MyrmexUser user = await userManager.FindByEmailAsync(email)
+            UserManager<AppUser> userManager = scope.ServiceProvider
+                .GetRequiredService<UserManager<AppUser>>();
+            AppUser user = await userManager.FindByEmailAsync(email)
                 ?? throw new InvalidOperationException("Test user was not found.");
             return await userManager.IsInRoleAsync(user, role);
         }
@@ -264,9 +264,9 @@ public sealed class InitialAdminSeederTests
         public async Task<bool> CheckPasswordAsync(string email, string password)
         {
             using IServiceScope scope = _services.CreateScope();
-            UserManager<MyrmexUser> userManager = scope.ServiceProvider
-                .GetRequiredService<UserManager<MyrmexUser>>();
-            MyrmexUser user = await userManager.FindByEmailAsync(email)
+            UserManager<AppUser> userManager = scope.ServiceProvider
+                .GetRequiredService<UserManager<AppUser>>();
+            AppUser user = await userManager.FindByEmailAsync(email)
                 ?? throw new InvalidOperationException("Test user was not found.");
             return await userManager.CheckPasswordAsync(user, password);
         }
@@ -275,7 +275,7 @@ public sealed class InitialAdminSeederTests
         {
             using IServiceScope scope = _services.CreateScope();
             return await scope.ServiceProvider
-                .GetRequiredService<MyrmexIdentityDbContext>()
+                .GetRequiredService<IdentityDbContext>()
                 .Users
                 .CountAsync(TestContext.Current.CancellationToken);
         }
@@ -287,7 +287,7 @@ public sealed class InitialAdminSeederTests
         : IInitialAdminRoleAssigner
     {
         public Task<IdentityResult> AddToRoleAsync(
-            MyrmexUser user,
+            AppUser user,
             string role,
             CancellationToken cancellationToken) =>
             Task.FromResult(IdentityResult.Failed(

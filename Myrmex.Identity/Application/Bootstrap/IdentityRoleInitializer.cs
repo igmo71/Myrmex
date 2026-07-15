@@ -7,7 +7,7 @@ using System.Collections.Concurrent;
 namespace Myrmex.Identity.Application.Bootstrap;
 
 public sealed class IdentityRoleInitializer(
-    RoleManager<MyrmexRole> roleManager,
+    RoleManager<AppRole> roleManager,
     ILogger<IdentityRoleInitializer> logger)
 {
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> RoleLocks =
@@ -48,7 +48,7 @@ public sealed class IdentityRoleInitializer(
             }
 
             IdentityResult result = await roleManager.CreateAsync(
-                new MyrmexRole(roleName));
+                new AppRole(roleName));
 
             if (result.Succeeded ||
                 await roleManager.RoleExistsAsync(roleName))

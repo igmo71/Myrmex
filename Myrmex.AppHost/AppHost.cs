@@ -10,7 +10,11 @@ var apiService = builder.AddProject<Projects.Myrmex_ApiService>("apiservice")
     .WithEnvironment("Myrmex__Integrations__OneC__Username",
         builder.Configuration["Myrmex:Integrations:OneC:Username"])
     .WithEnvironment("Myrmex__Integrations__OneC__Password",
-        builder.Configuration["Myrmex:Integrations:OneC:Password"]);
+        builder.Configuration["Myrmex:Integrations:OneC:Password"])
+    .WithEnvironment("Myrmex__Integrations__OneC__SourceInstance",
+        builder.Configuration["Myrmex:Integrations:OneC:SourceInstance"])
+    .WithEnvironment("Myrmex__Integrations__OneC__ApiKey",
+        builder.Configuration["Myrmex:Integrations:OneC:ApiKey"]);
 
 builder.AddProject<Projects.Myrmex_WebApp>("webapp")
     .WithExternalHttpEndpoints()

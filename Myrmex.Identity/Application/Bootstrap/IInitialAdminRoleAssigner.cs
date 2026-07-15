@@ -6,7 +6,7 @@ namespace Myrmex.Identity.Application.Bootstrap;
 public interface IInitialAdminRoleAssigner
 {
     Task<IdentityResult> AddToRoleAsync(
-        MyrmexUser user,
+        AppUser user,
         string role,
         CancellationToken cancellationToken);
 }

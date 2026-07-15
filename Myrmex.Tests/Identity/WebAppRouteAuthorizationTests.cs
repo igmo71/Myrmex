@@ -111,13 +111,13 @@ public sealed class WebAppRouteAuthorizationTests
             builder.WebHost.UseUrls("http://127.0.0.1:0");
             builder.Services.AddLogging();
             builder.Services.AddHttpContextAccessor();
-            builder.Services.AddDbContext<MyrmexIdentityDbContext>(options =>
+            builder.Services.AddDbContext<IdentityDbContext>(options =>
                 options.UseInMemoryDatabase(
                     $"myrmex-route-authorization-{Guid.NewGuid():N}"));
-            builder.Services.AddIdentityCore<MyrmexUser>()
-                .AddRoles<MyrmexRole>()
+            builder.Services.AddIdentityCore<AppUser>()
+                .AddRoles<AppRole>()
                 .AddSignInManager()
-                .AddEntityFrameworkStores<MyrmexIdentityDbContext>();
+                .AddEntityFrameworkStores<IdentityDbContext>();
             builder.Services.AddMyrmexIdentityWebAppAuthentication();
             builder.Services.Configure<CookieAuthenticationOptions>(
                 MyrmexAuthenticationSchemes.WebAppIdentity,
@@ -144,12 +144,12 @@ public sealed class WebAppRouteAuthorizationTests
                     "/test/sign-in",
                     async (
                         HttpContext context,
-                        SignInManager<MyrmexUser> signInManager,
-                        UserManager<MyrmexUser> userManager,
-                        RoleManager<MyrmexRole> roleManager) =>
+                        SignInManager<AppUser> signInManager,
+                        UserManager<AppUser> userManager,
+                        RoleManager<AppRole> roleManager) =>
                     {
                         string? role = context.Request.Query["role"];
-                        MyrmexUser user = new()
+                        AppUser user = new()
                         {
                             Id = Guid.NewGuid(),
                             UserName = $"{Guid.NewGuid():N}@example.com",
@@ -163,7 +163,7 @@ public sealed class WebAppRouteAuthorizationTests
                         if (!string.IsNullOrWhiteSpace(role))
                         {
                             IdentityResult createRole = await roleManager.CreateAsync(
-                                new MyrmexRole(role));
+                                new AppRole(role));
                             Assert.True(createRole.Succeeded);
 
                             IdentityResult addToRole = await userManager.AddToRoleAsync(

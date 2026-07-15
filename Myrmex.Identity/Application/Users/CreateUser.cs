@@ -24,8 +24,8 @@ public static class CreateUser
         : ICommand<ServiceResult<IdentityUserDetails>>;
 
     public sealed class Handler(
-        MyrmexIdentityDbContext dbContext,
-        UserManager<MyrmexUser> userManager)
+        IdentityDbContext dbContext,
+        UserManager<AppUser> userManager)
         : ICommandHandler<Command, ServiceResult<IdentityUserDetails>>
     {
         public async Task<ServiceResult<IdentityUserDetails>> HandleAsync(
@@ -63,7 +63,7 @@ public static class CreateUser
                     await using var transaction = await dbContext.Database
                         .BeginTransactionAsync(cancellationToken);
 
-                    MyrmexUser user = new()
+                    AppUser user = new()
                     {
                         Id = Guid.NewGuid(),
                         UserName = validation.Email,
@@ -145,11 +145,11 @@ public static class CreateUser
         string? displayName = string.IsNullOrWhiteSpace(command.DisplayName)
             ? null
             : command.DisplayName.Trim();
-        if (displayName?.Length > MyrmexUser.MaxDisplayNameLength)
+        if (displayName?.Length > AppUser.MaxDisplayNameLength)
         {
             errors.Add(ValidationError(
                 "IdentityUser.DisplayNameTooLong",
-                $"Display name must be {MyrmexUser.MaxDisplayNameLength} characters or fewer.",
+                $"Display name must be {AppUser.MaxDisplayNameLength} characters or fewer.",
                 nameof(Command.DisplayName)));
         }
 

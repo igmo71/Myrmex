@@ -11,7 +11,7 @@ using Myrmex.Identity.Persistence;
 
 namespace Myrmex.Identity.Persistence.Migrations
 {
-    [DbContext(typeof(MyrmexIdentityDbContext))]
+    [DbContext(typeof(IdentityDbContext))]
     [Migration("20260708195139_InitialIdentity")]
     partial class InitialIdentity
     {

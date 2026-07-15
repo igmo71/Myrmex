@@ -27,10 +27,10 @@ public class IdentityRevalidatingAuthenticationStateProvider(
         cancellationToken.ThrowIfCancellationRequested();
 
         using IServiceScope scope = scopeFactory.CreateScope();
-        SignInManager<MyrmexUser> signInManager = scope.ServiceProvider
-            .GetRequiredService<SignInManager<MyrmexUser>>();
+        SignInManager<AppUser> signInManager = scope.ServiceProvider
+            .GetRequiredService<SignInManager<AppUser>>();
 
-        MyrmexUser? user = await signInManager.ValidateSecurityStampAsync(
+        AppUser? user = await signInManager.ValidateSecurityStampAsync(
             principal);
 
         cancellationToken.ThrowIfCancellationRequested();

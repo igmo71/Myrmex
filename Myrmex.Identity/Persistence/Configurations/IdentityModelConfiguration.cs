@@ -12,7 +12,7 @@ internal static class IdentityModelConfiguration
     {
         modelBuilder.HasDefaultSchema(Schema);
 
-        modelBuilder.Entity<MyrmexUser>(builder =>
+        modelBuilder.Entity<AppUser>(builder =>
         {
             builder.ToTable("Users", Schema);
 
@@ -29,7 +29,7 @@ internal static class IdentityModelConfiguration
                 .HasMaxLength(256)
                 .IsRequired();
             builder.Property(user => user.DisplayName)
-                .HasMaxLength(MyrmexUser.MaxDisplayNameLength)
+                .HasMaxLength(AppUser.MaxDisplayNameLength)
                 .IsRequired(false);
 
             builder.HasIndex(user => user.NormalizedEmail)
@@ -40,7 +40,7 @@ internal static class IdentityModelConfiguration
                 .HasDatabaseName("UserNameIndex");
         });
 
-        modelBuilder.Entity<MyrmexRole>(builder =>
+        modelBuilder.Entity<AppRole>(builder =>
         {
             builder.ToTable("Roles", Schema);
             builder.Property(role => role.Name)
@@ -63,11 +63,11 @@ internal static class IdentityModelConfiguration
         modelBuilder.Entity<IdentityUserRole<Guid>>(builder =>
         {
             builder.ToTable("UserRoles", Schema);
-            builder.HasOne<MyrmexUser>()
+            builder.HasOne<AppUser>()
                 .WithMany()
                 .HasForeignKey(userRole => userRole.UserId)
                 .IsRequired();
-            builder.HasOne<MyrmexRole>()
+            builder.HasOne<AppRole>()
                 .WithMany()
                 .HasForeignKey(userRole => userRole.RoleId)
                 .IsRequired();

@@ -47,22 +47,22 @@ internal sealed class IdentitySessionBoundaryFixture : IAsyncDisposable
         return fixture;
     }
 
-    public async Task<MyrmexUser> CreateUserAsync(params string[] roles)
+    public async Task<AppUser> CreateUserAsync(params string[] roles)
     {
         using IServiceScope scope = _webServices!.CreateScope();
-        UserManager<MyrmexUser> users = scope.ServiceProvider.GetRequiredService<UserManager<MyrmexUser>>();
-        RoleManager<MyrmexRole> roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<MyrmexRole>>();
+        UserManager<AppUser> users = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+        RoleManager<AppRole> roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
         foreach (string role in roles)
         {
             if (!await roleManager.RoleExistsAsync(role))
             {
-                IdentityResult roleResult = await roleManager.CreateAsync(new MyrmexRole(role));
+                IdentityResult roleResult = await roleManager.CreateAsync(new AppRole(role));
                 Assert.True(roleResult.Succeeded);
             }
         }
 
         string email = $"{Guid.NewGuid():N}@example.com";
-        MyrmexUser user = new()
+        AppUser user = new()
         {
             Id = Guid.NewGuid(),
             UserName = email,
@@ -78,11 +78,11 @@ internal sealed class IdentitySessionBoundaryFixture : IAsyncDisposable
         return user;
     }
 
-    public async Task RemoveRoleAsync(MyrmexUser user, string role)
+    public async Task RemoveRoleAsync(AppUser user, string role)
     {
         using IServiceScope scope = _webServices!.CreateScope();
-        UserManager<MyrmexUser> users = scope.ServiceProvider.GetRequiredService<UserManager<MyrmexUser>>();
-        MyrmexUser persisted = (await users.FindByIdAsync(user.Id.ToString()))!;
+        UserManager<AppUser> users = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+        AppUser persisted = (await users.FindByIdAsync(user.Id.ToString()))!;
         Assert.True((await users.RemoveFromRoleAsync(persisted, role)).Succeeded);
     }
 
@@ -255,12 +255,12 @@ internal sealed class IdentitySessionBoundaryFixture : IAsyncDisposable
         ServiceCollection services = new();
         services.AddLogging();
         services.AddHttpContextAccessor();
-        services.AddDbContext<MyrmexIdentityDbContext>(options =>
+        services.AddDbContext<IdentityDbContext>(options =>
             options.UseInMemoryDatabase(_identityDatabaseName));
-        services.AddIdentityCore<MyrmexUser>()
-            .AddRoles<MyrmexRole>()
+        services.AddIdentityCore<AppUser>()
+            .AddRoles<AppRole>()
             .AddSignInManager()
-            .AddEntityFrameworkStores<MyrmexIdentityDbContext>();
+            .AddEntityFrameworkStores<IdentityDbContext>();
         services.AddDataProtection()
             .SetApplicationName(ApplicationName)
             .PersistKeysToFileSystem(new DirectoryInfo(KeyPath));

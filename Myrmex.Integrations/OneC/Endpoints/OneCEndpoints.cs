@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Myrmex.AspNetCore.Security;
-using Myrmex.Integrations.OneC.Transport;
 using Myrmex.Integrations.OneC.Imports;
+using Myrmex.Integrations.OneC.Transport;
 using Myrmex.Shared.Integrations.OneC;
 
 namespace Myrmex.Integrations.OneC.Endpoints;
@@ -15,6 +15,7 @@ public static class OneCEndpoints
     {
         RouteGroupBuilder group = endpoints
             .MapGroup("/api/integrations/1c")
+            .WithTags("Integrations 1C")
             .RequireAuthorization(MyrmexAuthorizationPolicies.WmsOperator);
 
         group.MapPost("/connection/test", TestConnectionAsync)

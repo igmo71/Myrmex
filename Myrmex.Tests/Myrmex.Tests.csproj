@@ -8,6 +8,7 @@
     <IsTestProject>true</IsTestProject>
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <UserSecretsId>69a67bb4-d428-48ac-96e9-5c412db22aab</UserSecretsId>
   </PropertyGroup>
 
 
