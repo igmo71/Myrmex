@@ -101,6 +101,18 @@ internal sealed class SynchronizationProcessor(
                 "Processing attempt timed out.",
                 cancellationToken);
         }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "Synchronization handler failed for request {SynchronizationRequestId}.",
+                processingRequest.Id);
+
+            await ApplyTransientFailureAsync(
+                processingRequest,
+                "Synchronization handler failed.",
+                cancellationToken);
+        }
     }
 
     private async Task<SynchronizationHandlerResult> InvokeHandlerAsync(
