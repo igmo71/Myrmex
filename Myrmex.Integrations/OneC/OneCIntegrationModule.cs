@@ -66,9 +66,13 @@ public static class OneCIntegrationModule
                 failureStatus: HealthStatus.Unhealthy);
 
         services.AddSingleton<SynchronizationWakeUp>();
+        services.AddSingleton<SynchronizationRetryPolicy>();
         services.AddSingleton<OneCChangeNotificationValidator>();
         services.AddScoped<SynchronizationRequestFactory>();
         services.AddScoped<SynchronizationRequestStore>();
+        services.AddScoped<ISynchronizationHandlerResolver, SynchronizationHandlerResolver>();
+        services.AddScoped<SynchronizationProcessor>();
+        services.AddHostedService<SynchronizationWorker>();
 
         services.AddSingleton<SqlServerDuplicateSynchronizationRequestDetector>();
 

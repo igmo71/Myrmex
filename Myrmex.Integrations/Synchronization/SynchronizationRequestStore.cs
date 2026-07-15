@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Myrmex.Integrations.Persistence;
 using Myrmex.Integrations.Persistence.SqlServer;
+using Myrmex.Integrations.Synchronization.Configuration;
 using Myrmex.Integrations.Synchronization.Processing;
 
 namespace Myrmex.Integrations.Synchronization;
@@ -175,6 +176,68 @@ internal sealed class SynchronizationRequestStore(
         request.LastError = BoundLastError(lastError);
 
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<int> RecoverAbandonedProcessingAsync(
+        TimeSpan processingTimeout,
+        DateTimeOffset nowUtc,
+        SynchronizationRetryPolicy retryPolicy,
+        SynchronizationOptions options,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(retryPolicy);
+        ArgumentNullException.ThrowIfNull(options);
+
+        DateTimeOffset abandonedBeforeUtc = nowUtc.Subtract(processingTimeout);
+        List<SynchronizationRequest> abandonedRequests =
+            await dbContext.SynchronizationRequests
+                .Where(request =>
+                    request.Status == SynchronizationStatus.Processing &&
+                    request.ProcessingStartedAtUtc != null &&
+                    request.ProcessingStartedAtUtc <= abandonedBeforeUtc)
+                .OrderBy(request => request.ProcessingStartedAtUtc)
+                .ThenBy(request => request.Id)
+                .ToListAsync(cancellationToken);
+
+        foreach (SynchronizationRequest request in abandonedRequests)
+        {
+            SynchronizationRetryDecision decision = request.AttemptCount > 0
+                ? retryPolicy.GetTransientFailureDecision(
+                    options,
+                    request.AttemptCount,
+                    nowUtc)
+                : SynchronizationRetryDecision.Fail();
+
+            if (decision.ShouldRetry)
+            {
+                request.Status = SynchronizationStatus.Pending;
+                request.ProcessingStartedAtUtc = null;
+                request.NextAttemptAtUtc = null;
+                request.LastError = BoundLastError(
+                    "Recovered abandoned Processing synchronization request.");
+                logger.LogWarning(
+                    "Recovered abandoned synchronization request {SynchronizationRequestId} for immediate retry after {AttemptCount} attempts.",
+                    request.Id,
+                    request.AttemptCount);
+                continue;
+            }
+
+            request.Status = SynchronizationStatus.Failed;
+            request.NextAttemptAtUtc = null;
+            request.LastError = BoundLastError(
+                "Recovered abandoned Processing synchronization request with no retry attempts remaining.");
+            logger.LogWarning(
+                "Marked abandoned synchronization request {SynchronizationRequestId} Failed after {AttemptCount} attempts.",
+                request.Id,
+                request.AttemptCount);
+        }
+
+        if (abandonedRequests.Count > 0)
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return abandonedRequests.Count;
     }
 
     private async Task<SynchronizationRequest> LoadTrackedAsync(

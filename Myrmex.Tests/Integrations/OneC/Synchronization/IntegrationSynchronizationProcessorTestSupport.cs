@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Myrmex.Integrations.Persistence;
@@ -80,16 +81,66 @@ internal static class IntegrationSynchronizationProcessorTestSupport
             NullLogger<SynchronizationProcessor>.Instance);
     }
 
+    public static SynchronizationRequestStore CreateStore(
+        IntegrationDbContext dbContext) =>
+        new(
+            dbContext,
+            new SynchronizationWakeUp(),
+            new SqlServerDuplicateSynchronizationRequestDetector(),
+            NullLogger<SynchronizationRequestStore>.Instance);
+
+    public static SynchronizationWorker CreateWorker(
+        IServiceScopeFactory scopeFactory,
+        SynchronizationWakeUp wakeUp,
+        MutableTimeProvider timeProvider,
+        SynchronizationOptions options) =>
+        new(
+            scopeFactory,
+            wakeUp,
+            Options.Create(options),
+            timeProvider,
+            NullLogger<SynchronizationWorker>.Instance);
+
+    public static ServiceProvider CreateWorkerServiceProvider(
+        string connectionString,
+        MutableTimeProvider timeProvider,
+        SynchronizationOptions options,
+        SynchronizationWakeUp wakeUp,
+        params ISynchronizationHandler[] handlers)
+    {
+        ServiceCollection services = new();
+
+        services.AddLogging();
+        services.AddDbContext<IntegrationDbContext>(dbOptions =>
+            dbOptions.UseSqlServer(connectionString));
+        services.AddSingleton<TimeProvider>(timeProvider);
+        services.AddSingleton(Options.Create(options));
+        services.AddSingleton(wakeUp);
+        services.AddSingleton<SynchronizationRetryPolicy>();
+        services.AddSingleton<SqlServerDuplicateSynchronizationRequestDetector>();
+        services.AddScoped<SynchronizationRequestStore>();
+        services.AddScoped<ISynchronizationHandlerResolver, SynchronizationHandlerResolver>();
+        services.AddScoped<SynchronizationProcessor>();
+
+        foreach (ISynchronizationHandler handler in handlers)
+        {
+            services.AddSingleton(handler);
+        }
+
+        return services.BuildServiceProvider();
+    }
+
     public static SynchronizationOptions CreateOptions(
         int batchSize = 20,
         int processingAttemptTimeoutSeconds = 30,
+        int processingTimeoutSeconds = 300,
         params int[] retryDelaysSeconds) =>
         new()
         {
             PollingIntervalSeconds = 60,
             BatchSize = batchSize,
             ProcessingAttemptTimeoutSeconds = processingAttemptTimeoutSeconds,
-            ProcessingTimeoutSeconds = 300,
+            ProcessingTimeoutSeconds = processingTimeoutSeconds,
             RetryDelaysSeconds = [.. retryDelaysSeconds]
         };
 }

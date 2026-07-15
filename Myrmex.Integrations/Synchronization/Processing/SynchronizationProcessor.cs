@@ -59,6 +59,11 @@ internal sealed class SynchronizationProcessor(
             handlerResolver.Resolve(request.EntityType);
         if (handler is null)
         {
+            logger.LogInformation(
+                "Deferring synchronization request {SynchronizationRequestId} because no handler is registered for {EntityType}.",
+                request.Id,
+                request.EntityType);
+
             await store.MarkDeferredAsync(
                 request.Id,
                 $"No synchronization handler is registered for {request.EntityType}.",
@@ -73,18 +78,18 @@ internal sealed class SynchronizationProcessor(
                 startedAtUtc,
                 cancellationToken);
 
+        logger.LogInformation(
+            "Started synchronization request {SynchronizationRequestId} attempt {AttemptCount}.",
+            processingRequest.Id,
+            processingRequest.AttemptCount);
+
+        SynchronizationHandlerResult result;
         try
         {
-            SynchronizationHandlerResult result =
-                await InvokeHandlerAsync(
-                    handler,
-                    processingRequest,
-                    currentOptions,
-                    cancellationToken);
-
-            await ApplyHandlerResultAsync(
+            result = await InvokeHandlerAsync(
+                handler,
                 processingRequest,
-                result,
+                currentOptions,
                 cancellationToken);
         }
         catch (OperationCanceledException) when (
@@ -93,26 +98,40 @@ internal sealed class SynchronizationProcessor(
             logger.LogInformation(
                 "Synchronization processing stopped during request {SynchronizationRequestId}; durable state remains Processing.",
                 processingRequest.Id);
+            return;
         }
         catch (TimeoutException)
         {
+            logger.LogWarning(
+                "Synchronization request {SynchronizationRequestId} attempt {AttemptCount} timed out.",
+                processingRequest.Id,
+                processingRequest.AttemptCount);
+
             await ApplyTransientFailureAsync(
                 processingRequest,
                 "Processing attempt timed out.",
                 cancellationToken);
+            return;
         }
         catch (Exception exception)
         {
             logger.LogError(
                 exception,
-                "Synchronization handler failed for request {SynchronizationRequestId}.",
-                processingRequest.Id);
+                "Synchronization handler failed for request {SynchronizationRequestId} attempt {AttemptCount}.",
+                processingRequest.Id,
+                processingRequest.AttemptCount);
 
             await ApplyTransientFailureAsync(
                 processingRequest,
                 "Synchronization handler failed.",
                 cancellationToken);
+            return;
         }
+
+        await ApplyHandlerResultAsync(
+            processingRequest,
+            result,
+            cancellationToken);
     }
 
     private async Task<SynchronizationHandlerResult> InvokeHandlerAsync(
@@ -154,6 +173,10 @@ internal sealed class SynchronizationProcessor(
                     request.Id,
                     timeProvider.GetUtcNow(),
                     cancellationToken);
+                logger.LogInformation(
+                    "Completed synchronization request {SynchronizationRequestId} attempt {AttemptCount}.",
+                    request.Id,
+                    request.AttemptCount);
                 break;
 
             case SynchronizationHandlerResultKind.TransientFailure:
@@ -168,6 +191,10 @@ internal sealed class SynchronizationProcessor(
                     request.Id,
                     result.Error ?? "Permanent synchronization failure.",
                     cancellationToken);
+                logger.LogWarning(
+                    "Marked synchronization request {SynchronizationRequestId} failed after permanent failure on attempt {AttemptCount}.",
+                    request.Id,
+                    request.AttemptCount);
                 break;
 
             default:
@@ -194,6 +221,11 @@ internal sealed class SynchronizationProcessor(
                 retryDecision.NextAttemptAtUtc!.Value,
                 error,
                 cancellationToken);
+            logger.LogWarning(
+                "Scheduled retry for synchronization request {SynchronizationRequestId} after attempt {AttemptCount} at {NextAttemptAtUtc}.",
+                request.Id,
+                request.AttemptCount,
+                retryDecision.NextAttemptAtUtc);
             return;
         }
 
@@ -201,5 +233,9 @@ internal sealed class SynchronizationProcessor(
             request.Id,
             error,
             cancellationToken);
+        logger.LogWarning(
+            "Marked synchronization request {SynchronizationRequestId} failed after transient failure on attempt {AttemptCount} with no retries remaining.",
+            request.Id,
+            request.AttemptCount);
     }
 }

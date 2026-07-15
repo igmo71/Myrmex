@@ -129,7 +129,7 @@
 - [X] T048 [P] [US4] Add retry tests for RetryDelaysSeconds[0], N+1 attempts, empty RetryDelaysSeconds allowing one attempt with no retries, transient failure becoming terminal Failed when no retry delay exists, exhausted retry, permanent failure, and ProcessingAttemptTimeoutSeconds as a transient failure in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationRetryTests.cs
 - [X] T049 [P] [US4] Add cancellation tests proving host-shutdown cancellation leaves durable records Processing for abandoned recovery and does not schedule a normal handler retry in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationCancellationTests.cs
 - [X] T050 [P] [US4] Add wake-up channel tests for capacity 1, DropWrite, no payload, and draining SQL batches until none are eligible in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationWakeUpTests.cs
-- [ ] T051 [P] [US4] Add abandoned Processing recovery tests for preserved AttemptCount, immediate Pending eligibility when retries remain, Failed when retries are exhausted, cleared ProcessingStartedAtUtc when requeued, and bounded non-secret LastError in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationRecoveryTests.cs
+- [X] T051 [P] [US4] Add abandoned Processing recovery tests for preserved AttemptCount, immediate Pending eligibility when retries remain, Failed when retries are exhausted, cleared ProcessingStartedAtUtc when requeued, and bounded non-secret LastError in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationRecoveryTests.cs
 
 ### Implementation for User Story 4
 
@@ -139,11 +139,11 @@
 - [X] T055 [US4] Implement durable Processing attempt start by transitioning Pending to Processing, incrementing AttemptCount, setting ProcessingStartedAtUtc, and committing before invoking the document handler in Myrmex.Integrations\Synchronization\Processing\SynchronizationProcessor.cs
 - [X] T056 [US4] Implement Completed, Pending retry, Failed terminal transitions, ProcessingAttemptTimeoutSeconds transient failure handling, host-shutdown cancellation behavior, and empty RetryDelaysSeconds transient-failure terminal behavior in Myrmex.Integrations\Synchronization\Processing\SynchronizationProcessor.cs
 - [X] T057 [US4] Implement retry schedule calculation from RetryDelaysSeconds, including empty collections permitting one attempt and no retries, in Myrmex.Integrations\Synchronization\Processing\SynchronizationRetryPolicy.cs
-- [ ] T058 [US4] Implement abandoned Processing recovery after ProcessingTimeoutSeconds with AttemptCount preserved, immediate Pending eligibility when retries remain, Failed when exhausted, ProcessingStartedAtUtc cleared when requeued, and bounded non-secret LastError in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
-- [ ] T059 [US4] Implement hosted service startup scan and fallback polling so each pass invokes store abandoned-Processing recovery before querying and processing currently eligible requests; keep wake-up read loop drain-until-no-eligible-work behavior in Myrmex.Integrations\Synchronization\IntegrationSynchronizationWorker.cs
-- [ ] T060 [US4] Register IntegrationSynchronizationWorker and handler collection in Myrmex.Integrations\OneC\OneCIntegrationModule.cs
-- [ ] T061 [US4] Add worker-loop diagnostics for startup scan, polling, wake-up, and drain cycles in Myrmex.Integrations\Synchronization\IntegrationSynchronizationWorker.cs
-- [ ] T062 [US4] Add lifecycle and outcome diagnostics for transitions, retries, defer, failure, completion, and recovery in Myrmex.Integrations\Synchronization\IntegrationSynchronizationProcessor.cs
+- [X] T058 [US4] Implement abandoned Processing recovery after ProcessingTimeoutSeconds with AttemptCount preserved, immediate Pending eligibility when retries remain, Failed when exhausted, ProcessingStartedAtUtc cleared when requeued, and bounded non-secret LastError in Myrmex.Integrations\Synchronization\SynchronizationRequestStore.cs
+- [X] T059 [US4] Implement hosted service startup scan and fallback polling so each pass invokes store abandoned-Processing recovery before querying and processing currently eligible requests; keep wake-up read loop drain-until-no-eligible-work behavior in Myrmex.Integrations\Synchronization\Processing\SynchronizationWorker.cs
+- [X] T060 [US4] Register SynchronizationWorker and handler collection in Myrmex.Integrations\OneC\OneCIntegrationModule.cs
+- [X] T061 [US4] Add worker-loop diagnostics for startup scan, polling, wake-up, and drain cycles in Myrmex.Integrations\Synchronization\Processing\SynchronizationWorker.cs
+- [X] T062 [US4] Add lifecycle and outcome diagnostics for transitions, retries, defer, failure, completion, and recovery in Myrmex.Integrations\Synchronization\Processing\SynchronizationProcessor.cs
 
 **Checkpoint**: User Story 4 is independently functional and durable requests are processed, deferred, retried, recovered, or failed through the recoverable lifecycle.
 
