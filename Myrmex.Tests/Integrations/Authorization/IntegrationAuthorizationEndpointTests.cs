@@ -210,8 +210,9 @@ public sealed class IntegrationAuthorizationEndpointTests
             new FixedTimeProvider(CheckedAtUtc));
         builder.Services.AddTestApiSessionAuthentication();
         builder.Services.AddProblemDetails();
+        string databaseName = Guid.NewGuid().ToString("N");
         builder.Services.AddDbContext<IntegrationDbContext>(options =>
-            options.UseInMemoryDatabase(Guid.NewGuid().ToString("N")));
+            options.UseInMemoryDatabase(databaseName));
         builder.Services.Configure<OneCIntegrationApiKeyOptions>(options =>
         {
             options.SourceSystem = OneCIntegrationApiKeyOptions.DefaultSourceSystem;
