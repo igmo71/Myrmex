@@ -124,9 +124,13 @@ public sealed class OneCNotificationEndpointTests
         Assert.Equal(new byte[] { 1, 2, 3 }, saved.ExternalDataVersion);
     }
 
-    private static WebApplication CreateApp() =>
-        CreateApp(options =>
-            options.UseInMemoryDatabase(Guid.NewGuid().ToString("N")));
+    private static WebApplication CreateApp()
+    {
+        string databaseName = Guid.NewGuid().ToString("N");
+
+        return CreateApp(options =>
+            options.UseInMemoryDatabase(databaseName));
+    }
 
     private static WebApplication CreateApp(string connectionString) =>
         CreateApp(options => options.UseSqlServer(connectionString));

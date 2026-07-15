@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Myrmex.Integrations.Persistence;
 using Myrmex.Integrations.Persistence.Configurations;
 
@@ -54,12 +55,7 @@ internal sealed class IntegrationSynchronizationSqlTestHost : IAsyncDisposable
 
         try
         {
-            string connectionString =
-                Environment.GetEnvironmentVariable(
-                    ConnectionStringEnvironmentVariable)
-                ?? throw new InvalidOperationException(
-                    $"Environment variable " +
-                    $"'{ConnectionStringEnvironmentVariable}' is not configured.");
+            string connectionString = GetConnectionString();
 
             ValidateTestDatabase(connectionString);
 
@@ -122,6 +118,27 @@ internal sealed class IntegrationSynchronizationSqlTestHost : IAsyncDisposable
                 "Integration synchronization SQL tests require a dedicated " +
                 "database whose name ends with '_test'.");
         }
+    }
+
+    private static string GetConnectionString()
+    {
+        string? environmentValue =
+            Environment.GetEnvironmentVariable(
+                ConnectionStringEnvironmentVariable);
+
+        if (!string.IsNullOrWhiteSpace(environmentValue))
+        {
+            return environmentValue;
+        }
+
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddUserSecrets<IntegrationSynchronizationSqlTestHost>()
+            .Build();
+
+        return configuration.GetConnectionString(
+                "MyrmexIntegrationTestDatabase")
+            ?? throw new InvalidOperationException(
+                "Integration test database connection string is not configured.");
     }
 
     public async ValueTask DisposeAsync()
