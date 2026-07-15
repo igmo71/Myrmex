@@ -82,9 +82,9 @@
 
 ### Tests for User Story 2
 
-- [ ] T033 [P] [US2] Add authentication scheme default-preservation tests for Myrmex.ApiSession and Myrmex.IntegrationApiKey registration in Myrmex.Tests\Integrations\Authorization\IntegrationApiKeyAuthenticationTests.cs
-- [ ] T034 [P] [US2] Add notification endpoint authorization tests for valid API key, missing API key, wrong API key, and Identity API-session-only rejection in Myrmex.Tests\Integrations\Authorization\IntegrationAuthorizationEndpointTests.cs
-- [ ] T035 [US2] Add existing 1C admin/import route protection regression tests for machine key rejection and WMS operator acceptance in Myrmex.Tests\Integrations\Authorization\IntegrationAuthorizationEndpointTests.cs
+- [X] T033 [P] [US2] Add authentication scheme default-preservation tests for Myrmex.ApiSession and Myrmex.IntegrationApiKey registration in Myrmex.Tests\Integrations\Authorization\IntegrationApiKeyAuthenticationTests.cs
+- [X] T034 [P] [US2] Add notification endpoint authorization tests for valid API key, missing API key, wrong API key, and Identity API-session-only rejection in Myrmex.Tests\Integrations\Authorization\IntegrationAuthorizationEndpointTests.cs
+- [X] T035 [US2] Add existing 1C admin/import route protection regression tests for machine key rejection and WMS operator acceptance in Myrmex.Tests\Integrations\Authorization\IntegrationAuthorizationEndpointTests.cs
 
 **Checkpoint**: User Story 2 proves notification auth does not weaken existing user-operated routes.
 
