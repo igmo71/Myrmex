@@ -13,7 +13,7 @@ public static class OneCEndpoints
 {
     public static IEndpointRouteBuilder MapOneCIntegration(this IEndpointRouteBuilder endpoints)
     {
-        //endpoints.MapOneCNotificationEndpoints();
+        endpoints.MapOneCNotificationEndpoints();
 
         RouteGroupBuilder group = endpoints
             .MapGroup("/api/integrations/1c")

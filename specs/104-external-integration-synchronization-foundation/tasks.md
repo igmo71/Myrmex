@@ -153,10 +153,10 @@
 
 **Purpose**: Final validation guidance, cleanup, and documentation consistency.
 
-- [ ] T063 [P] Update quickstart validation notes for final option names and expected outcomes in specs\104-external-integration-synchronization-foundation\quickstart.md
-- [ ] T064 [P] Review integration diagnostics for secret exposure in Myrmex.Integrations\OneC and Myrmex.Integrations\Synchronization
-- [ ] T065 [P] Review public endpoint names and OpenAPI summaries for notification endpoints in Myrmex.Integrations\OneC\Endpoints\OneCNotificationEndpoints.cs
-- [ ] T066 Document developer-controlled migration generation and application steps in specs\104-external-integration-synchronization-foundation\quickstart.md
+- [X] T063 [P] Update quickstart validation notes for final option names and expected outcomes in specs\104-external-integration-synchronization-foundation\quickstart.md
+- [X] T064 [P] Review integration diagnostics for secret exposure in Myrmex.Integrations\OneC and Myrmex.Integrations\Synchronization
+- [X] T065 [P] Review public endpoint names and OpenAPI summaries for notification endpoints in Myrmex.Integrations\OneC\Endpoints\OneCNotificationEndpoints.cs
+- [X] T066 Document developer-controlled migration generation and application steps in specs\104-external-integration-synchronization-foundation\quickstart.md
 
 ---
 

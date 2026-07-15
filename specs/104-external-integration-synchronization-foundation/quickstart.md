@@ -1,114 +1,173 @@
 # Quickstart: External Integration Synchronization Foundation
 
-This guide describes developer-controlled validation for the planned feature. Do not run builds, tests, application startup, database updates, EF migration generation, or EF migration application automatically.
+This guide describes developer-controlled validation for Issue #104. Do not run builds, tests, application startup, database updates, EF migration generation, or EF migration application automatically.
 
-## Prerequisites
+## Configuration
 
-- Development database available through `ConnectionStrings:MyrmexDatabase`.
-- Integration schema migration generated, reviewed, and applied by the developer.
-- Disposable development-only integration API key supplied through local development configuration.
-- Existing Identity/API-session configuration remains valid for current WMS operator 1C administration endpoints.
+ApiService uses the existing `ConnectionStrings:MyrmexDatabase` SQL Server connection. The synchronization queue is owned by `IntegrationDbContext` in the `integration` schema.
 
-## Recommended Validation Commands
+Required 1C integration identity configuration:
 
-Run only when the developer is ready:
+```json
+{
+  "Myrmex": {
+    "Integrations": {
+      "OneC": {
+        "SourceSystem": "OneC",
+        "SourceInstance": "main-infobase",
+        "ApiKey": "development-only-key"
+      }
+    }
+  }
+}
+```
+
+`SourceSystem` defaults to `OneC`, but it is still startup-validated as non-empty and bounded. `SourceInstance` is the server-assigned identity of the external 1C infobase. `ApiKey` is configuration-only secret material; use a disposable local development key and keep production values in protected uncommitted environment or `.env` configuration.
+
+Synchronization worker configuration:
+
+```json
+{
+  "Myrmex": {
+    "Integrations": {
+      "Synchronization": {
+        "PollingIntervalSeconds": 60,
+        "BatchSize": 20,
+        "ProcessingAttemptTimeoutSeconds": 30,
+        "ProcessingTimeoutSeconds": 300,
+        "RetryDelaysSeconds": [10, 30, 120, 600, 1800, 3600, 10800]
+      }
+    }
+  }
+}
+```
+
+All numeric values must be positive. `RetryDelaysSeconds = []` is valid and permits one initial attempt with no retries.
+
+## Developer-Controlled Migration
+
+Runtime startup must not create or update schema. The integration migration is developer-controlled and lives under `Myrmex.Integrations\Persistence\Migrations`.
+
+Generate and review the migration only when migration work is explicitly requested:
+
+```powershell
+dotnet ef migrations add AddSynchronizationRequests `
+  --project Myrmex.Integrations\Myrmex.Integrations.csproj `
+  --startup-project Myrmex.ApiService\Myrmex.ApiService.csproj `
+  --context IntegrationDbContext `
+  --output-dir Persistence\Migrations
+```
+
+Apply it only after review:
+
+```powershell
+dotnet ef database update `
+  --project Myrmex.Integrations\Myrmex.Integrations.csproj `
+  --startup-project Myrmex.ApiService\Myrmex.ApiService.csproj `
+  --context IntegrationDbContext
+```
+
+The expected table is `integration.synchronization_requests`; the idempotency unique index is `UX_integration_synchronization_requests_idempotency`.
+
+## SQL-Backed Tests
+
+Provider-specific persistence, duplicate-key, concurrency, lifecycle, and worker tests require a prepared SQL Server test database.
+
+Configure `Myrmex.Tests` user secrets:
+
+```powershell
+dotnet user-secrets set `
+  --project Myrmex.Tests\Myrmex.Tests.csproj `
+  "ConnectionStrings:MyrmexIntegrationTestDatabase" `
+  "Server=localhost;Database=MyrmexIntegration_test;Trusted_Connection=True;TrustServerCertificate=True"
+```
+
+The database name must end in `_test`. The test host also accepts `MYRMEX_INTEGRATION_TEST_CONNECTION` for local override. Tests verify pending migrations before clearing `integration.synchronization_requests`.
+
+Recommended validation commands, run only when the developer is ready:
 
 ```powershell
 dotnet build Myrmex.slnx -nologo -v:minimal
 dotnet test Myrmex.Tests\Myrmex.Tests.csproj --filter "FullyQualifiedName~Integrations"
 ```
 
-If migration work is explicitly requested later, generate and apply integration migrations through the repository's normal EF workflow; runtime startup must not silently create or update schema.
+## AppHost Smoke Tests
 
-## Scenario 1: Accepted Receiving Notification
+AppHost passes these integration settings into ApiService:
 
-1. Start ApiService with a disposable development API key.
-2. Send:
+- `Myrmex__Integrations__OneC__SourceInstance`
+- `Myrmex__Integrations__OneC__ApiKey`
 
-   ```http
-   POST /api/integrations/1c/receiving-orders/changed
-   Authorization: ApiKey <development-secret>
-   Content-Type: application/json
-   ```
+The explicit AppHost smoke test supplies disposable values for those variables. Normal AppHost runs still require valid `Myrmex:Integrations:OneC:SourceInstance`, `Myrmex:Integrations:OneC:ApiKey`, `ConnectionStrings:MyrmexDatabase`, and existing 1C OData settings before ApiService can pass startup validation and health checks.
 
-   ```json
-   {
-     "Ref_Key": "80066011-d7c7-11ef-bac8-00155d01d112",
-     "DataVersion": "AAAAAAAaKtk=",
-     "Number": "UT-00001004",
-     "Date": "2025-01-21T10:15:36"
-   }
-   ```
+## Notification Intake
 
-3. Expect empty `202 Accepted`.
-4. Verify one durable synchronization request exists with `EntityType = ReceivingOrder`, configured `SourceSystem`, configured `SourceInstance`, decoded binary data version, optional diagnostics, and `Pending` or later processor-owned lifecycle state.
+Send a receiving notification:
 
-## Scenario 2: Duplicate Notification
+```http
+POST /api/integrations/1c/receiving-orders/changed
+Authorization: ApiKey <key>
+Content-Type: application/json
+```
 
-1. Repeat the same request at least five times.
-2. Expect empty `202 Accepted` every time.
-3. Verify duplicate delivery does not change lifecycle state, attempt count, retry schedule, timestamps, or last error.
+```json
+{
+  "Ref_Key": "80066011-d7c7-11ef-bac8-00155d01d112",
+  "DataVersion": "AAAAAAAaKtk=",
+  "Number": "UT-00001004",
+  "Date": "2025-01-21T10:15:36"
+}
+```
 
-## Scenario 3: Contract Validation Failure
+Expected response after durable commit:
 
-1. Send a notification with invalid Base64 `DataVersion`, an empty decoded `DataVersion`, an oversized decoded `DataVersion`, an invalid `Ref_Key`, an over-length `Number`, and a malformed `Date`.
-2. Expect a non-`202` validation response.
-3. Verify no synchronization request is created.
+```http
+HTTP/1.1 202 Accepted
+Content-Length: 0
+```
 
-## Scenario 4: Authentication Boundary
+The shipping route is:
 
-1. Call a notification endpoint with no API key or a wrong API key.
-2. Expect authentication/authorization failure and no synchronization request.
-3. Call a notification endpoint with only an Identity API-session cookie.
-4. Expect `OneCIntegration` authorization to reject it.
-5. Start with missing or empty configured API-key values.
-6. Expect startup options validation failure.
-7. Call `/api/integrations/1c/connection/test` with the integration API key.
-8. Expect the existing WMS operator route to reject the machine credential.
-9. Call the same connection-test endpoint with an eligible WMS operator or administrator API session.
-10. Expect the existing route behavior to remain intact.
+```http
+POST /api/integrations/1c/shipping-orders/changed
+Authorization: ApiKey <key>
+Content-Type: application/json
+```
 
-## Scenario 5: Processor Lifecycle
+Valid new and accepted duplicate notifications both return the same empty `202 Accepted` response. The response does not expose whether a request was inserted or treated as a duplicate.
 
-1. Accept a receiving or shipping notification with no document-specific handler registered.
-2. Let the processor run.
-3. Verify the request becomes `Deferred`, not `Completed`.
-4. Simulate a registered handler completing successfully.
-5. Verify the request becomes `Completed` and records completion time.
-6. Simulate transient and permanent failures.
-7. Verify retry schedule, exhausted retries, and terminal `Failed` behavior.
-8. Verify `AttemptCount` increments when an attempt starts, the first attempt is `1`, `N` retry delays allow `N + 1` attempts, and `Deferred` outcomes do not consume retry delays.
-9. Verify the `Pending` to `Processing` transition, incremented `AttemptCount`, and `ProcessingStartedAtUtc` are committed before handler invocation.
-10. Verify `ProcessingAttemptTimeoutSeconds` is treated as a transient failure, while host-shutdown cancellation leaves the durable record `Processing` for abandoned recovery without scheduling a normal handler retry.
-11. Configure `RetryDelaysSeconds = []` and verify one initial attempt is allowed, no retry is scheduled, and a transient failure becomes terminal `Failed`.
+Malformed requests return normal validation problem details identifying `Ref_Key`, `DataVersion`, `Number`, or `Date` as applicable. Validation responses must not expose API keys, decoded data versions, connection strings, queue contents, or internal exception details.
 
-## Scenario 6: Wake-Up and Restart Recovery
+## Expected Startup and Worker Outcomes
 
-1. Accept a notification and suppress or ignore the wake-up signal.
-2. Verify fallback SQL polling still discovers the request within one polling interval.
-3. Fill the bounded capacity-1 wake-up channel.
-4. Verify additional wake-up writes are dropped/coalesced without losing SQL-backed work.
-5. Verify the processor drains eligible SQL batches until no immediately eligible work remains after a wake-up.
-6. Leave a request in `Processing` and restart the application after the processing timeout.
-7. Verify the abandoned attempt remains included in `AttemptCount`.
-8. Verify startup and fallback-polling passes invoke abandoned `Processing` recovery before querying and processing currently eligible requests.
-9. Verify the request returns to immediately eligible `Pending` with `ProcessingStartedAtUtc` cleared when retry opportunities remain.
-10. Verify the request becomes `Failed` with bounded non-secret `LastError` when retry opportunities are exhausted.
+- Missing or empty `ApiKey`, missing/empty/over-length `SourceSystem`, missing/empty/over-length `SourceInstance`, non-positive polling/batch/timeout values, null retry-delay collection, or non-positive retry-delay elements fail startup options validation.
+- Valid notification intake persists a `Pending` synchronization request and emits a best-effort wake-up only after commit.
+- The wake-up channel has capacity 1, drops writes when full, carries no request payload, and only wakes the worker.
+- Startup and fallback polling first recover abandoned `Processing` records, then process currently eligible requests.
+- Wake-up handling drains eligible SQL batches until no immediately eligible work remains.
+- Fallback polling still discovers work when wake-up signals are lost or coalesced.
+- If no document-specific handler is registered, the request transitions directly from `Pending` to `Deferred` without incrementing `AttemptCount`, setting `ProcessingStartedAtUtc`, or consuming a retry delay.
+- A registered handler starts a durable attempt by committing `Pending` to `Processing`, incrementing `AttemptCount`, and setting `ProcessingStartedAtUtc` before invocation.
+- `ProcessingAttemptTimeoutSeconds` is a transient failure and follows retry policy.
+- Host-shutdown cancellation leaves the durable record `Processing`; abandoned recovery handles it after `ProcessingTimeoutSeconds`.
+- Abandoned recovery preserves `AttemptCount`, requeues immediately as `Pending` with cleared `ProcessingStartedAtUtc` when retries remain, or marks `Failed` when retries are exhausted.
+- Persisted `LastError` values are bounded diagnostics and must not contain secrets.
 
-## Scenario 7: Concurrent Duplicate Intake
+## Readiness
 
-1. Send duplicate HTTP notifications for the same source/version concurrently.
-2. Verify the database unique constraint is authoritative and only one synchronization request exists.
-3. Verify only SQL Server duplicate-key failures that identify `UX_integration_synchronization_requests_idempotency` are treated as duplicate intake.
-4. Verify the failed Added entity is detached or otherwise cleared from EF tracking before loading the existing record and the failed insert is not retried.
-5. Verify unrelated persistence failures are surfaced as failures and are not returned as successful duplicates.
+Use the existing ApiService `/health` readiness endpoint supplied by `Myrmex.ServiceDefaults`; do not add a separate integration-specific public health endpoint.
 
-## Scenario 8: Platform Readiness Participation
+- `/health` includes `IntegrationDbContext` persistence reachability.
+- `/alive` remains platform liveness and does not depend on integration SQL availability.
+- Health output must not expose API keys, connection strings, external credentials, queue contents, synchronization-request details, or internal exception details.
 
-1. Use the existing ApiService `/health` readiness endpoint supplied by `Myrmex.ServiceDefaults`; do not add a separate integration-specific public health endpoint.
-2. Verify `/health` reflects whether `IntegrationDbContext` can reach integration persistence through the configured database context.
-3. Verify `/alive` remains the platform liveness check and does not depend on integration SQL availability.
-4. Verify readiness responses do not expose API keys, connection strings, external credentials, queue contents, synchronization-request details, or internal exception details.
+## Operational Review Checklist
+
+- Notification endpoint names are `AcceptOneCReceivingOrderChanged` and `AcceptOneCShippingOrderChanged`.
+- Notification OpenAPI summaries identify receiving and shipping change notifications.
+- Notification OpenAPI descriptions state that a valid request returns an empty `202 Accepted` after durable commit and malformed requests return validation problem details.
+- Integration logs may include entity type, synchronization request id, source identity fields, lifecycle state, attempt count, retry time, and counts.
+- Integration logs and persisted diagnostics must not include API keys, plaintext authorization headers, decoded `DataVersion`, external credentials, connection strings, queue contents, or internal exception details. Full exception details are allowed only in logs for unexpected handler failures, not in persisted `LastError` or HTTP responses.
 
 ## Expected Artifacts
 

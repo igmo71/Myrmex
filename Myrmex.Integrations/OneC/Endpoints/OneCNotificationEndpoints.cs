@@ -38,7 +38,11 @@ public static class OneCNotificationEndpoints
                     loggerFactory,
                     cancellationToken))
             .WithName("AcceptOneCReceivingOrderChanged")
-            .WithSummary("Accept a 1C receiving order change notification");
+            .WithSummary("Accept a 1C receiving order change notification")
+            .WithDescription(
+                "Persists the notification and returns an empty 202 Accepted response after durable commit. Malformed notifications return validation problem details.")
+            .Produces(StatusCodes.Status202Accepted)
+            .ProducesValidationProblem();
 
         group.MapPost(
             "/shipping-orders/changed",
@@ -58,7 +62,11 @@ public static class OneCNotificationEndpoints
                     loggerFactory,
                     cancellationToken))
             .WithName("AcceptOneCShippingOrderChanged")
-            .WithSummary("Accept a 1C shipping order change notification");
+            .WithSummary("Accept a 1C shipping order change notification")
+            .WithDescription(
+                "Persists the notification and returns an empty 202 Accepted response after durable commit. Malformed notifications return validation problem details.")
+            .Produces(StatusCodes.Status202Accepted)
+            .ProducesValidationProblem();
 
         return endpoints;
     }
