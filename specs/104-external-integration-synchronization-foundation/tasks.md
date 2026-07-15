@@ -98,19 +98,19 @@
 
 ### Tests for User Story 3
 
-- [ ] T036 [P] [US3] Add persistence tests for UX_integration_synchronization_requests_idempotency uniqueness and different DataVersion/source-instance distinctness in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationIdempotencyTests.cs
-- [ ] T037 [P] [US3] Add store tests for duplicate Pending, Processing, Deferred, Completed, and Failed records preserving status, attempts, retry timing, timestamps, and LastError in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationDuplicateTests.cs
-- [ ] T038 [P] [US3] Add duplicate-key classifier tests that only named UX_integration_synchronization_requests_idempotency violations are treated as duplicates in Myrmex.Tests\Integrations\OneC\Synchronization\SqlServerDuplicateSynchronizationRequestDetectorTests.cs
-- [ ] T039 [P] [US3] Add endpoint tests for concurrent duplicate HTTP intake returning empty 202 with one durable record in Myrmex.Tests\Integrations\OneC\Endpoints\OneCNotificationEndpointTests.cs
+- [X] T036 [P] [US3] Add persistence tests for UX_integration_synchronization_requests_idempotency uniqueness and different DataVersion/source-instance distinctness in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationIdempotencyTests.cs
+- [X] T037 [P] [US3] Add store tests for duplicate Pending, Processing, Deferred, Completed, and Failed records preserving status, attempts, retry timing, timestamps, and LastError in Myrmex.Tests\Integrations\OneC\Synchronization\IntegrationSynchronizationDuplicateTests.cs
+- [X] T038 [P] [US3] Add duplicate-key classifier tests that only named UX_integration_synchronization_requests_idempotency violations are treated as duplicates in Myrmex.Tests\Integrations\OneC\Synchronization\SqlServerDuplicateSynchronizationRequestDetectorTests.cs
+- [X] T039 [P] [US3] Add endpoint tests for concurrent duplicate HTTP intake returning empty 202 with one durable record in Myrmex.Tests\Integrations\OneC\Endpoints\OneCNotificationEndpointTests.cs
 
 ### Implementation for User Story 3
 
-- [ ] T040 [US3] Extend IntegrationSynchronizationRequestStore to catch SQL Server duplicate-key errors and verify UX_integration_synchronization_requests_idempotency in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
-- [ ] T041 [US3] Detach the failed Added entity or otherwise clear the failed insert from EF tracking before loading the existing record, without retrying the failed insert, in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
-- [ ] T042 [US3] Implement duplicate intake result that loads existing lifecycle state without mutating it in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
-- [ ] T043 [US3] Emit best-effort wake-up signal only for duplicate Pending requests in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
-- [ ] T044 [US3] Map newly inserted synchronization requests and accepted duplicate synchronization requests to the same empty 202 Accepted response without exposing which result occurred in Myrmex.Integrations\OneC\Endpoints\OneCNotificationEndpoints.cs
-- [ ] T045 [US3] Add diagnostics for duplicate notification detection without exposing new/existing state to callers in Myrmex.Integrations\Synchronization\IntegrationSynchronizationRequestStore.cs
+- [X] T040 [US3] Extend SynchronizationRequestStore to catch SQL Server duplicate-key errors and verify UX_integration_synchronization_requests_idempotency in Myrmex.Integrations\Synchronization\SynchronizationRequestStore.cs
+- [X] T041 [US3] Detach the failed Added entity or otherwise clear the failed insert from EF tracking before loading the existing record, without retrying the failed insert, in Myrmex.Integrations\Synchronization\SynchronizationRequestStore.cs
+- [X] T042 [US3] Implement duplicate intake result that loads existing lifecycle state without mutating it in Myrmex.Integrations\Synchronization\SynchronizationRequestStore.cs
+- [X] T043 [US3] Emit best-effort wake-up signal only for duplicate Pending requests in Myrmex.Integrations\Synchronization\SynchronizationRequestStore.cs
+- [X] T044 [US3] Map newly inserted synchronization requests and accepted duplicate synchronization requests to the same empty 202 Accepted response without exposing which result occurred in Myrmex.Integrations\OneC\Endpoints\OneCNotificationEndpoints.cs
+- [X] T045 [US3] Add diagnostics for duplicate notification detection without exposing new/existing state to callers in Myrmex.Integrations\Synchronization\SynchronizationRequestStore.cs
 
 **Checkpoint**: User Story 3 is independently functional and duplicate delivery cannot mutate existing lifecycle state.
 

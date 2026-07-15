@@ -91,12 +91,13 @@ public static class OneCNotificationEndpoints
 
         SynchronizationRequest synchronizationRequest =
             factory.Create(request, validation, entityType);
-        await store.InsertAsync(synchronizationRequest, cancellationToken);
+        SynchronizationRequestIntakeResult intakeResult =
+            await store.InsertAsync(synchronizationRequest, cancellationToken);
 
         logger.LogInformation(
             "Accepted 1C {EntityType} change notification as synchronization request {SynchronizationRequestId}.",
             entityType,
-            synchronizationRequest.Id);
+            intakeResult.Request.Id);
 
         return TypedResults.StatusCode(StatusCodes.Status202Accepted);
     }

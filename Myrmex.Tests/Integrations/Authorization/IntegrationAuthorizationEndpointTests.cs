@@ -12,6 +12,7 @@ using Myrmex.Integrations.OneC.Notifications;
 using Myrmex.Integrations.OneC.Security;
 using Myrmex.Integrations.OneC.Transport;
 using Myrmex.Integrations.Persistence;
+using Myrmex.Integrations.Persistence.SqlServer;
 using Myrmex.Integrations.Synchronization;
 using Myrmex.Integrations.Synchronization.Processing;
 using Myrmex.Shared.Identity;
@@ -223,6 +224,7 @@ public sealed class IntegrationAuthorizationEndpointTests
         builder.Services.AddSingleton<OneCChangeNotificationValidator>();
         builder.Services.AddScoped<SynchronizationRequestFactory>();
         builder.Services.AddScoped<SynchronizationRequestStore>();
+        builder.Services.AddSingleton<SqlServerDuplicateSynchronizationRequestDetector>();
         builder.Services
             .AddAuthentication()
             .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(

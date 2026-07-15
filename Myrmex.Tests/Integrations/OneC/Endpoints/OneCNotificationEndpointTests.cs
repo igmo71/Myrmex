@@ -12,8 +12,10 @@ using Myrmex.Integrations.OneC.Endpoints;
 using Myrmex.Integrations.OneC.Notifications;
 using Myrmex.Integrations.OneC.Security;
 using Myrmex.Integrations.Persistence;
+using Myrmex.Integrations.Persistence.SqlServer;
 using Myrmex.Integrations.Synchronization;
 using Myrmex.Integrations.Synchronization.Processing;
+using Myrmex.Tests.Integrations.OneC.Synchronization;
 using System.Net.Http.Json;
 
 namespace Myrmex.Tests.Integrations.OneC.Endpoints;
@@ -83,15 +85,60 @@ public sealed class OneCNotificationEndpointTests
         await Task.CompletedTask;
     }
 
-    private static WebApplication CreateApp()
+    [Fact]
+    public async Task NotificationEndpoint_WhenConcurrentDuplicates_ReturnsAcceptedAndPersistsOneRequest()
+    {
+        await using IntegrationSynchronizationSqlTestHost sqlHost =
+            await IntegrationSynchronizationSqlTestHost.CreateAsync();
+        await using WebApplication app = CreateApp(sqlHost.ConnectionString);
+        await app.StartAsync(TestContext.Current.CancellationToken);
+
+        using HttpClient client = CreateClient(app);
+        Task<HttpResponseMessage>[] sends = Enumerable.Range(0, 8)
+            .Select(_ => SendNotificationAsync(
+                client,
+                "/api/integrations/1c/receiving-orders/changed",
+                CreateNotificationPayload()))
+            .ToArray();
+
+        HttpResponseMessage[] responses = await Task.WhenAll(sends);
+
+        foreach (HttpResponseMessage response in responses)
+        {
+            using (response)
+            {
+                Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+                Assert.Equal(
+                    string.Empty,
+                    await response.Content.ReadAsStringAsync(
+                        TestContext.Current.CancellationToken));
+            }
+        }
+
+        await using IntegrationDbContext dbContext = sqlHost.CreateDbContext();
+        SynchronizationRequest saved = Assert.Single(
+            await dbContext.SynchronizationRequests
+                .ToListAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(SynchronizationStatus.Pending, saved.Status);
+        Assert.Equal("80066011-d7c7-11ef-bac8-00155d01d112", saved.ExternalId);
+        Assert.Equal(new byte[] { 1, 2, 3 }, saved.ExternalDataVersion);
+    }
+
+    private static WebApplication CreateApp() =>
+        CreateApp(options =>
+            options.UseInMemoryDatabase(Guid.NewGuid().ToString("N")));
+
+    private static WebApplication CreateApp(string connectionString) =>
+        CreateApp(options => options.UseSqlServer(connectionString));
+
+    private static WebApplication CreateApp(
+        Action<DbContextOptionsBuilder> configureDbContext)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Services.AddLogging();
         builder.Services.AddProblemDetails();
-        string databaseName = Guid.NewGuid().ToString("N");
-        builder.Services.AddDbContext<IntegrationDbContext>(options =>
-            options.UseInMemoryDatabase(databaseName));
+        builder.Services.AddDbContext<IntegrationDbContext>(configureDbContext);
         builder.Services.Configure<OneCIntegrationApiKeyOptions>(options =>
         {
             options.SourceSystem = OneCIntegrationApiKeyOptions.DefaultSourceSystem;
@@ -104,6 +151,7 @@ public sealed class OneCNotificationEndpointTests
         builder.Services.AddSingleton<OneCChangeNotificationValidator>();
         builder.Services.AddScoped<SynchronizationRequestFactory>();
         builder.Services.AddScoped<SynchronizationRequestStore>();
+        builder.Services.AddSingleton<SqlServerDuplicateSynchronizationRequestDetector>();
         builder.Services
             .AddAuthentication()
             .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
@@ -131,6 +179,26 @@ public sealed class OneCNotificationEndpointTests
         };
         request.Headers.TryAddWithoutValidation("Authorization", $"ApiKey {ApiKey}");
         return request;
+    }
+
+    private static Dictionary<string, object?> CreateNotificationPayload() =>
+        new()
+        {
+            ["Ref_Key"] = "80066011-d7c7-11ef-bac8-00155d01d112",
+            ["DataVersion"] = Convert.ToBase64String([1, 2, 3]),
+            ["Number"] = "UT-00001004",
+            ["Date"] = "2025-01-21T10:15:36"
+        };
+
+    private static async Task<HttpResponseMessage> SendNotificationAsync(
+        HttpClient client,
+        string route,
+        Dictionary<string, object?> payload)
+    {
+        using HttpRequestMessage request = CreateNotificationRequest(route, payload);
+        return await client.SendAsync(
+            request,
+            TestContext.Current.CancellationToken);
     }
 
     private static async Task<List<SynchronizationRequest>> ReadRequestsAsync(
