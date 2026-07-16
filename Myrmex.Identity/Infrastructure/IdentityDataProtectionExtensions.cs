@@ -48,33 +48,64 @@ public static class IdentityDataProtectionExtensions
             .SetApplicationName(options.DataProtection.ApplicationName.Trim())
             .PersistKeysToDbContext<IdentityDbContext>();
 
-        string? thumbprint = options.DataProtection.Certificate.Thumbprint?.Trim();
-        if (!string.IsNullOrWhiteSpace(thumbprint))
+        X509Certificate2? certificate = LoadCertificate(options.DataProtection.Certificate);
+        if (certificate is not null)
         {
-            dataProtection.ProtectKeysWithCertificate(
-                LoadCertificate(options.DataProtection.Certificate, thumbprint));
+            dataProtection.ProtectKeysWithCertificate(certificate);
         }
 
         return services;
     }
 
-    private static X509Certificate2 LoadCertificate(
-        IdentityDataProtectionCertificateOptions options,
-        string thumbprint)
+    private static X509Certificate2? LoadCertificate(
+    IdentityDataProtectionCertificateOptions options)
     {
+        string? filePath = options.FilePath?.Trim();
+
+        if (!string.IsNullOrWhiteSpace(filePath))
+        {
+            if (!File.Exists(filePath))
+            {
+                throw new InvalidOperationException(
+                    $"The configured Data Protection certificate file '{filePath}' was not found.");
+            }
+
+            X509Certificate2 certificate =
+                X509CertificateLoader.LoadPkcs12FromFile(
+                    filePath,
+                    options.Password,
+                    X509KeyStorageFlags.EphemeralKeySet);
+
+            if (!certificate.HasPrivateKey)
+            {
+                certificate.Dispose();
+
+                throw new InvalidOperationException(
+                    "The configured Data Protection certificate does not contain a private key.");
+            }
+
+            return certificate;
+        }
+
+        string? thumbprint = options.Thumbprint?.Trim();
+
+        if (string.IsNullOrWhiteSpace(thumbprint))
+        {
+            return null;
+        }
+
         using X509Store store = new(options.StoreName, options.StoreLocation);
         store.Open(OpenFlags.ReadOnly);
 
-        X509Certificate2? certificate = store.Certificates
+        return store.Certificates
             .Find(
                 X509FindType.FindByThumbprint,
                 thumbprint,
                 validOnly: false)
             .OfType<X509Certificate2>()
-            .FirstOrDefault(candidate => candidate.HasPrivateKey);
-
-        return certificate ?? throw new InvalidOperationException(
-            "The configured Data Protection certificate was not found or does not " +
-            "contain a private key.");
+            .FirstOrDefault(candidate => candidate.HasPrivateKey)
+            ?? throw new InvalidOperationException(
+                "The configured Data Protection certificate was not found or does not " +
+                "contain a private key.");
     }
 }

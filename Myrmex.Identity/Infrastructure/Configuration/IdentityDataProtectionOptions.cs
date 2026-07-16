@@ -33,6 +33,10 @@ public sealed class IdentitySharedDataProtectionOptions
 
 public sealed class IdentityDataProtectionCertificateOptions
 {
+    public string? FilePath { get; set; }
+
+    public string? Password { get; set; }
+
     public string? Thumbprint { get; set; }
 
     public StoreName StoreName { get; set; } =
