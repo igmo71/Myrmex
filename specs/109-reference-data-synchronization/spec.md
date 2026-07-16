@@ -67,14 +67,15 @@ As a WMS operator, I want source-owned fields on 1C-linked references protected 
 
 **Why this priority**: Clear source ownership preserves data integrity and makes same-version no-op behavior safe.
 
-**Independent Test**: Link each supported reference type to 1C, attempt local changes to every source-owned and WMS-owned field, and verify that source-owned changes are rejected while allowed descriptive changes succeed; then repeat with an unlinked record and verify existing behavior remains.
+**Independent Test**: Link each supported reference type to 1C, attempt actual local changes to every source-owned field, resubmit the current source-owned values while changing only WMS-owned fields, and verify that only actual source-owned changes are rejected; then repeat with an unlinked record and verify existing behavior remains.
 
 **Acceptance Scenarios**:
 
-1. **Given** a Warehouse linked to 1C, **When** a local operation tries to change its code, name, source-controlled active state, or external import state, **Then** the operation is rejected, while its description remains editable.
-2. **Given** a Unit of Measure linked to 1C, **When** a local operation tries to change its code, name, symbol, source-controlled active state, or external import state, **Then** the operation is rejected.
-3. **Given** an SKU linked to 1C, **When** a local operation tries to change its code, name, base Unit of Measure, source-controlled active state, or external import state, **Then** the operation is rejected, while its description remains editable.
+1. **Given** a Warehouse linked to 1C, **When** a local operation tries to change its code, name, or source-controlled active state, **Then** the operation is rejected; resubmitting those values unchanged while changing only its description is permitted.
+2. **Given** a Unit of Measure linked to 1C, **When** a local operation tries to change its code, name, symbol, or source-controlled active state, **Then** the operation is rejected; resubmitting those source-owned values unchanged is permitted.
+3. **Given** an SKU linked to 1C, **When** a local operation tries to change its code, name, base Unit of Measure, or source-controlled active state, **Then** the operation is rejected; resubmitting those values unchanged while changing only its description is permitted.
 4. **Given** a reference that is not linked to 1C, **When** an existing local edit operation is used, **Then** its current behavior is preserved.
+5. **Given** any linked reference, **When** a normal local edit operation is used, **Then** external identity, source version, and last-import time are not available for local mutation.
 
 ### Edge Cases
 
@@ -85,10 +86,11 @@ As a WMS operator, I want source-owned fields on 1C-linked references protected 
 - A deletion-marked source object is linked to an already inactive local record; synchronization records the new version without emitting a duplicate deactivation event.
 - An active source object is linked to an inactive local record; valid current source data reactivates the local record.
 - A deletion-marked source object has no linked local record; synchronization skips it successfully without creating an inactive record or validating irrelevant detail fields.
-- A source folder is encountered; it is skipped as a controlled successful outcome.
+- A Warehouse or SKU source folder is encountered; it is skipped as a controlled successful outcome. Unit of Measure and any other reference type do not gain folder support.
 - A single-object source read returns no object, a malformed response, a timeout, or cancellation; each outcome remains distinguishable.
 - Processing commits a WMS change but stops before the durable request is marked complete; retry observes the stored version and completes unchanged without a duplicate mutation or event.
 - Manual and reactive/on-demand work overlap for the same reference type; only one source-read-and-apply operation proceeds within the current application instance, while different reference types may proceed concurrently.
+- Application shutdown occurs during reactive processing; cancellation propagates, the durable request is not classified as completed or failed, and the existing abandoned-processing recovery behavior handles it later.
 - A missing SKU base Unit of Measure is itself absent, deletion-marked and unlinked, inactive, invalid, or unavailable; SKU synchronization fails after the single bounded repair attempt.
 
 ## Requirements *(mandatory)*
@@ -109,29 +111,32 @@ As a WMS operator, I want source-owned fields on 1C-linked references protected 
 - **FR-012**: A linked deletion-marked source reference MUST be deactivated if active, remain stored, and record the current source version; repeated inactive state MUST NOT emit another deactivation event.
 - **FR-013**: An active current source reference linked to an inactive local record MUST be validated, updated, reactivated, and recorded as applied.
 - **FR-014**: An unlinked deletion-marked source reference MUST be skipped without creating a local record, and deletion handling MUST occur before validation of reference details or SKU dependencies.
-- **FR-015**: Source folders MUST remain controlled skips and MUST NOT be treated as updated, unchanged, or failed records.
+- **FR-015**: Only Warehouse and Stock Keeping Unit, whose sources expose folder records, MUST treat source folders as controlled skips that are not updated, unchanged, or failed records; this feature MUST NOT add folder support to Unit of Measure or any other reference type.
 - **FR-016**: Synchronization MUST find linked records only by stable external identity and MUST NOT automatically link records by mutable business code.
-- **FR-017**: Local edit operations MUST reject changes to source-owned fields of linked references while preserving edits to explicitly WMS-owned fields and existing behavior for unlinked records.
+- **FR-017**: Local edit operations MUST reject only an actual change to a source-owned value of a linked reference; they MUST permit requests that resubmit source-owned values unchanged while changing only explicitly WMS-owned fields, preserve existing behavior for unlinked records, and keep external import state inaccessible to normal local edit operations.
 - **FR-018**: The system MUST provide an internal synchronize-one capability that accepts a supported reference type and external identity and returns an explicit applied, unchanged, controlled-skip, not-found, busy, or failure outcome.
 - **FR-019**: An absent source object during synchronize-one MUST NOT create a local record or deactivate an existing linked record without an explicit current deletion mark.
 - **FR-020**: Reactive and on-demand SKU synchronization MUST attempt to repair a missing or inactive base Unit of Measure by synchronizing no more than one Unit of Measure and applying the SKU no more than one additional time.
 - **FR-021**: Failed SKU dependency repair MUST return an explicit failure and MUST NOT recurse, build a dependency chain, or perform additional repair or SKU retries.
-- **FR-022**: Reactive processing MUST complete durable requests for applied, unchanged, source-folder skip, and unlinked-deletion skip outcomes.
+- **FR-022**: Reactive processing MUST complete durable requests for applied, unchanged, applicable Warehouse or Stock Keeping Unit source-folder skip, and unlinked-deletion skip operation outcomes.
 - **FR-023**: Reactive processing MUST classify temporary source failure, timeout, and same-type synchronization contention as retryable; it MUST classify object absence, malformed source data, validation failure, and unresolved business conflict as permanent.
 - **FR-024**: Reference synchronization MUST be safe for repeated execution when WMS changes and durable request state do not complete atomically; retry MUST NOT duplicate mutations or business events.
-- **FR-025**: Within one application instance, the source read and application of a reference type MUST be serialized against manual, reactive, and on-demand work of the same type, while different reference types remain independently executable.
+- **FR-025**: Within one application instance, each reference type MUST have an independent coordination lease shared by manual, reactive, and on-demand synchronization. Manual full import MUST hold the lease from before its first source read until the whole operation completes, fails, or is cancelled, including every page and batch of an SKU import. Reactive and on-demand synchronization MUST hold it from before the single-object source read through the application commit. Different reference types MUST remain independently executable, and this feature MUST NOT introduce distributed or cross-process locking.
 - **FR-026**: Manual import MUST retain its current fail-fast busy behavior; reactive work MUST return a retryable busy result; internal on-demand work MUST return an explicit busy result; all three MUST honor cancellation.
 - **FR-027**: Existing manual import routes, operator authorization, source ordering and SKU paging, code-conflict handling, transaction and savepoint behavior, previously committed SKU batches, response fields, structured error shape, and returned-error limit MUST remain compatible.
 - **FR-028**: Manual import results MUST add an unchanged count, and the operator-facing import view MUST display it alongside created, updated, skipped, and failed counts.
 - **FR-029**: Existing Receiving and Shipping notification behavior MUST remain unchanged by this feature.
 - **FR-030**: The feature MUST reuse the existing durable synchronization request intake, processing, retry, recovery, polling, and wake-up mechanisms rather than creating a parallel work lifecycle.
+- **FR-031**: Automated tests added or changed for this feature MUST cover only behavior introduced or changed by Feature 109; they MUST NOT duplicate Feature 104 synchronization-foundation tests, MUST use representative or parameterized coverage for behavior shared by Warehouse, Unit of Measure, and Stock Keeping Unit, and MUST add type-specific tests only where mappings or domain rules materially differ.
+- **FR-032**: Processor or application shutdown cancellation MUST propagate as cancellation and MUST NOT be classified as `Completed`, `TransientFailure`, `PermanentFailure`, or a new durable request status. Recovery MUST remain owned by Feature 104's existing abandoned-processing behavior. Manual import MUST preserve its existing caller-facing cancellation behavior, and internal on-demand synchronization MUST propagate cancellation to its caller.
+- **FR-033**: Persistence changes MUST preserve all existing `ExternalRefKey` and `LastImportedAtUtc` values, add nullable `ExternalDataVersion` for the legacy unknown-version state, keep the column names `ExternalRefKey`, `ExternalDataVersion`, and `LastImportedAtUtc`, and preserve uniqueness enforcement for non-null external identities.
 
 ### Domain Rules *(mandatory when feature changes domain behavior)*
 
 - **DR-001**: External import state is an identity-less part of its owning reference aggregate and represents the single supported external-source link through external reference key, opaque source version, and last successful import time.
-- **DR-002**: A linked reference may temporarily lack a source version only when it predates version-aware synchronization; an empty version is never a substitute for an unknown version, and a successful version-aware synchronization always leaves a non-empty version.
-- **DR-003**: Source versions are opaque binary values: equality is determined by content only, and no numeric or lexical ordering has business meaning.
-- **DR-004**: External identity remains unique within each supported reference type and is the only automatic link between a source object and local aggregate.
+- **DR-002**: `ExternalDataVersion` is nullable only to represent the unknown-version state of a linked record that predates version-aware synchronization; an empty version is never a substitute for an unknown version, and a successful version-aware synchronization always leaves a non-empty version.
+- **DR-003**: Source versions are opaque binary values: equality is determined by content only, no numeric or lexical ordering has business meaning, and stored versions MUST NOT be externally mutable through shared binary buffers.
+- **DR-004**: Non-null external identities remain unique within each supported reference type and are the only automatic link between a source object and local aggregate.
 - **DR-005**: For Warehouse, source-owned fields are code, name, source-controlled active state, and external import state; description is WMS-owned.
 - **DR-006**: For Unit of Measure, source-owned fields are code, name, symbol, source-controlled active state, and external import state.
 - **DR-007**: For Stock Keeping Unit, source-owned fields are code, name, base Unit of Measure, source-controlled active state, and external import state; description is WMS-owned.
@@ -153,9 +158,9 @@ As a WMS operator, I want source-owned fields on 1C-linked references protected 
 ### Observability & Error Handling *(mandatory when feature exposes runtime behavior)*
 
 - **OE-001**: Each failed single-reference synchronization MUST identify the reference type, external identity, failure category, and whether retry is appropriate without exposing credentials or unrelated source data.
-- **OE-002**: Object absence, malformed response, temporary source failure, validation failure, business conflict, busy coordination, and cancellation MUST remain distinguishable to the caller or durable processor.
+- **OE-002**: Object absence, malformed response, temporary source failure, validation failure, business conflict, busy coordination, and cancellation MUST remain distinguishable to the caller or durable processor; operation outcomes MUST remain distinct from durable synchronization-request lifecycle statuses.
 - **OE-003**: Reactive diagnostics MUST retain the notification identity and version while also indicating the current source outcome used for processing.
-- **OE-004**: Controlled folder and unlinked-deletion skips MUST be visible as successful operation outcomes without being reported as application failures.
+- **OE-004**: Applicable controlled Warehouse or Stock Keeping Unit folder skips and unlinked-deletion skips MUST be visible as successful operation outcomes without being reported as application failures.
 - **OE-005**: Existing structured manual-import errors and their maximum returned-error limit MUST remain unchanged.
 
 ### Key Entities *(include if feature involves data)*
@@ -174,14 +179,13 @@ As a WMS operator, I want source-owned fields on 1C-linked references protected 
 
 - **SC-001**: For 100% of valid notifications across the three supported reference types, acceptance occurs only after exactly one durable request is inserted or an existing duplicate is resolved.
 - **SC-002**: In repeated-delivery and interrupted-completion tests, 100% of references already storing the current source version complete without any duplicate data change, timestamp change, or business event.
-- **SC-003**: For 100% of changed or legacy-unversioned linked references in acceptance tests, successful synchronization stores the current non-empty source version and produces the correct applied lifecycle result.
-- **SC-004**: Under normal source availability and without same-type contention, at least 95% of accepted reactive reference changes reach a terminal processing outcome within 60 seconds.
+- **SC-003**: For 100% of changed or legacy-unversioned linked references in acceptance tests, successful synchronization stores the current non-empty source version and produces the correct applied operation outcome.
+- **SC-004**: For every eligible reactive request processed while the source is available and the per-reference-type coordination lease is free, an applied, unchanged, or controlled-skip operation outcome transitions the durable request to its existing completed lifecycle status during that same processing attempt.
 - **SC-005**: Across all manual import acceptance cases, reported counts satisfy the processing invariant exactly, and a repeated unchanged import reports 100% of unchanged records in the unchanged count.
 - **SC-006**: In all bounded SKU dependency-repair tests, no more than one Unit of Measure is synchronized and the SKU is applied no more than twice total, including the initial attempt.
 - **SC-007**: Existing manual-import compatibility scenarios pass for all three reference types with zero removed routes, response fields, permissions, paging guarantees, or structured-error behavior.
-- **SC-008**: In operator acceptance testing, at least 90% of participating operators can identify unchanged records and complete a full-import repair using the existing import page without assistance.
-- **SC-009**: Concurrent-operation tests show zero overlapping read-and-apply operations for the same reference type and allow all three different reference types to proceed independently.
-- **SC-010**: 100% of local-edit acceptance cases reject changes to linked source-owned fields while allowing every explicitly WMS-owned field and preserving existing unlinked-record behavior.
+- **SC-008**: Concurrent-operation tests show zero overlapping lease scopes for the same reference type, including all pages and batches of a manual SKU import, and allow all three different reference types to proceed independently within one application instance.
+- **SC-009**: 100% of local-edit acceptance cases reject actual changes to linked source-owned values, permit unchanged resubmission of those values with changes only to explicitly WMS-owned fields, keep external import state inaccessible, and preserve existing unlinked-record behavior.
 
 ## Assumptions
 
@@ -191,7 +195,6 @@ As a WMS operator, I want source-owned fields on 1C-linked references protected 
 - Source authentication, operator authorization, durable request lifecycle, retry scheduling, recovery, polling, and best-effort wake-up behavior established by the synchronization foundation remain available.
 - Existing linked records may have no stored source version until their first successful version-aware synchronization.
 - Manual full SKU import may continue to require Units of Measure to be imported first; per-SKU on-demand dependency repair applies only to reactive and synchronize-one flows.
-- The 60-second outcome target applies when 1C is reachable, source responses are valid, and the request is not delayed by retry backoff or deliberate same-type serialization.
 
 ## Dependencies
 
