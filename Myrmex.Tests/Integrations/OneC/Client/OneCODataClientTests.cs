@@ -393,6 +393,140 @@ public sealed class OneCODataClientTests
         Assert.Equal(2, handler.CallCount);
     }
 
+    [Theory]
+    [InlineData("warehouse")]
+    [InlineData("uom")]
+    [InlineData("sku")]
+    public async Task ReadCurrentReferenceAsync_FiltersByStableKeyAndUsesTypeSpecificShape(string referenceType)
+    {
+        Uri? requestUri = null;
+        Guid unitKey = Guid.NewGuid();
+        using HttpClient httpClient = new(new StubHttpMessageHandler(request =>
+        {
+            requestUri = request.RequestUri;
+            object record = referenceType switch
+            {
+                "warehouse" => new
+                {
+                    Ref_Key = RefKey,
+                    DataVersion = new byte[] { 1 },
+                    DeletionMark = false,
+                    IsFolder = true,
+                    Code = "WH",
+                    Description = "Warehouse"
+                },
+                "uom" => new
+                {
+                    Ref_Key = RefKey,
+                    DataVersion = new byte[] { 2 },
+                    DeletionMark = false,
+                    Code = "EA",
+                    Description = "Each",
+                    НаименованиеПолное = "Each full",
+                    МеждународноеСокращение = "ea"
+                },
+                _ => new
+                {
+                    Ref_Key = RefKey,
+                    DataVersion = new byte[] { 3 },
+                    DeletionMark = false,
+                    IsFolder = true,
+                    Code = "SKU",
+                    Description = "Stock item",
+                    НаименованиеПолное = "Stock item full",
+                    Артикул = "A-1",
+                    ЕдиницаИзмерения_Key = unitKey
+                }
+            };
+            return JsonResponse(new { value = new[] { record } });
+        }));
+        OneCODataClient client = CreateClient(httpClient);
+
+        object? current = referenceType switch
+        {
+            "warehouse" => await client.ReadWarehouseAsync(RefKey, TestContext.Current.CancellationToken),
+            "uom" => await client.ReadUnitOfMeasureAsync(RefKey, TestContext.Current.CancellationToken),
+            _ => await client.ReadStockKeepingUnitAsync(RefKey, TestContext.Current.CancellationToken)
+        };
+
+        Assert.NotNull(current);
+        string expectedEntitySet = referenceType switch
+        {
+            "warehouse" => "Catalog_Warehouses",
+            "uom" => OneCOptions.DefaultUnitsOfMeasureEntitySet,
+            _ => "Catalog_Nomenclature"
+        };
+        Assert.Contains(
+            Uri.EscapeDataString(expectedEntitySet),
+            requestUri!.AbsoluteUri,
+            StringComparison.OrdinalIgnoreCase);
+        string query = Uri.UnescapeDataString(requestUri!.Query);
+        Assert.Contains($"$filter=Ref_Key eq guid'{RefKey:D}'", query, StringComparison.Ordinal);
+        Assert.Contains("$top=2", query, StringComparison.Ordinal);
+        if (referenceType == "uom")
+        {
+            Assert.DoesNotContain("IsFolder", query, StringComparison.Ordinal);
+            Assert.Equal("ea", Assert.IsType<Catalog_УпаковкиЕдиницыИзмерения>(current).МеждународноеСокращение);
+        }
+        else
+        {
+            bool isFolder = referenceType == "warehouse"
+                ? Assert.IsType<Catalog_Склады>(current).IsFolder
+                : Assert.IsType<Catalog_Номенклатура>(current).IsFolder;
+            Assert.True(isFolder);
+        }
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(2)]
+    public async Task ReadWarehouseAsync_EnforcesCurrentObjectCardinality(int count)
+    {
+        object[] records = Enumerable.Range(0, count)
+            .Select(_ => (object)new
+            {
+                Ref_Key = RefKey,
+                DataVersion = new byte[] { 1 },
+                DeletionMark = false,
+                IsFolder = false,
+                Code = "WH",
+                Description = "Warehouse"
+            })
+            .ToArray();
+        using HttpClient httpClient = new(new StubHttpMessageHandler(_ =>
+            JsonResponse(new { value = records })));
+        OneCODataClient client = CreateClient(httpClient);
+
+        if (count == 0)
+        {
+            Assert.Null(await client.ReadWarehouseAsync(RefKey, TestContext.Current.CancellationToken));
+            return;
+        }
+
+        OneCTransportException exception = await Assert.ThrowsAsync<OneCTransportException>(() =>
+            client.ReadWarehouseAsync(RefKey, TestContext.Current.CancellationToken));
+        Assert.Equal(OneCTransportFailureReason.MalformedResponse, exception.Reason);
+    }
+
+    [Fact]
+    public async Task ReadWarehouseAsync_WhenDataVersionIsEmpty_ReturnsMalformedResponse()
+    {
+        using HttpClient httpClient = new(new StubHttpMessageHandler(_ =>
+            JsonResponse(new
+            {
+                value = new[]
+                {
+                    new { Ref_Key = RefKey, DataVersion = Array.Empty<byte>(), DeletionMark = false, IsFolder = false }
+                }
+            })));
+        OneCODataClient client = CreateClient(httpClient);
+
+        OneCTransportException exception = await Assert.ThrowsAsync<OneCTransportException>(() =>
+            client.ReadWarehouseAsync(RefKey, TestContext.Current.CancellationToken));
+
+        Assert.Equal(OneCTransportFailureReason.MalformedResponse, exception.Reason);
+    }
+
     private static OneCODataClient CreateClient(
         HttpClient httpClient,
         Action<OneCOptions>? configure = null,

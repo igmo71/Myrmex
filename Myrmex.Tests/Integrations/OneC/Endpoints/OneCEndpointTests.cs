@@ -286,9 +286,18 @@ public sealed class OneCEndpointTests
         public Task<IReadOnlyList<Catalog_Склады>> ReadWarehousesAsync(CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<Catalog_Склады>>([]);
 
+        public Task<Catalog_Склады?> ReadWarehouseAsync(
+            Guid externalRefKey,
+            CancellationToken cancellationToken) => Task.FromResult<Catalog_Склады?>(null);
+
         public Task<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>> ReadUnitsOfMeasureAsync(
             CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>>([]);
+
+        public Task<Catalog_УпаковкиЕдиницыИзмерения?> ReadUnitOfMeasureAsync(
+            Guid externalRefKey,
+            CancellationToken cancellationToken) =>
+            Task.FromResult<Catalog_УпаковкиЕдиницыИзмерения?>(null);
 
         public async IAsyncEnumerable<IReadOnlyList<Catalog_Номенклатура>> ReadNomenclaturePagesAsync(
             [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -296,6 +305,10 @@ public sealed class OneCEndpointTests
             await Task.CompletedTask;
             yield break;
         }
+
+        public Task<Catalog_Номенклатура?> ReadStockKeepingUnitAsync(
+            Guid externalRefKey,
+            CancellationToken cancellationToken) => Task.FromResult<Catalog_Номенклатура?>(null);
     }
 
     private sealed class StubImportService : IOneCImportService

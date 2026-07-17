@@ -13,6 +13,7 @@ namespace Myrmex.Integrations.OneC.Transport;
 
 internal sealed class OneCODataClient : IOneCODataClient
 {
+    private const int MaximumDataVersionLength = 128;
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
     private readonly HttpClient _httpClient;
     private readonly IOptions<OneCOptions> _options;
@@ -108,6 +109,23 @@ internal sealed class OneCODataClient : IOneCODataClient
             cancellationToken);
     }
 
+    public Task<Catalog_Склады?> ReadWarehouseAsync(
+        Guid externalRefKey,
+        CancellationToken cancellationToken)
+    {
+        OneCOptions options = _options.Value;
+        string select = options.WarehouseCodeAvailable
+            ? "Ref_Key,DataVersion,DeletionMark,IsFolder,Code,Description"
+            : "Ref_Key,DataVersion,DeletionMark,IsFolder,Description";
+        return ReadCurrentAsync<Catalog_Склады>(
+            options.WarehousesEntitySet!,
+            select,
+            externalRefKey,
+            record => record.Ref_Key,
+            record => record.DataVersion,
+            cancellationToken);
+    }
+
     public Task<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>> ReadUnitsOfMeasureAsync(
         CancellationToken cancellationToken)
     {
@@ -127,6 +145,17 @@ internal sealed class OneCODataClient : IOneCODataClient
             options,
             cancellationToken);
     }
+
+    public Task<Catalog_УпаковкиЕдиницыИзмерения?> ReadUnitOfMeasureAsync(
+        Guid externalRefKey,
+        CancellationToken cancellationToken) =>
+        ReadCurrentAsync<Catalog_УпаковкиЕдиницыИзмерения>(
+            _options.Value.UnitsOfMeasureEntitySet,
+            "Ref_Key,DataVersion,DeletionMark,Code,Description,НаименованиеПолное,МеждународноеСокращение",
+            externalRefKey,
+            record => record.Ref_Key,
+            record => record.DataVersion,
+            cancellationToken);
 
     public async IAsyncEnumerable<IReadOnlyList<Catalog_Номенклатура>> ReadNomenclaturePagesAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -171,6 +200,68 @@ internal sealed class OneCODataClient : IOneCODataClient
             }
         }
     }
+
+    public Task<Catalog_Номенклатура?> ReadStockKeepingUnitAsync(
+        Guid externalRefKey,
+        CancellationToken cancellationToken) =>
+        ReadCurrentAsync<Catalog_Номенклатура>(
+            _options.Value.NomenclatureEntitySet!,
+            "Ref_Key,DataVersion,DeletionMark,IsFolder,Code,Description,НаименованиеПолное,Артикул,ЕдиницаИзмерения_Key",
+            externalRefKey,
+            record => record.Ref_Key,
+            record => record.DataVersion,
+            cancellationToken);
+
+    private async Task<T?> ReadCurrentAsync<T>(
+        string entitySet,
+        string select,
+        Guid externalRefKey,
+        Func<T, Guid> getRefKey,
+        Func<T, byte[]?> getDataVersion,
+        CancellationToken cancellationToken)
+        where T : class
+    {
+        if (externalRefKey == Guid.Empty)
+        {
+            throw new ArgumentException("External reference key is required.", nameof(externalRefKey));
+        }
+
+        OneCOptions options = _options.Value;
+        IReadOnlyList<T> records = await ReadCollectionAsync<T>(
+            ValidateAndGetBaseUri(options),
+            entitySet,
+            [
+                new("$format", "json"),
+                new("$select", select),
+                new("$filter", $"Ref_Key eq guid'{externalRefKey:D}'"),
+                new("$top", "2")
+            ],
+            options,
+            cancellationToken);
+
+        if (records.Count == 0)
+        {
+            return null;
+        }
+
+        if (records.Count != 1 || getRefKey(records[0]) != externalRefKey)
+        {
+            throw MalformedCurrentObject();
+        }
+
+        byte[]? dataVersion = getDataVersion(records[0]);
+        if (dataVersion is null || dataVersion.Length is < 1 or > MaximumDataVersionLength)
+        {
+            throw MalformedCurrentObject();
+        }
+
+        return records[0];
+    }
+
+    private static OneCTransportException MalformedCurrentObject() =>
+        new(
+            OneCTransportFailureReason.MalformedResponse,
+            "The 1С OData service returned an invalid current reference object.");
 
     private async Task ProbeEntitySetAsync(
         Uri baseUri,

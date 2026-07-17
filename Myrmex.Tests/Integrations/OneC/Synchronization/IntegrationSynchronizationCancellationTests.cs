@@ -33,7 +33,7 @@ public sealed class IntegrationSynchronizationCancellationTests
         Task processing = processor.ProcessEligibleBatchAsync(shutdown.Token);
         await handlerStarted.Task.WaitAsync(TestContext.Current.CancellationToken);
         await shutdown.CancelAsync();
-        await processing;
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => processing);
 
         SynchronizationRequest saved = await ReadAsync(host, request.Id);
         Assert.Equal(SynchronizationStatus.Processing, saved.Status);

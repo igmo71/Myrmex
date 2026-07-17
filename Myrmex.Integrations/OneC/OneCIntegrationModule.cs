@@ -9,6 +9,7 @@ using Myrmex.AspNetCore.Security;
 using Myrmex.Integrations.OneC.Configuration;
 using Myrmex.Integrations.OneC.Imports;
 using Myrmex.Integrations.OneC.Notifications;
+using Myrmex.Integrations.OneC.References;
 using Myrmex.Integrations.OneC.Security;
 using Myrmex.Integrations.OneC.Transport;
 using Myrmex.Integrations.Persistence;
@@ -70,6 +71,10 @@ public static class OneCIntegrationModule
         services.AddSingleton<OneCChangeNotificationValidator>();
         services.AddScoped<SynchronizationRequestFactory>();
         services.AddScoped<SynchronizationRequestStore>();
+        services.AddScoped<IOneCReferenceSynchronizationService, OneCReferenceSynchronizationService>();
+        services.AddScoped<ISynchronizationHandler, WarehouseReferenceSynchronizationHandler>();
+        services.AddScoped<ISynchronizationHandler, UnitOfMeasureReferenceSynchronizationHandler>();
+        services.AddScoped<ISynchronizationHandler, StockKeepingUnitReferenceSynchronizationHandler>();
         services.AddScoped<ISynchronizationHandlerResolver, SynchronizationHandlerResolver>();
         services.AddScoped<SynchronizationProcessor>();
         services.AddHostedService<SynchronizationWorker>();

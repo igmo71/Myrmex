@@ -68,7 +68,58 @@ public static class OneCNotificationEndpoints
             .Produces(StatusCodes.Status202Accepted)
             .ProducesValidationProblem();
 
+        MapReferenceChanged(
+            group,
+            "/warehouses/changed",
+            "AcceptOneCWarehouseChanged",
+            "warehouse",
+            SynchronizationEntityTypes.Warehouse);
+        MapReferenceChanged(
+            group,
+            "/uoms/changed",
+            "AcceptOneCUnitOfMeasureChanged",
+            "unit of measure",
+            SynchronizationEntityTypes.UnitOfMeasure);
+        MapReferenceChanged(
+            group,
+            "/skus/changed",
+            "AcceptOneCStockKeepingUnitChanged",
+            "stock keeping unit",
+            SynchronizationEntityTypes.StockKeepingUnit);
+
         return endpoints;
+    }
+
+    private static void MapReferenceChanged(
+        RouteGroupBuilder group,
+        string route,
+        string endpointName,
+        string referenceName,
+        string entityType)
+    {
+        group.MapPost(
+            route,
+            (
+                [FromBody] OneCChangeNotificationRequest request,
+                OneCChangeNotificationValidator validator,
+                SynchronizationRequestFactory factory,
+                SynchronizationRequestStore store,
+                ILoggerFactory loggerFactory,
+                CancellationToken cancellationToken) =>
+                AcceptAsync(
+                    request,
+                    entityType,
+                    validator,
+                    factory,
+                    store,
+                    loggerFactory,
+                    cancellationToken))
+            .WithName(endpointName)
+            .WithSummary($"Accept a 1C {referenceName} change notification")
+            .WithDescription(
+                "Persists the notification and returns an empty 202 Accepted response after durable commit. Malformed notifications return validation problem details.")
+            .Produces(StatusCodes.Status202Accepted)
+            .ProducesValidationProblem();
     }
 
     private static async Task<IResult> AcceptAsync(
