@@ -71,6 +71,14 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
         string? name,
         string? description)
     {
+        string normalizedName = DomainText.NormalizeRequiredText(name);
+        if (ExternalRefKey.HasValue &&
+            !string.Equals(Name, normalizedName, StringComparison.Ordinal))
+        {
+            return DomainValidationResult.From([
+                DomainValidationFailure.IncorrectState<Warehouse>(nameof(Name))]);
+        }
+
         DomainValidationResult validationResult = ValidateDetails(
             name,
             description);
@@ -80,8 +88,15 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
             return validationResult;
         }
 
-        Name = DomainText.NormalizeRequiredText(name);
-        Description = DomainText.NormalizeOptionalText(description);
+        string? normalizedDescription = DomainText.NormalizeOptionalText(description);
+        if (ExternalRefKey.HasValue &&
+            string.Equals(Description, normalizedDescription, StringComparison.Ordinal))
+        {
+            return DomainValidationResult.Valid;
+        }
+
+        Name = normalizedName;
+        Description = normalizedDescription;
 
         Touch();
         AddDomainEvent(new WarehouseDetailsUpdatedDomainEvent(Id));
@@ -166,6 +181,40 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
             Touch();
         }
 
+        return DomainValidationResult.Valid;
+    }
+
+    public DomainValidationResult DeactivateLocally()
+    {
+        if (!IsActive)
+        {
+            return DomainValidationResult.Valid;
+        }
+
+        if (ExternalRefKey.HasValue)
+        {
+            return DomainValidationResult.From([
+                DomainValidationFailure.IncorrectState<Warehouse>(nameof(IsActive))]);
+        }
+
+        Deactivate();
+        return DomainValidationResult.Valid;
+    }
+
+    public DomainValidationResult ReactivateLocally()
+    {
+        if (IsActive)
+        {
+            return DomainValidationResult.Valid;
+        }
+
+        if (ExternalRefKey.HasValue)
+        {
+            return DomainValidationResult.From([
+                DomainValidationFailure.IncorrectState<Warehouse>(nameof(IsActive))]);
+        }
+
+        Reactivate();
         return DomainValidationResult.Valid;
     }
 

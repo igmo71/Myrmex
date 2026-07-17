@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Myrmex.AppDispatching.EventDispatching;
 using Myrmex.Core.Application;
+using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
@@ -29,7 +30,11 @@ internal static class DeactivateStockKeepingUnit
                 return ServiceResult<StockKeepingUnitDetails>.Fail(ServiceError.NotFound<StockKeepingUnit>());
             }
 
-            stockKeepingUnit.Deactivate();
+            DomainValidationResult validationResult = stockKeepingUnit.DeactivateLocally();
+            if (!validationResult.IsValid)
+            {
+                return ServiceResult<StockKeepingUnitDetails>.Invalid(validationResult.Errors);
+            }
 
             ServiceResult saveResult = await dbContext
                 .SaveChangesAsServiceResultAsync(domainEventDispatcher, cancellationToken);

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Myrmex.AppDispatching.EventDispatching;
 using Myrmex.Core.Application;
+using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
@@ -29,7 +30,11 @@ internal static class ReactivateWarehouse
                 return ServiceResult<WarehouseDetails>.Fail(ServiceError.NotFound<Warehouse>());
             }
 
-            warehouse.Reactivate();
+            DomainValidationResult validationResult = warehouse.ReactivateLocally();
+            if (!validationResult.IsValid)
+            {
+                return ServiceResult<WarehouseDetails>.Invalid(validationResult.Errors);
+            }
 
             ServiceResult saveResult = await dbContext
                 .SaveChangesAsServiceResultAsync(domainEventDispatcher, cancellationToken);

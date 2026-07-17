@@ -145,6 +145,26 @@ internal sealed class UnitOfMeasure : AggregateRoot, IActivatable
         string? name,
         string? symbol)
     {
+        string normalizedName = DomainText.NormalizeRequiredText(name);
+        string? normalizedSymbol = DomainText.NormalizeOptionalText(symbol);
+        if (ExternalRefKey.HasValue &&
+            (!string.Equals(Name, normalizedName, StringComparison.Ordinal) ||
+             !string.Equals(Symbol, normalizedSymbol, StringComparison.Ordinal)))
+        {
+            List<DomainValidationFailure> ownershipErrors = [];
+            if (!string.Equals(Name, normalizedName, StringComparison.Ordinal))
+            {
+                ownershipErrors.Add(
+                    DomainValidationFailure.IncorrectState<UnitOfMeasure>(nameof(Name)));
+            }
+            if (!string.Equals(Symbol, normalizedSymbol, StringComparison.Ordinal))
+            {
+                ownershipErrors.Add(
+                    DomainValidationFailure.IncorrectState<UnitOfMeasure>(nameof(Symbol)));
+            }
+            return DomainValidationResult.From(ownershipErrors);
+        }
+
         DomainValidationResult validationResult = ValidateDetails(
             name,
             symbol);
@@ -154,12 +174,51 @@ internal sealed class UnitOfMeasure : AggregateRoot, IActivatable
             return validationResult;
         }
 
-        Name = DomainText.NormalizeRequiredText(name);
-        Symbol = DomainText.NormalizeOptionalText(symbol);
+        if (ExternalRefKey.HasValue)
+        {
+            return DomainValidationResult.Valid;
+        }
+
+        Name = normalizedName;
+        Symbol = normalizedSymbol;
 
         Touch();
         AddDomainEvent(new UnitOfMeasureDetailsUpdatedDomainEvent(Id));
 
+        return DomainValidationResult.Valid;
+    }
+
+    public DomainValidationResult DeactivateLocally()
+    {
+        if (!IsActive)
+        {
+            return DomainValidationResult.Valid;
+        }
+
+        if (ExternalRefKey.HasValue)
+        {
+            return DomainValidationResult.From([
+                DomainValidationFailure.IncorrectState<UnitOfMeasure>(nameof(IsActive))]);
+        }
+
+        Deactivate();
+        return DomainValidationResult.Valid;
+    }
+
+    public DomainValidationResult ReactivateLocally()
+    {
+        if (IsActive)
+        {
+            return DomainValidationResult.Valid;
+        }
+
+        if (ExternalRefKey.HasValue)
+        {
+            return DomainValidationResult.From([
+                DomainValidationFailure.IncorrectState<UnitOfMeasure>(nameof(IsActive))]);
+        }
+
+        Reactivate();
         return DomainValidationResult.Valid;
     }
 

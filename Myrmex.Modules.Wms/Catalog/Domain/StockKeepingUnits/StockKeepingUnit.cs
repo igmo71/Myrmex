@@ -155,6 +155,14 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
         string? description,
         Guid? baseUnitOfMeasureId)
     {
+        DomainValidationResult ownershipValidationResult = ValidateLocalDetailsOwnership(
+            name,
+            baseUnitOfMeasureId);
+        if (!ownershipValidationResult.IsValid)
+        {
+            return ownershipValidationResult;
+        }
+
         DomainValidationResult validationResult = ValidateDetails(
             name,
             description,
@@ -165,13 +173,80 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
             return validationResult;
         }
 
-        Name = DomainText.NormalizeRequiredText(name);
-        Description = DomainText.NormalizeOptionalText(description);
+        string normalizedName = DomainText.NormalizeRequiredText(name);
+        string? normalizedDescription = DomainText.NormalizeOptionalText(description);
+        if (ExternalRefKey.HasValue &&
+            string.Equals(Description, normalizedDescription, StringComparison.Ordinal))
+        {
+            return DomainValidationResult.Valid;
+        }
+
+        Name = normalizedName;
+        Description = normalizedDescription;
         BaseUnitOfMeasureId = baseUnitOfMeasureId!.Value;
 
         Touch();
         AddDomainEvent(new StockKeepingUnitDetailsUpdatedDomainEvent(Id));
 
+        return DomainValidationResult.Valid;
+    }
+
+    public DomainValidationResult ValidateLocalDetailsOwnership(
+        string? name,
+        Guid? baseUnitOfMeasureId)
+    {
+        if (!ExternalRefKey.HasValue)
+        {
+            return DomainValidationResult.Valid;
+        }
+
+        List<DomainValidationFailure> errors = [];
+        if (!string.Equals(
+                Name,
+                DomainText.NormalizeRequiredText(name),
+                StringComparison.Ordinal))
+        {
+            errors.Add(DomainValidationFailure.IncorrectState<StockKeepingUnit>(nameof(Name)));
+        }
+        if (baseUnitOfMeasureId != BaseUnitOfMeasureId)
+        {
+            errors.Add(DomainValidationFailure.IncorrectState<StockKeepingUnit>(
+                nameof(BaseUnitOfMeasureId)));
+        }
+        return DomainValidationResult.From(errors);
+    }
+
+    public DomainValidationResult DeactivateLocally()
+    {
+        if (!IsActive)
+        {
+            return DomainValidationResult.Valid;
+        }
+
+        if (ExternalRefKey.HasValue)
+        {
+            return DomainValidationResult.From([
+                DomainValidationFailure.IncorrectState<StockKeepingUnit>(nameof(IsActive))]);
+        }
+
+        Deactivate();
+        return DomainValidationResult.Valid;
+    }
+
+    public DomainValidationResult ReactivateLocally()
+    {
+        if (IsActive)
+        {
+            return DomainValidationResult.Valid;
+        }
+
+        if (ExternalRefKey.HasValue)
+        {
+            return DomainValidationResult.From([
+                DomainValidationFailure.IncorrectState<StockKeepingUnit>(nameof(IsActive))]);
+        }
+
+        Reactivate();
         return DomainValidationResult.Valid;
     }
 

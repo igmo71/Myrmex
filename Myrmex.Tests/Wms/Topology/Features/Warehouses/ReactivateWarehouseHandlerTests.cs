@@ -83,6 +83,51 @@ public sealed class ReactivateWarehouseHandlerTests
         Assert.Empty(domainEventDispatcher.DispatchedEvents);
     }
 
+    [Fact]
+    public async Task HandleAsync_WhenLinkedWarehouseIsInactive_RejectsSourceOwnedTransition()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        RecordingDomainEventDispatcher domainEventDispatcher = new();
+        Warehouse warehouse = CreateLinkedWarehouse(isDeletionMarked: true);
+        testDbContext.DbContext.Warehouses.Add(warehouse);
+        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        ReactivateWarehouse.Handler handler = new(
+            testDbContext.DbContext,
+            domainEventDispatcher);
+
+        ServiceResult<WarehouseDetails> result = await handler.HandleAsync(
+            new ReactivateWarehouse.Command(warehouse.Id),
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ServiceErrorType.Invalid, result.Error.Type);
+        Assert.False(warehouse.IsActive);
+        Assert.Empty(domainEventDispatcher.DispatchedEvents);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenLinkedWarehouseIsAlreadyActive_ReturnsNoOp()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        RecordingDomainEventDispatcher domainEventDispatcher = new();
+        Warehouse warehouse = CreateLinkedWarehouse(isDeletionMarked: false);
+        DateTimeOffset? updatedAtUtc = warehouse.UpdatedAtUtc;
+        testDbContext.DbContext.Warehouses.Add(warehouse);
+        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        ReactivateWarehouse.Handler handler = new(
+            testDbContext.DbContext,
+            domainEventDispatcher);
+
+        ServiceResult<WarehouseDetails> result = await handler.HandleAsync(
+            new ReactivateWarehouse.Command(warehouse.Id),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value.IsActive);
+        Assert.Equal(updatedAtUtc, warehouse.UpdatedAtUtc);
+        Assert.Empty(domainEventDispatcher.DispatchedEvents);
+    }
+
     private static Warehouse CreateWarehouse()
     {
         var result = Warehouse.Create(
@@ -94,6 +139,21 @@ public sealed class ReactivateWarehouseHandlerTests
         Assert.True(result.IsValid);
         Assert.NotNull(warehouse);
 
+        return warehouse;
+    }
+
+    private static Warehouse CreateLinkedWarehouse(bool isDeletionMarked)
+    {
+        Warehouse warehouse = CreateWarehouse();
+        var result = warehouse.ApplyImport(
+            Guid.NewGuid(),
+            [1],
+            warehouse.Code,
+            warehouse.Name,
+            isDeletionMarked,
+            importedAtUtc: DateTimeOffset.Parse("2026-07-17T12:00:00Z"));
+        Assert.True(result.IsValid);
+        warehouse.ClearDomainEvents();
         return warehouse;
     }
 }
