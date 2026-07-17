@@ -1,6 +1,6 @@
 # Quickstart: Validate Feature 109
 
-This guide records acceptance expectations after implementation. The implementation may prepare source, test, EF mapping, migration source, and model-snapshot changes. It does not plan or schedule build, test, migration-generation, database-update, AppHost, Docker, application-startup, or other environment-changing command execution. Those operations remain developer-controlled and occur only after an explicit user request.
+This guide records acceptance expectations after implementation. The agent may modify domain/application source, test source, and EF mappings only. The developer generates, reviews, and applies migrations. The agent must not generate, create, or edit migration `.cs`, `.Designer.cs`, or `WmsDbContextModelSnapshot` files, and it must not run build, test, migration-generation, database-update, AppHost, Docker, application-startup, or other environment-changing commands unless explicitly requested.
 
 ## Prerequisites
 
@@ -10,14 +10,13 @@ This guide records acceptance expectations after implementation. The implementat
 - A controllable 1C dataset containing Warehouse, UoM, and SKU objects with observable `DataVersion` values; Warehouse/SKU folder and deletion-mark samples; and an SKU with a base-UoM reference.
 - Existing Feature 104 synchronization worker configuration and migrations already applied.
 
-## 1. Review the Prepared Additive Migration Source
+## 1. Verify the Developer-Generated Additive Migration Shape
 
-Implementation may prepare the EF mappings, migration source file, and model snapshot without executing migration-generation or database-update commands. Review the prepared `Up` and `Down` source:
+After the EF mappings are complete, the developer generates, reviews, and applies the migration. The expected shape is limited to:
 
-- `Up` adds only nullable `ExternalDataVersion varbinary(128)` to `wms.warehouses`, `wms.units_of_measure`, and `wms.stock_keeping_units`.
-- `Down` drops only those three new columns.
-- No operation drops, renames, recreates, or rewrites `ExternalRefKey`, `LastImportedAtUtc`, or the three filtered unique indexes.
-- Existing linked-row values remain unchanged and are represented with `ExternalDataVersion = NULL` until version-aware synchronization succeeds.
+- three nullable `ExternalDataVersion varbinary(128)` columns, one on each of `wms.warehouses`, `wms.units_of_measure`, and `wms.stock_keeping_units`;
+- no changes to existing `ExternalRefKey` or `LastImportedAtUtc` columns or their filtered unique indexes;
+- existing linked-row values remaining unchanged, with `ExternalDataVersion = NULL` representing the legacy unknown-version state until version-aware synchronization succeeds.
 
 ## 2. Test-Source and Validation Expectations
 

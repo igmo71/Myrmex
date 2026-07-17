@@ -125,25 +125,17 @@
 ### Tests for User Story 4
 
 - [ ] T044 [P] [US4] Add linked-Warehouse tests proving an actual `Name` change is rejected, unchanged `Name` resubmission permits `Description` changes, and unlinked edits remain unchanged in `Myrmex.Tests/Wms/Topology/Features/Warehouses/UpdateWarehouseDetailsHandlerTests.cs`
-- [ ] T045 [P] [US4] Add linked-Unit-of-Measure tests proving actual `Name`, `Symbol`, or lifecycle changes are rejected, identical resubmission is permitted only as a no-op, unlinked behavior is preserved, and no WMS-owned Description edit is introduced in `Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/UpdateUnitOfMeasureDetailsHandlerTests.cs`, `Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/DeactivateUnitOfMeasureHandlerTests.cs`, and `Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/ReactivateUnitOfMeasureHandlerTests.cs`
+- [ ] T045 [P] [US4] Add linked-Unit-of-Measure tests only for rejection of actual `Name` or `Symbol` changes, identical resubmission as a no-op, and preserved unlinked behavior in `Myrmex.Tests/Wms/Catalog/Features/UnitsOfMeasure/UpdateUnitOfMeasureDetailsHandlerTests.cs`
 - [ ] T046 [P] [US4] Add linked-SKU tests proving actual `Name` or base-UoM changes are rejected, identical resubmission skips redundant base-UoM validation and permits `Description` changes, and unlinked edits remain unchanged in `Myrmex.Tests/Wms/Catalog/Features/StockKeepingUnits/UpdateStockKeepingUnitDetailsHandlerTests.cs`
-- [ ] T047 [P] [US4] Add representative linked-Warehouse lifecycle tests proving actual deactivate/reactivate transitions are rejected while redundant no-op requests are accepted in `Myrmex.Tests/Wms/Topology/Features/Warehouses/DeactivateWarehouseHandlerTests.cs` and `Myrmex.Tests/Wms/Topology/Features/Warehouses/ReactivateWarehouseHandlerTests.cs`
+- [ ] T047 [P] [US4] Add the representative lifecycle-guard coverage in linked-Warehouse tests, proving actual deactivate/reactivate transitions are rejected while redundant no-op requests are accepted, in `Myrmex.Tests/Wms/Topology/Features/Warehouses/DeactivateWarehouseHandlerTests.cs` and `Myrmex.Tests/Wms/Topology/Features/Warehouses/ReactivateWarehouseHandlerTests.cs`
 
 ### Implementation for User Story 4
 
-- [ ] T048 [P] [US4] Enforce Warehouse source ownership by comparing requested source-owned values and lifecycle state before rejecting, while excluding external import state from local edit contracts in `Myrmex.Modules.Wms/Topology/Domain/Warehouses/Warehouse.cs`, `Myrmex.Modules.Wms/Topology/Features/Warehouses/UpdateWarehouseDetails.cs`, `Myrmex.Modules.Wms/Topology/Features/Warehouses/DeactivateWarehouse.cs`, and `Myrmex.Modules.Wms/Topology/Features/Warehouses/ReactivateWarehouse.cs`
-- [ ] T049 [P] [US4] Enforce Unit of Measure source ownership by rejecting actual linked `Name`, `Symbol`, or lifecycle changes, permitting identical resubmission only as a no-op, preserving unlinked behavior, excluding external import state from local edit contracts, and introducing no WMS-owned Description edit in `Myrmex.Modules.Wms/Catalog/Domain/UnitsOfMeasure/UnitOfMeasure.cs`, `Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/UpdateUnitOfMeasureDetails.cs`, `Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/DeactivateUnitOfMeasure.cs`, and `Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/ReactivateUnitOfMeasure.cs`
-- [ ] T050 [P] [US4] Enforce Stock Keeping Unit source ownership by rejecting only actual source-owned value or lifecycle changes, checking equality before base-UoM validation, allowing WMS-owned edits, and excluding external import state from local edit contracts in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnit.cs`, `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/UpdateStockKeepingUnitDetails.cs`, `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/DeactivateStockKeepingUnit.cs`, and `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/ReactivateStockKeepingUnit.cs`
+- [ ] T048 [P] [US4] After T044 and T047, enforce Warehouse source ownership by comparing requested source-owned values and lifecycle state before rejecting, while excluding external import state from local edit contracts in `Myrmex.Modules.Wms/Topology/Domain/Warehouses/Warehouse.cs`, `Myrmex.Modules.Wms/Topology/Features/Warehouses/UpdateWarehouseDetails.cs`, `Myrmex.Modules.Wms/Topology/Features/Warehouses/DeactivateWarehouse.cs`, and `Myrmex.Modules.Wms/Topology/Features/Warehouses/ReactivateWarehouse.cs`
+- [ ] T049 [P] [US4] After T045, enforce Unit of Measure source ownership by rejecting actual linked `Name`, `Symbol`, or lifecycle changes, permitting identical resubmission only as a no-op, preserving unlinked behavior, excluding external import state from local edit contracts, and introducing no WMS-owned Description edit in `Myrmex.Modules.Wms/Catalog/Domain/UnitsOfMeasure/UnitOfMeasure.cs`, `Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/UpdateUnitOfMeasureDetails.cs`, `Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/DeactivateUnitOfMeasure.cs`, and `Myrmex.Modules.Wms/Catalog/Features/UnitsOfMeasure/ReactivateUnitOfMeasure.cs`
+- [ ] T050 [P] [US4] After T046, enforce Stock Keeping Unit source ownership by rejecting only actual source-owned value or lifecycle changes, checking equality before base-UoM validation, allowing WMS-owned edits, and excluding external import state from local edit contracts in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnit.cs`, `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/UpdateStockKeepingUnitDetails.cs`, `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/DeactivateStockKeepingUnit.cs`, and `Myrmex.Modules.Wms/Catalog/Features/StockKeepingUnits/ReactivateStockKeepingUnit.cs`
 
 **Checkpoint**: Linked-record ownership is enforced only for actual source-owned changes, with normal WMS-owned edits preserved.
-
----
-
-## Phase 7: Polish & Cross-Cutting Concerns
-
-**Purpose**: Complete the developer-controlled handoff without adding command execution to the plan.
-
-- [ ] T051 Document the developer-generated additive migration expectation—exactly three nullable `ExternalDataVersion` columns with no changes to existing `ExternalRefKey` or `LastImportedAtUtc` columns or their indexes—and remove prepared migration filenames or agent-owned migration-source steps in `specs/109-reference-data-synchronization/quickstart.md`
 
 ---
 
@@ -157,7 +149,6 @@
 - **User Story 2 (Phase 4)**: Depends on the synchronize-one service established by User Story 1.
 - **User Story 3 (Phase 5)**: Depends on Foundational and can proceed in parallel with User Stories 1 and 4 after shared contracts stabilize.
 - **User Story 4 (Phase 6)**: Depends on Foundational and can proceed in parallel with User Stories 1 and 3.
-- **Polish (Phase 7)**: Depends on every user story included in the intended delivery.
 
 ### User Story Dependency Graph
 
@@ -167,8 +158,6 @@ Setup
        -> US1 (MVP) -> US2
        -> US3
        -> US4
-US1 + US2 + US3 + US4
-  -> Polish
 ```
 
 ### Within Each User Story
@@ -178,6 +167,7 @@ US1 + US2 + US3 + US4
 - Complete T008 before T009-T011; after T008, the Warehouse, UoM, and SKU aggregate slices may proceed independently.
 - Complete each aggregate before its EF mapping: T009 before T012, T010 before T013, and T011 before T014.
 - Complete the shared result T015 and the corresponding aggregate before each import-handler task: T016 depends on T015 and T009, T017 depends on T015 and T010, and T018 depends on T015 and T011.
+- For US4, complete T044 and the representative lifecycle test T047 before T048; complete T045 before T049; and complete T046 before T050. T049 implements UoM lifecycle protection without adding UoM deactivate/reactivate test suites.
 - Preserve Feature #104 durable lifecycle ownership; do not create queue, processor, retry, recovery, or status alternatives.
 - Keep the shared per-reference-type gate in-process and single-instance only: concurrent manual import retains fail-fast/409 behavior, reactive and on-demand work return `Busy`, and no distributed or cross-process locking is introduced.
 - Treat operation outcomes as internal results and map them explicitly to existing durable request statuses only at the reactive handler boundary.
@@ -190,7 +180,7 @@ US1 + US2 + US3 + US4
 - User Story 1 tests T020-T025 can be split by transport, endpoint, service outcome, handler mapping, gate, and processor-cancellation concern.
 - User Story 2 tests T034 and T035 can proceed in parallel.
 - User Story 3 tests T037-T039 can proceed in parallel; localization T042 can proceed once the response wording is stable.
-- User Story 4 tests T044-T047 and implementation tasks T048-T050 can proceed in parallel only between independent reference-type slices after their prerequisites complete.
+- User Story 4 tests T044-T047 may proceed independently. After their stated prerequisite tests complete, T048-T050 may proceed independently as Warehouse, UoM, and SKU implementation slices.
 
 ## Parallel Example: User Story 1
 
@@ -201,15 +191,6 @@ T022: Synchronize-one outcome semantics
 T023: Thin reactive-handler status mapping
 T024: Per-type gate coordination
 T025: Shutdown cancellation propagation
-```
-
-## Parallel Example: User Story 4
-
-```text
-T044 + T048: Warehouse ownership slice
-T045 + T049: Unit of Measure ownership slice
-T046 + T050: Stock Keeping Unit ownership slice
-T047: Representative Warehouse lifecycle behavior
 ```
 
 ## Implementation Strategy
@@ -225,7 +206,6 @@ T047: Representative Warehouse lifecycle behavior
 1. Add User Story 2 for internal on-demand synchronization and bounded SKU repair.
 2. Add User Story 3 for manual-import compatibility and `Unchanged` reporting.
 3. Add User Story 4 for linked-record edit protection.
-4. Finish the documentation handoff in Phase 7.
 
 ## Notes
 
@@ -234,5 +214,5 @@ T047: Representative Warehouse lifecycle behavior
 - The same-version smoke coverage is deliberately limited to one compact test in each explicit import-handler test file; shared behavior uses representative or parameterized coverage.
 - Feature #104 synchronization-foundation coverage is reused, not reproduced.
 - Full-import reads preserve the existing Warehouse/SKU `IsFolder eq false` filter; synchronize-one detects Warehouse/SKU folders before command dispatch; import command items and UoM have no folder semantics.
-- The documentation task records an expected developer-generated migration with exactly three nullable `ExternalDataVersion` columns and no changes to existing `ExternalRefKey` or `LastImportedAtUtc` columns or their indexes; no task generates, creates, or edits migration files or the model snapshot.
+- Planning artifacts record the expected developer-generated migration as exactly three nullable `ExternalDataVersion` columns with no changes to existing `ExternalRefKey` or `LastImportedAtUtc` columns or their indexes; no task generates, creates, or edits migration files or the model snapshot.
 - No task authorizes execution of build, tests, migrations, database updates, AppHost, Docker, or application startup.

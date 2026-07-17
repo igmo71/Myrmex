@@ -29,9 +29,9 @@ Map the owned values into the existing aggregate tables with exact columns `Exte
 
 **Alternatives considered**: Keeping three unrelated scalar fields on every aggregate was rejected because the specification defines a cohesive identity-less import state. A shared external-link table, provider hierarchy, concurrency token, SQL row version, or polymorphic link abstraction was rejected as out of scope.
 
-## Decision 4: Constrain the migration to an additive column change
+## Decision 4: Define the developer-generated additive migration shape
 
-**Decision**: Prepare WMS migration source changes whose `Up` only adds nullable `ExternalDataVersion` to `wms.warehouses`, `wms.units_of_measure`, and `wms.stock_keeping_units`, and whose `Down` only drops those columns. Review and, if necessary, edit the prepared operations because moving existing CLR scalars into an owned mapping can otherwise produce destructive drop/re-add operations. Do not accept any operation that drops, renames, rewrites, or recreates `ExternalRefKey`, `LastImportedAtUtc`, or their filtered unique indexes. Migration-generation and database-update commands remain developer-controlled and are not part of the implementation plan.
+**Decision**: The agent modifies EF mappings only. The developer generates, reviews, and applies the migration. The expected migration shape is exactly three nullable `ExternalDataVersion` columns—one each on `wms.warehouses`, `wms.units_of_measure`, and `wms.stock_keeping_units`—with no changes to existing `ExternalRefKey` or `LastImportedAtUtc` columns or their filtered unique indexes. The agent does not create or edit migration `.cs`, `.Designer.cs`, or `WmsDbContextModelSnapshot` files.
 
 **Rationale**: Existing identities and import timestamps are production data. The CLR ownership refactor must not become a physical data migration.
 
@@ -109,7 +109,7 @@ Do not retest Feature 104 queue uniqueness, retry schedules, polling, wake-up, a
 
 ## Decision 13: Keep command execution developer-controlled
 
-**Decision**: Implementation may create or modify source code, test code, EF mappings, and migration source/model-snapshot files. Planning and later task generation do not schedule migration-generation, database-update, build, test, AppHost, Docker, application-startup, or other environment-changing command execution. Those operations remain developer-controlled and occur only after an explicit user request.
+**Decision**: The agent may modify domain/application source code, test code, and EF mappings. The developer generates, reviews, and applies migrations. The agent does not generate, create, or edit migration `.cs`, `.Designer.cs`, or `WmsDbContextModelSnapshot` files, and planning and later task generation do not schedule migration-generation, database-update, build, test, AppHost, Docker, application-startup, or other environment-changing command execution unless explicitly requested.
 
 **Rationale**: Planning must distinguish implementation artifacts from execution against the developer's environment and database.
 
