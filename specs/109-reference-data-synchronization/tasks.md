@@ -101,16 +101,16 @@
 
 ### Tests for User Story 3
 
-- [ ] T037 [P] [US3] Add focused full-import service tests only for `DataVersion` mapping, `Unchanged` aggregation, one representative repeated import, partial SKU accounting, and manual caller cancellation, leaving gate coverage to T024 and no-mutation/event assertions to the import-handler tests, in `Myrmex.Tests/Integrations/OneC/Imports/OneCImportServiceTests.cs`
-- [ ] T038 [P] [US3] Extend existing endpoint contract tests with additive `Unchanged` counts while retaining current routes, authorization, and error shapes in `Myrmex.Tests/Integrations/OneC/Endpoints/OneCEndpointTests.cs`
-- [ ] T039 [P] [US3] Add shared-fixture client tests that deserialize nonzero `Unchanged` counts for all three existing manual import routes in `Myrmex.Tests/Integrations/OneC/Web/OneCIntegrationApiClientTests.cs`
+- [X] T037 [P] [US3] Add focused full-import service tests only for `DataVersion` mapping, `Unchanged` aggregation, one representative repeated import, partial SKU accounting, and manual caller cancellation, leaving gate coverage to T024 and no-mutation/event assertions to the import-handler tests, in `Myrmex.Tests/Integrations/OneC/Imports/OneCImportServiceTests.cs`
+- [X] T038 [P] [US3] Extend existing endpoint contract tests with additive `Unchanged` counts while retaining current routes, authorization, and error shapes in `Myrmex.Tests/Integrations/OneC/Endpoints/OneCEndpointTests.cs`
+- [X] T039 [P] [US3] Add shared-fixture client tests that deserialize nonzero `Unchanged` counts for all three existing manual import routes in `Myrmex.Tests/Integrations/OneC/Web/OneCIntegrationApiClientTests.cs`
 
 ### Implementation for User Story 3
 
-- [ ] T040 [US3] Add the backward-compatible `Unchanged` count to the public manual-import response contract in `Myrmex.Shared/Integrations/OneC/OneCImportResponse.cs`
-- [ ] T041 [US3] Map source `DataVersion`, aggregate `Unchanged`, preserve existing logging, paging, errors, partial SKU results, and caller cancellation, and hold each per-type lease for the entire manual operation in `Myrmex.Integrations/OneC/Imports/OneCImportService.cs`
-- [ ] T042 [P] [US3] Add the shared `Common.Unchanged` localization entry in `Myrmex.WebApp/Resources/Localization/SharedResource.resx`, `Myrmex.WebApp/Resources/Localization/SharedResource.en-US.resx`, and `Myrmex.WebApp/Resources/Localization/SharedResource.ru-RU.resx`
-- [ ] T043 [US3] Display the additive `Unchanged` count in existing manual-import results without adding new controls or changing workflow in `Myrmex.WebApp/Components/Pages/Integrations/OneC/Index.razor`
+- [X] T040 [US3] Add the backward-compatible `Unchanged` count to the public manual-import response contract in `Myrmex.Shared/Integrations/OneC/OneCImportResponse.cs`
+- [X] T041 [US3] Map source `DataVersion`, aggregate `Unchanged`, preserve existing logging, paging, errors, partial SKU results, and caller cancellation, and hold each per-type lease for the entire manual operation in `Myrmex.Integrations/OneC/Imports/OneCImportService.cs`
+- [X] T042 [P] [US3] Add the shared `Common.Unchanged` localization entry in `Myrmex.WebApp/Resources/Localization/SharedResource.resx`, `Myrmex.WebApp/Resources/Localization/SharedResource.en-US.resx`, and `Myrmex.WebApp/Resources/Localization/SharedResource.ru-RU.resx`
+- [X] T043 [US3] Display the additive `Unchanged` count in existing manual-import results without adding new controls or changing workflow in `Myrmex.WebApp/Components/Pages/Integrations/OneC/Index.razor`
 
 **Checkpoint**: Existing full imports remain compatible and deterministically report same-version records as unchanged.
 

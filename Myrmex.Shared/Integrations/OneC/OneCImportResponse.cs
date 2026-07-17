@@ -6,6 +6,7 @@ public sealed record OneCImportResponse(
     int Processed,
     int Created,
     int Updated,
+    int Unchanged,
     int Skipped,
     int Failed,
     DateTimeOffset StartedAtUtc,

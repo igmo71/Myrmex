@@ -64,6 +64,7 @@ internal sealed class OneCImportService(
                     processed: pendingFolderErrors.Count,
                     created: 0,
                     updated: 0,
+                    unchanged: 0,
                     skipped: pendingFolderErrors.Count,
                     failed: 0,
                     pendingFolderErrors);
@@ -141,6 +142,7 @@ internal sealed class OneCImportService(
                     processed: 0,
                     created: 0,
                     updated: 0,
+                    unchanged: 0,
                     skipped: 0,
                     failed: 0,
                     []);
@@ -192,6 +194,7 @@ internal sealed class OneCImportService(
         int processed = 0;
         int created = 0;
         int updated = 0;
+        int unchanged = 0;
         int skipped = 0;
         int failed = 0;
         List<OneCImportRecordError> errors = [];
@@ -245,6 +248,7 @@ internal sealed class OneCImportService(
                         processed,
                         created,
                         updated,
+                        unchanged,
                         skipped,
                         failed,
                         errors);
@@ -253,6 +257,7 @@ internal sealed class OneCImportService(
                 processed += result.Value.Processed + pendingFolderErrors.Count;
                 created += result.Value.Created;
                 updated += result.Value.Updated;
+                unchanged += result.Value.Unchanged;
                 skipped += result.Value.Skipped + pendingFolderErrors.Count;
                 failed += result.Value.Failed;
                 AppendErrors(errors, pendingFolderErrors);
@@ -269,6 +274,7 @@ internal sealed class OneCImportService(
                 processed,
                 created,
                 updated,
+                unchanged,
                 skipped,
                 failed,
                 errors);
@@ -277,7 +283,7 @@ internal sealed class OneCImportService(
         {
             return Incomplete(
                 "skus", startedAtUtc, "Cancelled", "The SKU import was cancelled.",
-                processed, created, updated, skipped, failed, errors);
+                processed, created, updated, unchanged, skipped, failed, errors);
         }
         catch (OneCTransportException exception)
         {
@@ -286,14 +292,14 @@ internal sealed class OneCImportService(
                 startedAtUtc,
                 OperationReason(exception.Reason),
                 OperationMessage(exception.Reason),
-                processed, created, updated, skipped, failed, errors);
+                processed, created, updated, unchanged, skipped, failed, errors);
         }
         catch (Exception)
         {
             return Incomplete(
                 "skus", startedAtUtc, "BatchCommitFailed",
                 "The SKU import batch could not be committed.",
-                processed, created, updated, skipped, failed, errors);
+                processed, created, updated, unchanged, skipped, failed, errors);
         }
     }
 
@@ -338,25 +344,27 @@ internal sealed class OneCImportService(
         if (response.IsComplete)
         {
             logger.LogInformation(
-                "1С import completed for {ReferenceType} in {DurationMilliseconds} ms. Processed: {Processed}; Created: {Created}; Updated: {Updated}; Skipped: {Skipped}; Failed: {Failed}.",
+                "1С import completed for {ReferenceType} in {DurationMilliseconds} ms. Processed: {Processed}; Created: {Created}; Updated: {Updated}; Unchanged: {Unchanged}; Skipped: {Skipped}; Failed: {Failed}.",
                 response.ReferenceType,
                 durationMilliseconds,
                 response.Processed,
                 response.Created,
                 response.Updated,
+                response.Unchanged,
                 response.Skipped,
                 response.Failed);
             return;
         }
 
         logger.LogWarning(
-            "1С import incomplete for {ReferenceType} in {DurationMilliseconds} ms with category {FailureCategory}. Processed: {Processed}; Created: {Created}; Updated: {Updated}; Skipped: {Skipped}; Failed: {Failed}.",
+            "1С import incomplete for {ReferenceType} in {DurationMilliseconds} ms with category {FailureCategory}. Processed: {Processed}; Created: {Created}; Updated: {Updated}; Unchanged: {Unchanged}; Skipped: {Skipped}; Failed: {Failed}.",
             response.ReferenceType,
             durationMilliseconds,
             response.OperationError?.Reason ?? "Unknown",
             response.Processed,
             response.Created,
             response.Updated,
+            response.Unchanged,
             response.Skipped,
             response.Failed);
     }
@@ -402,6 +410,7 @@ internal sealed class OneCImportService(
             batch.Processed + pendingErrors.Count,
             batch.Created,
             batch.Updated,
+            batch.Unchanged,
             batch.Skipped + pendingErrors.Count,
             batch.Failed,
             errors);
@@ -413,6 +422,7 @@ internal sealed class OneCImportService(
         int processed,
         int created,
         int updated,
+        int unchanged,
         int skipped,
         int failed,
         IReadOnlyList<OneCImportRecordError> errors) =>
@@ -422,6 +432,7 @@ internal sealed class OneCImportService(
             Processed: processed,
             Created: created,
             Updated: updated,
+            Unchanged: unchanged,
             Skipped: skipped,
             Failed: failed,
             StartedAtUtc: startedAtUtc,
@@ -440,6 +451,7 @@ internal sealed class OneCImportService(
             Processed: 0,
             Created: 0,
             Updated: 0,
+            Unchanged: 0,
             Skipped: 0,
             Failed: 0,
             StartedAtUtc: startedAtUtc,
@@ -455,6 +467,7 @@ internal sealed class OneCImportService(
         int processed,
         int created,
         int updated,
+        int unchanged,
         int skipped,
         int failed,
         IReadOnlyList<OneCImportRecordError> errors) =>
@@ -464,6 +477,7 @@ internal sealed class OneCImportService(
             Processed: processed,
             Created: created,
             Updated: updated,
+            Unchanged: unchanged,
             Skipped: skipped,
             Failed: failed,
             StartedAtUtc: startedAtUtc,

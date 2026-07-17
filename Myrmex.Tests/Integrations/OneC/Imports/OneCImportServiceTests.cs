@@ -83,6 +83,39 @@ public sealed class OneCImportServiceTests
     }
 
     [Fact]
+    public async Task ImportWarehousesAsync_WhenRepeatedWithSameDataVersion_ReportsUnchanged()
+    {
+        Guid warehouseKey = Guid.NewGuid();
+        StubODataClient source = new()
+        {
+            Warehouses =
+            [
+                new Catalog_Склады
+                {
+                    Ref_Key = warehouseKey,
+                    DataVersion = [9, 8, 7],
+                    Code = "WH-1",
+                    Description = "Warehouse"
+                }
+            ]
+        };
+        VersionAwareWarehouseDispatcher dispatcher = new();
+        OneCImportService service = CreateService(source, dispatcher);
+
+        OneCImportResponse first = await service.ImportWarehousesAsync(
+            TestContext.Current.CancellationToken);
+        OneCImportResponse repeated = await service.ImportWarehousesAsync(
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, first.Created);
+        Assert.Equal(0, first.Unchanged);
+        Assert.Equal(1, repeated.Processed);
+        Assert.Equal(0, repeated.Updated);
+        Assert.Equal(1, repeated.Unchanged);
+        Assert.Equal(new byte[] { 9, 8, 7 }, dispatcher.LastDataVersion);
+    }
+
+    [Fact]
     public async Task ImportWarehousesAsync_WhenBatchFails_DiscardsPendingFolderCounts()
     {
         StubODataClient source = new()
@@ -235,14 +268,24 @@ public sealed class OneCImportServiceTests
                 [Nomenclature("SKU-2"), new Catalog_Номенклатура { Ref_Key = Guid.NewGuid(), IsFolder = true }]
             ]
         };
-        SkuDispatcher dispatcher = new(failOnCall: 2);
+        SkuDispatcher dispatcher = new(
+            failOnCall: 2,
+            fixedResult: new ReferenceImportBatchResult(
+                1,
+                Created: 0,
+                Updated: 0,
+                Unchanged: 1,
+                Skipped: 0,
+                Failed: 0,
+                Errors: []));
         OneCImportService service = CreateService(source, dispatcher);
 
         var response = await service.ImportStockKeepingUnitsAsync(TestContext.Current.CancellationToken);
 
         Assert.False(response.IsComplete);
         Assert.Equal(1, response.Processed);
-        Assert.Equal(1, response.Created);
+        Assert.Equal(0, response.Created);
+        Assert.Equal(1, response.Unchanged);
         Assert.Equal(0, response.Skipped);
         Assert.Equal("BatchCommitFailed", response.OperationError?.Reason);
         Assert.Empty(response.Errors);
@@ -380,6 +423,7 @@ public sealed class OneCImportServiceTests
         Assert.Contains("Processed=1", structuredState, StringComparison.Ordinal);
         Assert.Contains("Created=1", structuredState, StringComparison.Ordinal);
         Assert.Contains("Updated=0", structuredState, StringComparison.Ordinal);
+        Assert.Contains("Unchanged=0", structuredState, StringComparison.Ordinal);
         Assert.Contains("Skipped=0", structuredState, StringComparison.Ordinal);
         Assert.Contains("Failed=0", structuredState, StringComparison.Ordinal);
         Assert.DoesNotContain(sourcePayload, structuredState, StringComparison.Ordinal);
@@ -741,6 +785,38 @@ public sealed class OneCImportServiceTests
                 throw new NotSupportedException(typeof(TCommand).FullName);
             }
             return Task.FromResult((TResult)(object)_result);
+        }
+    }
+
+    private sealed class VersionAwareWarehouseDispatcher : ICommandDispatcher
+    {
+        private byte[]? _storedDataVersion;
+
+        public byte[]? LastDataVersion { get; private set; }
+
+        public Task<TResult> DispatchAsync<TCommand, TResult>(
+            TCommand command,
+            CancellationToken cancellationToken = default)
+            where TCommand : ICommand<TResult>
+            where TResult : IServiceResult
+        {
+            ImportWarehouses.Item item = Assert.Single(
+                Assert.IsType<ImportWarehouses.Command>(command).Items);
+            LastDataVersion = item.ExternalDataVersion.ToArray();
+            bool unchanged = _storedDataVersion is not null &&
+                _storedDataVersion.AsSpan().SequenceEqual(item.ExternalDataVersion);
+            _storedDataVersion = item.ExternalDataVersion.ToArray();
+            ReferenceImportBatchResult batch = new(
+                Processed: 1,
+                Created: unchanged ? 0 : 1,
+                Updated: 0,
+                Unchanged: unchanged ? 1 : 0,
+                Skipped: 0,
+                Failed: 0,
+                Errors: []);
+            ServiceResult<ReferenceImportBatchResult> result =
+                ServiceResult<ReferenceImportBatchResult>.Success(batch);
+            return Task.FromResult((TResult)(object)result);
         }
     }
 

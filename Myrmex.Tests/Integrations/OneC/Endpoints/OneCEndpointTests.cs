@@ -95,9 +95,10 @@ public sealed class OneCEndpointTests
         OneCImportResponse expected = new(
             referenceType,
             isComplete,
-            Processed: 2,
+            Processed: 3,
             Created: 1,
             Updated: 0,
+            Unchanged: 1,
             Skipped: 1,
             Failed: 0,
             StartedAtUtc: CheckedAtUtc,
@@ -122,6 +123,7 @@ public sealed class OneCEndpointTests
             TestContext.Current.CancellationToken);
         Assert.Equal(referenceType, payload?.ReferenceType);
         Assert.Equal(isComplete, payload?.IsComplete);
+        Assert.Equal(1, payload?.Unchanged);
         Assert.Equal(!isComplete, payload?.OperationError is not null);
         Assert.Equal(1, importService.CallCount);
     }
@@ -179,6 +181,7 @@ public sealed class OneCEndpointTests
             Processed: 1,
             Created: 0,
             Updated: 0,
+            Unchanged: 0,
             Skipped: 0,
             Failed: 1,
             StartedAtUtc: CheckedAtUtc,
@@ -357,6 +360,7 @@ public sealed class OneCEndpointTests
         Processed: 0,
         Created: 0,
         Updated: 0,
+        Unchanged: 0,
         Skipped: 0,
         Failed: 0,
         StartedAtUtc: CheckedAtUtc,

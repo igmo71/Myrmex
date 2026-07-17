@@ -366,6 +366,7 @@ public sealed class IntegrationAuthorizationEndpointTests
                 Processed: 0,
                 Created: 0,
                 Updated: 0,
+                Unchanged: 0,
                 Skipped: 0,
                 Failed: 0,
                 StartedAtUtc: CheckedAtUtc,

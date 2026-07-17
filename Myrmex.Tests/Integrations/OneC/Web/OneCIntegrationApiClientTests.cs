@@ -86,7 +86,8 @@ public sealed class OneCIntegrationApiClientTests
             IsComplete: true,
             Processed: 3,
             Created: 1,
-            Updated: 1,
+            Updated: 0,
+            Unchanged: 1,
             Skipped: 1,
             Failed: 0,
             StartedAtUtc: DateTimeOffset.Parse("2026-06-27T12:00:00Z"),
@@ -109,6 +110,7 @@ public sealed class OneCIntegrationApiClientTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(3, result.Value?.Processed);
+        Assert.Equal(1, result.Value?.Unchanged);
         Assert.Equal(expectedRoute, captured?.RequestUri?.AbsolutePath);
         Assert.Null(captured?.Content);
     }
@@ -138,7 +140,7 @@ public sealed class OneCIntegrationApiClientTests
     public async Task ImportStockKeepingUnitsAsync_PreservesStableRecordErrors()
     {
         OneCImportResponse expected = new(
-            "skus", true, 1, 0, 0, 0, 1,
+            "skus", true, 1, 0, 0, 0, 0, 1,
             DateTimeOffset.Parse("2026-06-27T12:00:00Z"),
             DateTimeOffset.Parse("2026-06-27T12:01:00Z"),
             null,

@@ -72,6 +72,7 @@
   <data name="Common.Processed" xml:space="preserve"><value>Processed</value></data>
   <data name="Common.Created" xml:space="preserve"><value>Created</value></data>
   <data name="Common.Updated" xml:space="preserve"><value>Updated</value></data>
+  <data name="Common.Unchanged" xml:space="preserve"><value>Unchanged</value></data>
   <data name="Common.Skipped" xml:space="preserve"><value>Skipped</value></data>
   <data name="Common.Failed" xml:space="preserve"><value>Failed</value></data>
   <data name="Common.Import" xml:space="preserve"><value>Import</value></data>
