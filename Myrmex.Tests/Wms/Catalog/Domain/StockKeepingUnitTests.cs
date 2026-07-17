@@ -169,6 +169,7 @@ public sealed class StockKeepingUnitTests
 
         var deleted = stockKeepingUnit.ApplyImport(
             ExternalRefKey,
+            [1],
             code: null,
             name: null,
             baseUnitOfMeasureId: null,
@@ -184,7 +185,7 @@ public sealed class StockKeepingUnitTests
         Assert.False(stockKeepingUnit.IsActive);
 
         Assert.True(stockKeepingUnit.ApplyImport(
-            ExternalRefKey, "ITEM-002", "Imported Widget", OtherBaseUnitOfMeasureId,
+            ExternalRefKey, [2], "ITEM-002", "Imported Widget", OtherBaseUnitOfMeasureId,
             false, ImportedAtUtc.AddMinutes(1)).IsValid);
         Assert.True(stockKeepingUnit.IsActive);
         Assert.Equal("ITEM-002", stockKeepingUnit.Code);
@@ -198,10 +199,10 @@ public sealed class StockKeepingUnitTests
     {
         StockKeepingUnit stockKeepingUnit = CreateStockKeepingUnit();
         Assert.True(stockKeepingUnit.ApplyImport(
-            ExternalRefKey, "ITEM-001", "Widget", BaseUnitOfMeasureId, false, ImportedAtUtc).IsValid);
+            ExternalRefKey, [1], "ITEM-001", "Widget", BaseUnitOfMeasureId, false, ImportedAtUtc).IsValid);
 
         var result = stockKeepingUnit.ApplyImport(
-            Guid.NewGuid(), "ITEM-002", "Other", OtherBaseUnitOfMeasureId, false, ImportedAtUtc);
+            Guid.NewGuid(), [2], "ITEM-002", "Other", OtherBaseUnitOfMeasureId, false, ImportedAtUtc);
 
         Assert.False(result.IsValid);
         Assert.Equal(ExternalRefKey, stockKeepingUnit.ExternalRefKey);

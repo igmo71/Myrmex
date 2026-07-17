@@ -1,5 +1,6 @@
 using Myrmex.Core.Domain;
 using Myrmex.Core.Domain.Validation;
+using Myrmex.Modules.Wms.Domain;
 
 namespace Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 
@@ -28,12 +29,20 @@ internal sealed class UnitOfMeasure : AggregateRoot, IActivatable
 
     public bool IsActive { get; private set; } = true;
 
-    public Guid? ExternalRefKey { get; private set; }
+    internal ExternalImportState? ImportState { get; set; }
 
-    public DateTimeOffset? LastImportedAtUtc { get; private set; }
+    public Guid? ExternalRefKey => ImportState?.RefKey;
+
+    public byte[]? ExternalDataVersion => ImportState?.DataVersion;
+
+    public DateTimeOffset? LastImportedAtUtc => ImportState?.ImportedAtUtc;
+
+    public bool HasExternalDataVersion(ReadOnlySpan<byte> dataVersion) =>
+        ImportState?.HasDataVersion(dataVersion) == true;
 
     public DomainValidationResult ApplyImport(
         Guid externalRefKey,
+        byte[]? externalDataVersion,
         string? code,
         string? name,
         string? symbol,
@@ -51,6 +60,17 @@ internal sealed class UnitOfMeasure : AggregateRoot, IActivatable
             errors.Add(DomainValidationFailure.IncorrectState<UnitOfMeasure>(nameof(ExternalRefKey)));
         }
 
+        if (externalDataVersion is null || externalDataVersion.Length == 0)
+        {
+            errors.Add(DomainValidationFailure.Required<UnitOfMeasure>(nameof(ExternalDataVersion)));
+        }
+        else if (externalDataVersion.Length > ExternalImportState.MaxDataVersionLength)
+        {
+            errors.Add(DomainValidationFailure.TooLong<UnitOfMeasure>(
+                nameof(ExternalDataVersion),
+                ExternalImportState.MaxDataVersionLength));
+        }
+
         DomainValidationResult validationResult = DomainValidationResult.From(errors);
         if (!validationResult.IsValid)
         {
@@ -59,8 +79,7 @@ internal sealed class UnitOfMeasure : AggregateRoot, IActivatable
 
         if (isDeletionMarked)
         {
-            ExternalRefKey ??= externalRefKey;
-            LastImportedAtUtc = importedAtUtc;
+            RecordImport(externalRefKey, externalDataVersion!, importedAtUtc);
             if (IsActive)
             {
                 Deactivate();
@@ -78,16 +97,48 @@ internal sealed class UnitOfMeasure : AggregateRoot, IActivatable
             return validationResult;
         }
 
-        ExternalRefKey ??= externalRefKey;
-        Code = DomainText.NormalizeCode(code);
-        Name = DomainText.NormalizeRequiredText(name);
-        Symbol = DomainText.NormalizeOptionalText(symbol);
-        LastImportedAtUtc = importedAtUtc;
+        string normalizedCode = DomainText.NormalizeCode(code);
+        string normalizedName = DomainText.NormalizeRequiredText(name);
+        string? normalizedSymbol = DomainText.NormalizeOptionalText(symbol);
+        bool detailsChanged = !string.Equals(Code, normalizedCode, StringComparison.Ordinal) ||
+            !string.Equals(Name, normalizedName, StringComparison.Ordinal) ||
+            !string.Equals(Symbol, normalizedSymbol, StringComparison.Ordinal);
+        bool wasInactive = !IsActive;
+
+        RecordImport(externalRefKey, externalDataVersion!, importedAtUtc);
+        Code = normalizedCode;
+        Name = normalizedName;
+        Symbol = normalizedSymbol;
         Reactivate();
 
-        Touch();
-        AddDomainEvent(new UnitOfMeasureDetailsUpdatedDomainEvent(Id));
+        if (detailsChanged)
+        {
+            Touch();
+            AddDomainEvent(new UnitOfMeasureDetailsUpdatedDomainEvent(Id));
+        }
+        else if (!wasInactive)
+        {
+            Touch();
+        }
+
         return DomainValidationResult.Valid;
+    }
+
+    private void RecordImport(
+        Guid externalRefKey,
+        byte[] externalDataVersion,
+        DateTimeOffset importedAtUtc)
+    {
+        if (ImportState is null)
+        {
+            ImportState = ExternalImportState.Create(
+                externalRefKey,
+                externalDataVersion,
+                importedAtUtc);
+            return;
+        }
+
+        ImportState.RecordImport(externalDataVersion, importedAtUtc);
     }
 
     public DomainValidationResult UpdateDetails(

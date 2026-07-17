@@ -1,5 +1,6 @@
 ﻿using Myrmex.Core.Domain;
 using Myrmex.Core.Domain.Validation;
+using Myrmex.Modules.Wms.Domain;
 
 namespace Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 
@@ -28,9 +29,16 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
 
     public bool IsActive { get; private set; } = true;
 
-    public Guid? ExternalRefKey { get; private set; }
+    internal ExternalImportState? ImportState { get; set; }
 
-    public DateTimeOffset? LastImportedAtUtc { get; private set; }
+    public Guid? ExternalRefKey => ImportState?.RefKey;
+
+    public byte[]? ExternalDataVersion => ImportState?.DataVersion;
+
+    public DateTimeOffset? LastImportedAtUtc => ImportState?.ImportedAtUtc;
+
+    public bool HasExternalDataVersion(ReadOnlySpan<byte> dataVersion) =>
+        ImportState?.HasDataVersion(dataVersion) == true;
 
     public static DomainValidationResult Create(
         string? code,
@@ -83,6 +91,7 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
 
     public DomainValidationResult ApplyImport(
         Guid externalRefKey,
+        byte[]? externalDataVersion,
         string? code,
         string? name,
         bool isDeletionMarked,
@@ -99,6 +108,17 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
             errors.Add(DomainValidationFailure.IncorrectState<Warehouse>(nameof(ExternalRefKey)));
         }
 
+        if (externalDataVersion is null || externalDataVersion.Length == 0)
+        {
+            errors.Add(DomainValidationFailure.Required<Warehouse>(nameof(ExternalDataVersion)));
+        }
+        else if (externalDataVersion.Length > ExternalImportState.MaxDataVersionLength)
+        {
+            errors.Add(DomainValidationFailure.TooLong<Warehouse>(
+                nameof(ExternalDataVersion),
+                ExternalImportState.MaxDataVersionLength));
+        }
+
         DomainValidationResult validationResult = DomainValidationResult.From(errors);
         if (!validationResult.IsValid)
         {
@@ -107,8 +127,7 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
 
         if (isDeletionMarked)
         {
-            ExternalRefKey ??= externalRefKey;
-            LastImportedAtUtc = importedAtUtc;
+            RecordImport(externalRefKey, externalDataVersion!, importedAtUtc);
             if (IsActive)
             {
                 Deactivate();
@@ -126,15 +145,45 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
             return validationResult;
         }
 
-        ExternalRefKey ??= externalRefKey;
-        Code = DomainText.NormalizeCode(code);
-        Name = DomainText.NormalizeRequiredText(name);
-        LastImportedAtUtc = importedAtUtc;
+        string normalizedCode = DomainText.NormalizeCode(code);
+        string normalizedName = DomainText.NormalizeRequiredText(name);
+        bool detailsChanged = !string.Equals(Code, normalizedCode, StringComparison.Ordinal) ||
+            !string.Equals(Name, normalizedName, StringComparison.Ordinal);
+        bool wasInactive = !IsActive;
+
+        RecordImport(externalRefKey, externalDataVersion!, importedAtUtc);
+        Code = normalizedCode;
+        Name = normalizedName;
         Reactivate();
 
-        Touch();
-        AddDomainEvent(new WarehouseDetailsUpdatedDomainEvent(Id));
+        if (detailsChanged)
+        {
+            Touch();
+            AddDomainEvent(new WarehouseDetailsUpdatedDomainEvent(Id));
+        }
+        else if (!wasInactive)
+        {
+            Touch();
+        }
+
         return DomainValidationResult.Valid;
+    }
+
+    private void RecordImport(
+        Guid externalRefKey,
+        byte[] externalDataVersion,
+        DateTimeOffset importedAtUtc)
+    {
+        if (ImportState is null)
+        {
+            ImportState = ExternalImportState.Create(
+                externalRefKey,
+                externalDataVersion,
+                importedAtUtc);
+            return;
+        }
+
+        ImportState.RecordImport(externalDataVersion, importedAtUtc);
     }
 
     public void Deactivate()

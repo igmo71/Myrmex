@@ -28,7 +28,7 @@ public sealed class OneCImportServiceTests
             Warehouses =
             [
                 new Catalog_Склады { Ref_Key = folderKey, IsFolder = true, Code = "GROUP", Description = "Group" },
-                new Catalog_Склады { Ref_Key = warehouseKey, Code = null, Description = " Main Warehouse " }
+                new Catalog_Склады { Ref_Key = warehouseKey, DataVersion = [1, 2], Code = null, Description = " Main Warehouse " }
             ]
         };
         RecordingDispatcher dispatcher = new(new ReferenceImportBatchResult(1, 1, 0, 0, 0, []));
@@ -44,6 +44,7 @@ public sealed class OneCImportServiceTests
         ImportWarehouses.Item item = Assert.Single(dispatcher.WarehouseCommand!.Items);
         Assert.Equal(warehouseKey.ToString("N").ToUpperInvariant(), item.Code);
         Assert.Equal("Main Warehouse", item.Name);
+        Assert.Equal(new byte[] { 1, 2 }, item.ExternalDataVersion);
     }
 
     [Fact]
@@ -55,12 +56,12 @@ public sealed class OneCImportServiceTests
             [
                 new Catalog_УпаковкиЕдиницыИзмерения
                 {
-                    Ref_Key = Guid.NewGuid(), Code = " 796 ", Description = "Штука",
+                    Ref_Key = Guid.NewGuid(), DataVersion = [2, 3], Code = " 796 ", Description = "Штука",
                     НаименованиеПолное = " Штука полная ", МеждународноеСокращение = " PCE "
                 },
                 new Catalog_УпаковкиЕдиницыИзмерения
                 {
-                    Ref_Key = Guid.NewGuid(), Code = " 166 ", Description = " Килограмм ",
+                    Ref_Key = Guid.NewGuid(), DataVersion = [3, 4], Code = " 166 ", Description = " Килограмм ",
                     НаименованиеПолное = " ", МеждународноеСокращение = null
                 }
             ]
@@ -76,6 +77,7 @@ public sealed class OneCImportServiceTests
         Assert.Equal("796", items[0].Code);
         Assert.Equal("Штука полная", items[0].Name);
         Assert.Equal("PCE", items[0].Symbol);
+        Assert.Equal(new byte[] { 2, 3 }, items[0].ExternalDataVersion);
         Assert.Equal("Килограмм", items[1].Name);
         Assert.Equal("Килограмм", items[1].Symbol);
     }
@@ -164,13 +166,13 @@ public sealed class OneCImportServiceTests
                     new Catalog_Номенклатура { Ref_Key = Guid.NewGuid(), IsFolder = true, Code = "GROUP" },
                     new Catalog_Номенклатура
                     {
-                        Ref_Key = Guid.NewGuid(), Code = " SKU-1 ", Description = "Fallback",
+                        Ref_Key = Guid.NewGuid(), DataVersion = [4, 5], Code = " SKU-1 ", Description = "Fallback",
                         НаименованиеПолное = " Full Name ", Артикул = "TRANSPORT-ONLY",
                         ЕдиницаИзмерения_Key = unitKey
                     },
                     new Catalog_Номенклатура
                     {
-                        Ref_Key = Guid.NewGuid(), Code = "SKU-2", Description = " Fallback Name ",
+                        Ref_Key = Guid.NewGuid(), DataVersion = [5, 6], Code = "SKU-2", Description = " Fallback Name ",
                         ЕдиницаИзмерения_Key = null
                     }
                 ]
@@ -190,6 +192,7 @@ public sealed class OneCImportServiceTests
         Assert.Equal("SKU-1", items[0].Code);
         Assert.Equal("Full Name", items[0].Name);
         Assert.Equal(unitKey, items[0].BaseUnitOfMeasureExternalRefKey);
+        Assert.Equal(new byte[] { 4, 5 }, items[0].ExternalDataVersion);
         Assert.Equal("Fallback Name", items[1].Name);
         Assert.Null(items[1].BaseUnitOfMeasureExternalRefKey);
     }

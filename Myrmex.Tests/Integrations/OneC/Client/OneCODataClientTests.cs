@@ -167,7 +167,7 @@ public sealed class OneCODataClientTests
             {
                 value = new[]
                 {
-                    new { Ref_Key = RefKey, DeletionMark = false, IsFolder = false, Code = " WH ", Description = " Main " }
+                    new { Ref_Key = RefKey, DataVersion = new byte[] { 1, 2, 3 }, DeletionMark = false, IsFolder = false, Code = " WH ", Description = " Main " }
                 }
             });
         }));
@@ -177,10 +177,12 @@ public sealed class OneCODataClientTests
             TestContext.Current.CancellationToken);
 
         string query = Uri.UnescapeDataString(requestUri!.Query);
-        Assert.Contains("$select=Ref_Key,DeletionMark,IsFolder,Code,Description", query, StringComparison.Ordinal);
+        Assert.Contains("$select=Ref_Key,DataVersion,DeletionMark,IsFolder,Code,Description", query, StringComparison.Ordinal);
         Assert.Contains("$orderby=Ref_Key", query, StringComparison.Ordinal);
         Assert.Contains("$filter=IsFolder eq false", query, StringComparison.Ordinal);
-        Assert.Equal(" WH ", Assert.Single(records).Code);
+        Catalog_Склады record = Assert.Single(records);
+        Assert.Equal(" WH ", record.Code);
+        Assert.Equal(new byte[] { 1, 2, 3 }, record.DataVersion);
     }
 
     [Fact]
@@ -201,7 +203,7 @@ public sealed class OneCODataClientTests
         await client.ReadWarehousesAsync(TestContext.Current.CancellationToken);
 
         string query = Uri.UnescapeDataString(requestUri!.Query);
-        Assert.Contains("$select=Ref_Key,DeletionMark,IsFolder,Description", query, StringComparison.Ordinal);
+        Assert.Contains("$select=Ref_Key,DataVersion,DeletionMark,IsFolder,Description", query, StringComparison.Ordinal);
         Assert.DoesNotContain(",Code,", query, StringComparison.Ordinal);
         Assert.DoesNotContain("$filter", query, StringComparison.Ordinal);
     }
@@ -220,6 +222,7 @@ public sealed class OneCODataClientTests
                     new Dictionary<string, object?>
                     {
                         ["Ref_Key"] = RefKey,
+                        ["DataVersion"] = new byte[] { 2, 3, 4 },
                         ["DeletionMark"] = false,
                         ["Code"] = "796",
                         ["Description"] = "Штука",
@@ -236,13 +239,14 @@ public sealed class OneCODataClientTests
 
         string query = Uri.UnescapeDataString(requestUri!.Query);
         Assert.Contains(
-            "$select=Ref_Key,DeletionMark,Code,Description,НаименованиеПолное,МеждународноеСокращение",
+            "$select=Ref_Key,DataVersion,DeletionMark,Code,Description,НаименованиеПолное,МеждународноеСокращение",
             query,
             StringComparison.Ordinal);
         Assert.Contains("$orderby=Ref_Key", query, StringComparison.Ordinal);
         Catalog_УпаковкиЕдиницыИзмерения record = Assert.Single(records);
         Assert.Equal("Штука полная", record.НаименованиеПолное);
         Assert.Equal("PCE", record.МеждународноеСокращение);
+        Assert.Equal(new byte[] { 2, 3, 4 }, record.DataVersion);
     }
 
     [Fact]
@@ -276,6 +280,7 @@ public sealed class OneCODataClientTests
                     new Dictionary<string, object?>
                     {
                         ["Ref_Key"] = RefKey,
+                        ["DataVersion"] = new byte[] { 3, 4, 5 },
                         ["DeletionMark"] = false,
                         ["IsFolder"] = false,
                         ["Code"] = "SKU-1",
@@ -298,7 +303,7 @@ public sealed class OneCODataClientTests
 
         string query = Uri.UnescapeDataString(requestUri!.Query);
         Assert.Contains(
-            "$select=Ref_Key,DeletionMark,IsFolder,Code,Description,НаименованиеПолное,Артикул,ЕдиницаИзмерения_Key",
+            "$select=Ref_Key,DataVersion,DeletionMark,IsFolder,Code,Description,НаименованиеПолное,Артикул,ЕдиницаИзмерения_Key",
             query,
             StringComparison.Ordinal);
         Assert.Contains("$orderby=Ref_Key", query, StringComparison.Ordinal);
@@ -308,6 +313,7 @@ public sealed class OneCODataClientTests
         Catalog_Номенклатура record = Assert.Single(Assert.Single(pages));
         Assert.Equal(unitKey, record.ЕдиницаИзмерения_Key);
         Assert.Equal("ART-1", record.Артикул);
+        Assert.Equal(new byte[] { 3, 4, 5 }, record.DataVersion);
     }
 
     [Fact]
@@ -422,6 +428,7 @@ public sealed class OneCODataClientTests
     private static object NomenclatureRecord(Guid refKey) => new
     {
         Ref_Key = refKey,
+        DataVersion = new byte[] { 1 },
         DeletionMark = false,
         IsFolder = false,
         Code = refKey.ToString("N"),

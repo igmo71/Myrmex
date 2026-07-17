@@ -20,6 +20,7 @@ public static class ImportStockKeepingUnits
 
     public sealed record Item(
         Guid ExternalRefKey,
+        byte[] ExternalDataVersion,
         string? Code,
         string? Name,
         Guid? BaseUnitOfMeasureExternalRefKey,
@@ -113,24 +114,25 @@ public static class ImportStockKeepingUnits
 
             List<StockKeepingUnit> existing = await dbContext.StockKeepingUnits
                 .Where(sku =>
-                    (sku.ExternalRefKey.HasValue && externalRefKeys.Contains(sku.ExternalRefKey.Value)) ||
+                    (sku.ImportState != null && externalRefKeys.Contains(sku.ImportState.RefKey)) ||
                     codes.Contains(sku.Code))
                 .ToListAsync(cancellationToken);
             List<UnitOfMeasure> baseUnits = await dbContext.UnitsOfMeasure
-                .Where(unit => unit.ExternalRefKey.HasValue &&
-                    baseUnitExternalRefKeys.Contains(unit.ExternalRefKey.Value))
+                .Where(unit => unit.ImportState != null &&
+                    baseUnitExternalRefKeys.Contains(unit.ImportState.RefKey))
                 .ToListAsync(cancellationToken);
 
             Dictionary<Guid, StockKeepingUnit> byExternalRefKey = existing
-                .Where(sku => sku.ExternalRefKey.HasValue)
-                .ToDictionary(sku => sku.ExternalRefKey!.Value);
+                .Where(sku => sku.ImportState != null)
+                .ToDictionary(sku => sku.ImportState!.RefKey);
             Dictionary<string, StockKeepingUnit> byCode = existing
                 .ToDictionary(sku => sku.Code, StringComparer.Ordinal);
             Dictionary<Guid, UnitOfMeasure> baseUnitsByExternalRefKey = baseUnits
-                .ToDictionary(unit => unit.ExternalRefKey!.Value);
+                .ToDictionary(unit => unit.ImportState!.RefKey);
 
             int created = 0;
             int updated = 0;
+            int unchanged = 0;
             int skipped = 0;
             int failed = 0;
             List<ReferenceImportRecordError> errors = [];
@@ -145,11 +147,19 @@ public static class ImportStockKeepingUnits
                     continue;
                 }
 
-                if (byExternalRefKey.TryGetValue(item.ExternalRefKey, out StockKeepingUnit? linked) &&
+                bool isLinked = byExternalRefKey.TryGetValue(item.ExternalRefKey, out StockKeepingUnit? linked);
+                if (isLinked && linked!.HasExternalDataVersion(item.ExternalDataVersion))
+                {
+                    unchanged++;
+                    continue;
+                }
+
+                if (isLinked &&
                     item.IsDeletionMarked)
                 {
                     DomainValidationResult deletionResult = linked.ApplyImport(
                         item.ExternalRefKey,
+                        item.ExternalDataVersion,
                         item.Code,
                         item.Name,
                         baseUnitOfMeasureId: null,
@@ -196,6 +206,7 @@ public static class ImportStockKeepingUnits
                     string oldCode = linked.Code;
                     DomainValidationResult updateResult = linked.ApplyImport(
                         item.ExternalRefKey,
+                        item.ExternalDataVersion,
                         item.Code,
                         item.Name,
                         baseUnit.Id,
@@ -238,6 +249,7 @@ public static class ImportStockKeepingUnits
 
                 DomainValidationResult importResult = sku.ApplyImport(
                     item.ExternalRefKey,
+                    item.ExternalDataVersion,
                     item.Code,
                     item.Name,
                     baseUnit.Id,
@@ -261,6 +273,7 @@ public static class ImportStockKeepingUnits
                 command.Items.Count,
                 created,
                 updated,
+                unchanged,
                 skipped,
                 failed,
                 errors);

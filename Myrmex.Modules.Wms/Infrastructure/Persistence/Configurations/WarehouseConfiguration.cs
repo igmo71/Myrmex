@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Myrmex.Modules.Wms.Domain;
 using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 
 namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Configurations;
@@ -35,15 +36,34 @@ internal sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehous
         builder.Property(x => x.IsActive)
             .IsRequired();
 
-        builder.Property(x => x.ExternalRefKey)
-            .IsRequired(false);
+        builder.Ignore(x => x.ExternalRefKey);
+        builder.Ignore(x => x.ExternalDataVersion);
+        builder.Ignore(x => x.LastImportedAtUtc);
 
-        builder.HasIndex(x => x.ExternalRefKey)
-            .IsUnique()
-            .HasFilter("[ExternalRefKey] IS NOT NULL")
-            .HasDatabaseName(WmsDatabaseNames.WarehouseExternalRefKeyUniqueIndex);
+        builder.OwnsOne(x => x.ImportState, importState =>
+        {
+            importState.Property(x => x.RefKey)
+                .HasColumnName("ExternalRefKey")
+                .IsRequired();
 
-        builder.Property(x => x.LastImportedAtUtc)
+            importState.HasIndex(x => x.RefKey)
+                .IsUnique()
+                .HasFilter("[ExternalRefKey] IS NOT NULL")
+                .HasDatabaseName(WmsDatabaseNames.WarehouseExternalRefKeyUniqueIndex);
+
+            importState.Property(x => x.DataVersion)
+                .HasField("_dataVersion")
+                .UsePropertyAccessMode(PropertyAccessMode.Field)
+                .HasColumnName("ExternalDataVersion")
+                .HasMaxLength(ExternalImportState.MaxDataVersionLength)
+                .IsRequired(false);
+
+            importState.Property(x => x.ImportedAtUtc)
+                .HasColumnName("LastImportedAtUtc")
+                .IsRequired();
+        });
+
+        builder.Navigation(x => x.ImportState)
             .IsRequired(false);
 
         builder.Property(x => x.CreatedAtUtc)

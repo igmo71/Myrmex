@@ -7,6 +7,9 @@ internal sealed class Catalog_Склады
     [JsonPropertyName("Ref_Key")]
     public Guid Ref_Key { get; init; }
 
+    [JsonPropertyName("DataVersion")]
+    public byte[] DataVersion { get; init; } = [];
+
     [JsonPropertyName("DeletionMark")]
     public bool DeletionMark { get; init; }
 

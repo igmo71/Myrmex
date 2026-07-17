@@ -49,6 +49,7 @@ internal sealed class OneCImportService(
                 .Where(record => !record.IsFolder)
                 .Select(record => new ImportWarehouses.Item(
                     record.Ref_Key,
+                    record.DataVersion,
                     WarehouseCode(record),
                     record.Description?.Trim(),
                     record.DeletionMark,
@@ -124,6 +125,7 @@ internal sealed class OneCImportService(
             List<ImportUnitsOfMeasure.Item> items = source
                 .Select(record => new ImportUnitsOfMeasure.Item(
                     record.Ref_Key,
+                    record.DataVersion,
                     record.Code?.Trim(),
                     FirstNonEmpty(record.НаименованиеПолное, record.Description),
                     FirstNonEmpty(record.МеждународноеСокращение, record.Description),
@@ -212,6 +214,7 @@ internal sealed class OneCImportService(
                     .Where(record => !record.IsFolder)
                     .Select(record => new ImportStockKeepingUnits.Item(
                         record.Ref_Key,
+                        record.DataVersion,
                         record.Code?.Trim(),
                         FirstNonEmpty(record.НаименованиеПолное, record.Description),
                         record.ЕдиницаИзмерения_Key,

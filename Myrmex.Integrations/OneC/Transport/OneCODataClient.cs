@@ -86,8 +86,8 @@ internal sealed class OneCODataClient : IOneCODataClient
         OneCOptions options = _options.Value;
         Uri baseUri = ValidateAndGetBaseUri(options);
         string select = options.WarehouseCodeAvailable
-            ? "Ref_Key,DeletionMark,IsFolder,Code,Description"
-            : "Ref_Key,DeletionMark,IsFolder,Description";
+            ? "Ref_Key,DataVersion,DeletionMark,IsFolder,Code,Description"
+            : "Ref_Key,DataVersion,DeletionMark,IsFolder,Description";
 
         List<KeyValuePair<string, string>> parameters =
         [
@@ -116,7 +116,7 @@ internal sealed class OneCODataClient : IOneCODataClient
         KeyValuePair<string, string>[] parameters =
         [
             new("$format", "json"),
-            new("$select", "Ref_Key,DeletionMark,Code,Description,НаименованиеПолное,МеждународноеСокращение"),
+            new("$select", "Ref_Key,DataVersion,DeletionMark,Code,Description,НаименованиеПолное,МеждународноеСокращение"),
             new("$orderby", "Ref_Key")
         ];
 
@@ -140,7 +140,7 @@ internal sealed class OneCODataClient : IOneCODataClient
             List<KeyValuePair<string, string>> parameters =
             [
                 new("$format", "json"),
-                new("$select", "Ref_Key,DeletionMark,IsFolder,Code,Description,НаименованиеПолное,Артикул,ЕдиницаИзмерения_Key"),
+                new("$select", "Ref_Key,DataVersion,DeletionMark,IsFolder,Code,Description,НаименованиеПолное,Артикул,ЕдиницаИзмерения_Key"),
                 new("$orderby", "Ref_Key"),
                 new("$skip", offset.ToString(System.Globalization.CultureInfo.InvariantCulture)),
                 new("$top", options.BatchSize.ToString(System.Globalization.CultureInfo.InvariantCulture))

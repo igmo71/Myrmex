@@ -20,6 +20,7 @@ public static class ImportWarehouses
 
     public sealed record Item(
         Guid ExternalRefKey,
+        byte[] ExternalDataVersion,
         string? Code,
         string? Name,
         bool IsDeletionMarked,
@@ -105,18 +106,19 @@ public static class ImportWarehouses
 
             List<Warehouse> existing = await dbContext.Warehouses
                 .Where(warehouse =>
-                    (warehouse.ExternalRefKey.HasValue && externalRefKeys.Contains(warehouse.ExternalRefKey.Value)) ||
+                    (warehouse.ImportState != null && externalRefKeys.Contains(warehouse.ImportState.RefKey)) ||
                     codes.Contains(warehouse.Code))
                 .ToListAsync(cancellationToken);
 
             Dictionary<Guid, Warehouse> byExternalRefKey = existing
-                .Where(warehouse => warehouse.ExternalRefKey.HasValue)
-                .ToDictionary(warehouse => warehouse.ExternalRefKey!.Value);
+                .Where(warehouse => warehouse.ImportState != null)
+                .ToDictionary(warehouse => warehouse.ImportState!.RefKey);
             Dictionary<string, Warehouse> byCode = existing
                 .ToDictionary(warehouse => warehouse.Code, StringComparer.Ordinal);
 
             int created = 0;
             int updated = 0;
+            int unchanged = 0;
             int skipped = 0;
             int failed = 0;
             List<ReferenceImportRecordError> errors = [];
@@ -135,10 +137,17 @@ public static class ImportWarehouses
 
                 if (byExternalRefKey.TryGetValue(item.ExternalRefKey, out Warehouse? linked))
                 {
+                    if (linked.HasExternalDataVersion(item.ExternalDataVersion))
+                    {
+                        unchanged++;
+                        continue;
+                    }
+
                     if (item.IsDeletionMarked)
                     {
                         DomainValidationResult deletionResult = linked.ApplyImport(
                             item.ExternalRefKey,
+                            item.ExternalDataVersion,
                             item.Code,
                             item.Name,
                             isDeletionMarked: true,
@@ -166,6 +175,7 @@ public static class ImportWarehouses
                     string oldCode = linked.Code;
                     DomainValidationResult updateResult = linked.ApplyImport(
                         item.ExternalRefKey,
+                        item.ExternalDataVersion,
                         item.Code,
                         item.Name,
                         item.IsDeletionMarked,
@@ -214,6 +224,7 @@ public static class ImportWarehouses
 
                 DomainValidationResult importResult = warehouse.ApplyImport(
                     item.ExternalRefKey,
+                    item.ExternalDataVersion,
                     item.Code,
                     item.Name,
                     isDeletionMarked: false,
@@ -236,6 +247,7 @@ public static class ImportWarehouses
                 command.Items.Count,
                 created,
                 updated,
+                unchanged,
                 skipped,
                 failed,
                 errors);
