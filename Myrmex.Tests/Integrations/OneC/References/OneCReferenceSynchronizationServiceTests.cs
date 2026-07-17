@@ -8,6 +8,7 @@ using Myrmex.Integrations.OneC.Imports;
 using Myrmex.Integrations.OneC.References;
 using Myrmex.Integrations.OneC.Transport;
 using Myrmex.Modules.Wms.Catalog.Features.Imports;
+using Myrmex.Modules.Wms.Topology.Features.Imports;
 using System.Runtime.CompilerServices;
 
 namespace Myrmex.Tests.Integrations.OneC.References;
@@ -78,6 +79,63 @@ public sealed class OneCReferenceSynchronizationServiceTests
         Assert.Equal(scenario == "busy" ? 0 : 1, source.CurrentReadCount);
     }
 
+    [Theory]
+    [InlineData(OneCReferenceType.Warehouse)]
+    [InlineData(OneCReferenceType.UnitOfMeasure)]
+    [InlineData(OneCReferenceType.StockKeepingUnit)]
+    internal async Task SynchronizeAsync_DispatchesTheSupportedTypeAndKey(
+        OneCReferenceType referenceType)
+    {
+        StubODataClient source = new()
+        {
+            Warehouse = Warehouse(isFolder: false, isDeletionMarked: false),
+            UnitOfMeasure = UnitOfMeasure(),
+            StockKeepingUnit = StockKeepingUnit(isFolder: false)
+        };
+        RecordingDispatcher dispatcher = new(Batch("applied"));
+        OneCReferenceSynchronizationService service = CreateService(
+            source,
+            dispatcher,
+            new OneCImportGate());
+
+        await service.SynchronizeAsync(
+            referenceType,
+            ExternalRefKey,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(referenceType, source.LastReadType);
+        Assert.Equal(ExternalRefKey, source.LastExternalRefKey);
+        Type expectedCommandType = referenceType switch
+        {
+            OneCReferenceType.Warehouse => typeof(ImportWarehouses.Command),
+            OneCReferenceType.UnitOfMeasure => typeof(ImportUnitsOfMeasure.Command),
+            OneCReferenceType.StockKeepingUnit => typeof(ImportStockKeepingUnits.Command),
+            _ => throw new ArgumentOutOfRangeException(nameof(referenceType))
+        };
+        Assert.Equal(expectedCommandType, dispatcher.LastCommand?.GetType());
+    }
+
+    [Fact]
+    public async Task SynchronizeAsync_PropagatesCallerCancellation()
+    {
+        using CancellationTokenSource cancellation = new();
+        cancellation.Cancel();
+        StubODataClient source = new()
+        {
+            Warehouse = Warehouse(isFolder: false, isDeletionMarked: false)
+        };
+        OneCReferenceSynchronizationService service = CreateService(
+            source,
+            new RecordingDispatcher(Batch("applied")),
+            new OneCImportGate());
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            service.SynchronizeAsync(
+                OneCReferenceType.Warehouse,
+                ExternalRefKey,
+                cancellation.Token));
+    }
+
     private static OneCReferenceSynchronizationService CreateService(
         IOneCODataClient source,
         ICommandDispatcher dispatcher,
@@ -137,6 +195,16 @@ public sealed class OneCReferenceSynchronizationServiceTests
         ЕдиницаИзмерения_Key = Guid.NewGuid()
     };
 
+    private static Catalog_УпаковкиЕдиницыИзмерения UnitOfMeasure() => new()
+    {
+        Ref_Key = ExternalRefKey,
+        DataVersion = [1],
+        Code = "EA",
+        Description = "Each",
+        НаименованиеПолное = "Each",
+        МеждународноеСокращение = "ea"
+    };
+
     private sealed class StubODataClient : IOneCODataClient
     {
         public Catalog_Склады? Warehouse { get; init; }
@@ -144,6 +212,8 @@ public sealed class OneCReferenceSynchronizationServiceTests
         public Catalog_Номенклатура? StockKeepingUnit { get; init; }
         public Exception? Exception { get; init; }
         public int CurrentReadCount { get; private set; }
+        public OneCReferenceType? LastReadType { get; private set; }
+        public Guid? LastExternalRefKey { get; private set; }
 
         public void ValidateConfiguration() { }
         public Task TestConnectionAsync(CancellationToken cancellationToken) => Task.CompletedTask;
@@ -161,17 +231,26 @@ public sealed class OneCReferenceSynchronizationServiceTests
 
         public Task<Catalog_Склады?> ReadWarehouseAsync(
             Guid externalRefKey,
-            CancellationToken cancellationToken) => Return(Warehouse);
+            CancellationToken cancellationToken) =>
+            Return(Warehouse, OneCReferenceType.Warehouse, externalRefKey);
         public Task<Catalog_УпаковкиЕдиницыИзмерения?> ReadUnitOfMeasureAsync(
             Guid externalRefKey,
-            CancellationToken cancellationToken) => Return(UnitOfMeasure);
+            CancellationToken cancellationToken) =>
+            Return(UnitOfMeasure, OneCReferenceType.UnitOfMeasure, externalRefKey);
         public Task<Catalog_Номенклатура?> ReadStockKeepingUnitAsync(
             Guid externalRefKey,
-            CancellationToken cancellationToken) => Return(StockKeepingUnit);
+            CancellationToken cancellationToken) =>
+            Return(StockKeepingUnit, OneCReferenceType.StockKeepingUnit, externalRefKey);
 
-        private Task<T?> Return<T>(T? value) where T : class
+        private Task<T?> Return<T>(
+            T? value,
+            OneCReferenceType referenceType,
+            Guid externalRefKey)
+            where T : class
         {
             CurrentReadCount++;
+            LastReadType = referenceType;
+            LastExternalRefKey = externalRefKey;
             return Exception is null ? Task.FromResult(value) : Task.FromException<T?>(Exception);
         }
     }
@@ -179,6 +258,7 @@ public sealed class OneCReferenceSynchronizationServiceTests
     private sealed class RecordingDispatcher(ReferenceImportBatchResult batch) : ICommandDispatcher
     {
         public int CallCount { get; private set; }
+        public object? LastCommand { get; private set; }
 
         public Task<TResult> DispatchAsync<TCommand, TResult>(
             TCommand command,
@@ -187,6 +267,7 @@ public sealed class OneCReferenceSynchronizationServiceTests
             where TResult : IServiceResult
         {
             CallCount++;
+            LastCommand = command;
             ServiceResult<ReferenceImportBatchResult> result =
                 ServiceResult<ReferenceImportBatchResult>.Success(batch);
             return Task.FromResult((TResult)(object)result);

@@ -67,6 +67,12 @@ public sealed class ReferenceSynchronizationHandlerTests
     {
         public Guid? ExternalRefKey { get; private set; }
 
+        public Task<ReferenceSynchronizationResult> SynchronizeAsync(
+            OneCReferenceType referenceType,
+            Guid externalRefKey,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(result);
+
         public Task<ReferenceSynchronizationResult> SynchronizeWarehouseAsync(
             Guid externalRefKey,
             CancellationToken cancellationToken)

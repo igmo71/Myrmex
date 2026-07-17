@@ -12,6 +12,11 @@ namespace Myrmex.Integrations.OneC.References;
 
 internal interface IOneCReferenceSynchronizationService
 {
+    Task<ReferenceSynchronizationResult> SynchronizeAsync(
+        OneCReferenceType referenceType,
+        Guid externalRefKey,
+        CancellationToken cancellationToken);
+
     Task<ReferenceSynchronizationResult> SynchronizeWarehouseAsync(
         Guid externalRefKey,
         CancellationToken cancellationToken);
@@ -34,6 +39,27 @@ internal sealed class OneCReferenceSynchronizationService(
     ILogger<OneCReferenceSynchronizationService> logger)
     : IOneCReferenceSynchronizationService
 {
+    public Task<ReferenceSynchronizationResult> SynchronizeAsync(
+        OneCReferenceType referenceType,
+        Guid externalRefKey,
+        CancellationToken cancellationToken) =>
+        referenceType switch
+        {
+            OneCReferenceType.Warehouse => SynchronizeWarehouseAsync(
+                externalRefKey,
+                cancellationToken),
+            OneCReferenceType.UnitOfMeasure => SynchronizeUnitOfMeasureAsync(
+                externalRefKey,
+                cancellationToken),
+            OneCReferenceType.StockKeepingUnit => SynchronizeStockKeepingUnitAsync(
+                externalRefKey,
+                cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(referenceType),
+                referenceType,
+                "The reference type is not supported for 1С synchronization.")
+        };
+
     public Task<ReferenceSynchronizationResult> SynchronizeWarehouseAsync(
         Guid externalRefKey,
         CancellationToken cancellationToken) =>
@@ -71,6 +97,8 @@ internal sealed class OneCReferenceSynchronizationService(
         Func<Guid, CancellationToken, Task<ReferenceSynchronizationResult>> synchronize,
         CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (externalRefKey == Guid.Empty)
         {
             return PermanentFailure(
@@ -210,8 +238,67 @@ internal sealed class OneCReferenceSynchronizationService(
             .DispatchAsync<ImportStockKeepingUnits.Command, ServiceResult<ReferenceImportBatchResult>>(
                 new ImportStockKeepingUnits.Command([item]),
                 cancellationToken);
-        return FromBatchResult(OneCReferenceType.StockKeepingUnit, externalRefKey, result);
+        if (!RequiresBaseUnitOfMeasureRepair(result, item.BaseUnitOfMeasureExternalRefKey))
+        {
+            return FromBatchResult(OneCReferenceType.StockKeepingUnit, externalRefKey, result);
+        }
+
+        Guid unitOfMeasureExternalRefKey = item.BaseUnitOfMeasureExternalRefKey!.Value;
+        ReferenceSynchronizationResult repair = await SynchronizeUnitOfMeasureAsync(
+            unitOfMeasureExternalRefKey,
+            cancellationToken);
+        if (repair.Outcome is ReferenceSynchronizationOutcome.Busy or
+            ReferenceSynchronizationOutcome.TransientFailure)
+        {
+            return ReferenceSynchronizationResult.Failure(
+                OneCReferenceType.StockKeepingUnit,
+                externalRefKey,
+                ReferenceSynchronizationOutcome.TransientFailure,
+                ReferenceSynchronizationReasons.BaseUnitOfMeasureRepairUnavailable,
+                $"Base Unit of Measure {unitOfMeasureExternalRefKey:D} could not be synchronized temporarily.",
+                retrySuitable: true);
+        }
+
+        if (repair.Outcome is not ReferenceSynchronizationOutcome.Applied and
+            not ReferenceSynchronizationOutcome.Unchanged)
+        {
+            return PermanentFailure(
+                OneCReferenceType.StockKeepingUnit,
+                externalRefKey,
+                ReferenceSynchronizationReasons.BaseUnitOfMeasureRepairFailed,
+                $"Base Unit of Measure {unitOfMeasureExternalRefKey:D} could not be made active and applicable.");
+        }
+
+        ServiceResult<ReferenceImportBatchResult> retryResult = await commandDispatcher
+            .DispatchAsync<ImportStockKeepingUnits.Command, ServiceResult<ReferenceImportBatchResult>>(
+                new ImportStockKeepingUnits.Command([item]),
+                cancellationToken);
+        if (RequiresBaseUnitOfMeasureRepair(retryResult, item.BaseUnitOfMeasureExternalRefKey))
+        {
+            return PermanentFailure(
+                OneCReferenceType.StockKeepingUnit,
+                externalRefKey,
+                ReferenceSynchronizationReasons.BaseUnitOfMeasureRepairFailed,
+                $"Base Unit of Measure {unitOfMeasureExternalRefKey:D} remained missing or inactive after synchronization.");
+        }
+
+        return FromBatchResult(
+            OneCReferenceType.StockKeepingUnit,
+            externalRefKey,
+            retryResult);
     }
+
+    private static bool RequiresBaseUnitOfMeasureRepair(
+        ServiceResult<ReferenceImportBatchResult> result,
+        Guid? unitOfMeasureExternalRefKey) =>
+        result.IsSuccess &&
+        unitOfMeasureExternalRefKey is Guid key &&
+        key != Guid.Empty &&
+        result.Value.Processed == 1 &&
+        result.Value.Failed == 1 &&
+        result.Value.Errors.Any(error => error.Reason is
+            ReferenceImportRecordErrorReasons.BaseUnitOfMeasureNotImported or
+            ReferenceImportRecordErrorReasons.BaseUnitOfMeasureInactive);
 
     private string WarehouseCode(Catalog_Склады source)
     {

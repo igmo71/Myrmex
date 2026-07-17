@@ -64,4 +64,6 @@ internal static class ReferenceSynchronizationReasons
     public const string BusinessConflict = nameof(BusinessConflict);
     public const string ApplicationFailure = nameof(ApplicationFailure);
     public const string InvalidRequest = nameof(InvalidRequest);
+    public const string BaseUnitOfMeasureRepairUnavailable = nameof(BaseUnitOfMeasureRepairUnavailable);
+    public const string BaseUnitOfMeasureRepairFailed = nameof(BaseUnitOfMeasureRepairFailed);
 }

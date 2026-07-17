@@ -82,12 +82,12 @@
 
 ### Tests for User Story 2
 
-- [ ] T034 [P] [US2] Add direct internal-call tests only for supported type/key dispatch and propagation of caller cancellation, leaving all outcome classification to T022, in `Myrmex.Tests/Integrations/OneC/References/OneCReferenceSynchronizationServiceTests.cs`
-- [ ] T035 [P] [US2] Add one successful and one failed SKU base-UoM repair test proving at most one UoM synchronization, at most one additional SKU apply, and no recursive dependency resolution in `Myrmex.Tests/Integrations/OneC/References/StockKeepingUnitReferenceRepairTests.cs`
+- [X] T034 [P] [US2] Add direct internal-call tests only for supported type/key dispatch and propagation of caller cancellation, leaving all outcome classification to T022, in `Myrmex.Tests/Integrations/OneC/References/OneCReferenceSynchronizationServiceTests.cs`
+- [X] T035 [P] [US2] Add one successful and one failed SKU base-UoM repair test proving at most one UoM synchronization, at most one additional SKU apply, and no recursive dependency resolution in `Myrmex.Tests/Integrations/OneC/References/StockKeepingUnitReferenceRepairTests.cs`
 
 ### Implementation for User Story 2
 
-- [ ] T036 [US2] Finalize the internal synchronize-one contract and implement the explicit bounded SKU-to-UoM repair path without a public endpoint or generalized dependency abstraction in `Myrmex.Integrations/OneC/References/OneCReferenceSynchronizationService.cs`
+- [X] T036 [US2] Finalize the internal synchronize-one contract and implement the explicit bounded SKU-to-UoM repair path without a public endpoint or generalized dependency abstraction in `Myrmex.Integrations/OneC/References/OneCReferenceSynchronizationService.cs`
 
 **Checkpoint**: Internal callers can synchronize one supported reference and SKU repair is bounded, explicit, and independently testable.
 
