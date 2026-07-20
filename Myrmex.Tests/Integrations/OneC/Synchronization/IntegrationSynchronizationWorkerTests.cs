@@ -194,11 +194,13 @@ public sealed class IntegrationSynchronizationWorkerTests
     }
 
     [Fact]
-    public async Task RunStartupPass_WhenHostShutdownCancelsHandler_LeavesRequestProcessing()
+    public async Task RunStartupPass_WhenHostShutdownCancelsHandler_PropagatesCancellationAndLeavesRequestProcessing()
     {
         await using IntegrationSynchronizationSqlTestHost host =
             await IntegrationSynchronizationSqlTestHost.CreateAsync();
+
         SynchronizationRequest request = CreateRequest();
+
         await using (IntegrationDbContext dbContext = host.CreateDbContext())
         {
             await SeedAsync(dbContext, request);
@@ -206,38 +208,45 @@ public sealed class IntegrationSynchronizationWorkerTests
 
         TaskCompletionSource handlerStarted =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
+
         MutableTimeProvider timeProvider = new(NowUtc);
         SynchronizationOptions options =
             CreateOptions(retryDelaysSeconds: [10]);
         SynchronizationWakeUp wakeUp = new();
+
         TestSynchronizationHandler handler = new(async (_, cancellationToken) =>
         {
             handlerStarted.SetResult();
             await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
             return SynchronizationHandlerResult.Completed();
         });
+
         await using ServiceProvider provider = CreateWorkerServiceProvider(
             host.ConnectionString,
             timeProvider,
             options,
             wakeUp,
             handler);
+
         SynchronizationWorker worker = CreateWorker(
             provider.GetRequiredService<IServiceScopeFactory>(),
             wakeUp,
             timeProvider,
             options);
+
         using CancellationTokenSource shutdown = new();
 
         Task<SynchronizationWorker.WorkerPassResult> startupPass =
             worker.RunStartupPassAsync(shutdown.Token);
+
         await handlerStarted.Task.WaitAsync(TestContext.Current.CancellationToken);
         await shutdown.CancelAsync();
-        SynchronizationWorker.WorkerPassResult result = await startupPass;
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => startupPass);
 
         SynchronizationRequest saved = await ReadAsync(host, request.Id);
-        Assert.Equal(0, result.RecoveredCount);
-        Assert.Equal(1, result.ProcessedCount);
+
         Assert.Equal(SynchronizationStatus.Processing, saved.Status);
         Assert.Equal(1, saved.AttemptCount);
         Assert.Equal(NowUtc, saved.ProcessingStartedAtUtc);
