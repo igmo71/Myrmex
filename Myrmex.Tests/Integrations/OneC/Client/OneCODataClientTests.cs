@@ -167,7 +167,7 @@ public sealed class OneCODataClientTests
             {
                 value = new[]
                 {
-                    new { Ref_Key = RefKey, DeletionMark = false, IsFolder = false, Code = " WH ", Description = " Main " }
+                    new { Ref_Key = RefKey, DataVersion = new byte[] { 1, 2, 3 }, DeletionMark = false, IsFolder = false, Code = " WH ", Description = " Main " }
                 }
             });
         }));
@@ -177,10 +177,12 @@ public sealed class OneCODataClientTests
             TestContext.Current.CancellationToken);
 
         string query = Uri.UnescapeDataString(requestUri!.Query);
-        Assert.Contains("$select=Ref_Key,DeletionMark,IsFolder,Code,Description", query, StringComparison.Ordinal);
+        Assert.Contains("$select=Ref_Key,DataVersion,DeletionMark,IsFolder,Code,Description", query, StringComparison.Ordinal);
         Assert.Contains("$orderby=Ref_Key", query, StringComparison.Ordinal);
         Assert.Contains("$filter=IsFolder eq false", query, StringComparison.Ordinal);
-        Assert.Equal(" WH ", Assert.Single(records).Code);
+        Catalog_Склады record = Assert.Single(records);
+        Assert.Equal(" WH ", record.Code);
+        Assert.Equal(new byte[] { 1, 2, 3 }, record.DataVersion);
     }
 
     [Fact]
@@ -201,7 +203,7 @@ public sealed class OneCODataClientTests
         await client.ReadWarehousesAsync(TestContext.Current.CancellationToken);
 
         string query = Uri.UnescapeDataString(requestUri!.Query);
-        Assert.Contains("$select=Ref_Key,DeletionMark,IsFolder,Description", query, StringComparison.Ordinal);
+        Assert.Contains("$select=Ref_Key,DataVersion,DeletionMark,IsFolder,Description", query, StringComparison.Ordinal);
         Assert.DoesNotContain(",Code,", query, StringComparison.Ordinal);
         Assert.DoesNotContain("$filter", query, StringComparison.Ordinal);
     }
@@ -220,6 +222,7 @@ public sealed class OneCODataClientTests
                     new Dictionary<string, object?>
                     {
                         ["Ref_Key"] = RefKey,
+                        ["DataVersion"] = new byte[] { 2, 3, 4 },
                         ["DeletionMark"] = false,
                         ["Code"] = "796",
                         ["Description"] = "Штука",
@@ -236,13 +239,14 @@ public sealed class OneCODataClientTests
 
         string query = Uri.UnescapeDataString(requestUri!.Query);
         Assert.Contains(
-            "$select=Ref_Key,DeletionMark,Code,Description,НаименованиеПолное,МеждународноеСокращение",
+            "$select=Ref_Key,DataVersion,DeletionMark,Code,Description,НаименованиеПолное,МеждународноеСокращение",
             query,
             StringComparison.Ordinal);
         Assert.Contains("$orderby=Ref_Key", query, StringComparison.Ordinal);
         Catalog_УпаковкиЕдиницыИзмерения record = Assert.Single(records);
         Assert.Equal("Штука полная", record.НаименованиеПолное);
         Assert.Equal("PCE", record.МеждународноеСокращение);
+        Assert.Equal(new byte[] { 2, 3, 4 }, record.DataVersion);
     }
 
     [Fact]
@@ -276,6 +280,7 @@ public sealed class OneCODataClientTests
                     new Dictionary<string, object?>
                     {
                         ["Ref_Key"] = RefKey,
+                        ["DataVersion"] = new byte[] { 3, 4, 5 },
                         ["DeletionMark"] = false,
                         ["IsFolder"] = false,
                         ["Code"] = "SKU-1",
@@ -298,7 +303,7 @@ public sealed class OneCODataClientTests
 
         string query = Uri.UnescapeDataString(requestUri!.Query);
         Assert.Contains(
-            "$select=Ref_Key,DeletionMark,IsFolder,Code,Description,НаименованиеПолное,Артикул,ЕдиницаИзмерения_Key",
+            "$select=Ref_Key,DataVersion,DeletionMark,IsFolder,Code,Description,НаименованиеПолное,Артикул,ЕдиницаИзмерения_Key",
             query,
             StringComparison.Ordinal);
         Assert.Contains("$orderby=Ref_Key", query, StringComparison.Ordinal);
@@ -308,6 +313,7 @@ public sealed class OneCODataClientTests
         Catalog_Номенклатура record = Assert.Single(Assert.Single(pages));
         Assert.Equal(unitKey, record.ЕдиницаИзмерения_Key);
         Assert.Equal("ART-1", record.Артикул);
+        Assert.Equal(new byte[] { 3, 4, 5 }, record.DataVersion);
     }
 
     [Fact]
@@ -387,6 +393,140 @@ public sealed class OneCODataClientTests
         Assert.Equal(2, handler.CallCount);
     }
 
+    [Theory]
+    [InlineData("warehouse")]
+    [InlineData("uom")]
+    [InlineData("sku")]
+    public async Task ReadCurrentReferenceAsync_FiltersByStableKeyAndUsesTypeSpecificShape(string referenceType)
+    {
+        Uri? requestUri = null;
+        Guid unitKey = Guid.NewGuid();
+        using HttpClient httpClient = new(new StubHttpMessageHandler(request =>
+        {
+            requestUri = request.RequestUri;
+            object record = referenceType switch
+            {
+                "warehouse" => new
+                {
+                    Ref_Key = RefKey,
+                    DataVersion = new byte[] { 1 },
+                    DeletionMark = false,
+                    IsFolder = true,
+                    Code = "WH",
+                    Description = "Warehouse"
+                },
+                "uom" => new
+                {
+                    Ref_Key = RefKey,
+                    DataVersion = new byte[] { 2 },
+                    DeletionMark = false,
+                    Code = "EA",
+                    Description = "Each",
+                    НаименованиеПолное = "Each full",
+                    МеждународноеСокращение = "ea"
+                },
+                _ => new
+                {
+                    Ref_Key = RefKey,
+                    DataVersion = new byte[] { 3 },
+                    DeletionMark = false,
+                    IsFolder = true,
+                    Code = "SKU",
+                    Description = "Stock item",
+                    НаименованиеПолное = "Stock item full",
+                    Артикул = "A-1",
+                    ЕдиницаИзмерения_Key = unitKey
+                }
+            };
+            return JsonResponse(new { value = new[] { record } });
+        }));
+        OneCODataClient client = CreateClient(httpClient);
+
+        object? current = referenceType switch
+        {
+            "warehouse" => await client.ReadWarehouseAsync(RefKey, TestContext.Current.CancellationToken),
+            "uom" => await client.ReadUnitOfMeasureAsync(RefKey, TestContext.Current.CancellationToken),
+            _ => await client.ReadStockKeepingUnitAsync(RefKey, TestContext.Current.CancellationToken)
+        };
+
+        Assert.NotNull(current);
+        string expectedEntitySet = referenceType switch
+        {
+            "warehouse" => "Catalog_Warehouses",
+            "uom" => OneCOptions.DefaultUnitsOfMeasureEntitySet,
+            _ => "Catalog_Nomenclature"
+        };
+        Assert.Contains(
+            Uri.EscapeDataString(expectedEntitySet),
+            requestUri!.AbsoluteUri,
+            StringComparison.OrdinalIgnoreCase);
+        string query = Uri.UnescapeDataString(requestUri!.Query);
+        Assert.Contains($"$filter=Ref_Key eq guid'{RefKey:D}'", query, StringComparison.Ordinal);
+        Assert.Contains("$top=2", query, StringComparison.Ordinal);
+        if (referenceType == "uom")
+        {
+            Assert.DoesNotContain("IsFolder", query, StringComparison.Ordinal);
+            Assert.Equal("ea", Assert.IsType<Catalog_УпаковкиЕдиницыИзмерения>(current).МеждународноеСокращение);
+        }
+        else
+        {
+            bool isFolder = referenceType == "warehouse"
+                ? Assert.IsType<Catalog_Склады>(current).IsFolder
+                : Assert.IsType<Catalog_Номенклатура>(current).IsFolder;
+            Assert.True(isFolder);
+        }
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(2)]
+    public async Task ReadWarehouseAsync_EnforcesCurrentObjectCardinality(int count)
+    {
+        object[] records = Enumerable.Range(0, count)
+            .Select(_ => (object)new
+            {
+                Ref_Key = RefKey,
+                DataVersion = new byte[] { 1 },
+                DeletionMark = false,
+                IsFolder = false,
+                Code = "WH",
+                Description = "Warehouse"
+            })
+            .ToArray();
+        using HttpClient httpClient = new(new StubHttpMessageHandler(_ =>
+            JsonResponse(new { value = records })));
+        OneCODataClient client = CreateClient(httpClient);
+
+        if (count == 0)
+        {
+            Assert.Null(await client.ReadWarehouseAsync(RefKey, TestContext.Current.CancellationToken));
+            return;
+        }
+
+        OneCTransportException exception = await Assert.ThrowsAsync<OneCTransportException>(() =>
+            client.ReadWarehouseAsync(RefKey, TestContext.Current.CancellationToken));
+        Assert.Equal(OneCTransportFailureReason.MalformedResponse, exception.Reason);
+    }
+
+    [Fact]
+    public async Task ReadWarehouseAsync_WhenDataVersionIsEmpty_ReturnsMalformedResponse()
+    {
+        using HttpClient httpClient = new(new StubHttpMessageHandler(_ =>
+            JsonResponse(new
+            {
+                value = new[]
+                {
+                    new { Ref_Key = RefKey, DataVersion = Array.Empty<byte>(), DeletionMark = false, IsFolder = false }
+                }
+            })));
+        OneCODataClient client = CreateClient(httpClient);
+
+        OneCTransportException exception = await Assert.ThrowsAsync<OneCTransportException>(() =>
+            client.ReadWarehouseAsync(RefKey, TestContext.Current.CancellationToken));
+
+        Assert.Equal(OneCTransportFailureReason.MalformedResponse, exception.Reason);
+    }
+
     private static OneCODataClient CreateClient(
         HttpClient httpClient,
         Action<OneCOptions>? configure = null,
@@ -422,6 +562,7 @@ public sealed class OneCODataClientTests
     private static object NomenclatureRecord(Guid refKey) => new
     {
         Ref_Key = refKey,
+        DataVersion = new byte[] { 1 },
         DeletionMark = false,
         IsFolder = false,
         Code = refKey.ToString("N"),

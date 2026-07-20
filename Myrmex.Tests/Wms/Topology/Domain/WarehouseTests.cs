@@ -78,6 +78,7 @@ public sealed class WarehouseTests
 
         var deleted = warehouse.ApplyImport(
             ExternalRefKey,
+            [1],
             code: null,
             name: null,
             isDeletionMarked: true,
@@ -93,6 +94,7 @@ public sealed class WarehouseTests
 
         var active = warehouse.ApplyImport(
             ExternalRefKey,
+            [2],
             "imported",
             "Imported Warehouse",
             isDeletionMarked: false,
@@ -109,9 +111,9 @@ public sealed class WarehouseTests
     public void ApplyImport_WhenExternalRefKeyChanges_RejectsMutation()
     {
         Warehouse warehouse = CreateWarehouse();
-        Assert.True(warehouse.ApplyImport(ExternalRefKey, "MAIN", "Main", false, ImportedAtUtc).IsValid);
+        Assert.True(warehouse.ApplyImport(ExternalRefKey, [1], "MAIN", "Main", false, ImportedAtUtc).IsValid);
 
-        var result = warehouse.ApplyImport(Guid.NewGuid(), "OTHER", "Other", false, ImportedAtUtc);
+        var result = warehouse.ApplyImport(Guid.NewGuid(), [2], "OTHER", "Other", false, ImportedAtUtc);
 
         Assert.False(result.IsValid);
         Assert.Equal(ExternalRefKey, warehouse.ExternalRefKey);

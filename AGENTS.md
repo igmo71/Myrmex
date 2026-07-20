@@ -1,5 +1,5 @@
 <!-- SPECKIT START -->
-Active feature plan: `specs/104-external-integration-synchronization-foundation/plan.md`.
+Active feature plan: `specs/109-reference-data-synchronization/plan.md`.
 
 Durable project guidance lives in `.specify/memory/`. Read only the files relevant to the task:
 

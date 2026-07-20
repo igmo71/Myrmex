@@ -21,11 +21,11 @@ Do not pin durable memory or `AGENTS.md` to a completed feature.
 
 ## Execution Boundaries
 
-Builds, tests, application startup, database updates, EF migration application, EF migration generation, and infrastructure-affecting commands are developer-controlled. Do not run them automatically.
+The agent may modify domain/application code, tests, and EF mappings, but must not generate, create, or edit EF migration files or model snapshots, and must not run migration-generation or database-update commands, unless the user explicitly requests that work. Migration generation and application are developer-controlled.
+
+Builds, tests, AppHost, Docker, application startup, and other environment-changing command execution are developer-controlled. Do not run them unless the user explicitly requests that execution.
 
 Report recommended commands instead of executing them.
-
-Migration work may happen only when the user explicitly requests it.
 
 ## Development Database Workflow
 
@@ -51,7 +51,7 @@ When stabilizing Identity authentication work, classify failures before changing
 
 Tasks must be small, reviewable, and ordered by dependency. Identify required tests before implementation tasks that depend on them.
 
-Task lists should state recommended validation commands for build, test, startup, database, migration, and infrastructure checks.
+Task lists may document a developer-controlled validation handoff, but must not schedule build, test, startup, database, migration, or infrastructure command execution unless the user explicitly requests it. They must not schedule migration-file or model-snapshot creation or editing unless the user explicitly requests that work.
 
 Separate UI implementation into its own phase when practical.
 

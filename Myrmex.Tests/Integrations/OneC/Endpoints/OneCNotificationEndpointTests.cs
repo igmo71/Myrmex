@@ -29,6 +29,9 @@ public sealed class OneCNotificationEndpointTests
     [Theory]
     [InlineData("/api/integrations/1c/receiving-orders/changed", SynchronizationEntityTypes.ReceivingOrder)]
     [InlineData("/api/integrations/1c/shipping-orders/changed", SynchronizationEntityTypes.ShippingOrder)]
+    [InlineData("/api/integrations/1c/warehouses/changed", SynchronizationEntityTypes.Warehouse)]
+    [InlineData("/api/integrations/1c/uoms/changed", SynchronizationEntityTypes.UnitOfMeasure)]
+    [InlineData("/api/integrations/1c/skus/changed", SynchronizationEntityTypes.StockKeepingUnit)]
     public async Task NotificationEndpoint_WhenValid_PersistsRequestAndReturnsEmptyAccepted(
         string route,
         string expectedEntityType)

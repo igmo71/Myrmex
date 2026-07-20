@@ -30,10 +30,29 @@ public sealed class IdentityDataProtectionOptionsValidator(
                 $"must be {IdentityDataProtectionOptions.RequiredApiSessionLifetimeMinutes}.");
         }
 
-        bool hasCertificate = !string.IsNullOrWhiteSpace(
-            options.DataProtection.Certificate.Thumbprint);
-        bool allowsDevelopmentOptOut =
-            options.DataProtection.AllowUnprotectedKeysInDevelopment;
+        IdentityDataProtectionCertificateOptions certificate = options.DataProtection.Certificate;
+
+        bool hasThumbprint = !string.IsNullOrWhiteSpace(certificate.Thumbprint);
+
+        bool hasCertificateFile = !string.IsNullOrWhiteSpace(certificate.FilePath);
+
+        if (hasThumbprint && hasCertificateFile)
+        {
+            failures.Add(
+                $"{IdentityDataProtectionOptions.SectionName}:DataProtection:Certificate " +
+                "must configure either FilePath or Thumbprint, but not both.");
+        }
+
+        if (hasCertificateFile && string.IsNullOrWhiteSpace(certificate.Password))
+        {
+            failures.Add(
+                $"{IdentityDataProtectionOptions.SectionName}:DataProtection:Certificate:" +
+                "Password must be configured when FilePath is used.");
+        }
+
+        bool hasCertificate = hasThumbprint || hasCertificateFile;
+
+        bool allowsDevelopmentOptOut = options.DataProtection.AllowUnprotectedKeysInDevelopment;
 
         if (allowsDevelopmentOptOut && !environment.IsDevelopment())
         {

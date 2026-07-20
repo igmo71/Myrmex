@@ -30,10 +30,10 @@ public sealed class ImportUnitsOfMeasureHandlerTests
         ServiceResult<ReferenceImportBatchResult> result = await handler.HandleAsync(
             new ImportUnitsOfMeasure.Command(
             [
-                new(linkedKey, " pkg ", " Package ", " pc ", false, ImportedAtUtc),
-                new(Guid.NewGuid(), " kg ", " Kilogram ", " kg ", false, ImportedAtUtc),
-                new(Guid.NewGuid(), "ea", "Must not link", "ea", false, ImportedAtUtc),
-                new(Guid.NewGuid(), "", "Missing code", "x", false, ImportedAtUtc)
+                new(linkedKey, [2], " pkg ", " Package ", " pc ", false, ImportedAtUtc),
+                new(Guid.NewGuid(), [1], " kg ", " Kilogram ", " kg ", false, ImportedAtUtc),
+                new(Guid.NewGuid(), [1], "ea", "Must not link", "ea", false, ImportedAtUtc),
+                new(Guid.NewGuid(), [1], "", "Missing code", "x", false, ImportedAtUtc)
             ]),
             TestContext.Current.CancellationToken);
 
@@ -46,7 +46,7 @@ public sealed class ImportUnitsOfMeasureHandlerTests
         Assert.True(result.Value.HasConsistentCounts);
 
         UnitOfMeasure updated = await testDbContext.DbContext.UnitsOfMeasure.SingleAsync(
-            x => x.ExternalRefKey == linkedKey,
+            x => x.ImportState != null && x.ImportState.RefKey == linkedKey,
             TestContext.Current.CancellationToken);
         Assert.Equal("PKG", updated.Code);
         Assert.Equal("Package", updated.Name);
@@ -66,7 +66,7 @@ public sealed class ImportUnitsOfMeasureHandlerTests
 
         ServiceResult<ReferenceImportBatchResult> result = await handler.HandleAsync(
             new ImportUnitsOfMeasure.Command(
-                [new(externalRefKey, null, null, null, true, ImportedAtUtc)]),
+                [new(externalRefKey, [1], null, null, null, true, ImportedAtUtc)]),
             TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
@@ -77,7 +77,7 @@ public sealed class ImportUnitsOfMeasureHandlerTests
         Assert.Equal(externalRefKey, error.ExternalRefKey);
         Assert.Equal(ReferenceImportRecordErrorReasons.SourceRecordDeletionMarked, error.Reason);
         Assert.False(await testDbContext.DbContext.UnitsOfMeasure.AnyAsync(
-            x => x.ExternalRefKey == externalRefKey,
+            x => x.ImportState != null && x.ImportState.RefKey == externalRefKey,
             TestContext.Current.CancellationToken));
     }
 
@@ -95,7 +95,7 @@ public sealed class ImportUnitsOfMeasureHandlerTests
 
         ServiceResult<ReferenceImportBatchResult> result = await handler.HandleAsync(
             new ImportUnitsOfMeasure.Command(
-                [new(externalRefKey, null, null, new string('x', UnitOfMeasure.MaxSymbolLength + 1), true, deletionImportedAtUtc)]),
+                [new(externalRefKey, [2], null, null, new string('x', UnitOfMeasure.MaxSymbolLength + 1), true, deletionImportedAtUtc)]),
             TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess);
@@ -104,7 +104,7 @@ public sealed class ImportUnitsOfMeasureHandlerTests
         Assert.Equal(0, result.Value.Failed);
         Assert.Empty(result.Value.Errors);
         UnitOfMeasure saved = await testDbContext.DbContext.UnitsOfMeasure.SingleAsync(
-            x => x.ExternalRefKey == externalRefKey,
+            x => x.ImportState != null && x.ImportState.RefKey == externalRefKey,
             TestContext.Current.CancellationToken);
         Assert.False(saved.IsActive);
         Assert.Equal("EA", saved.Code);
@@ -125,16 +125,16 @@ public sealed class ImportUnitsOfMeasureHandlerTests
 
         ServiceResult<ReferenceImportBatchResult> first = await handler.HandleAsync(
             new ImportUnitsOfMeasure.Command(
-                [new(externalRefKey, "EA", "Each", "ea", false, ImportedAtUtc)]),
+                [new(externalRefKey, [1], "EA", "Each", "ea", false, ImportedAtUtc)]),
             TestContext.Current.CancellationToken);
         Guid internalId = await testDbContext.DbContext.UnitsOfMeasure
-            .Where(unit => unit.ExternalRefKey == externalRefKey)
+            .Where(unit => unit.ImportState != null && unit.ImportState.RefKey == externalRefKey)
             .Select(unit => unit.Id)
             .SingleAsync(TestContext.Current.CancellationToken);
 
         ServiceResult<ReferenceImportBatchResult> repeated = await handler.HandleAsync(
             new ImportUnitsOfMeasure.Command(
-                [new(externalRefKey, "PCS", "Pieces", "pc", false, repeatedAtUtc)]),
+                [new(externalRefKey, [2], "EA", "Each", "each", false, repeatedAtUtc)]),
             TestContext.Current.CancellationToken);
 
         Assert.True(first.IsSuccess);
@@ -143,14 +143,48 @@ public sealed class ImportUnitsOfMeasureHandlerTests
         Assert.Equal(0, repeated.Value.Created);
         Assert.Equal(1, repeated.Value.Updated);
         UnitOfMeasure saved = await testDbContext.DbContext.UnitsOfMeasure.SingleAsync(
-            unit => unit.ExternalRefKey == externalRefKey,
+            unit => unit.ImportState != null && unit.ImportState.RefKey == externalRefKey,
             TestContext.Current.CancellationToken);
         Assert.Equal(internalId, saved.Id);
         Assert.Equal(externalRefKey, saved.ExternalRefKey);
-        Assert.Equal("PCS", saved.Code);
-        Assert.Equal("Pieces", saved.Name);
-        Assert.Equal("pc", saved.Symbol);
+        Assert.Equal("EA", saved.Code);
+        Assert.Equal("Each", saved.Name);
+        Assert.Equal("each", saved.Symbol);
         Assert.Equal(repeatedAtUtc, saved.LastImportedAtUtc);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenDataVersionIsCurrent_ReturnsUnchangedWithoutMutationOrEvent()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        Guid externalRefKey = Guid.NewGuid();
+        UnitOfMeasure linked = CreateUnit("EA", "Each", "ea", externalRefKey);
+        testDbContext.DbContext.UnitsOfMeasure.Add(linked);
+        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        DateTimeOffset? updatedAtUtc = linked.UpdatedAtUtc;
+        testDbContext.DbContext.ChangeTracker.Clear();
+        RecordingDomainEventDispatcher dispatcher = new();
+        ImportUnitsOfMeasure.Handler handler = new(testDbContext.DbContext, dispatcher);
+
+        ServiceResult<ReferenceImportBatchResult> result = await handler.HandleAsync(
+            new ImportUnitsOfMeasure.Command(
+                [new(externalRefKey, [1], "KG", "Kilogram", "kg", true, ImportedAtUtc.AddHours(1))]),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value.Unchanged);
+        Assert.Equal(0, result.Value.Updated);
+        UnitOfMeasure saved = await testDbContext.DbContext.UnitsOfMeasure.SingleAsync(
+            x => x.ImportState != null && x.ImportState.RefKey == externalRefKey,
+            TestContext.Current.CancellationToken);
+        Assert.Equal("EA", saved.Code);
+        Assert.Equal("Each", saved.Name);
+        Assert.Equal("ea", saved.Symbol);
+        Assert.True(saved.IsActive);
+        Assert.Equal(ImportedAtUtc, saved.LastImportedAtUtc);
+        Assert.Equal(updatedAtUtc, saved.UpdatedAtUtc);
+        Assert.Empty(saved.DomainEvents);
+        Assert.Empty(dispatcher.DispatchedEvents);
     }
 
     [Fact]
@@ -162,12 +196,12 @@ public sealed class ImportUnitsOfMeasureHandlerTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => handler.HandleAsync(
             new ImportUnitsOfMeasure.Command(
-                [new(externalRefKey, "ROLLBACK", "Rollback", "r", false, ImportedAtUtc)]),
+                [new(externalRefKey, [1], "ROLLBACK", "Rollback", "r", false, ImportedAtUtc)]),
             TestContext.Current.CancellationToken));
 
         await using var verificationContext = testDbContext.CreateDbContext();
         Assert.False(await verificationContext.UnitsOfMeasure.AnyAsync(
-            x => x.ExternalRefKey == externalRefKey,
+            x => x.ImportState != null && x.ImportState.RefKey == externalRefKey,
             TestContext.Current.CancellationToken));
     }
 
@@ -180,7 +214,7 @@ public sealed class ImportUnitsOfMeasureHandlerTests
         Assert.True(UnitOfMeasure.Create(code, name, symbol, out UnitOfMeasure? unit).IsValid);
         if (externalRefKey.HasValue)
         {
-            Assert.True(unit!.ApplyImport(externalRefKey.Value, code, name, symbol, false, ImportedAtUtc).IsValid);
+            Assert.True(unit!.ApplyImport(externalRefKey.Value, [1], code, name, symbol, false, ImportedAtUtc).IsValid);
         }
         unit!.ClearDomainEvents();
         return unit;

@@ -98,7 +98,7 @@ internal sealed class SynchronizationProcessor(
             logger.LogInformation(
                 "Synchronization processing stopped during request {SynchronizationRequestId}; durable state remains Processing.",
                 processingRequest.Id);
-            return;
+            throw;
         }
         catch (TimeoutException)
         {

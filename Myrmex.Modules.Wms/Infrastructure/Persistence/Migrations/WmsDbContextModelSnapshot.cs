@@ -18,7 +18,7 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("wms")
-                .HasAnnotation("ProductVersion", "10.0.8")
+                .HasAnnotation("ProductVersion", "10.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -89,14 +89,8 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<Guid?>("ExternalRefKey")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("LastImportedAtUtc")
-                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -116,11 +110,6 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("UX_wms_stock_keeping_units_code");
 
-                    b.HasIndex("ExternalRefKey")
-                        .IsUnique()
-                        .HasDatabaseName("UX_wms_stock_keeping_units_external_ref_key")
-                        .HasFilter("[ExternalRefKey] IS NOT NULL");
-
                     b.ToTable("stock_keeping_units", "wms");
                 });
 
@@ -138,14 +127,8 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<Guid?>("ExternalRefKey")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("LastImportedAtUtc")
-                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -165,11 +148,6 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                     b.HasIndex("Code")
                         .IsUnique()
                         .HasDatabaseName("UX_wms_units_of_measure_code");
-
-                    b.HasIndex("ExternalRefKey")
-                        .IsUnique()
-                        .HasDatabaseName("UX_wms_units_of_measure_external_ref_key")
-                        .HasFilter("[ExternalRefKey] IS NOT NULL");
 
                     b.ToTable("units_of_measure", "wms");
                 });
@@ -924,14 +902,8 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<Guid?>("ExternalRefKey")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("LastImportedAtUtc")
-                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -947,11 +919,6 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                     b.HasIndex("Code")
                         .IsUnique()
                         .HasDatabaseName("UX_wms_warehouses_code");
-
-                    b.HasIndex("ExternalRefKey")
-                        .IsUnique()
-                        .HasDatabaseName("UX_wms_warehouses_external_ref_key")
-                        .HasFilter("[ExternalRefKey] IS NOT NULL");
 
                     b.ToTable("warehouses", "wms");
                 });
@@ -1020,7 +987,76 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_wms_stock_keeping_units_units_of_measure_base_unit_of_measure_id");
 
+                    b.OwnsOne("Myrmex.Modules.Wms.Domain.ExternalImportState", "ImportState", b1 =>
+                        {
+                            b1.Property<Guid>("StockKeepingUnitId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<byte[]>("DataVersion")
+                                .HasMaxLength(128)
+                                .HasColumnType("varbinary(128)")
+                                .HasColumnName("ExternalDataVersion");
+
+                            b1.Property<DateTimeOffset>("ImportedAtUtc")
+                                .HasColumnType("datetimeoffset")
+                                .HasColumnName("LastImportedAtUtc");
+
+                            b1.Property<Guid>("RefKey")
+                                .HasColumnType("uniqueidentifier")
+                                .HasColumnName("ExternalRefKey");
+
+                            b1.HasKey("StockKeepingUnitId");
+
+                            b1.HasIndex("RefKey")
+                                .IsUnique()
+                                .HasDatabaseName("UX_wms_stock_keeping_units_external_ref_key")
+                                .HasFilter("[ExternalRefKey] IS NOT NULL");
+
+                            b1.ToTable("stock_keeping_units", "wms");
+
+                            b1.WithOwner()
+                                .HasForeignKey("StockKeepingUnitId");
+                        });
+
                     b.Navigation("BaseUnitOfMeasure");
+
+                    b.Navigation("ImportState");
+                });
+
+            modelBuilder.Entity("Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure.UnitOfMeasure", b =>
+                {
+                    b.OwnsOne("Myrmex.Modules.Wms.Domain.ExternalImportState", "ImportState", b1 =>
+                        {
+                            b1.Property<Guid>("UnitOfMeasureId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<byte[]>("DataVersion")
+                                .HasMaxLength(128)
+                                .HasColumnType("varbinary(128)")
+                                .HasColumnName("ExternalDataVersion");
+
+                            b1.Property<DateTimeOffset>("ImportedAtUtc")
+                                .HasColumnType("datetimeoffset")
+                                .HasColumnName("LastImportedAtUtc");
+
+                            b1.Property<Guid>("RefKey")
+                                .HasColumnType("uniqueidentifier")
+                                .HasColumnName("ExternalRefKey");
+
+                            b1.HasKey("UnitOfMeasureId");
+
+                            b1.HasIndex("RefKey")
+                                .IsUnique()
+                                .HasDatabaseName("UX_wms_units_of_measure_external_ref_key")
+                                .HasFilter("[ExternalRefKey] IS NOT NULL");
+
+                            b1.ToTable("units_of_measure", "wms");
+
+                            b1.WithOwner()
+                                .HasForeignKey("UnitOfMeasureId");
+                        });
+
+                    b.Navigation("ImportState");
                 });
 
             modelBuilder.Entity("Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances.InventoryBalance", b =>
@@ -1285,6 +1321,42 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                     b.Navigation("Warehouse");
 
                     b.Navigation("Zone");
+                });
+
+            modelBuilder.Entity("Myrmex.Modules.Wms.Topology.Domain.Warehouses.Warehouse", b =>
+                {
+                    b.OwnsOne("Myrmex.Modules.Wms.Domain.ExternalImportState", "ImportState", b1 =>
+                        {
+                            b1.Property<Guid>("WarehouseId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<byte[]>("DataVersion")
+                                .HasMaxLength(128)
+                                .HasColumnType("varbinary(128)")
+                                .HasColumnName("ExternalDataVersion");
+
+                            b1.Property<DateTimeOffset>("ImportedAtUtc")
+                                .HasColumnType("datetimeoffset")
+                                .HasColumnName("LastImportedAtUtc");
+
+                            b1.Property<Guid>("RefKey")
+                                .HasColumnType("uniqueidentifier")
+                                .HasColumnName("ExternalRefKey");
+
+                            b1.HasKey("WarehouseId");
+
+                            b1.HasIndex("RefKey")
+                                .IsUnique()
+                                .HasDatabaseName("UX_wms_warehouses_external_ref_key")
+                                .HasFilter("[ExternalRefKey] IS NOT NULL");
+
+                            b1.ToTable("warehouses", "wms");
+
+                            b1.WithOwner()
+                                .HasForeignKey("WarehouseId");
+                        });
+
+                    b.Navigation("ImportState");
                 });
 
             modelBuilder.Entity("Myrmex.Modules.Wms.Topology.Domain.Zones.Zone", b =>

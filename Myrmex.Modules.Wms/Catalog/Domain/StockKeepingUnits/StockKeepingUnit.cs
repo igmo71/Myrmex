@@ -1,6 +1,7 @@
 using Myrmex.Core.Domain;
 using Myrmex.Core.Domain.Validation;
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
+using Myrmex.Modules.Wms.Domain;
 
 namespace Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 
@@ -37,12 +38,20 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
 
     public bool IsActive { get; private set; } = true;
 
-    public Guid? ExternalRefKey { get; private set; }
+    internal ExternalImportState? ImportState { get; set; }
 
-    public DateTimeOffset? LastImportedAtUtc { get; private set; }
+    public Guid? ExternalRefKey => ImportState?.RefKey;
+
+    public byte[]? ExternalDataVersion => ImportState?.DataVersion;
+
+    public DateTimeOffset? LastImportedAtUtc => ImportState?.ImportedAtUtc;
+
+    public bool HasExternalDataVersion(ReadOnlySpan<byte> dataVersion) =>
+        ImportState?.HasDataVersion(dataVersion) == true;
 
     public DomainValidationResult ApplyImport(
         Guid externalRefKey,
+        byte[]? externalDataVersion,
         string? code,
         string? name,
         Guid? baseUnitOfMeasureId,
@@ -60,6 +69,17 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
             errors.Add(DomainValidationFailure.IncorrectState<StockKeepingUnit>(nameof(ExternalRefKey)));
         }
 
+        if (externalDataVersion is null || externalDataVersion.Length == 0)
+        {
+            errors.Add(DomainValidationFailure.Required<StockKeepingUnit>(nameof(ExternalDataVersion)));
+        }
+        else if (externalDataVersion.Length > ExternalImportState.MaxDataVersionLength)
+        {
+            errors.Add(DomainValidationFailure.TooLong<StockKeepingUnit>(
+                nameof(ExternalDataVersion),
+                ExternalImportState.MaxDataVersionLength));
+        }
+
         DomainValidationResult validationResult = DomainValidationResult.From(errors);
         if (!validationResult.IsValid)
         {
@@ -68,8 +88,7 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
 
         if (isDeletionMarked)
         {
-            ExternalRefKey ??= externalRefKey;
-            LastImportedAtUtc = importedAtUtc;
+            RecordImport(externalRefKey, externalDataVersion!, importedAtUtc);
             if (IsActive)
             {
                 Deactivate();
@@ -87,16 +106,48 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
             return validationResult;
         }
 
-        ExternalRefKey ??= externalRefKey;
-        Code = DomainText.NormalizeCode(code);
-        Name = DomainText.NormalizeRequiredText(name);
-        BaseUnitOfMeasureId = baseUnitOfMeasureId!.Value;
-        LastImportedAtUtc = importedAtUtc;
+        string normalizedCode = DomainText.NormalizeCode(code);
+        string normalizedName = DomainText.NormalizeRequiredText(name);
+        Guid normalizedBaseUnitOfMeasureId = baseUnitOfMeasureId!.Value;
+        bool detailsChanged = !string.Equals(Code, normalizedCode, StringComparison.Ordinal) ||
+            !string.Equals(Name, normalizedName, StringComparison.Ordinal) ||
+            BaseUnitOfMeasureId != normalizedBaseUnitOfMeasureId;
+        bool wasInactive = !IsActive;
+
+        RecordImport(externalRefKey, externalDataVersion!, importedAtUtc);
+        Code = normalizedCode;
+        Name = normalizedName;
+        BaseUnitOfMeasureId = normalizedBaseUnitOfMeasureId;
         Reactivate();
 
-        Touch();
-        AddDomainEvent(new StockKeepingUnitDetailsUpdatedDomainEvent(Id));
+        if (detailsChanged)
+        {
+            Touch();
+            AddDomainEvent(new StockKeepingUnitDetailsUpdatedDomainEvent(Id));
+        }
+        else if (!wasInactive)
+        {
+            Touch();
+        }
+
         return DomainValidationResult.Valid;
+    }
+
+    private void RecordImport(
+        Guid externalRefKey,
+        byte[] externalDataVersion,
+        DateTimeOffset importedAtUtc)
+    {
+        if (ImportState is null)
+        {
+            ImportState = ExternalImportState.Create(
+                externalRefKey,
+                externalDataVersion,
+                importedAtUtc);
+            return;
+        }
+
+        ImportState.RecordImport(externalDataVersion, importedAtUtc);
     }
 
     public DomainValidationResult UpdateDetails(
@@ -104,6 +155,14 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
         string? description,
         Guid? baseUnitOfMeasureId)
     {
+        DomainValidationResult ownershipValidationResult = ValidateLocalDetailsOwnership(
+            name,
+            baseUnitOfMeasureId);
+        if (!ownershipValidationResult.IsValid)
+        {
+            return ownershipValidationResult;
+        }
+
         DomainValidationResult validationResult = ValidateDetails(
             name,
             description,
@@ -114,13 +173,80 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
             return validationResult;
         }
 
-        Name = DomainText.NormalizeRequiredText(name);
-        Description = DomainText.NormalizeOptionalText(description);
+        string normalizedName = DomainText.NormalizeRequiredText(name);
+        string? normalizedDescription = DomainText.NormalizeOptionalText(description);
+        if (ExternalRefKey.HasValue &&
+            string.Equals(Description, normalizedDescription, StringComparison.Ordinal))
+        {
+            return DomainValidationResult.Valid;
+        }
+
+        Name = normalizedName;
+        Description = normalizedDescription;
         BaseUnitOfMeasureId = baseUnitOfMeasureId!.Value;
 
         Touch();
         AddDomainEvent(new StockKeepingUnitDetailsUpdatedDomainEvent(Id));
 
+        return DomainValidationResult.Valid;
+    }
+
+    public DomainValidationResult ValidateLocalDetailsOwnership(
+        string? name,
+        Guid? baseUnitOfMeasureId)
+    {
+        if (!ExternalRefKey.HasValue)
+        {
+            return DomainValidationResult.Valid;
+        }
+
+        List<DomainValidationFailure> errors = [];
+        if (!string.Equals(
+                Name,
+                DomainText.NormalizeRequiredText(name),
+                StringComparison.Ordinal))
+        {
+            errors.Add(DomainValidationFailure.IncorrectState<StockKeepingUnit>(nameof(Name)));
+        }
+        if (baseUnitOfMeasureId != BaseUnitOfMeasureId)
+        {
+            errors.Add(DomainValidationFailure.IncorrectState<StockKeepingUnit>(
+                nameof(BaseUnitOfMeasureId)));
+        }
+        return DomainValidationResult.From(errors);
+    }
+
+    public DomainValidationResult DeactivateLocally()
+    {
+        if (!IsActive)
+        {
+            return DomainValidationResult.Valid;
+        }
+
+        if (ExternalRefKey.HasValue)
+        {
+            return DomainValidationResult.From([
+                DomainValidationFailure.IncorrectState<StockKeepingUnit>(nameof(IsActive))]);
+        }
+
+        Deactivate();
+        return DomainValidationResult.Valid;
+    }
+
+    public DomainValidationResult ReactivateLocally()
+    {
+        if (IsActive)
+        {
+            return DomainValidationResult.Valid;
+        }
+
+        if (ExternalRefKey.HasValue)
+        {
+            return DomainValidationResult.From([
+                DomainValidationFailure.IncorrectState<StockKeepingUnit>(nameof(IsActive))]);
+        }
+
+        Reactivate();
         return DomainValidationResult.Valid;
     }
 

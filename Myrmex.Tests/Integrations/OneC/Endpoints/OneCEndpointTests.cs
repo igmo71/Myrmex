@@ -95,9 +95,10 @@ public sealed class OneCEndpointTests
         OneCImportResponse expected = new(
             referenceType,
             isComplete,
-            Processed: 2,
+            Processed: 3,
             Created: 1,
             Updated: 0,
+            Unchanged: 1,
             Skipped: 1,
             Failed: 0,
             StartedAtUtc: CheckedAtUtc,
@@ -122,6 +123,7 @@ public sealed class OneCEndpointTests
             TestContext.Current.CancellationToken);
         Assert.Equal(referenceType, payload?.ReferenceType);
         Assert.Equal(isComplete, payload?.IsComplete);
+        Assert.Equal(1, payload?.Unchanged);
         Assert.Equal(!isComplete, payload?.OperationError is not null);
         Assert.Equal(1, importService.CallCount);
     }
@@ -179,6 +181,7 @@ public sealed class OneCEndpointTests
             Processed: 1,
             Created: 0,
             Updated: 0,
+            Unchanged: 0,
             Skipped: 0,
             Failed: 1,
             StartedAtUtc: CheckedAtUtc,
@@ -286,9 +289,18 @@ public sealed class OneCEndpointTests
         public Task<IReadOnlyList<Catalog_Склады>> ReadWarehousesAsync(CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<Catalog_Склады>>([]);
 
+        public Task<Catalog_Склады?> ReadWarehouseAsync(
+            Guid externalRefKey,
+            CancellationToken cancellationToken) => Task.FromResult<Catalog_Склады?>(null);
+
         public Task<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>> ReadUnitsOfMeasureAsync(
             CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>>([]);
+
+        public Task<Catalog_УпаковкиЕдиницыИзмерения?> ReadUnitOfMeasureAsync(
+            Guid externalRefKey,
+            CancellationToken cancellationToken) =>
+            Task.FromResult<Catalog_УпаковкиЕдиницыИзмерения?>(null);
 
         public async IAsyncEnumerable<IReadOnlyList<Catalog_Номенклатура>> ReadNomenclaturePagesAsync(
             [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -296,6 +308,10 @@ public sealed class OneCEndpointTests
             await Task.CompletedTask;
             yield break;
         }
+
+        public Task<Catalog_Номенклатура?> ReadStockKeepingUnitAsync(
+            Guid externalRefKey,
+            CancellationToken cancellationToken) => Task.FromResult<Catalog_Номенклатура?>(null);
     }
 
     private sealed class StubImportService : IOneCImportService
@@ -344,6 +360,7 @@ public sealed class OneCEndpointTests
         Processed: 0,
         Created: 0,
         Updated: 0,
+        Unchanged: 0,
         Skipped: 0,
         Failed: 0,
         StartedAtUtc: CheckedAtUtc,

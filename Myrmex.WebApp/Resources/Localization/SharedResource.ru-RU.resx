@@ -321,6 +321,9 @@
   <data name="Common.Updated" xml:space="preserve">
     <value>Обновлено</value>
   </data>
+  <data name="Common.Unchanged" xml:space="preserve">
+    <value>Без изменений</value>
+  </data>
   <data name="Common.Skipped" xml:space="preserve">
     <value>Пропущено</value>
   </data>

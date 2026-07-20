@@ -35,9 +35,9 @@ public sealed class ImportStockKeepingUnitsHandlerTests
         ServiceResult<ReferenceImportBatchResult> result = await handler.HandleAsync(
             new ImportStockKeepingUnits.Command(
             [
-                new(linkedExternalKey, " updated ", "Updated", packageExternalKey, false, ImportedAtUtc),
-                new(createdExternalKey, " new ", "New", eachExternalKey, false, ImportedAtUtc),
-                new(Guid.NewGuid(), "local", "Must not link", eachExternalKey, false, ImportedAtUtc)
+                new(linkedExternalKey, [2], " updated ", "Updated", packageExternalKey, false, ImportedAtUtc),
+                new(createdExternalKey, [1], " new ", "New", eachExternalKey, false, ImportedAtUtc),
+                new(Guid.NewGuid(), [1], "local", "Must not link", eachExternalKey, false, ImportedAtUtc)
             ]),
             TestContext.Current.CancellationToken);
 
@@ -47,7 +47,7 @@ public sealed class ImportStockKeepingUnitsHandlerTests
         Assert.Equal(1, result.Value.Updated);
         Assert.Equal(1, result.Value.Skipped);
         StockKeepingUnit updated = await testDbContext.DbContext.StockKeepingUnits.SingleAsync(
-            sku => sku.ExternalRefKey == linkedExternalKey,
+            sku => sku.ImportState != null && sku.ImportState.RefKey == linkedExternalKey,
             TestContext.Current.CancellationToken);
         Assert.Equal("UPDATED", updated.Code);
         Assert.Equal(package.Id, updated.BaseUnitOfMeasureId);
@@ -76,10 +76,10 @@ public sealed class ImportStockKeepingUnitsHandlerTests
         ServiceResult<ReferenceImportBatchResult> result = await handler.HandleAsync(
             new ImportStockKeepingUnits.Command(
             [
-                new(Guid.NewGuid(), "SKU-NULL", "Null", null, false, ImportedAtUtc),
-                new(Guid.NewGuid(), "SKU-EMPTY", "Empty", Guid.Empty, false, ImportedAtUtc),
-                new(Guid.NewGuid(), "MATCHING-CODE", "Unknown external key", Guid.NewGuid(), false, ImportedAtUtc),
-                new(Guid.NewGuid(), "SKU-INACTIVE", "Inactive", inactiveExternalKey, false, ImportedAtUtc)
+                new(Guid.NewGuid(), [1], "SKU-NULL", "Null", null, false, ImportedAtUtc),
+                new(Guid.NewGuid(), [1], "SKU-EMPTY", "Empty", Guid.Empty, false, ImportedAtUtc),
+                new(Guid.NewGuid(), [1], "MATCHING-CODE", "Unknown external key", Guid.NewGuid(), false, ImportedAtUtc),
+                new(Guid.NewGuid(), [1], "SKU-INACTIVE", "Inactive", inactiveExternalKey, false, ImportedAtUtc)
             ]),
             TestContext.Current.CancellationToken);
 
@@ -115,8 +115,8 @@ public sealed class ImportStockKeepingUnitsHandlerTests
         ServiceResult<ReferenceImportBatchResult> result = await handler.HandleAsync(
             new ImportStockKeepingUnits.Command(
             [
-                new(linkedExternalKey, null, null, null, true, deletionImportedAtUtc),
-                new(unlinkedExternalKey, null, null, null, true, deletionImportedAtUtc)
+                new(linkedExternalKey, [2], null, null, null, true, deletionImportedAtUtc),
+                new(unlinkedExternalKey, [1], null, null, null, true, deletionImportedAtUtc)
             ]),
             TestContext.Current.CancellationToken);
 
@@ -129,7 +129,7 @@ public sealed class ImportStockKeepingUnitsHandlerTests
         Assert.Equal(unlinkedExternalKey, error.ExternalRefKey);
         Assert.Equal(ReferenceImportRecordErrorReasons.SourceRecordDeletionMarked, error.Reason);
         StockKeepingUnit saved = await testDbContext.DbContext.StockKeepingUnits.SingleAsync(
-            sku => sku.ExternalRefKey == linkedExternalKey,
+            sku => sku.ImportState != null && sku.ImportState.RefKey == linkedExternalKey,
             TestContext.Current.CancellationToken);
         Assert.False(saved.IsActive);
         Assert.Equal("SKU", saved.Code);
@@ -138,7 +138,7 @@ public sealed class ImportStockKeepingUnitsHandlerTests
         Assert.Equal("Local description", saved.Description);
         Assert.Equal(deletionImportedAtUtc, saved.LastImportedAtUtc);
         Assert.False(await testDbContext.DbContext.StockKeepingUnits.AnyAsync(
-            sku => sku.ExternalRefKey == unlinkedExternalKey,
+            sku => sku.ImportState != null && sku.ImportState.RefKey == unlinkedExternalKey,
             TestContext.Current.CancellationToken));
     }
 
@@ -158,16 +158,16 @@ public sealed class ImportStockKeepingUnitsHandlerTests
 
         ServiceResult<ReferenceImportBatchResult> first = await handler.HandleAsync(
             new ImportStockKeepingUnits.Command(
-                [new(externalRefKey, "SKU-1", "SKU 1", unitExternalRefKey, false, ImportedAtUtc)]),
+                [new(externalRefKey, [1], "SKU-1", "SKU 1", unitExternalRefKey, false, ImportedAtUtc)]),
             TestContext.Current.CancellationToken);
         Guid internalId = await testDbContext.DbContext.StockKeepingUnits
-            .Where(sku => sku.ExternalRefKey == externalRefKey)
+            .Where(sku => sku.ImportState != null && sku.ImportState.RefKey == externalRefKey)
             .Select(sku => sku.Id)
             .SingleAsync(TestContext.Current.CancellationToken);
 
         ServiceResult<ReferenceImportBatchResult> repeated = await handler.HandleAsync(
             new ImportStockKeepingUnits.Command(
-                [new(externalRefKey, "SKU-2", "SKU 2", unitExternalRefKey, false, repeatedAtUtc)]),
+                [new(externalRefKey, [2], "SKU-2", "SKU 2", unitExternalRefKey, false, repeatedAtUtc)]),
             TestContext.Current.CancellationToken);
 
         Assert.True(first.IsSuccess);
@@ -176,7 +176,7 @@ public sealed class ImportStockKeepingUnitsHandlerTests
         Assert.Equal(0, repeated.Value.Created);
         Assert.Equal(1, repeated.Value.Updated);
         StockKeepingUnit saved = await testDbContext.DbContext.StockKeepingUnits.SingleAsync(
-            sku => sku.ExternalRefKey == externalRefKey,
+            sku => sku.ImportState != null && sku.ImportState.RefKey == externalRefKey,
             TestContext.Current.CancellationToken);
         Assert.Equal(internalId, saved.Id);
         Assert.Equal(externalRefKey, saved.ExternalRefKey);
@@ -184,6 +184,43 @@ public sealed class ImportStockKeepingUnitsHandlerTests
         Assert.Equal("SKU 2", saved.Name);
         Assert.Equal(unit.Id, saved.BaseUnitOfMeasureId);
         Assert.Equal(repeatedAtUtc, saved.LastImportedAtUtc);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenDataVersionIsCurrent_ReturnsUnchangedWithoutResolvingNewBaseUnitOrMutating()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        Guid unitExternalKey = Guid.NewGuid();
+        UnitOfMeasure unit = CreateUnit("EA", "Each", unitExternalKey);
+        Guid skuExternalKey = Guid.NewGuid();
+        StockKeepingUnit linked = CreateSku("SKU", "Stock item", unit.Id, skuExternalKey);
+        testDbContext.DbContext.AddRange(unit, linked);
+        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        DateTimeOffset? updatedAtUtc = linked.UpdatedAtUtc;
+        testDbContext.DbContext.ChangeTracker.Clear();
+        RecordingDomainEventDispatcher dispatcher = new();
+        ImportStockKeepingUnits.Handler handler = new(testDbContext.DbContext, dispatcher);
+
+        ServiceResult<ReferenceImportBatchResult> result = await handler.HandleAsync(
+            new ImportStockKeepingUnits.Command(
+                [new(skuExternalKey, [1], "CHANGED", "Changed", Guid.NewGuid(), true, ImportedAtUtc.AddHours(1))]),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, result.Value.Unchanged);
+        Assert.Equal(0, result.Value.Updated);
+        StockKeepingUnit saved = await testDbContext.DbContext.StockKeepingUnits.SingleAsync(
+            sku => sku.ImportState != null && sku.ImportState.RefKey == skuExternalKey,
+            TestContext.Current.CancellationToken);
+        Assert.Equal("SKU", saved.Code);
+        Assert.Equal("Stock item", saved.Name);
+        Assert.Equal("Local description", saved.Description);
+        Assert.Equal(unit.Id, saved.BaseUnitOfMeasureId);
+        Assert.True(saved.IsActive);
+        Assert.Equal(ImportedAtUtc, saved.LastImportedAtUtc);
+        Assert.Equal(updatedAtUtc, saved.UpdatedAtUtc);
+        Assert.Empty(saved.DomainEvents);
+        Assert.Empty(dispatcher.DispatchedEvents);
     }
 
     [Fact]
@@ -202,19 +239,19 @@ public sealed class ImportStockKeepingUnitsHandlerTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => handler.HandleAsync(
             new ImportStockKeepingUnits.Command(
-                [new(skuExternalKey, "ROLLBACK", "Rollback", unitExternalKey, false, ImportedAtUtc)]),
+                [new(skuExternalKey, [1], "ROLLBACK", "Rollback", unitExternalKey, false, ImportedAtUtc)]),
             TestContext.Current.CancellationToken));
 
         await using var verificationContext = testDbContext.CreateDbContext();
         Assert.False(await verificationContext.StockKeepingUnits.AnyAsync(
-            sku => sku.ExternalRefKey == skuExternalKey,
+            sku => sku.ImportState != null && sku.ImportState.RefKey == skuExternalKey,
             TestContext.Current.CancellationToken));
     }
 
     private static UnitOfMeasure CreateUnit(string code, string name, Guid externalRefKey)
     {
         Assert.True(UnitOfMeasure.Create(code, name, code, out UnitOfMeasure? unit).IsValid);
-        Assert.True(unit!.ApplyImport(externalRefKey, code, name, code, false, ImportedAtUtc).IsValid);
+        Assert.True(unit!.ApplyImport(externalRefKey, [1], code, name, code, false, ImportedAtUtc).IsValid);
         unit.ClearDomainEvents();
         return unit;
     }
@@ -230,7 +267,7 @@ public sealed class ImportStockKeepingUnitsHandlerTests
         if (externalRefKey.HasValue)
         {
             Assert.True(sku!.ApplyImport(
-                externalRefKey.Value, code, name, baseUnitOfMeasureId, false, ImportedAtUtc).IsValid);
+                externalRefKey.Value, [1], code, name, baseUnitOfMeasureId, false, ImportedAtUtc).IsValid);
         }
         sku!.ClearDomainEvents();
         return sku;

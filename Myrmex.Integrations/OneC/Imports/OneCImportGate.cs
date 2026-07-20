@@ -16,13 +16,7 @@ internal sealed class OneCImportGate
 
     public IDisposable Acquire(string referenceType)
     {
-        if (!_gates.TryGetValue(referenceType, out SemaphoreSlim? gate))
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(referenceType),
-                referenceType,
-                "Unknown 1С import reference type.");
-        }
+        SemaphoreSlim gate = GetGate(referenceType);
 
         if (!gate.Wait(0))
         {
@@ -31,6 +25,20 @@ internal sealed class OneCImportGate
 
         return new Lease(gate);
     }
+
+    public IDisposable? TryAcquire(string referenceType)
+    {
+        SemaphoreSlim gate = GetGate(referenceType);
+        return gate.Wait(0) ? new Lease(gate) : null;
+    }
+
+    private SemaphoreSlim GetGate(string referenceType) =>
+        _gates.TryGetValue(referenceType, out SemaphoreSlim? gate)
+            ? gate
+            : throw new ArgumentOutOfRangeException(
+                nameof(referenceType),
+                referenceType,
+                "Unknown 1С import reference type.");
 
     private sealed class Lease(SemaphoreSlim gate) : IDisposable
     {

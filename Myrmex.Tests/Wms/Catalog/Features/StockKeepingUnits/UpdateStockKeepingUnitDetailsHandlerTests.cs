@@ -81,6 +81,72 @@ public sealed class UpdateStockKeepingUnitDetailsHandlerTests
         Assert.IsType<StockKeepingUnitDetailsUpdatedDomainEvent>(dispatchedEvent);
     }
 
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task HandleAsync_WhenLinkedSourceOwnedValueChanges_RejectsTheChange(
+        bool changeName,
+        bool changeBaseUnitOfMeasure)
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        RecordingDomainEventDispatcher domainEventDispatcher = new();
+        UnitOfMeasure originalBase = await AddUnitOfMeasureAsync(testDbContext, "EA");
+        UnitOfMeasure otherBase = await AddUnitOfMeasureAsync(testDbContext, "CS");
+        StockKeepingUnit stockKeepingUnit = CreateLinkedStockKeepingUnit(originalBase.Id);
+        testDbContext.DbContext.StockKeepingUnits.Add(stockKeepingUnit);
+        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        UpdateStockKeepingUnitDetails.Handler handler = new(
+            testDbContext.DbContext,
+            domainEventDispatcher);
+
+        ServiceResult<StockKeepingUnitDetails> result = await handler.HandleAsync(
+            new UpdateStockKeepingUnitDetails.Command(
+                stockKeepingUnit.Id,
+                Name: changeName ? "Changed by WMS" : "Widget",
+                Description: "Local description",
+                BaseUnitOfMeasureId: changeBaseUnitOfMeasure ? otherBase.Id : originalBase.Id),
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ServiceErrorType.Invalid, result.Error.Type);
+        Assert.Equal("Widget", stockKeepingUnit.Name);
+        Assert.Equal(originalBase.Id, stockKeepingUnit.BaseUnitOfMeasureId);
+        Assert.Null(stockKeepingUnit.Description);
+        Assert.Empty(domainEventDispatcher.DispatchedEvents);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenLinkedSourceValuesAreUnchanged_AllowsDescriptionWithoutBaseValidation()
+    {
+        await using TestWmsDbContext testDbContext = await TestWmsDbContext.CreateAsync();
+        RecordingDomainEventDispatcher domainEventDispatcher = new();
+        UnitOfMeasure inactiveBase = await AddUnitOfMeasureAsync(testDbContext, "EA");
+        inactiveBase.Deactivate();
+        inactiveBase.ClearDomainEvents();
+        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        StockKeepingUnit stockKeepingUnit = CreateLinkedStockKeepingUnit(inactiveBase.Id);
+        testDbContext.DbContext.StockKeepingUnits.Add(stockKeepingUnit);
+        await testDbContext.DbContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+        UpdateStockKeepingUnitDetails.Handler handler = new(
+            testDbContext.DbContext,
+            domainEventDispatcher);
+
+        ServiceResult<StockKeepingUnitDetails> result = await handler.HandleAsync(
+            new UpdateStockKeepingUnitDetails.Command(
+                stockKeepingUnit.Id,
+                Name: " Widget ",
+                Description: " Local description ",
+                BaseUnitOfMeasureId: inactiveBase.Id),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Widget", result.Value.Name);
+        Assert.Equal("Local description", result.Value.Description);
+        Assert.Equal(inactiveBase.Id, result.Value.BaseUnitOfMeasureId);
+        Assert.IsType<StockKeepingUnitDetailsUpdatedDomainEvent>(
+            Assert.Single(domainEventDispatcher.DispatchedEvents));
+    }
+
     private static async Task<UnitOfMeasure> AddUnitOfMeasureAsync(
         TestWmsDbContext testDbContext,
         string code)
@@ -116,6 +182,22 @@ public sealed class UpdateStockKeepingUnitDetailsHandlerTests
 
         stockKeepingUnit.ClearDomainEvents();
 
+        return stockKeepingUnit;
+    }
+
+    private static StockKeepingUnit CreateLinkedStockKeepingUnit(Guid baseUnitOfMeasureId)
+    {
+        StockKeepingUnit stockKeepingUnit = CreateStockKeepingUnit(baseUnitOfMeasureId);
+        var result = stockKeepingUnit.ApplyImport(
+            Guid.NewGuid(),
+            [1],
+            stockKeepingUnit.Code,
+            stockKeepingUnit.Name,
+            stockKeepingUnit.BaseUnitOfMeasureId,
+            isDeletionMarked: false,
+            importedAtUtc: DateTimeOffset.Parse("2026-07-17T12:00:00Z"));
+        Assert.True(result.IsValid);
+        stockKeepingUnit.ClearDomainEvents();
         return stockKeepingUnit;
     }
 }

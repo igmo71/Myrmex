@@ -35,6 +35,14 @@ internal static class UpdateStockKeepingUnitDetails
                 return ServiceResult<StockKeepingUnitDetails>.Fail(ServiceError.NotFound<StockKeepingUnit>());
             }
 
+            DomainValidationResult ownershipValidationResult = stockKeepingUnit
+                .ValidateLocalDetailsOwnership(command.Name, command.BaseUnitOfMeasureId);
+            if (!ownershipValidationResult.IsValid)
+            {
+                return ServiceResult<StockKeepingUnitDetails>.Invalid(
+                    ownershipValidationResult.Errors);
+            }
+
             if (!command.BaseUnitOfMeasureId.HasValue || command.BaseUnitOfMeasureId.Value == Guid.Empty)
             {
                 return ServiceResult<StockKeepingUnitDetails>.Fail(ServiceError.Validation<StockKeepingUnit>("UnitOfMeasure is required", nameof(StockKeepingUnit.BaseUnitOfMeasureId)));
@@ -42,13 +50,18 @@ internal static class UpdateStockKeepingUnitDetails
 
             Guid baseUnitOfMeasureId = command.BaseUnitOfMeasureId.Value;
 
-            ServiceResult baseUnitOfMeasureResult = await EnsureBaseUnitOfMeasureCanBeAssignedAsync(
-                baseUnitOfMeasureId,
-                cancellationToken);
-
-            if (!baseUnitOfMeasureResult.IsSuccess)
+            bool requiresAssignmentValidation = !stockKeepingUnit.ExternalRefKey.HasValue ||
+                stockKeepingUnit.BaseUnitOfMeasureId != baseUnitOfMeasureId;
+            if (requiresAssignmentValidation)
             {
-                return ServiceResult<StockKeepingUnitDetails>.Fail(baseUnitOfMeasureResult.Error);
+                ServiceResult baseUnitOfMeasureResult = await EnsureBaseUnitOfMeasureCanBeAssignedAsync(
+                    baseUnitOfMeasureId,
+                    cancellationToken);
+
+                if (!baseUnitOfMeasureResult.IsSuccess)
+                {
+                    return ServiceResult<StockKeepingUnitDetails>.Fail(baseUnitOfMeasureResult.Error);
+                }
             }
 
             DomainValidationResult validationResult = stockKeepingUnit

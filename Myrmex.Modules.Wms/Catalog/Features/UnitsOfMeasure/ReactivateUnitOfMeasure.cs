@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Myrmex.AppDispatching.EventDispatching;
 using Myrmex.Core.Application;
+using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
@@ -29,7 +30,11 @@ internal static class ReactivateUnitOfMeasure
                 return ServiceResult<UnitOfMeasureDetails>.Fail(ServiceError.NotFound<UnitOfMeasure>());
             }
 
-            unitOfMeasure.Reactivate();
+            DomainValidationResult validationResult = unitOfMeasure.ReactivateLocally();
+            if (!validationResult.IsValid)
+            {
+                return ServiceResult<UnitOfMeasureDetails>.Invalid(validationResult.Errors);
+            }
 
             ServiceResult saveResult = await dbContext
                 .SaveChangesAsServiceResultAsync(domainEventDispatcher, cancellationToken);

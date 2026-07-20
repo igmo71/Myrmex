@@ -4,11 +4,23 @@ public sealed record ReferenceImportBatchResult(
     int Processed,
     int Created,
     int Updated,
+    int Unchanged,
     int Skipped,
     int Failed,
     IReadOnlyList<ReferenceImportRecordError> Errors)
 {
-    public bool HasConsistentCounts => Processed == Created + Updated + Skipped + Failed;
+    public ReferenceImportBatchResult(
+        int Processed,
+        int Created,
+        int Updated,
+        int Skipped,
+        int Failed,
+        IReadOnlyList<ReferenceImportRecordError> Errors)
+        : this(Processed, Created, Updated, 0, Skipped, Failed, Errors)
+    {
+    }
+
+    public bool HasConsistentCounts => Processed == Created + Updated + Unchanged + Skipped + Failed;
 }
 
 public sealed record ReferenceImportRecordError(

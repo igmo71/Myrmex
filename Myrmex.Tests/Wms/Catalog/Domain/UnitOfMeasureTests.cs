@@ -162,6 +162,7 @@ public sealed class UnitOfMeasureTests
 
         var deleted = unitOfMeasure.ApplyImport(
             ExternalRefKey,
+            [1],
             code: null,
             name: null,
             symbol: new string('x', UnitOfMeasure.MaxSymbolLength + 1),
@@ -177,7 +178,7 @@ public sealed class UnitOfMeasureTests
         Assert.False(unitOfMeasure.IsActive);
 
         Assert.True(unitOfMeasure.ApplyImport(
-            ExternalRefKey, "PKG", "Package", "pc", false, ImportedAtUtc.AddMinutes(1)).IsValid);
+            ExternalRefKey, [2], "PKG", "Package", "pc", false, ImportedAtUtc.AddMinutes(1)).IsValid);
         Assert.True(unitOfMeasure.IsActive);
         Assert.Equal("PKG", unitOfMeasure.Code);
         Assert.Equal("Package", unitOfMeasure.Name);
@@ -189,9 +190,9 @@ public sealed class UnitOfMeasureTests
     public void ApplyImport_WhenExternalRefKeyChanges_RejectsMutation()
     {
         UnitOfMeasure unitOfMeasure = CreateUnitOfMeasure();
-        Assert.True(unitOfMeasure.ApplyImport(ExternalRefKey, "EA", "Each", "ea", false, ImportedAtUtc).IsValid);
+        Assert.True(unitOfMeasure.ApplyImport(ExternalRefKey, [1], "EA", "Each", "ea", false, ImportedAtUtc).IsValid);
 
-        var result = unitOfMeasure.ApplyImport(Guid.NewGuid(), "KG", "Kilogram", "kg", false, ImportedAtUtc);
+        var result = unitOfMeasure.ApplyImport(Guid.NewGuid(), [2], "KG", "Kilogram", "kg", false, ImportedAtUtc);
 
         Assert.False(result.IsValid);
         Assert.Equal(ExternalRefKey, unitOfMeasure.ExternalRefKey);

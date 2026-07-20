@@ -19,6 +19,7 @@ public static class ImportUnitsOfMeasure
 
     public sealed record Item(
         Guid ExternalRefKey,
+        byte[] ExternalDataVersion,
         string? Code,
         string? Name,
         string? Symbol,
@@ -105,18 +106,19 @@ public static class ImportUnitsOfMeasure
 
             List<UnitOfMeasure> existing = await dbContext.UnitsOfMeasure
                 .Where(unit =>
-                    (unit.ExternalRefKey.HasValue && externalRefKeys.Contains(unit.ExternalRefKey.Value)) ||
+                    (unit.ImportState != null && externalRefKeys.Contains(unit.ImportState.RefKey)) ||
                     codes.Contains(unit.Code))
                 .ToListAsync(cancellationToken);
 
             Dictionary<Guid, UnitOfMeasure> byExternalRefKey = existing
-                .Where(unit => unit.ExternalRefKey.HasValue)
-                .ToDictionary(unit => unit.ExternalRefKey!.Value);
+                .Where(unit => unit.ImportState != null)
+                .ToDictionary(unit => unit.ImportState!.RefKey);
             Dictionary<string, UnitOfMeasure> byCode = existing
                 .ToDictionary(unit => unit.Code, StringComparer.Ordinal);
 
             int created = 0;
             int updated = 0;
+            int unchanged = 0;
             int skipped = 0;
             int failed = 0;
             List<ReferenceImportRecordError> errors = [];
@@ -135,10 +137,17 @@ public static class ImportUnitsOfMeasure
 
                 if (byExternalRefKey.TryGetValue(item.ExternalRefKey, out UnitOfMeasure? linked))
                 {
+                    if (linked.HasExternalDataVersion(item.ExternalDataVersion))
+                    {
+                        unchanged++;
+                        continue;
+                    }
+
                     if (item.IsDeletionMarked)
                     {
                         DomainValidationResult deletionResult = linked.ApplyImport(
                             item.ExternalRefKey,
+                            item.ExternalDataVersion,
                             item.Code,
                             item.Name,
                             item.Symbol,
@@ -167,6 +176,7 @@ public static class ImportUnitsOfMeasure
                     string oldCode = linked.Code;
                     DomainValidationResult updateResult = linked.ApplyImport(
                         item.ExternalRefKey,
+                        item.ExternalDataVersion,
                         item.Code,
                         item.Name,
                         item.Symbol,
@@ -216,6 +226,7 @@ public static class ImportUnitsOfMeasure
 
                 DomainValidationResult importResult = unit.ApplyImport(
                     item.ExternalRefKey,
+                    item.ExternalDataVersion,
                     item.Code,
                     item.Name,
                     item.Symbol,
@@ -239,6 +250,7 @@ public static class ImportUnitsOfMeasure
                 command.Items.Count,
                 created,
                 updated,
+                unchanged,
                 skipped,
                 failed,
                 errors);
