@@ -21,7 +21,7 @@ IWarehouseOneCSynchronizer
 
 `WarehouseOneCImport` and `WarehouseOneCSynchronizer` both depend on `IWarehouseOneCSource`, the singleton gate, time/logging, and the command dispatcher. Only the slice chooses `ImportWarehouses.Command` and Warehouse mapping/folder rules.
 
-`WarehouseReferenceSynchronizationHandler` depends only on `IWarehouseOneCSynchronizer` plus common result mapping.
+`WarehouseReferenceSynchronizationHandler` depends on `IWarehouseOneCSynchronizer`, the pure common result mapper, and `ILogger<WarehouseReferenceSynchronizationHandler>`.
 
 ## Unit of Measure Slice
 
@@ -42,6 +42,8 @@ Only the slice chooses `ImportUnitsOfMeasure.Command`, full-name/symbol fallback
 
 `IUnitOfMeasureOneCSynchronizer` is the sole cross-slice operation contract and may be consumed by the SKU synchronizer. It is not a generic reference dispatcher.
 
+`UnitOfMeasureReferenceSynchronizationHandler` depends on `IUnitOfMeasureOneCSynchronizer`, the pure common result mapper, and `ILogger<UnitOfMeasureReferenceSynchronizationHandler>`.
+
 ## Stock Keeping Unit Slice
 
 ```text
@@ -61,6 +63,8 @@ Only the slice chooses `ImportStockKeepingUnits.Command`, paging/batching, parti
 
 `StockKeepingUnitOneCSynchronizer` depends directly on `IUnitOfMeasureOneCSynchronizer` and may invoke it once per SKU synchronization attempt.
 
+`StockKeepingUnitReferenceSynchronizationHandler` depends on `IStockKeepingUnitOneCSynchronizer`, the pure common result mapper, and `ILogger<StockKeepingUnitReferenceSynchronizationHandler>`.
+
 ## Common Dependencies
 
 ### OData Transport
@@ -77,7 +81,32 @@ One singleton `OneCImportGate` retains the Warehouse/UoM/SKU lease identities an
 
 ### Synchronization Result and Mapper
 
-`ReferenceSynchronizationResult`, outcome/reason values, and safe diagnostic rendering remain common. `ReferenceSynchronizationHandlerResultMapper.Map(result)` is pure translation from an already-produced internal result to the existing Feature #104 handler result. It does not parse a type, choose a slice, or invoke a callback.
+`ReferenceSynchronizationResult`, outcome/reason values, and safe diagnostic rendering remain common. `ReferenceSynchronizationHandlerResultMapper.Map(result)` is pure translation from an already-produced internal result to the existing Feature #104 handler result. It does not parse requests, select a type or slice, invoke a callback, or perform logging.
+
+The current one-item accounting invariant remains common contract data but is interpreted inside each slice: `Processed != 1` or inconsistent counts produce `PermanentFailure`, reason `ApplicationFailure`, and `retrySuitable = false`. Issue #111 does not throw or reclassify this condition; any reconsideration belongs to a separate issue.
+
+## Concrete Handler Correlation Boundary
+
+Each concrete handler owns this sequence:
+
+```text
+parse and validate ExternalId
+-> call the matching slice synchronizer
+-> write structured correlation log
+-> map the completed result through the pure common mapper
+```
+
+The handler writes exactly one structured correlation log for the current internal result using:
+
+- `SynchronizationRequestId`;
+- `EntityType`;
+- `ExternalId`;
+- `NotifiedDataVersion`, rendered deterministically as Base64;
+- `CurrentOutcome`;
+- `CurrentReason`;
+- `RetrySuitable`.
+
+An invalid `ExternalId` is represented and logged as the equivalent permanent invalid-request result before mapping. The log excludes credentials, secrets, and source payloads. No new logging test suite is planned; these fields are code-review/quickstart acceptance unless an existing assertion can be trivially extended.
 
 ## Composition Root
 

@@ -38,9 +38,9 @@
 
 ## Decision 4: Use narrow manual-import contracts
 
-**Decision**: Define one internal import contract and implementation per slice, each exposing `ImportAsync(CancellationToken)`. `OneCEndpoints` injects the matching contract for each existing route. A common response factory may construct responses and cap errors but accepts no workflow delegate.
+**Decision**: Define one internal import contract and implementation per slice, each exposing `ImportAsync(CancellationToken)`. `OneCEndpoints` injects the matching contract for each existing route. A common response factory may construct responses and cap errors but accepts no workflow delegate. Preserve the current start boundary: invalid/disabled integration configuration produces pre-start `400 OneC.ConfigurationInvalid`, same-reference lease contention produces pre-start `409 OneCImport.AlreadyInProgress`, and platform authentication/authorization remains `401/403`. Once configuration succeeds and source processing starts, authentication rejection, entity-set unavailability, malformed/source-unavailable/timeout responses, and unexpected application/batch failures remain incomplete `200 OK OneCImportResponse` results with safe `OperationError`. Transport Problem Details remain applicable to the connection-test endpoint, not active manual imports.
 
-**Rationale**: The endpoint-to-operation dependency becomes explicit, while route, authorization, Problem Details, and response contracts stay stable. The full import sequence, lease scope, reference mapping, cancellation, and logging remain visible in the owning slice.
+**Rationale**: The endpoint-to-operation dependency becomes explicit while the precise pre-start versus active-import error boundary remains stable. The full import sequence, lease scope, reference mapping, cancellation, result conversion, and logging remain visible in the owning slice.
 
 **Alternatives considered**:
 
@@ -50,9 +50,9 @@
 
 ## Decision 5: Use narrow synchronize-one contracts behind existing durable handlers
 
-**Decision**: Define one internal synchronize-one contract and implementation per slice, each exposing `SynchronizeAsync(Guid, CancellationToken)`. Each existing concrete `ISynchronizationHandler` moves into its slice, parses the durable request identity explicitly, invokes its synchronizer, and passes the completed internal result to a pure common durable-result mapper.
+**Decision**: Define one internal synchronize-one contract and implementation per slice, each exposing `SynchronizeAsync(Guid, CancellationToken)`. Each concrete `ISynchronizationHandler` moves into its slice and depends on its matching synchronizer, the pure common durable-result mapper, and its typed logger. Its visible flow is `parse and validate ExternalId -> call matching synchronizer -> write structured correlation log -> map completed result`. The log records `SynchronizationRequestId`, `EntityType`, `ExternalId`, Base64-rendered `NotifiedDataVersion`, `CurrentOutcome`, `CurrentReason`, and `RetrySuitable`; invalid `ExternalId` logs the equivalent permanent invalid-request result. Credentials, secrets, and source payloads are excluded. The common mapper neither parses requests, selects a slice, invokes callbacks, nor logs.
 
-**Rationale**: Feature #104 remains the durable lifecycle owner, while each reference handler has a direct dependency on exactly one business flow. Removing delegate invocation from handler mapping leaves the call visible.
+**Rationale**: Feature #104 remains the durable lifecycle owner, while each reference handler has a direct dependency on exactly one business flow and is the only concrete boundary that sees both durable request correlation data and the current internal outcome. Keeping mapping pure prevents correlation concerns from becoming another shared orchestration layer.
 
 **Alternatives considered**:
 
@@ -86,7 +86,7 @@
 
 ## Decision 8: Preserve every public, durable, domain, and persistence contract
 
-**Decision**: Keep public routes, endpoint names, authorization, request/response shapes, Problem Details, WebApp client/localization, stable entity-type strings, synchronization statuses, source-version rules, WMS commands, domain behavior, schema, EF mappings, and migrations unchanged.
+**Decision**: Keep public routes, endpoint names, authorization, request/response shapes, WebApp client/localization, stable entity-type strings, synchronization statuses, source-version rules, WMS commands, domain behavior, schema, EF mappings, and migrations unchanged. Preserve existing Problem Details only at their current boundaries: manual-import pre-start configuration/lease failures and connection-test transport failures. Active manual-import transport/application failures remain incomplete `200 OK OneCImportResponse` results.
 
 **Rationale**: Issue #111 is a behavior-preserving organization change. Any change in these areas would broaden scope and weaken the compatibility baseline.
 
@@ -95,19 +95,32 @@
 - Improve public names or result shapes during the refactor: rejected because unrelated contract changes obscure behavioral verification.
 - Redesign external-link or synchronization persistence: rejected as explicitly out of scope.
 
-## Decision 9: Retarget existing tests; add none
+## Decision 9: Retarget existing tests and close only the SKU repair outcome gap
 
-**Decision**: Preserve existing #104/#109 test scenarios and minimally update constructors, fakes, calls, and namespaces. Remove only the test whose purpose is to verify the now-prohibited central type switch. Do not add a DI composition test or per-slice matrices. Adapt the existing two SKU repair tests to the explicit UoM contract.
+**Decision**: Preserve existing #104/#109 test scenarios and minimally update constructors, fakes, calls, and namespaces. Remove only the test whose purpose is to verify the now-prohibited central type switch. Continue using `StockKeepingUnitReferenceRepairTests`: make the successful repair test parameterized for UoM `Applied` and `Unchanged`; rename the current second test to state that UoM synchronization succeeds but the single SKU retry still reports missing/inactive UoM and stops permanently; add one compact parameterized test for UoM `Busy`, `TransientFailure`, `NotFound`, `ControlledSkip`, and `PermanentFailure`. The theory expects the first two to produce transient SKU repair failure and the last three permanent SKU repair failure. Every failed-UoM row asserts one UoM call, one SKU dispatch, no SKU retry, and no recursion/additional dependency call. Do not add a new test class, DI composition test, per-reference matrix, Feature #104 suite, or logging suite.
 
-**Rationale**: Existing coverage already protects source projections, mapping, accounting, paging, partial commits, cancellation, gate semantics, outcome mapping, endpoint/auth contracts, and repair limits. The only new boundary—SKU to a narrow UoM synchronizer—is already directly exercised.
+**Rationale**: Existing coverage already protects source projections, mapping, accounting, paging, partial commits, cancellation, gate semantics, general outcome mapping, endpoint/auth contracts, and success/retry-still-fails repair limits. It does not directly prove all failed UoM outcomes or the no-retry boundary, so one compact theory is the minimum material addition. Correlation logging remains code-review/quickstart acceptance unless an existing assertion can be trivially extended.
 
 **Alternatives considered**:
 
 - Create one full test class per new production class: rejected because class splitting is not a new behavioral risk.
 - Repeat the synchronize-one outcome matrix for all three references: rejected as duplicate coverage.
 - Add a new DI test solely for split registrations: rejected because the structural split alone does not justify a new test under FR-025.
+- Add a dedicated logging test suite: rejected because the structured fields can be reviewed directly and do not justify a new matrix.
+- Add no repair test: rejected because existing cases do not cover failed UoM outcome mapping and the no-retry boundary.
 
-## Decision 10: Migrate one reference at a time without compatibility wrappers
+## Decision 10: Preserve inconsistent one-item accounting as permanent application failure
+
+**Decision**: Preserve the current classification exactly: `Processed != 1` or otherwise inconsistent one-item counts produce `PermanentFailure`, reason `ApplicationFailure`, and `retrySuitable = false`.
+
+**Rationale**: Issue #111 is behavior-preserving. Reclassifying this invariant as an exception or transient processor failure would change retry and durable lifecycle behavior.
+
+**Alternatives considered**:
+
+- Throw and let the processor decide retry behavior: deferred to a separate issue because it changes the current contract.
+- Map inconsistent accounting to transient failure: deferred to a separate issue because it can add retries and change terminal status.
+
+## Decision 11: Migrate one reference at a time without compatibility wrappers
 
 **Decision**: Extract common prerequisites, then move Warehouse, UoM, and SKU in order. For each reference, rewire its endpoint/handler in the same change that removes its old composite method. After SKU moves, delete the composite services, typed client, old source DTO locations, obsolete registrations, delegate helpers, central switch, and placeholder options file.
 
@@ -118,7 +131,7 @@
 - Keep facades until a later cleanup: rejected because parallel paths and compatibility wrappers are prohibited.
 - Move every file first and rewire later: rejected because it creates a large ambiguous intermediate state.
 
-## Decision 11: No data-model or schema change
+## Decision 12: No data-model or schema change
 
 **Decision**: Treat source records, manual results, internal outcomes, durable requests, WMS references, and their state transitions as existing models whose ownership is clarified but whose shape and persistence remain unchanged.
 

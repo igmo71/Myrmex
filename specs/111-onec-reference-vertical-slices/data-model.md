@@ -95,14 +95,16 @@ These command and item shapes do not change.
 
 ```text
 Requested
-  -> Gate unavailable -> HTTP 409 before operation start
-  -> Configuration invalid -> existing safe Problem Details before operation start
-  -> Gate acquired
-       -> Completed response
-       -> Incomplete source/application response
-       -> Incomplete Cancelled response
+  -> Gate unavailable -> 409 Problem Details
+  -> Configuration invalid -> 400 Problem Details
+  -> Import started
+       -> Complete 200 OneCImportResponse
+       -> Incomplete 200 OneCImportResponse
+       -> Incomplete 200 Cancelled response
        -> Lease released
 ```
+
+Platform authentication and authorization remain pre-operation `401/403`. Configuration validation remains integration-wide and verifies enabled state, base URL, credentials, all three entity sets, batch size, and timeout. After configuration succeeds and source processing begins, 1C authentication rejection, entity-set unavailability, malformed response, source unavailability, source timeout, and unexpected application/batch failure remain incomplete `200 OK OneCImportResponse` results with the existing safe `OperationError`. They do not become `502/504` Problem Details on manual-import routes. The connection-test endpoint separately retains transport-failure Problem Details.
 
 For Warehouse and UoM, a failed single WMS batch contributes no pending counts. For SKU, every successfully committed page contributes durable counts; later failure or cancellation returns those prior committed counts and errors.
 
@@ -132,6 +134,19 @@ Allowed outcomes remain:
 
 No outcome is added, removed, or persisted as a new durable status.
 
+### Inconsistent One-Item Accounting
+
+The current invariant remains unchanged:
+
+```text
+Processed != 1 or inconsistent counts
+-> PermanentFailure
+-> ApplicationFailure
+-> retrySuitable = false
+```
+
+Issue #111 does not throw or route this condition through transient processor retry. Reconsidering that classification is deferred to a separate issue.
+
 ## Existing Durable Synchronization Request
 
 Feature #104 remains the owner of source identity, entity type, external identity/version, trigger, status, timing, attempts, retry scheduling, last error, polling, wake-up, deferred handling, and abandoned-processing recovery.
@@ -143,6 +158,20 @@ Stable entity-type values remain:
 - `StockKeepingUnit`
 
 Durable lifecycle states remain `Pending`, `Processing`, `Deferred`, `Completed`, and `Failed`.
+
+## Handler Correlation Record
+
+Each concrete reference handler emits one structured correlation log after receiving the internal result and before mapping it to the Feature #104 handler result. The log contains:
+
+- `SynchronizationRequestId`;
+- `EntityType`;
+- `ExternalId`;
+- `NotifiedDataVersion`, rendered safely and deterministically as Base64;
+- `CurrentOutcome`;
+- `CurrentReason`;
+- `RetrySuitable`.
+
+When `ExternalId` is invalid, the handler logs the equivalent permanent invalid-request outcome before mapping it. Credentials, secrets, and source payloads are never included. This is diagnostic output, not a persisted entity or schema change. The common result mapper does not parse requests, select a slice, invoke callbacks, or log.
 
 ## Coordination Model
 

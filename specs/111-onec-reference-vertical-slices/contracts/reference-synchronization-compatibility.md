@@ -33,14 +33,28 @@ EntityType
 HandleAsync(SynchronizationRequest, CancellationToken)
 ```
 
-The handler:
+Each concrete handler depends on its matching slice synchronizer, the pure common mapper, and its typed logger. Its visible flow is:
 
-1. Parses and validates the durable request's external identity.
-2. Calls exactly one matching slice synchronizer.
-3. Maps the completed internal result through the pure common durable-result mapper.
-4. Retains safe diagnostic information for Feature #104 processing.
+```text
+parse and validate ExternalId
+-> call the matching slice synchronizer
+-> write structured correlation log
+-> map the completed result through the pure common mapper
+```
 
-The common mapper does not receive or invoke a synchronization delegate.
+The structured log is written after the internal result is available and before durable mapping. It contains:
+
+- `SynchronizationRequestId`;
+- `EntityType`;
+- `ExternalId`;
+- `NotifiedDataVersion`, rendered safely and deterministically as Base64;
+- `CurrentOutcome`;
+- `CurrentReason`;
+- `RetrySuitable`.
+
+When `ExternalId` is invalid, the concrete handler produces and logs the equivalent permanent invalid-request result with the same correlation fields before mapping it. Credentials, secrets, and source payloads are never logged.
+
+`ReferenceSynchronizationHandlerResultMapper` remains pure. It does not parse a request, select a reference slice, invoke a synchronization callback, or perform logging.
 
 ## Internal Synchronize-One Contract
 
@@ -111,12 +125,14 @@ validate request and acquire SKU lease
 - Exactly one created or updated record maps to `Applied`.
 - Exactly one unchanged record maps to `Unchanged`.
 - Exactly one unlinked deletion-mark skip maps to `ControlledSkip`.
-- Inconsistent one-item accounting maps to permanent application failure.
+- `Processed != 1` or otherwise inconsistent one-item counts map to `PermanentFailure` with reason `ApplicationFailure` and `retrySuitable = false`.
 - Invalid, not-found, conflict, unauthorized, or forbidden service errors remain permanent; other service errors remain transient.
 - Existing code-conflict record reasons map to permanent business conflict; other record failures map to permanent validation failure.
 - Source unavailable and timeout remain transient; disabled/invalid configuration, authentication rejection, unavailable entity set, and malformed source data remain permanent.
 
 Each slice owns this interpretation locally; no common all-reference classifier selects behavior.
+
+Issue #111 preserves the inconsistent-accounting classification exactly. Reconsidering whether this invariant should throw or use the transient processor retry path is deferred to a separate issue.
 
 ## Coordination and Cancellation
 
@@ -137,6 +153,8 @@ Repair is eligible only when the first SKU command:
 - reports `BaseUnitOfMeasureNotImported` or `BaseUnitOfMeasureInactive`.
 
 The SKU synchronizer then calls the explicit UoM synchronizer at most once. `Busy` or `TransientFailure` maps to transient SKU repair unavailability. Any result other than `Applied` or `Unchanged` maps to permanent repair failure. Success permits exactly one retry of the same SKU item. A still-repairable retry fails permanently. No recursion or further dependency is permitted.
+
+Minimum focused coverage remains in the existing `StockKeepingUnitReferenceRepairTests` class: successful UoM `Applied`/`Unchanged` outcomes are parameterized; the retry-still-missing/inactive case is descriptively renamed; and one compact failed-UoM theory covers `Busy`, `TransientFailure`, `NotFound`, `ControlledSkip`, and `PermanentFailure`, including one UoM call, one SKU dispatch, no retry, and no additional dependency call. No new repair test class or Feature #104 matrix is introduced.
 
 ## Durable Foundation Exclusions
 

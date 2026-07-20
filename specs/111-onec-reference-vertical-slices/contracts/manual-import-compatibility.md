@@ -37,21 +37,50 @@ No field is renamed, removed, added, or reinterpreted.
 
 ## Pre-Start Error Contract
 
-Errors raised before the operation produces an import response retain existing Problem Details behavior:
-
-Before any manual import source read, configuration validation continues to require the integration to be enabled and the existing base URL, credentials, all three reference entity-set settings, batch size, and timeout to be valid. Splitting source readers does not weaken this integration-wide validation.
+Before any manual import source processing begins, configuration validation continues to require the integration to be enabled and the existing base URL, credentials, all three reference entity-set settings, batch size, and timeout to be valid. Splitting source readers does not weaken this integration-wide validation.
 
 | Condition | Status | Code |
 |-----------|--------|------|
 | Integration disabled or configuration invalid | 400 | `OneC.ConfigurationInvalid` |
 | Same reference import already in progress | 409 | `OneCImport.AlreadyInProgress` |
-| 1C authentication rejected | 502 | `OneC.AuthenticationFailed` |
-| Entity set unavailable | 502 | `OneC.EntitySetUnavailable` |
-| Malformed source response | 502 | `OneC.MalformedResponse` |
-| Source unavailable | 502 | `OneC.SourceUnavailable` |
-| Source timeout | 504 | `OneC.Timeout` |
+| Platform authentication required | 401 | Existing platform authentication response |
+| Authenticated principal is not authorized | 403 | Existing platform authorization response |
 
-Authentication/authorization failures retain existing platform behavior.
+The `400` and `409` cases retain their existing safe Problem Details. Platform `401/403` behavior remains unchanged.
+
+## Active Import Failure Contract
+
+After configuration succeeds and source processing begins, the following failures remain incomplete `200 OK OneCImportResponse` values with the existing safe `OperationError`. They do not become import-route `502/504` Problem Details.
+
+| Failure during active import | `OperationError.Reason` | Result |
+|------------------------------|-------------------------|--------|
+| 1C authentication rejection | `AuthenticationFailed` | Incomplete `200 OK OneCImportResponse` |
+| Entity set unavailable | `EntitySetUnavailable` | Incomplete `200 OK OneCImportResponse` |
+| Malformed source response | `MalformedResponse` | Incomplete `200 OK OneCImportResponse` |
+| Source unavailable | `SourceUnavailable` | Incomplete `200 OK OneCImportResponse` |
+| Source timeout | `Timeout` | Incomplete `200 OK OneCImportResponse` |
+| Unexpected application or batch failure | `BatchCommitFailed` | Incomplete `200 OK OneCImportResponse` |
+
+The response uses the existing safe operation messages, exposes no credentials or source payload, and preserves committed SKU counts/errors when applicable.
+
+## Manual Import Transition
+
+```text
+Requested
+  -> Gate unavailable -> 409 Problem Details
+  -> Configuration invalid -> 400 Problem Details
+  -> Import started
+       -> Complete 200 OneCImportResponse
+       -> Incomplete 200 OneCImportResponse
+       -> Incomplete 200 Cancelled response
+       -> Lease released
+```
+
+Platform authentication/authorization (`401/403`) occurs before invoking the operation and does not start an import.
+
+## Connection-Test Distinction
+
+The existing connection-test endpoint remains separate from manual imports. It continues to return Problem Details for transport failures, including its existing `502` authentication/entity-set/malformed/source-unavailable responses and `504` timeout response. This behavior must not be applied to an import that has already started.
 
 ## Accounting Invariants
 
@@ -75,7 +104,7 @@ Authentication/authorization failures retain existing platform behavior.
 
 ## Internal Endpoint Composition
 
-The endpoint may retain a small uniform adapter for `OneCImportResponse` and Problem Details. That adapter must not select a reference type or accept a callback that owns source read, mapping, dispatch, or classification. Each endpoint invokes its matching explicit import contract.
+The endpoint may retain a small uniform adapter for `OneCImportResponse` and pre-start Problem Details. That adapter must not select a reference type or accept a callback that owns source read, mapping, dispatch, or classification. Each endpoint invokes its matching explicit import contract and returns active-import failures through the response produced by that contract.
 
 ## Unchanged Clients
 
