@@ -1,5 +1,5 @@
 <!-- SPECKIT START -->
-Active feature plan: `specs/109-reference-data-synchronization/plan.md`.
+Active feature plan: `specs/111-onec-reference-vertical-slices/plan.md`.
 
 Durable project guidance lives in `.specify/memory/`. Read only the files relevant to the task:
 
