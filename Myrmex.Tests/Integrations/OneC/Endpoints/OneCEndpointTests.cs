@@ -1,27 +1,33 @@
-using System.Net.Http.Json;
-using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
+using Myrmex.Integrations.OneC.Common.Imports;
+using Myrmex.Integrations.OneC.Common.Transport;
+using Myrmex.Integrations.OneC.Connection;
 using Myrmex.Integrations.OneC.Endpoints;
-using Myrmex.Integrations.OneC.Imports;
-using Myrmex.Integrations.OneC.Transport;
+using Myrmex.Integrations.OneC.StockKeepingUnits;
+using Myrmex.Integrations.OneC.UnitsOfMeasure;
+using Myrmex.Integrations.OneC.Warehouses;
 using Myrmex.Shared.Integrations.OneC;
+using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
 
 namespace Myrmex.Tests.Integrations.OneC.Endpoints;
 
 public sealed class OneCEndpointTests
 {
-    private static readonly DateTimeOffset CheckedAtUtc = DateTimeOffset.Parse("2026-06-27T12:00:00Z");
+    private static readonly DateTimeOffset CheckedAtUtc =
+        DateTimeOffset.Parse("2026-06-27T12:00:00Z");
 
     [Fact]
     public async Task TestConnection_WhenAuthenticatedAndReady_ReturnsProbeSummary()
     {
-        var client = new StubOneCODataClient();
-        await using WebApplication app = CreateApp(client, authenticated: true);
+        ProbeCounter probes = new();
+        await using WebApplication app = CreateApp(probes, authenticated: true);
         await app.StartAsync(TestContext.Current.CancellationToken);
 
         using HttpClient httpClient = CreateClient(app);
@@ -36,22 +42,24 @@ public sealed class OneCEndpointTests
         Assert.True(payload?.IsReady);
         Assert.Equal(CheckedAtUtc, payload?.CheckedAtUtc);
         Assert.Equal(["warehouses", "uoms", "skus"], payload?.CheckedReferenceTypes);
-        Assert.Equal(1, client.CallCount);
+        Assert.Equal(3, probes.CallCount);
     }
 
     [Fact]
     public async Task TestConnection_WhenUnauthenticated_Returns401WithoutSourceAccess()
     {
-        var client = new StubOneCODataClient();
-        await using WebApplication app = CreateApp(client, authenticated: false);
+        ProbeCounter probes = new();
+        await using WebApplication app = CreateApp(probes, authenticated: false);
         await app.StartAsync(TestContext.Current.CancellationToken);
 
         using HttpClient httpClient = CreateClient(app);
         using HttpResponseMessage response = await httpClient.PostAsync(
-            "/api/integrations/1c/connection/test", null, TestContext.Current.CancellationToken);
+            "/api/integrations/1c/connection/test",
+            null,
+            TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        Assert.Equal(0, client.CallCount);
+        Assert.Equal(0, probes.CallCount);
     }
 
     [Theory]
@@ -66,15 +74,20 @@ public sealed class OneCEndpointTests
         HttpStatusCode status,
         string expectedCode)
     {
-        var client = new StubOneCODataClient(new OneCTransportException(
+        OneCTransportException exception = new(
             (OneCTransportFailureReason)reason,
-            "Safe failure."));
-        await using WebApplication app = CreateApp(client, authenticated: true);
+            "Safe failure.");
+        await using WebApplication app = CreateApp(
+            new ProbeCounter(),
+            authenticated: true,
+            connectionException: exception);
         await app.StartAsync(TestContext.Current.CancellationToken);
 
         using HttpClient httpClient = CreateClient(app);
         using HttpResponseMessage response = await httpClient.PostAsync(
-            "/api/integrations/1c/connection/test", null, TestContext.Current.CancellationToken);
+            "/api/integrations/1c/connection/test",
+            null,
+            TestContext.Current.CancellationToken);
 
         Assert.Equal(status, response.StatusCode);
         ProblemDetails? problem = await response.Content.ReadFromJsonAsync<ProblemDetails>(
@@ -103,13 +116,15 @@ public sealed class OneCEndpointTests
             Failed: 0,
             StartedAtUtc: CheckedAtUtc,
             CompletedAtUtc: CheckedAtUtc,
-            OperationError: isComplete ? null : new OneCImportOperationError("SourceUnavailable", "Unavailable."),
+            OperationError: isComplete
+                ? null
+                : new OneCImportOperationError("SourceUnavailable", "Unavailable."),
             Errors: []);
-        StubImportService importService = new(expected);
+        StubImportOperations imports = new(expected);
         await using WebApplication app = CreateApp(
-            new StubOneCODataClient(),
+            new ProbeCounter(),
             authenticated: true,
-            importService: importService);
+            imports: imports);
         await app.StartAsync(TestContext.Current.CancellationToken);
 
         using HttpClient httpClient = CreateClient(app);
@@ -125,19 +140,19 @@ public sealed class OneCEndpointTests
         Assert.Equal(isComplete, payload?.IsComplete);
         Assert.Equal(1, payload?.Unchanged);
         Assert.Equal(!isComplete, payload?.OperationError is not null);
-        Assert.Equal(1, importService.CallCount);
+        Assert.Equal(1, imports.CallCount);
     }
 
     [Fact]
     public async Task ImportRoute_WhenConfigurationFailsBeforeStart_Returns400ProblemDetails()
     {
-        StubImportService importService = new(new OneCTransportException(
+        StubImportOperations imports = new(new OneCTransportException(
             OneCTransportFailureReason.InvalidConfiguration,
             "Configuration is invalid."));
         await using WebApplication app = CreateApp(
-            new StubOneCODataClient(),
+            new ProbeCounter(),
             authenticated: true,
-            importService: importService);
+            imports: imports);
         await app.StartAsync(TestContext.Current.CancellationToken);
 
         using HttpClient httpClient = CreateClient(app);
@@ -155,11 +170,11 @@ public sealed class OneCEndpointTests
     [Fact]
     public async Task ImportRoute_WhenUnauthenticated_Returns401WithoutStartingImport()
     {
-        StubImportService importService = new(CreateImportResponse("warehouses"));
+        StubImportOperations imports = new(CreateImportResponse("warehouses"));
         await using WebApplication app = CreateApp(
-            new StubOneCODataClient(),
+            new ProbeCounter(),
             authenticated: false,
-            importService: importService);
+            imports: imports);
         await app.StartAsync(TestContext.Current.CancellationToken);
 
         using HttpClient httpClient = CreateClient(app);
@@ -169,7 +184,7 @@ public sealed class OneCEndpointTests
             TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        Assert.Equal(0, importService.CallCount);
+        Assert.Equal(0, imports.CallCount);
     }
 
     [Fact]
@@ -195,11 +210,11 @@ public sealed class OneCEndpointTests
                     "BaseUnitOfMeasureExternalRefKeyMissing",
                     "Base unit is required.")
             ]);
-        StubImportService importService = new(expected);
+        StubImportOperations imports = new(expected);
         await using WebApplication app = CreateApp(
-            new StubOneCODataClient(),
+            new ProbeCounter(),
             authenticated: true,
-            importService: importService);
+            imports: imports);
         await app.StartAsync(TestContext.Current.CancellationToken);
 
         using HttpClient httpClient = CreateClient(app);
@@ -217,11 +232,11 @@ public sealed class OneCEndpointTests
     [Fact]
     public async Task ImportRoutes_WhenSkuImportIsAlreadyRunning_Returns409WithoutBlockingWarehouseImport()
     {
-        SelectiveConflictImportService importService = new();
+        StubImportOperations imports = new(skuConflict: true);
         await using WebApplication app = CreateApp(
-            new StubOneCODataClient(),
+            new ProbeCounter(),
             authenticated: true,
-            importService: importService);
+            imports: imports);
         await app.StartAsync(TestContext.Current.CancellationToken);
         using HttpClient httpClient = CreateClient(app);
 
@@ -239,18 +254,39 @@ public sealed class OneCEndpointTests
             TestContext.Current.CancellationToken);
         Assert.Equal("OneCImport.AlreadyInProgress", problem?.Extensions["code"]?.ToString());
         warehouseResponse.EnsureSuccessStatusCode();
-        Assert.Equal(1, importService.WarehouseCallCount);
+        Assert.Equal(1, imports.WarehouseCallCount);
     }
 
     private static WebApplication CreateApp(
-        IOneCODataClient client,
+        ProbeCounter probes,
         bool authenticated,
-        IOneCImportService? importService = null)
+        StubImportOperations? imports = null,
+        OneCTransportException? connectionException = null)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
-        builder.Services.AddSingleton(client);
-        builder.Services.AddSingleton(importService ?? new StubImportService(CreateImportResponse("warehouses")));
+
+        StubTransport transport = new(
+            connectionException?.Reason is OneCTransportFailureReason.Disabled or
+                OneCTransportFailureReason.InvalidConfiguration
+                ? connectionException
+                : null);
+        StubWarehouseSource warehouseSource = new(probes, connectionException);
+        StubUnitOfMeasureSource unitSource = new(probes);
+        StubStockKeepingUnitSource skuSource = new(probes);
+        OneCConnectionTest connectionTest = new(
+            transport,
+            warehouseSource,
+            unitSource,
+            skuSource,
+            NullLogger<OneCConnectionTest>.Instance);
+        StubImportOperations importOperations =
+            imports ?? new StubImportOperations(CreateImportResponse("warehouses"));
+
+        builder.Services.AddSingleton(connectionTest);
+        builder.Services.AddSingleton<IWarehouseOneCImport>(importOperations);
+        builder.Services.AddSingleton<IUnitOfMeasureOneCImport>(importOperations);
+        builder.Services.AddSingleton<IStockKeepingUnitOneCImport>(importOperations);
         builder.Services.AddSingleton<TimeProvider>(new FixedTimeProvider(CheckedAtUtc));
         builder.Services.AddTestAuthentication(authenticated);
 
@@ -268,90 +304,140 @@ public sealed class OneCEndpointTests
         return new HttpClient { BaseAddress = new Uri(address) };
     }
 
-    private sealed class StubOneCODataClient(Exception? exception = null) : IOneCODataClient
+    private sealed class ProbeCounter
     {
-        public int CallCount { get; private set; }
+        private int _callCount;
 
+        public int CallCount => Volatile.Read(ref _callCount);
+
+        public void Increment() => Interlocked.Increment(ref _callCount);
+    }
+
+    private sealed class StubTransport(Exception? configurationException = null)
+        : IOneCODataTransport
+    {
         public void ValidateConfiguration()
         {
-            if (exception is not null)
+            if (configurationException is not null)
             {
-                throw exception;
+                throw configurationException;
             }
         }
 
-        public Task TestConnectionAsync(CancellationToken cancellationToken)
+        public Task<IReadOnlyList<T>> ReadCollectionAsync<T>(
+            string entitySet,
+            IEnumerable<KeyValuePair<string, string>> parameters,
+            CancellationToken cancellationToken)
+            where T : class => throw new NotSupportedException();
+    }
+
+    private sealed class StubWarehouseSource(
+        ProbeCounter probes,
+        Exception? probeException = null) : IWarehouseOneCSource
+    {
+        public Task<IReadOnlyList<WarehouseSourceRecord>> ReadAllAsync(
+            CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<WarehouseSourceRecord>>([]);
+
+        public Task<WarehouseSourceRecord?> ReadCurrentAsync(
+            Guid externalRefKey,
+            CancellationToken cancellationToken) => Task.FromResult<WarehouseSourceRecord?>(null);
+
+        public Task ProbeAsync(CancellationToken cancellationToken)
         {
-            CallCount++;
-            return exception is null ? Task.CompletedTask : Task.FromException(exception);
+            probes.Increment();
+            return probeException is null
+                ? Task.CompletedTask
+                : Task.FromException(probeException);
         }
+    }
 
-        public Task<IReadOnlyList<Catalog_Склады>> ReadWarehousesAsync(CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<Catalog_Склады>>([]);
-
-        public Task<Catalog_Склады?> ReadWarehouseAsync(
-            Guid externalRefKey,
-            CancellationToken cancellationToken) => Task.FromResult<Catalog_Склады?>(null);
-
-        public Task<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>> ReadUnitsOfMeasureAsync(
+    private sealed class StubUnitOfMeasureSource(ProbeCounter probes) : IUnitOfMeasureOneCSource
+    {
+        public Task<IReadOnlyList<UnitOfMeasureSourceRecord>> ReadAllAsync(
             CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>>([]);
+            Task.FromResult<IReadOnlyList<UnitOfMeasureSourceRecord>>([]);
 
-        public Task<Catalog_УпаковкиЕдиницыИзмерения?> ReadUnitOfMeasureAsync(
+        public Task<UnitOfMeasureSourceRecord?> ReadCurrentAsync(
             Guid externalRefKey,
             CancellationToken cancellationToken) =>
-            Task.FromResult<Catalog_УпаковкиЕдиницыИзмерения?>(null);
+            Task.FromResult<UnitOfMeasureSourceRecord?>(null);
 
-        public async IAsyncEnumerable<IReadOnlyList<Catalog_Номенклатура>> ReadNomenclaturePagesAsync(
+        public Task ProbeAsync(CancellationToken cancellationToken)
+        {
+            probes.Increment();
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class StubStockKeepingUnitSource(ProbeCounter probes)
+        : IStockKeepingUnitOneCSource
+    {
+        public async IAsyncEnumerable<IReadOnlyList<StockKeepingUnitSourceRecord>> ReadPagesAsync(
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             await Task.CompletedTask;
             yield break;
         }
 
-        public Task<Catalog_Номенклатура?> ReadStockKeepingUnitAsync(
+        public Task<StockKeepingUnitSourceRecord?> ReadCurrentAsync(
             Guid externalRefKey,
-            CancellationToken cancellationToken) => Task.FromResult<Catalog_Номенклатура?>(null);
+            CancellationToken cancellationToken) =>
+            Task.FromResult<StockKeepingUnitSourceRecord?>(null);
+
+        public Task ProbeAsync(CancellationToken cancellationToken)
+        {
+            probes.Increment();
+            return Task.CompletedTask;
+        }
     }
 
-    private sealed class StubImportService : IOneCImportService
+    private sealed class StubImportOperations :
+        IWarehouseOneCImport,
+        IUnitOfMeasureOneCImport,
+        IStockKeepingUnitOneCImport
     {
         private readonly OneCImportResponse? _response;
         private readonly Exception? _exception;
+        private readonly bool _skuConflict;
 
-        public StubImportService(OneCImportResponse response) => _response = response;
-        public StubImportService(Exception exception) => _exception = exception;
+        public StubImportOperations(OneCImportResponse response) => _response = response;
+        public StubImportOperations(Exception exception) => _exception = exception;
+        public StubImportOperations(bool skuConflict) => _skuConflict = skuConflict;
 
         public int CallCount { get; private set; }
-
-        public Task<OneCImportResponse> ImportWarehousesAsync(CancellationToken cancellationToken) => Complete();
-        public Task<OneCImportResponse> ImportUnitsOfMeasureAsync(CancellationToken cancellationToken) => Complete();
-        public Task<OneCImportResponse> ImportStockKeepingUnitsAsync(CancellationToken cancellationToken) => Complete();
-
-        private Task<OneCImportResponse> Complete()
-        {
-            CallCount++;
-            return _exception is null
-                ? Task.FromResult(_response!)
-                : Task.FromException<OneCImportResponse>(_exception);
-        }
-    }
-
-    private sealed class SelectiveConflictImportService : IOneCImportService
-    {
         public int WarehouseCallCount { get; private set; }
 
-        public Task<OneCImportResponse> ImportWarehousesAsync(CancellationToken cancellationToken)
+        Task<OneCImportResponse> IWarehouseOneCImport.ImportAsync(
+            CancellationToken cancellationToken)
         {
             WarehouseCallCount++;
-            return Task.FromResult(CreateImportResponse("warehouses"));
+            return Complete("warehouses");
         }
 
-        public Task<OneCImportResponse> ImportUnitsOfMeasureAsync(CancellationToken cancellationToken) =>
-            Task.FromResult(CreateImportResponse("uoms"));
+        Task<OneCImportResponse> IUnitOfMeasureOneCImport.ImportAsync(
+            CancellationToken cancellationToken) => Complete("uoms");
 
-        public Task<OneCImportResponse> ImportStockKeepingUnitsAsync(CancellationToken cancellationToken) =>
-            Task.FromException<OneCImportResponse>(new OneCImportAlreadyInProgressException("skus"));
+        Task<OneCImportResponse> IStockKeepingUnitOneCImport.ImportAsync(
+            CancellationToken cancellationToken) =>
+            _skuConflict
+                ? Task.FromException<OneCImportResponse>(
+                    new OneCImportAlreadyInProgressException("skus"))
+                : Complete("skus");
+
+        private Task<OneCImportResponse> Complete(string referenceType)
+        {
+            CallCount++;
+            if (_exception is not null)
+            {
+                return Task.FromException<OneCImportResponse>(_exception);
+            }
+
+            return Task.FromResult(
+                _response?.ReferenceType == referenceType
+                    ? _response
+                    : CreateImportResponse(referenceType));
+        }
     }
 
     private static OneCImportResponse CreateImportResponse(string referenceType) => new(

@@ -1,4 +1,4 @@
-namespace Myrmex.Integrations.OneC.Transport;
+namespace Myrmex.Integrations.OneC.Common.Transport;
 
 internal enum OneCTransportFailureReason
 {

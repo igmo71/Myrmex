@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
 
-namespace Myrmex.Integrations.OneC.Transport;
+namespace Myrmex.Integrations.OneC.Warehouses;
 
-internal sealed class Catalog_Номенклатура
+internal sealed class WarehouseSourceRecord
 {
     [JsonPropertyName("Ref_Key")]
     public Guid Ref_Key { get; init; }
@@ -21,13 +21,4 @@ internal sealed class Catalog_Номенклатура
 
     [JsonPropertyName("Description")]
     public string? Description { get; init; }
-
-    [JsonPropertyName("НаименованиеПолное")]
-    public string? НаименованиеПолное { get; init; }
-
-    [JsonPropertyName("Артикул")]
-    public string? Артикул { get; init; }
-
-    [JsonPropertyName("ЕдиницаИзмерения_Key")]
-    public Guid? ЕдиницаИзмерения_Key { get; init; }
 }

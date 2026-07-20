@@ -1,4 +1,4 @@
-namespace Myrmex.Integrations.OneC.Imports;
+namespace Myrmex.Integrations.OneC.Common.Imports;
 
 internal sealed class OneCImportGate
 {
@@ -17,7 +17,6 @@ internal sealed class OneCImportGate
     public IDisposable Acquire(string referenceType)
     {
         SemaphoreSlim gate = GetGate(referenceType);
-
         if (!gate.Wait(0))
         {
             throw new OneCImportAlreadyInProgressException(referenceType);

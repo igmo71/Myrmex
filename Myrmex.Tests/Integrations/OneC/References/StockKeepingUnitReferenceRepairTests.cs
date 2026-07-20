@@ -1,12 +1,11 @@
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Myrmex.AppDispatching.CommandDispatching;
 using Myrmex.Core.Application;
 using Myrmex.Core.Results;
-using Myrmex.Integrations.OneC.Configuration;
-using Myrmex.Integrations.OneC.Imports;
-using Myrmex.Integrations.OneC.References;
-using Myrmex.Integrations.OneC.Transport;
+using Myrmex.Integrations.OneC.Common.Imports;
+using Myrmex.Integrations.OneC.Common.References;
+using Myrmex.Integrations.OneC.StockKeepingUnits;
+using Myrmex.Integrations.OneC.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Catalog.Features.Imports;
 using System.Runtime.CompilerServices;
 
@@ -19,80 +18,103 @@ public sealed class StockKeepingUnitReferenceRepairTests
     private static readonly Guid UnitOfMeasureExternalRefKey =
         Guid.Parse("018f0000-0000-7000-8000-000000000912");
 
-    [Fact]
-    public async Task SynchronizeStockKeepingUnitAsync_RepairsOneUnitOfMeasureAndRetriesOnce()
+    [Theory]
+    [InlineData(ReferenceSynchronizationOutcome.Applied)]
+    [InlineData(ReferenceSynchronizationOutcome.Unchanged)]
+    internal async Task SynchronizeAsync_WhenUnitOfMeasureRepairSucceeds_RetriesSkuOnce(
+        ReferenceSynchronizationOutcome unitOfMeasureOutcome)
     {
-        RepairODataClient source = new()
-        {
-            StockKeepingUnit = StockKeepingUnit(),
-            UnitOfMeasure = UnitOfMeasure()
-        };
+        StubStockKeepingUnitSource source = new(StockKeepingUnit());
+        StubUnitOfMeasureSynchronizer dependency = new(unitOfMeasureOutcome);
         RepairDispatcher dispatcher = new(
-            firstStockKeepingUnitResult: BaseUnitOfMeasureFailure(
-                ReferenceImportRecordErrorReasons.BaseUnitOfMeasureNotImported),
-            secondStockKeepingUnitResult: Applied(),
-            unitOfMeasureResult: Applied());
-        OneCReferenceSynchronizationService service = CreateService(source, dispatcher);
+            BaseUnitOfMeasureFailure(ReferenceImportRecordErrorReasons.BaseUnitOfMeasureNotImported),
+            Applied());
+        StockKeepingUnitOneCSynchronizer synchronizer = CreateSynchronizer(
+            source,
+            dependency,
+            dispatcher);
 
-        ReferenceSynchronizationResult result = await service.SynchronizeStockKeepingUnitAsync(
+        ReferenceSynchronizationResult result = await synchronizer.SynchronizeAsync(
             StockKeepingUnitExternalRefKey,
             TestContext.Current.CancellationToken);
 
         Assert.Equal(ReferenceSynchronizationOutcome.Applied, result.Outcome);
-        Assert.Equal(1, source.StockKeepingUnitReadCount);
-        Assert.Equal(1, source.UnitOfMeasureReadCount);
+        Assert.Equal(1, source.ReadCount);
+        Assert.Equal(1, dependency.CallCount);
+        Assert.Equal(UnitOfMeasureExternalRefKey, dependency.ExternalRefKey);
         Assert.Equal(2, dispatcher.StockKeepingUnitDispatchCount);
-        Assert.Equal(1, dispatcher.UnitOfMeasureDispatchCount);
     }
 
     [Fact]
-    public async Task SynchronizeStockKeepingUnitAsync_StopsAfterFailedUnitOfMeasureRepair()
+    public async Task SynchronizeAsync_WhenUnitOfMeasureSucceedsButSkuRetryStillNeedsRepair_StopsPermanently()
     {
-        RepairODataClient source = new()
-        {
-            StockKeepingUnit = StockKeepingUnit(),
-            UnitOfMeasure = UnitOfMeasure()
-        };
+        StubStockKeepingUnitSource source = new(StockKeepingUnit());
+        StubUnitOfMeasureSynchronizer dependency =
+            new(ReferenceSynchronizationOutcome.Applied);
         RepairDispatcher dispatcher = new(
-            firstStockKeepingUnitResult: BaseUnitOfMeasureFailure(
-                ReferenceImportRecordErrorReasons.BaseUnitOfMeasureNotImported),
-            secondStockKeepingUnitResult: BaseUnitOfMeasureFailure(
-                ReferenceImportRecordErrorReasons.BaseUnitOfMeasureInactive),
-            unitOfMeasureResult: Applied());
-        OneCReferenceSynchronizationService service = CreateService(source, dispatcher);
+            BaseUnitOfMeasureFailure(ReferenceImportRecordErrorReasons.BaseUnitOfMeasureNotImported),
+            BaseUnitOfMeasureFailure(ReferenceImportRecordErrorReasons.BaseUnitOfMeasureInactive));
+        StockKeepingUnitOneCSynchronizer synchronizer = CreateSynchronizer(
+            source,
+            dependency,
+            dispatcher);
 
-        ReferenceSynchronizationResult result = await service.SynchronizeStockKeepingUnitAsync(
+        ReferenceSynchronizationResult result = await synchronizer.SynchronizeAsync(
             StockKeepingUnitExternalRefKey,
             TestContext.Current.CancellationToken);
 
         Assert.Equal(ReferenceSynchronizationOutcome.PermanentFailure, result.Outcome);
-        Assert.Equal(1, source.StockKeepingUnitReadCount);
-        Assert.Equal(1, source.UnitOfMeasureReadCount);
+        Assert.Equal(ReferenceSynchronizationReasons.BaseUnitOfMeasureRepairFailed, result.Reason);
+        Assert.Equal(1, source.ReadCount);
+        Assert.Equal(1, dependency.CallCount);
         Assert.Equal(2, dispatcher.StockKeepingUnitDispatchCount);
-        Assert.Equal(1, dispatcher.UnitOfMeasureDispatchCount);
     }
 
-    private static OneCReferenceSynchronizationService CreateService(
-        IOneCODataClient source,
+    [Theory]
+    [InlineData(ReferenceSynchronizationOutcome.Busy, ReferenceSynchronizationOutcome.TransientFailure)]
+    [InlineData(ReferenceSynchronizationOutcome.TransientFailure, ReferenceSynchronizationOutcome.TransientFailure)]
+    [InlineData(ReferenceSynchronizationOutcome.NotFound, ReferenceSynchronizationOutcome.PermanentFailure)]
+    [InlineData(ReferenceSynchronizationOutcome.ControlledSkip, ReferenceSynchronizationOutcome.PermanentFailure)]
+    [InlineData(ReferenceSynchronizationOutcome.PermanentFailure, ReferenceSynchronizationOutcome.PermanentFailure)]
+    internal async Task SynchronizeAsync_WhenUnitOfMeasureRepairFails_MapsOutcomeWithoutSkuRetry(
+        ReferenceSynchronizationOutcome unitOfMeasureOutcome,
+        ReferenceSynchronizationOutcome expectedSkuOutcome)
+    {
+        StubStockKeepingUnitSource source = new(StockKeepingUnit());
+        StubUnitOfMeasureSynchronizer dependency = new(unitOfMeasureOutcome);
+        RepairDispatcher dispatcher = new(
+            BaseUnitOfMeasureFailure(ReferenceImportRecordErrorReasons.BaseUnitOfMeasureNotImported),
+            Applied());
+        StockKeepingUnitOneCSynchronizer synchronizer = CreateSynchronizer(
+            source,
+            dependency,
+            dispatcher);
+
+        ReferenceSynchronizationResult result = await synchronizer.SynchronizeAsync(
+            StockKeepingUnitExternalRefKey,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(expectedSkuOutcome, result.Outcome);
+        Assert.Equal(expectedSkuOutcome == ReferenceSynchronizationOutcome.TransientFailure,
+            result.RetrySuitable);
+        Assert.Equal(1, source.ReadCount);
+        Assert.Equal(1, dependency.CallCount);
+        Assert.Equal(1, dispatcher.StockKeepingUnitDispatchCount);
+    }
+
+    private static StockKeepingUnitOneCSynchronizer CreateSynchronizer(
+        IStockKeepingUnitOneCSource source,
+        IUnitOfMeasureOneCSynchronizer dependency,
         ICommandDispatcher dispatcher) =>
         new(
             source,
+            dependency,
             dispatcher,
-            Options.Create(new OneCOptions
-            {
-                Enabled = true,
-                BaseUrl = "https://onec.example.test/odata/",
-                Username = "operator",
-                Password = "secret",
-                WarehousesEntitySet = "Catalog_Warehouses",
-                UnitsOfMeasureEntitySet = OneCOptions.DefaultUnitsOfMeasureEntitySet,
-                NomenclatureEntitySet = "Catalog_Nomenclature"
-            }),
             new OneCImportGate(),
             TimeProvider.System,
-            NullLogger<OneCReferenceSynchronizationService>.Instance);
+            NullLogger<StockKeepingUnitOneCSynchronizer>.Instance);
 
-    private static Catalog_Номенклатура StockKeepingUnit() => new()
+    private static StockKeepingUnitSourceRecord StockKeepingUnit() => new()
     {
         Ref_Key = StockKeepingUnitExternalRefKey,
         DataVersion = [1],
@@ -102,23 +124,8 @@ public sealed class StockKeepingUnitReferenceRepairTests
         ЕдиницаИзмерения_Key = UnitOfMeasureExternalRefKey
     };
 
-    private static Catalog_УпаковкиЕдиницыИзмерения UnitOfMeasure() => new()
-    {
-        Ref_Key = UnitOfMeasureExternalRefKey,
-        DataVersion = [1],
-        Code = "EA",
-        Description = "Each",
-        НаименованиеПолное = "Each",
-        МеждународноеСокращение = "ea"
-    };
-
     private static ReferenceImportBatchResult BaseUnitOfMeasureFailure(string reason) => new(
-        1,
-        0,
-        0,
-        0,
-        0,
-        1,
+        1, 0, 0, 0, 0, 1,
         [new ReferenceImportRecordError(
             StockKeepingUnitExternalRefKey,
             "SKU-001",
@@ -127,60 +134,68 @@ public sealed class StockKeepingUnitReferenceRepairTests
 
     private static ReferenceImportBatchResult Applied() => new(1, 1, 0, 0, 0, 0, []);
 
-    private sealed class RepairODataClient : IOneCODataClient
+    private sealed class StubStockKeepingUnitSource(StockKeepingUnitSourceRecord record)
+        : IStockKeepingUnitOneCSource
     {
-        public Catalog_УпаковкиЕдиницыИзмерения? UnitOfMeasure { get; init; }
-        public Catalog_Номенклатура? StockKeepingUnit { get; init; }
-        public int UnitOfMeasureReadCount { get; private set; }
-        public int StockKeepingUnitReadCount { get; private set; }
+        public int ReadCount { get; private set; }
 
-        public void ValidateConfiguration() { }
-        public Task TestConnectionAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-        public Task<IReadOnlyList<Catalog_Склады>> ReadWarehousesAsync(
-            CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<Catalog_Склады>>([]);
-        public Task<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>> ReadUnitsOfMeasureAsync(
-            CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>>([]);
-        public async IAsyncEnumerable<IReadOnlyList<Catalog_Номенклатура>> ReadNomenclaturePagesAsync(
+        public async IAsyncEnumerable<IReadOnlyList<StockKeepingUnitSourceRecord>> ReadPagesAsync(
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             await Task.CompletedTask;
             yield break;
         }
 
-        public Task<Catalog_Склады?> ReadWarehouseAsync(
-            Guid externalRefKey,
-            CancellationToken cancellationToken) =>
-            Task.FromResult<Catalog_Склады?>(null);
-
-        public Task<Catalog_УпаковкиЕдиницыИзмерения?> ReadUnitOfMeasureAsync(
+        public Task<StockKeepingUnitSourceRecord?> ReadCurrentAsync(
             Guid externalRefKey,
             CancellationToken cancellationToken)
         {
-            UnitOfMeasureReadCount++;
-            Assert.Equal(UnitOfMeasureExternalRefKey, externalRefKey);
-            return Task.FromResult(UnitOfMeasure);
+            ReadCount++;
+            Assert.Equal(StockKeepingUnitExternalRefKey, externalRefKey);
+            return Task.FromResult<StockKeepingUnitSourceRecord?>(record);
         }
 
-        public Task<Catalog_Номенклатура?> ReadStockKeepingUnitAsync(
+        public Task ProbeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
+    private sealed class StubUnitOfMeasureSynchronizer(ReferenceSynchronizationOutcome outcome)
+        : IUnitOfMeasureOneCSynchronizer
+    {
+        public int CallCount { get; private set; }
+        public Guid? ExternalRefKey { get; private set; }
+
+        public Task<ReferenceSynchronizationResult> SynchronizeAsync(
             Guid externalRefKey,
             CancellationToken cancellationToken)
         {
-            StockKeepingUnitReadCount++;
-            Assert.Equal(StockKeepingUnitExternalRefKey, externalRefKey);
-            return Task.FromResult(StockKeepingUnit);
+            CallCount++;
+            ExternalRefKey = externalRefKey;
+            ReferenceSynchronizationResult result = outcome is
+                ReferenceSynchronizationOutcome.Applied or
+                ReferenceSynchronizationOutcome.Unchanged or
+                ReferenceSynchronizationOutcome.ControlledSkip
+                    ? ReferenceSynchronizationResult.Success(
+                        OneCReferenceType.UnitOfMeasure,
+                        externalRefKey,
+                        outcome,
+                        outcome.ToString())
+                    : ReferenceSynchronizationResult.Failure(
+                        OneCReferenceType.UnitOfMeasure,
+                        externalRefKey,
+                        outcome,
+                        outcome.ToString(),
+                        "Expected repair result.",
+                        retrySuitable: outcome is ReferenceSynchronizationOutcome.Busy or
+                            ReferenceSynchronizationOutcome.TransientFailure);
+            return Task.FromResult(result);
         }
     }
 
     private sealed class RepairDispatcher(
-        ReferenceImportBatchResult firstStockKeepingUnitResult,
-        ReferenceImportBatchResult secondStockKeepingUnitResult,
-        ReferenceImportBatchResult unitOfMeasureResult)
-        : ICommandDispatcher
+        ReferenceImportBatchResult firstResult,
+        ReferenceImportBatchResult secondResult) : ICommandDispatcher
     {
         public int StockKeepingUnitDispatchCount { get; private set; }
-        public int UnitOfMeasureDispatchCount { get; private set; }
 
         public Task<TResult> DispatchAsync<TCommand, TResult>(
             TCommand command,
@@ -188,24 +203,13 @@ public sealed class StockKeepingUnitReferenceRepairTests
             where TCommand : ICommand<TResult>
             where TResult : IServiceResult
         {
-            ReferenceImportBatchResult batch = command switch
-            {
-                ImportStockKeepingUnits.Command _ => StockKeepingUnitDispatchCount++ == 0
-                    ? firstStockKeepingUnitResult
-                    : secondStockKeepingUnitResult,
-                ImportUnitsOfMeasure.Command _ => IncrementUnitOfMeasureDispatch(),
-                _ => throw new InvalidOperationException(
-                    $"Unexpected command type {typeof(TCommand).Name}.")
-            };
+            Assert.IsType<ImportStockKeepingUnits.Command>(command);
+            ReferenceImportBatchResult batch = StockKeepingUnitDispatchCount++ == 0
+                ? firstResult
+                : secondResult;
             ServiceResult<ReferenceImportBatchResult> result =
                 ServiceResult<ReferenceImportBatchResult>.Success(batch);
             return Task.FromResult((TResult)(object)result);
-        }
-
-        private ReferenceImportBatchResult IncrementUnitOfMeasureDispatch()
-        {
-            UnitOfMeasureDispatchCount++;
-            return unitOfMeasureResult;
         }
     }
 }

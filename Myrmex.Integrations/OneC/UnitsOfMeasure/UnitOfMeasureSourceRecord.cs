@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
 
-namespace Myrmex.Integrations.OneC.Transport;
+namespace Myrmex.Integrations.OneC.UnitsOfMeasure;
 
-internal sealed class Catalog_Склады
+internal sealed class UnitOfMeasureSourceRecord
 {
     [JsonPropertyName("Ref_Key")]
     public Guid Ref_Key { get; init; }
@@ -13,12 +13,15 @@ internal sealed class Catalog_Склады
     [JsonPropertyName("DeletionMark")]
     public bool DeletionMark { get; init; }
 
-    [JsonPropertyName("IsFolder")]
-    public bool IsFolder { get; init; }
-
     [JsonPropertyName("Code")]
     public string? Code { get; init; }
 
     [JsonPropertyName("Description")]
     public string? Description { get; init; }
+
+    [JsonPropertyName("НаименованиеПолное")]
+    public string? НаименованиеПолное { get; init; }
+
+    [JsonPropertyName("МеждународноеСокращение")]
+    public string? МеждународноеСокращение { get; init; }
 }
