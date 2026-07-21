@@ -4,7 +4,7 @@
 
 **Prerequisites**: `plan.md`, `spec.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md`
 
-**Tests**: No automated test tasks are included. The repository has no tracked test project, and this feature must not add testing infrastructure. Focused manual verification begins only after the user confirms that they have built the solution, applied the prepared migration, and started the application.
+**Tests**: No automated test tasks are included. The repository has no tracked test project, and this feature must not add testing infrastructure. Focused manual verification begins only after the user confirms that they have built the solution, applied the user-generated migration, and started the application.
 
 **Organization**: Tasks are grouped by user story so normalization, display, and refresh behavior can be implemented in priority order, followed by one combined focused verification pass.
 
@@ -51,7 +51,7 @@
 - [ ] T007 [US1] Implement the SKU-specific normalizer with the provisional verified formula, measurement-type matching, independent characteristic outcomes, source-zero/unit-zero rules, overflow handling, and structured issue return without logging in `Myrmex.Integrations/OneC/StockKeepingUnits/StockKeepingUnitPhysicalCharacteristicsNormalizer.cs`
 - [ ] T008 [US1] Extend the existing full SKU import to load unit definitions once per operation, normalize each materialized SKU, log each returned issue once in the caller, and dispatch the existing WMS batch command in `Myrmex.Integrations/OneC/StockKeepingUnits/StockKeepingUnitOneCImport.cs`
 - [ ] T009 [P] [US1] Extend reactive SKU synchronization to resolve distinct referenced units, normalize the current SKU, log each returned issue once in the caller, preserve existing base-UoM repair, and dispatch the existing one-item command in `Myrmex.Integrations/OneC/StockKeepingUnits/StockKeepingUnitOneCSynchronizer.cs`
-- [ ] T010 [P] [US1] Prepare the `AddSkuPhysicalCharacteristics` EF Core migration files under `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/`, update `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/WmsDbContextModelSnapshot.cs` for four ordinary nullable decimal columns, and update the user-run command section with the actual migration name in `specs/114-normalized-sku-physical-characteristics/quickstart.md` without applying the migration or running any build, application, or database command
+- [ ] T010 [P] [US1] Complete the entity and EF configuration required for four ordinary nullable decimal columns in `Myrmex.Modules.Wms/Catalog/Domain/StockKeepingUnits/StockKeepingUnit.cs` and `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/StockKeepingUnitConfiguration.cs`, and document the exact user-run command `dotnet ef migrations add AddSkuPhysicalCharacteristics --project Myrmex.Modules.Wms --startup-project Myrmex.ApiService --context WmsDbContext` in `specs/114-normalized-sku-physical-characteristics/quickstart.md`; do not manually create or edit migration files or `Myrmex.Modules.Wms/Infrastructure/Persistence/Migrations/WmsDbContextModelSnapshot.cs`, and leave migration generation and application to the user so the generated migration and snapshot can be reviewed later before application
 - [ ] T011 [US1] Replace the data-version-only early exit with an unchanged check that also compares all four incoming canonical nullable values so existing SKUs can receive initial physical-characteristic values after migration and factor-driven changes can refresh them, while preserving existing import accounting in `Myrmex.Modules.Wms/Catalog/Features/Imports/ImportStockKeepingUnits.cs`
 
 **Checkpoint**: User Story 1 implementation supports initial population and synchronization through existing paths and is ready for the final combined verification. This is the suggested MVP scope.
@@ -105,7 +105,7 @@ User Story 3 requires no additional implementation task: T004, T005, T007, T008,
 - **User Story 1 (Phase 3)**: Depends on Phase 2; T007 depends on T002 and T003, T008/T009 depend on T005 and T007, T010 depends on T004, and T011 depends on T005 and must complete before final verification.
 - **User Story 2 (Phase 4)**: Implementation depends on T006; T013 also depends on T012.
 - **User Story 3 (Phase 5)**: Depends on the shared and US1 import work, including T011; it adds no separate implementation task.
-- **Polish and Combined Verification (Phase 6)**: T014 depends on all implementation work; T015 depends on T014 and on the user's single manual build, migration-application, and application-start sequence.
+- **Polish and Combined Verification (Phase 6)**: T014 depends on all implementation work and may include review of the user-generated migration and snapshot before application; T015 depends on T014 and on the user's manual build, migration application, and application-start sequence.
 
 ### User Story Dependencies
 
@@ -115,7 +115,8 @@ User Story 3 requires no additional implementation task: T004, T005, T007, T008,
 
 ### Manual-Action Boundary
 
-- Implementation tasks may prepare migration files and documentation but MUST NOT execute builds, tests, migration application, database commands, or application startup.
+- Implementation tasks may complete the entity and EF configuration and document the migration-generation command, but MUST NOT execute builds, tests, EF commands, migration generation or application, database commands, or application startup.
+- After implementation, the user may generate the migration with the documented command and pause before application so the generated migration and snapshot can be reviewed under T014.
 - T015 begins only after all implementation work is complete and the user confirms that the required manual environment actions were completed once.
 - No task creates or switches branches, commits, pushes, or creates another import/UI/diagnostics workflow.
 
@@ -134,7 +135,7 @@ User Story 3 requires no additional implementation task: T004, T005, T007, T008,
 ```text
 After T001 and Phase 2:
 Task T007: Implement the SKU-specific normalizer.
-Task T010: Prepare the WMS migration and model snapshot without applying it.
+Task T010: Complete the entity and EF configuration and document the exact user-run migration-generation command without creating migration or snapshot files.
 
 After T005 and T007:
 Task T008: Wire the full import caller.
@@ -168,7 +169,7 @@ Final behavior is checked once in T015 after all implementation and the user's m
 
 1. Complete T001 before formula-dependent code.
 2. Complete the shared foundation in Phase 2.
-3. Complete User Story 1 integration, WMS, migration-preparation, and read-contract work.
+3. Complete User Story 1 integration, WMS, EF configuration and migration-command documentation, and read-contract work.
 4. Continue through the desired UI and refresh scope before requesting the user's single manual environment sequence.
 5. Perform the combined T015 verification only after all implementation and scope review are complete.
 
@@ -184,6 +185,6 @@ Final behavior is checked once in T015 after all implementation and the user's m
 
 - `[P]` tasks change different files and have no dependency on another incomplete task at that point.
 - No automated test project or testing infrastructure is introduced.
-- Migration preparation is allowed; migration application and every database command remain user-owned manual actions.
+- Entity/EF configuration and migration-command documentation are allowed; migration generation, migration application, and every EF or database command remain user-owned manual actions, with generated files reviewable before application.
 - Build, test, application-start, branch, commit, and push actions are absent from executable tasks.
 - If T001 contradicts the provisional formula or wire contract, update planning artifacts before continuing rather than implementing heuristics or generalized conversion infrastructure.
