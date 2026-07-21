@@ -1,50 +1,37 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+- Version: template -> 1.0.0
+- Principles: placeholders -> Clear Warehouse Behavior; Explicit Ownership; Outcome-First Simplicity
+- Added sections: none
+- Removed sections: two unused template sections and two unused principle slots
+- Templates requiring updates: none; no new mandatory template structure introduced
+- Follow-up TODOs: none
+-->
+# Myrmex Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Clear Warehouse Behavior
+Myrmex MUST keep warehouse behavior and terminology clear, correct, and consistent with the real
+workflow being demonstrated. Names, states, and rules make the warehouse meaning apparent, and
+behavior preserves the relevant warehouse invariants.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Explicit Ownership
+Every feature and its data MUST have an explicit owning module. Other modules interact through
+deliberate, narrow boundaries and do not silently take responsibility for data or rules they do
+not own.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
-
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
-
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
-
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
-
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
-
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
-
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### III. Outcome-First Simplicity
+Work MUST use the simplest implementation that delivers the current demonstrable warehouse
+outcome. Add abstraction, infrastructure, and generalized mechanisms only for a concrete current
+need. Verification is proportional to the likelihood and impact of failure, using the smallest
+evidence that gives reasonable confidence.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution guides scope and implementation decisions for the warehouse MVP. Changes record
+their reason and update the semantic version: major for changed or removed principles, minor for
+added guidance, and patch for clarification. Feature plans record only relevant conventions.
+Review checks the three principles in proportion to scope and risk.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-07-21 | **Last Amended**: 2026-07-21
