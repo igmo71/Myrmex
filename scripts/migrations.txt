@@ -1,0 +1,21 @@
+Myrmex.Modules.Wms:
+
+dotnet ef migrations add <MigrationName> --project Myrmex.Modules.Wms --startup-project Myrmex.ApiService --context WmsDbContext --output-dir Infrastructure/Persistence/Migrations
+dotnet ef database update --project Myrmex.Modules.Wms --startup-project Myrmex.ApiService --context WmsDbContext
+
+
+Myrmex.Integrations:
+
+dotnet ef migrations add <MigrationName> --project Myrmex.Integrations --startup-project Myrmex.ApiService --context IntegrationDbContext --output-dir Persistence/Migrations
+dotnet ef database update --project Myrmex.Integrations --startup-project Myrmex.ApiService --context IntegrationDbContext
+
+
+Myrmex.Identity:
+
+dotnet ef migrations add InitialIdentity --project Myrmex.Identity --startup-project Myrmex.ApiService --context MyrmexIdentityDbContext --output-dir Persistence\Migrations
+dotnet ef database update --project Myrmex.Identity --startup-project Myrmex.ApiService --context MyrmexIdentityDbContext  
+
+
+
+$env:ConnectionStrings__MyrmexDatabase = "Data Source=vm-bi-sql.dobroga.local;Initial Catalog=Myrmex_test;Persist Security Info=True;User ID=sa;Password=Ser45zx;Encrypt=False;TrustServerCertificate=True"
+Remove-Item Env:ConnectionStrings__MyrmexDatabase
