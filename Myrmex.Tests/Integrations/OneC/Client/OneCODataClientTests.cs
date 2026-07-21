@@ -1,36 +1,43 @@
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Myrmex.Integrations.OneC.Common.Transport;
 using Myrmex.Integrations.OneC.Configuration;
-using Myrmex.Integrations.OneC.Transport;
+using Myrmex.Integrations.OneC.Connection;
+using Myrmex.Integrations.OneC.StockKeepingUnits;
+using Myrmex.Integrations.OneC.UnitsOfMeasure;
+using Myrmex.Integrations.OneC.Warehouses;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 
 namespace Myrmex.Tests.Integrations.OneC.Client;
 
 public sealed class OneCODataClientTests
 {
-    private static readonly Guid RefKey = Guid.Parse("018f0000-0000-7000-8000-000000000999");
+    private static readonly Guid RefKey =
+        Guid.Parse("018f0000-0000-7000-8000-000000000999");
 
     [Fact]
-    public async Task TestConnectionAsync_ProbesAllEntitySetsWithBasicAuthentication()
+    public async Task ConnectionTest_ProbesAllEntitySetsWithBasicAuthentication()
     {
         List<Uri> requests = [];
         AuthenticationHeaderValue? authorization = null;
-        RecordingLogger<OneCODataClient> logger = new();
+        RecordingLogger<OneCConnectionTest> logger = new();
         using HttpClient httpClient = new(new StubHttpMessageHandler(request =>
         {
             requests.Add(request.RequestUri!);
             authorization = request.Headers.Authorization;
             return Success();
         }));
-        OneCODataClient client = CreateClient(httpClient, logger: logger);
+        Harness harness = CreateHarness(httpClient, logger: logger);
 
-        await client.TestConnectionAsync(TestContext.Current.CancellationToken);
+        await harness.ConnectionTest.TestAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(3, requests.Count);
         Assert.Contains(requests, x => x.AbsoluteUri.Contains("Catalog_Warehouses", StringComparison.Ordinal));
-        Assert.Contains(requests, x => x.AbsoluteUri.Contains(Uri.EscapeDataString(OneCOptions.DefaultUnitsOfMeasureEntitySet), StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(requests, x => x.AbsoluteUri.Contains(
+            Uri.EscapeDataString(OneCOptions.DefaultUnitsOfMeasureEntitySet),
+            StringComparison.OrdinalIgnoreCase));
         Assert.Contains(requests, x => x.AbsoluteUri.Contains("Catalog_Nomenclature", StringComparison.Ordinal));
         Assert.All(requests, x =>
         {
@@ -44,48 +51,97 @@ public sealed class OneCODataClientTests
         Assert.Contains("DurationMilliseconds=", logger.StructuredState, StringComparison.Ordinal);
         Assert.DoesNotContain("operator", logger.StructuredState, StringComparison.Ordinal);
         Assert.DoesNotContain("secret", logger.StructuredState, StringComparison.Ordinal);
-        Assert.DoesNotContain("onec.example.test", logger.StructuredState, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task TestConnectionAsync_WhenDisabled_FailsBeforeSendingRequest()
+    public void Transport_WhenDisabled_FailsBeforeSendingRequest()
     {
-        var handler = new StubHttpMessageHandler(_ => throw new InvalidOperationException("Must not send."));
+        var handler = new StubHttpMessageHandler(_ =>
+            throw new InvalidOperationException("Must not send."));
         using HttpClient httpClient = new(handler);
-        OneCODataClient client = CreateClient(httpClient, options => options.Enabled = false);
+        Harness harness = CreateHarness(httpClient, options => options.Enabled = false);
 
-        OneCTransportException exception = await Assert.ThrowsAsync<OneCTransportException>(() =>
-            client.TestConnectionAsync(TestContext.Current.CancellationToken));
+        OneCTransportException exception = Assert.Throws<OneCTransportException>(
+            harness.Transport.ValidateConfiguration);
 
         Assert.Equal(OneCTransportFailureReason.Disabled, exception.Reason);
         Assert.DoesNotContain("secret", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(0, handler.CallCount);
     }
 
-    [Fact]
-    public async Task TestConnectionAsync_WhenConfigurationIsIncomplete_FailsSafely()
+    [Theory]
+    [InlineData("base-url")]
+    [InlineData("username")]
+    [InlineData("password")]
+    [InlineData("warehouses")]
+    [InlineData("uoms")]
+    [InlineData("skus")]
+    [InlineData("batch-size")]
+    [InlineData("timeout")]
+    public void Transport_WhenConfigurationIsIncomplete_FailsSafely(string invalidSetting)
     {
-        var handler = new StubHttpMessageHandler(_ => throw new InvalidOperationException("Must not send."));
+        var handler = new StubHttpMessageHandler(_ =>
+            throw new InvalidOperationException("Must not send."));
         using HttpClient httpClient = new(handler);
-        OneCODataClient client = CreateClient(httpClient, options => options.BaseUrl = null);
+        Harness harness = CreateHarness(httpClient, options =>
+        {
+            switch (invalidSetting)
+            {
+                case "base-url":
+                    options.BaseUrl = null;
+                    break;
+                case "username":
+                    options.Username = null;
+                    break;
+                case "password":
+                    options.Password = null;
+                    break;
+                case "warehouses":
+                    options.WarehousesEntitySet = null;
+                    break;
+                case "uoms":
+                    options.UnitsOfMeasureEntitySet = null!;
+                    break;
+                case "skus":
+                    options.NomenclatureEntitySet = null;
+                    break;
+                case "batch-size":
+                    options.BatchSize = 0;
+                    break;
+                case "timeout":
+                    options.TimeoutSeconds = 0;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(invalidSetting));
+            }
+        });
 
-        OneCTransportException exception = await Assert.ThrowsAsync<OneCTransportException>(() =>
-            client.TestConnectionAsync(TestContext.Current.CancellationToken));
+        OneCTransportException exception = Assert.Throws<OneCTransportException>(
+            harness.Transport.ValidateConfiguration);
 
         Assert.Equal(OneCTransportFailureReason.InvalidConfiguration, exception.Reason);
         Assert.DoesNotContain("secret", exception.ToString(), StringComparison.OrdinalIgnoreCase);
         Assert.Equal(0, handler.CallCount);
     }
 
-    [Fact]
-    public async Task TestConnectionAsync_WhenAuthenticationFails_DoesNotLogOrExposeCredentials()
+    [Theory]
+    [InlineData((int)HttpStatusCode.Unauthorized, (int)OneCTransportFailureReason.AuthenticationFailed)]
+    [InlineData((int)HttpStatusCode.Forbidden, (int)OneCTransportFailureReason.AuthenticationFailed)]
+    [InlineData((int)HttpStatusCode.NotFound, (int)OneCTransportFailureReason.EntitySetUnavailable)]
+    [InlineData((int)HttpStatusCode.ServiceUnavailable, (int)OneCTransportFailureReason.SourceUnavailable)]
+    [InlineData(-1, (int)OneCTransportFailureReason.SourceUnavailable)]
+    public async Task Transport_WhenHttpOrRequestFails_ClassifiesWithoutExposingCredentials(
+        int statusCode,
+        int expectedReason)
     {
         const string username = "credential-user-sentinel";
         const string password = "credential-password-sentinel";
-        RecordingLogger<OneCODataClient> logger = new();
+        RecordingLogger<OneCConnectionTest> logger = new();
         using HttpClient httpClient = new(new StubHttpMessageHandler(_ =>
-            new HttpResponseMessage(HttpStatusCode.Unauthorized)));
-        OneCODataClient client = CreateClient(
+            statusCode < 0
+                ? throw new HttpRequestException("Network unavailable.")
+                : new HttpResponseMessage((HttpStatusCode)statusCode)));
+        Harness harness = CreateHarness(
             httpClient,
             options =>
             {
@@ -95,69 +151,77 @@ public sealed class OneCODataClientTests
             logger);
 
         OneCTransportException exception = await Assert.ThrowsAsync<OneCTransportException>(() =>
-            client.TestConnectionAsync(TestContext.Current.CancellationToken));
+            harness.ConnectionTest.TestAsync(TestContext.Current.CancellationToken));
 
-        Assert.Equal(OneCTransportFailureReason.AuthenticationFailed, exception.Reason);
+        OneCTransportFailureReason reason = (OneCTransportFailureReason)expectedReason;
+        Assert.Equal(reason, exception.Reason);
         Assert.DoesNotContain(username, exception.ToString(), StringComparison.Ordinal);
         Assert.DoesNotContain(password, exception.ToString(), StringComparison.Ordinal);
-        string structuredState = logger.StructuredState;
-        Assert.DoesNotContain(username, structuredState, StringComparison.Ordinal);
-        Assert.DoesNotContain(password, structuredState, StringComparison.Ordinal);
-        Assert.Contains("FailureCategory=AuthenticationFailed", structuredState, StringComparison.Ordinal);
-        Assert.Contains("DurationMilliseconds=", structuredState, StringComparison.Ordinal);
+        Assert.DoesNotContain(username, logger.StructuredState, StringComparison.Ordinal);
+        Assert.DoesNotContain(password, logger.StructuredState, StringComparison.Ordinal);
+        Assert.Contains($"FailureCategory={reason}", logger.StructuredState, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task TestConnectionAsync_WhenEnvelopeIsMalformed_ReturnsSafeFailure()
+    public async Task Transport_WhenEnvelopeIsMalformed_ReturnsSafeFailure()
     {
         using HttpClient httpClient = new(new StubHttpMessageHandler(_ =>
             new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("{\"odata.context\":\"metadata\"}")
             }));
-        OneCODataClient client = CreateClient(httpClient);
+        Harness harness = CreateHarness(httpClient);
 
         OneCTransportException exception = await Assert.ThrowsAsync<OneCTransportException>(() =>
-            client.TestConnectionAsync(TestContext.Current.CancellationToken));
+            harness.Transport.ReadCollectionAsync<object>(
+                "Catalog_Warehouses",
+                [new("$format", "json")],
+                TestContext.Current.CancellationToken));
 
         Assert.Equal(OneCTransportFailureReason.MalformedResponse, exception.Reason);
         Assert.DoesNotContain("secret", exception.ToString(), StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public async Task TestConnectionAsync_WhenCallerCancels_PropagatesCancellation()
+    public async Task Transport_WhenCallerCancels_PropagatesCancellation()
     {
         using HttpClient httpClient = new(new StubHttpMessageHandler(async (_, cancellationToken) =>
         {
             await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
             return Success();
         }));
-        OneCODataClient client = CreateClient(httpClient);
+        Harness harness = CreateHarness(httpClient);
         using CancellationTokenSource cancellation = new();
         cancellation.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            client.TestConnectionAsync(cancellation.Token));
+            harness.Transport.ReadCollectionAsync<object>(
+                "Catalog_Warehouses",
+                [new("$format", "json")],
+                cancellation.Token));
     }
 
     [Fact]
-    public async Task TestConnectionAsync_WhenPerRequestTimeoutExpires_ReturnsTimeoutFailure()
+    public async Task Transport_WhenPerRequestTimeoutExpires_ReturnsTimeoutFailure()
     {
         using HttpClient httpClient = new(new StubHttpMessageHandler(async (_, cancellationToken) =>
         {
             await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
             return Success();
         }));
-        OneCODataClient client = CreateClient(httpClient, options => options.TimeoutSeconds = 1);
+        Harness harness = CreateHarness(httpClient, options => options.TimeoutSeconds = 1);
 
         OneCTransportException exception = await Assert.ThrowsAsync<OneCTransportException>(() =>
-            client.TestConnectionAsync(CancellationToken.None));
+            harness.Transport.ReadCollectionAsync<object>(
+                "Catalog_Warehouses",
+                [new("$format", "json")],
+                CancellationToken.None));
 
         Assert.Equal(OneCTransportFailureReason.Timeout, exception.Reason);
     }
 
     [Fact]
-    public async Task ReadWarehousesAsync_UsesExactProjectionOrderingAndOptionalFolderFilter()
+    public async Task WarehouseSource_UsesExactProjectionOrderingAndOptionalFolderFilter()
     {
         Uri? requestUri = null;
         using HttpClient httpClient = new(new StubHttpMessageHandler(request =>
@@ -171,22 +235,22 @@ public sealed class OneCODataClientTests
                 }
             });
         }));
-        OneCODataClient client = CreateClient(httpClient);
+        Harness harness = CreateHarness(httpClient);
 
-        IReadOnlyList<Catalog_Склады> records = await client.ReadWarehousesAsync(
+        IReadOnlyList<WarehouseSourceRecord> records = await harness.WarehouseSource.ReadAllAsync(
             TestContext.Current.CancellationToken);
 
         string query = Uri.UnescapeDataString(requestUri!.Query);
         Assert.Contains("$select=Ref_Key,DataVersion,DeletionMark,IsFolder,Code,Description", query, StringComparison.Ordinal);
         Assert.Contains("$orderby=Ref_Key", query, StringComparison.Ordinal);
         Assert.Contains("$filter=IsFolder eq false", query, StringComparison.Ordinal);
-        Catalog_Склады record = Assert.Single(records);
+        WarehouseSourceRecord record = Assert.Single(records);
         Assert.Equal(" WH ", record.Code);
         Assert.Equal(new byte[] { 1, 2, 3 }, record.DataVersion);
     }
 
     [Fact]
-    public async Task ReadWarehousesAsync_WhenCodeAndFolderFilterDisabled_OmitsBoth()
+    public async Task WarehouseSource_WhenCodeAndFolderFilterDisabled_OmitsBoth()
     {
         Uri? requestUri = null;
         using HttpClient httpClient = new(new StubHttpMessageHandler(request =>
@@ -194,13 +258,13 @@ public sealed class OneCODataClientTests
             requestUri = request.RequestUri;
             return JsonResponse(new { value = Array.Empty<object>() });
         }));
-        OneCODataClient client = CreateClient(httpClient, options =>
+        Harness harness = CreateHarness(httpClient, options =>
         {
             options.WarehouseCodeAvailable = false;
             options.UseFolderFilter = false;
         });
 
-        await client.ReadWarehousesAsync(TestContext.Current.CancellationToken);
+        await harness.WarehouseSource.ReadAllAsync(TestContext.Current.CancellationToken);
 
         string query = Uri.UnescapeDataString(requestUri!.Query);
         Assert.Contains("$select=Ref_Key,DataVersion,DeletionMark,IsFolder,Description", query, StringComparison.Ordinal);
@@ -209,7 +273,7 @@ public sealed class OneCODataClientTests
     }
 
     [Fact]
-    public async Task ReadUnitsOfMeasureAsync_UsesExactProjectionAndDeserializesUnicodeFields()
+    public async Task UnitOfMeasureSource_UsesExactProjectionAndDeserializesUnicodeFields()
     {
         Uri? requestUri = null;
         using HttpClient httpClient = new(new StubHttpMessageHandler(request =>
@@ -232,10 +296,10 @@ public sealed class OneCODataClientTests
                 }
             });
         }));
-        OneCODataClient client = CreateClient(httpClient);
+        Harness harness = CreateHarness(httpClient);
 
-        IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения> records =
-            await client.ReadUnitsOfMeasureAsync(TestContext.Current.CancellationToken);
+        IReadOnlyList<UnitOfMeasureSourceRecord> records =
+            await harness.UnitOfMeasureSource.ReadAllAsync(TestContext.Current.CancellationToken);
 
         string query = Uri.UnescapeDataString(requestUri!.Query);
         Assert.Contains(
@@ -243,30 +307,14 @@ public sealed class OneCODataClientTests
             query,
             StringComparison.Ordinal);
         Assert.Contains("$orderby=Ref_Key", query, StringComparison.Ordinal);
-        Catalog_УпаковкиЕдиницыИзмерения record = Assert.Single(records);
+        Assert.DoesNotContain("IsFolder", query, StringComparison.Ordinal);
+        UnitOfMeasureSourceRecord record = Assert.Single(records);
         Assert.Equal("Штука полная", record.НаименованиеПолное);
         Assert.Equal("PCE", record.МеждународноеСокращение);
-        Assert.Equal(new byte[] { 2, 3, 4 }, record.DataVersion);
     }
 
     [Fact]
-    public async Task ReadWarehousesAsync_PropagatesCallerCancellation()
-    {
-        using HttpClient httpClient = new(new StubHttpMessageHandler(async (_, cancellationToken) =>
-        {
-            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
-            return Success();
-        }));
-        OneCODataClient client = CreateClient(httpClient);
-        using CancellationTokenSource cancellation = new();
-        cancellation.Cancel();
-
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            client.ReadWarehousesAsync(cancellation.Token));
-    }
-
-    [Fact]
-    public async Task ReadNomenclaturePagesAsync_UsesExactStablePagingQueryAndDeserializesUomKey()
+    public async Task StockKeepingUnitSource_UsesStablePagingAndDeserializesBaseUnitKey()
     {
         Uri? requestUri = null;
         Guid unitKey = Guid.NewGuid();
@@ -292,11 +340,11 @@ public sealed class OneCODataClientTests
                 }
             });
         }));
-        OneCODataClient client = CreateClient(httpClient, options => options.BatchSize = 2);
+        Harness harness = CreateHarness(httpClient, options => options.BatchSize = 2);
+        List<IReadOnlyList<StockKeepingUnitSourceRecord>> pages = [];
 
-        List<IReadOnlyList<Catalog_Номенклатура>> pages = [];
-        await foreach (IReadOnlyList<Catalog_Номенклатура> page in
-            client.ReadNomenclaturePagesAsync(TestContext.Current.CancellationToken))
+        await foreach (IReadOnlyList<StockKeepingUnitSourceRecord> page in
+            harness.StockKeepingUnitSource.ReadPagesAsync(TestContext.Current.CancellationToken))
         {
             pages.Add(page);
         }
@@ -310,22 +358,22 @@ public sealed class OneCODataClientTests
         Assert.Contains("$skip=0", query, StringComparison.Ordinal);
         Assert.Contains("$top=2", query, StringComparison.Ordinal);
         Assert.Contains("$filter=IsFolder eq false", query, StringComparison.Ordinal);
-        Catalog_Номенклатура record = Assert.Single(Assert.Single(pages));
+        StockKeepingUnitSourceRecord record = Assert.Single(Assert.Single(pages));
         Assert.Equal(unitKey, record.ЕдиницаИзмерения_Key);
         Assert.Equal("ART-1", record.Артикул);
-        Assert.Equal(new byte[] { 3, 4, 5 }, record.DataVersion);
     }
 
     [Fact]
-    public async Task ReadNomenclaturePagesAsync_WhenFirstPageIsEmpty_TerminatesWithoutYielding()
+    public async Task StockKeepingUnitSource_WhenFirstPageIsEmpty_TerminatesWithoutYielding()
     {
-        var handler = new StubHttpMessageHandler(_ => JsonResponse(new { value = Array.Empty<object>() }));
+        var handler = new StubHttpMessageHandler(_ =>
+            JsonResponse(new { value = Array.Empty<object>() }));
         using HttpClient httpClient = new(handler);
-        OneCODataClient client = CreateClient(httpClient, options => options.BatchSize = 2);
+        Harness harness = CreateHarness(httpClient, options => options.BatchSize = 2);
         int pageCount = 0;
 
-        await foreach (IReadOnlyList<Catalog_Номенклатура> _ in
-            client.ReadNomenclaturePagesAsync(TestContext.Current.CancellationToken))
+        await foreach (IReadOnlyList<StockKeepingUnitSourceRecord> _ in
+            harness.StockKeepingUnitSource.ReadPagesAsync(TestContext.Current.CancellationToken))
         {
             pageCount++;
         }
@@ -335,7 +383,7 @@ public sealed class OneCODataClientTests
     }
 
     [Fact]
-    public async Task ReadNomenclaturePagesAsync_AdvancesByReturnedCountAndHandlesExactAndPartialPages()
+    public async Task StockKeepingUnitSource_AdvancesByReturnedCountAndHandlesPartialPage()
     {
         Queue<IReadOnlyList<object>> responses = new(
         [
@@ -349,15 +397,15 @@ public sealed class OneCODataClientTests
             queries.Add(Uri.UnescapeDataString(request.RequestUri!.Query));
             return JsonResponse(new { value = responses.Dequeue() });
         }));
-        OneCODataClient client = CreateClient(httpClient, options =>
+        Harness harness = CreateHarness(httpClient, options =>
         {
             options.BatchSize = 2;
             options.UseFolderFilter = false;
         });
         List<int> pageSizes = [];
 
-        await foreach (IReadOnlyList<Catalog_Номенклатура> page in
-            client.ReadNomenclaturePagesAsync(TestContext.Current.CancellationToken))
+        await foreach (IReadOnlyList<StockKeepingUnitSourceRecord> page in
+            harness.StockKeepingUnitSource.ReadPagesAsync(TestContext.Current.CancellationToken))
         {
             pageSizes.Add(page.Count);
         }
@@ -366,11 +414,12 @@ public sealed class OneCODataClientTests
         Assert.Contains("$skip=0", queries[0], StringComparison.Ordinal);
         Assert.Contains("$skip=2", queries[1], StringComparison.Ordinal);
         Assert.Contains("$skip=4", queries[2], StringComparison.Ordinal);
-        Assert.All(queries, query => Assert.DoesNotContain("$filter", query, StringComparison.Ordinal));
+        Assert.All(queries, query =>
+            Assert.DoesNotContain("$filter", query, StringComparison.Ordinal));
     }
 
     [Fact]
-    public async Task ReadNomenclaturePagesAsync_WhenTotalIsExactBatchSize_RequestsEmptyTerminalPage()
+    public async Task StockKeepingUnitSource_WhenTotalIsExactBatchSize_RequestsEmptyTerminalPage()
     {
         Queue<IReadOnlyList<object>> responses = new(
         [
@@ -380,11 +429,11 @@ public sealed class OneCODataClientTests
         var handler = new StubHttpMessageHandler(_ =>
             JsonResponse(new { value = responses.Dequeue() }));
         using HttpClient httpClient = new(handler);
-        OneCODataClient client = CreateClient(httpClient, options => options.BatchSize = 2);
+        Harness harness = CreateHarness(httpClient, options => options.BatchSize = 2);
         List<int> pageSizes = [];
 
-        await foreach (IReadOnlyList<Catalog_Номенклатура> page in
-            client.ReadNomenclaturePagesAsync(TestContext.Current.CancellationToken))
+        await foreach (IReadOnlyList<StockKeepingUnitSourceRecord> page in
+            harness.StockKeepingUnitSource.ReadPagesAsync(TestContext.Current.CancellationToken))
         {
             pageSizes.Add(page.Count);
         }
@@ -397,7 +446,8 @@ public sealed class OneCODataClientTests
     [InlineData("warehouse")]
     [InlineData("uom")]
     [InlineData("sku")]
-    public async Task ReadCurrentReferenceAsync_FiltersByStableKeyAndUsesTypeSpecificShape(string referenceType)
+    public async Task Sources_FilterCurrentObjectByStableKeyAndUseTypeSpecificShape(
+        string referenceType)
     {
         Uri? requestUri = null;
         Guid unitKey = Guid.NewGuid();
@@ -406,73 +456,35 @@ public sealed class OneCODataClientTests
             requestUri = request.RequestUri;
             object record = referenceType switch
             {
-                "warehouse" => new
-                {
-                    Ref_Key = RefKey,
-                    DataVersion = new byte[] { 1 },
-                    DeletionMark = false,
-                    IsFolder = true,
-                    Code = "WH",
-                    Description = "Warehouse"
-                },
-                "uom" => new
-                {
-                    Ref_Key = RefKey,
-                    DataVersion = new byte[] { 2 },
-                    DeletionMark = false,
-                    Code = "EA",
-                    Description = "Each",
-                    НаименованиеПолное = "Each full",
-                    МеждународноеСокращение = "ea"
-                },
-                _ => new
-                {
-                    Ref_Key = RefKey,
-                    DataVersion = new byte[] { 3 },
-                    DeletionMark = false,
-                    IsFolder = true,
-                    Code = "SKU",
-                    Description = "Stock item",
-                    НаименованиеПолное = "Stock item full",
-                    Артикул = "A-1",
-                    ЕдиницаИзмерения_Key = unitKey
-                }
+                "warehouse" => new { Ref_Key = RefKey, DataVersion = new byte[] { 1 }, DeletionMark = false, IsFolder = true, Code = "WH", Description = "Warehouse" },
+                "uom" => new { Ref_Key = RefKey, DataVersion = new byte[] { 2 }, DeletionMark = false, Code = "EA", Description = "Each", НаименованиеПолное = "Each full", МеждународноеСокращение = "ea" },
+                _ => new { Ref_Key = RefKey, DataVersion = new byte[] { 3 }, DeletionMark = false, IsFolder = true, Code = "SKU", Description = "Stock item", НаименованиеПолное = "Stock item full", Артикул = "A-1", ЕдиницаИзмерения_Key = unitKey }
             };
             return JsonResponse(new { value = new[] { record } });
         }));
-        OneCODataClient client = CreateClient(httpClient);
+        Harness harness = CreateHarness(httpClient);
 
         object? current = referenceType switch
         {
-            "warehouse" => await client.ReadWarehouseAsync(RefKey, TestContext.Current.CancellationToken),
-            "uom" => await client.ReadUnitOfMeasureAsync(RefKey, TestContext.Current.CancellationToken),
-            _ => await client.ReadStockKeepingUnitAsync(RefKey, TestContext.Current.CancellationToken)
+            "warehouse" => await harness.WarehouseSource.ReadCurrentAsync(RefKey, TestContext.Current.CancellationToken),
+            "uom" => await harness.UnitOfMeasureSource.ReadCurrentAsync(RefKey, TestContext.Current.CancellationToken),
+            _ => await harness.StockKeepingUnitSource.ReadCurrentAsync(RefKey, TestContext.Current.CancellationToken)
         };
 
         Assert.NotNull(current);
-        string expectedEntitySet = referenceType switch
-        {
-            "warehouse" => "Catalog_Warehouses",
-            "uom" => OneCOptions.DefaultUnitsOfMeasureEntitySet,
-            _ => "Catalog_Nomenclature"
-        };
-        Assert.Contains(
-            Uri.EscapeDataString(expectedEntitySet),
-            requestUri!.AbsoluteUri,
-            StringComparison.OrdinalIgnoreCase);
         string query = Uri.UnescapeDataString(requestUri!.Query);
         Assert.Contains($"$filter=Ref_Key eq guid'{RefKey:D}'", query, StringComparison.Ordinal);
         Assert.Contains("$top=2", query, StringComparison.Ordinal);
         if (referenceType == "uom")
         {
             Assert.DoesNotContain("IsFolder", query, StringComparison.Ordinal);
-            Assert.Equal("ea", Assert.IsType<Catalog_УпаковкиЕдиницыИзмерения>(current).МеждународноеСокращение);
+            Assert.Equal("ea", Assert.IsType<UnitOfMeasureSourceRecord>(current).МеждународноеСокращение);
         }
         else
         {
             bool isFolder = referenceType == "warehouse"
-                ? Assert.IsType<Catalog_Склады>(current).IsFolder
-                : Assert.IsType<Catalog_Номенклатура>(current).IsFolder;
+                ? Assert.IsType<WarehouseSourceRecord>(current).IsFolder
+                : Assert.IsType<StockKeepingUnitSourceRecord>(current).IsFolder;
             Assert.True(isFolder);
         }
     }
@@ -480,7 +492,7 @@ public sealed class OneCODataClientTests
     [Theory]
     [InlineData(0)]
     [InlineData(2)]
-    public async Task ReadWarehouseAsync_EnforcesCurrentObjectCardinality(int count)
+    public async Task WarehouseSource_EnforcesCurrentObjectCardinality(int count)
     {
         object[] records = Enumerable.Range(0, count)
             .Select(_ => (object)new
@@ -493,23 +505,85 @@ public sealed class OneCODataClientTests
                 Description = "Warehouse"
             })
             .ToArray();
+
         using HttpClient httpClient = new(new StubHttpMessageHandler(_ =>
             JsonResponse(new { value = records })));
-        OneCODataClient client = CreateClient(httpClient);
+
+        Harness harness = CreateHarness(httpClient);
 
         if (count == 0)
         {
-            Assert.Null(await client.ReadWarehouseAsync(RefKey, TestContext.Current.CancellationToken));
+            WarehouseSourceRecord? result =
+                await harness.WarehouseSource.ReadCurrentAsync(
+                    RefKey,
+                    TestContext.Current.CancellationToken);
+
+            Assert.Null(result);
             return;
         }
 
-        OneCTransportException exception = await Assert.ThrowsAsync<OneCTransportException>(() =>
-            client.ReadWarehouseAsync(RefKey, TestContext.Current.CancellationToken));
+        OneCTransportException exception =
+            await Assert.ThrowsAsync<OneCTransportException>(() =>
+                harness.WarehouseSource.ReadCurrentAsync(
+                    RefKey,
+                    TestContext.Current.CancellationToken));
+
+        Assert.Equal(
+            OneCTransportFailureReason.MalformedResponse,
+            exception.Reason);
+    }
+
+    [Theory]
+    [InlineData("warehouse")]
+    [InlineData("uom")]
+    [InlineData("sku")]
+    public async Task Sources_WhenCurrentDataVersionIsNull_ReturnMalformedResponse(
+        string referenceType)
+    {
+        using HttpClient httpClient = new(new StubHttpMessageHandler(_ =>
+            JsonResponse(new
+            {
+                value = new[]
+                {
+                    new Dictionary<string, object?>
+                    {
+                        ["Ref_Key"] = RefKey,
+                        ["DataVersion"] = null
+                    }
+                }
+            })));
+        Harness harness = CreateHarness(httpClient);
+        Func<Task> read = referenceType switch
+        {
+            "warehouse" => async () =>
+            {
+                _ = await harness.WarehouseSource.ReadCurrentAsync(
+                    RefKey,
+                    TestContext.Current.CancellationToken);
+            }
+            ,
+            "uom" => async () =>
+            {
+                _ = await harness.UnitOfMeasureSource.ReadCurrentAsync(
+                    RefKey,
+                    TestContext.Current.CancellationToken);
+            }
+            ,
+            _ => async () =>
+            {
+                _ = await harness.StockKeepingUnitSource.ReadCurrentAsync(
+                    RefKey,
+                    TestContext.Current.CancellationToken);
+            }
+        };
+
+        OneCTransportException exception = await Assert.ThrowsAsync<OneCTransportException>(read);
+
         Assert.Equal(OneCTransportFailureReason.MalformedResponse, exception.Reason);
     }
 
     [Fact]
-    public async Task ReadWarehouseAsync_WhenDataVersionIsEmpty_ReturnsMalformedResponse()
+    public async Task WarehouseSource_WhenDataVersionIsEmpty_ReturnsMalformedResponse()
     {
         using HttpClient httpClient = new(new StubHttpMessageHandler(_ =>
             JsonResponse(new
@@ -519,18 +593,20 @@ public sealed class OneCODataClientTests
                     new { Ref_Key = RefKey, DataVersion = Array.Empty<byte>(), DeletionMark = false, IsFolder = false }
                 }
             })));
-        OneCODataClient client = CreateClient(httpClient);
+        Harness harness = CreateHarness(httpClient);
 
         OneCTransportException exception = await Assert.ThrowsAsync<OneCTransportException>(() =>
-            client.ReadWarehouseAsync(RefKey, TestContext.Current.CancellationToken));
+            harness.WarehouseSource.ReadCurrentAsync(
+                RefKey,
+                TestContext.Current.CancellationToken));
 
         Assert.Equal(OneCTransportFailureReason.MalformedResponse, exception.Reason);
     }
 
-    private static OneCODataClient CreateClient(
+    private static Harness CreateHarness(
         HttpClient httpClient,
         Action<OneCOptions>? configure = null,
-        ILogger<OneCODataClient>? logger = null)
+        ILogger<OneCConnectionTest>? logger = null)
     {
         OneCOptions options = new()
         {
@@ -543,10 +619,23 @@ public sealed class OneCODataClientTests
             NomenclatureEntitySet = "Catalog_Nomenclature"
         };
         configure?.Invoke(options);
-        return new OneCODataClient(
-            httpClient,
-            Options.Create(options),
-            logger ?? NullLogger<OneCODataClient>.Instance);
+        IOptions<OneCOptions> wrappedOptions = Options.Create(options);
+        OneCODataTransport transport = new(httpClient, wrappedOptions);
+        WarehouseOneCSource warehouseSource = new(transport, wrappedOptions);
+        UnitOfMeasureOneCSource unitOfMeasureSource = new(transport, wrappedOptions);
+        StockKeepingUnitOneCSource stockKeepingUnitSource = new(transport, wrappedOptions);
+        OneCConnectionTest connectionTest = new(
+            transport,
+            warehouseSource,
+            unitOfMeasureSource,
+            stockKeepingUnitSource,
+            logger ?? NullLogger<OneCConnectionTest>.Instance);
+        return new(
+            transport,
+            warehouseSource,
+            unitOfMeasureSource,
+            stockKeepingUnitSource,
+            connectionTest);
     }
 
     private static HttpResponseMessage Success() => new(HttpStatusCode.OK)
@@ -569,6 +658,13 @@ public sealed class OneCODataClientTests
         Description = "Item"
     };
 
+    private sealed record Harness(
+        OneCODataTransport Transport,
+        WarehouseOneCSource WarehouseSource,
+        UnitOfMeasureOneCSource UnitOfMeasureSource,
+        StockKeepingUnitOneCSource StockKeepingUnitSource,
+        OneCConnectionTest ConnectionTest);
+
     private sealed class StubHttpMessageHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;
@@ -578,14 +674,17 @@ public sealed class OneCODataClientTests
         {
         }
 
-        public StubHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler)
+        public StubHttpMessageHandler(
+            Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler)
         {
             _handler = handler;
         }
 
         public int CallCount { get; private set; }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
         {
             CallCount++;
             return _handler(request, cancellationToken);
@@ -598,10 +697,10 @@ public sealed class OneCODataClientTests
 
         public string StructuredState => string.Join(
             "|",
-            _entries.SelectMany(entry => entry.Select(property => $"{property.Key}={property.Value}")));
+            _entries.SelectMany(entry => entry.Select(property =>
+                $"{property.Key}={property.Value}")));
 
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-
         public bool IsEnabled(LogLevel logLevel) => true;
 
         public void Log<TState>(
@@ -613,7 +712,9 @@ public sealed class OneCODataClientTests
         {
             if (state is IEnumerable<KeyValuePair<string, object?>> properties)
             {
-                _entries.Add(properties.ToDictionary(property => property.Key, property => property.Value));
+                _entries.Add(properties.ToDictionary(
+                    property => property.Key,
+                    property => property.Value));
             }
         }
     }

@@ -1,4 +1,4 @@
-namespace Myrmex.Integrations.OneC.References;
+namespace Myrmex.Integrations.OneC.Common.References;
 
 internal enum OneCReferenceType
 {

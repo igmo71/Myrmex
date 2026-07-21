@@ -3,10 +3,13 @@ using Microsoft.Extensions.Options;
 using Myrmex.AppDispatching.CommandDispatching;
 using Myrmex.Core.Application;
 using Myrmex.Core.Results;
+using Myrmex.Integrations.OneC.Common.Imports;
+using Myrmex.Integrations.OneC.Common.References;
+using Myrmex.Integrations.OneC.Common.Transport;
 using Myrmex.Integrations.OneC.Configuration;
-using Myrmex.Integrations.OneC.Imports;
-using Myrmex.Integrations.OneC.References;
-using Myrmex.Integrations.OneC.Transport;
+using Myrmex.Integrations.OneC.StockKeepingUnits;
+using Myrmex.Integrations.OneC.UnitsOfMeasure;
+using Myrmex.Integrations.OneC.Warehouses;
 using Myrmex.Modules.Wms.Catalog.Features.Imports;
 using Myrmex.Modules.Wms.Topology.Features.Imports;
 using System.Runtime.CompilerServices;
@@ -34,85 +37,85 @@ public sealed class OneCReferenceSynchronizationServiceTests
         ReferenceSynchronizationOutcome expectedOutcome,
         bool retrySuitable)
     {
-        StubODataClient source = new()
+        Exception? exception = scenario switch
         {
-            Warehouse = scenario == "not-found"
-                ? null
-                : Warehouse(
-                    isFolder: scenario == "warehouse-folder",
-                    isDeletionMarked: scenario == "unlinked-deletion"),
-            StockKeepingUnit = StockKeepingUnit(isFolder: scenario == "sku-folder"),
-            Exception = scenario switch
-            {
-                "transient" => new OneCTransportException(
-                    OneCTransportFailureReason.SourceUnavailable,
-                    "Unavailable."),
-                "timeout" => new OneCTransportException(
-                    OneCTransportFailureReason.Timeout,
-                    "Timed out."),
-                "permanent" => new OneCTransportException(
-                    OneCTransportFailureReason.MalformedResponse,
-                    "Malformed."),
-                _ => null
-            }
+            "transient" => new OneCTransportException(
+                OneCTransportFailureReason.SourceUnavailable, "Unavailable."),
+            "timeout" => new OneCTransportException(
+                OneCTransportFailureReason.Timeout, "Timed out."),
+            "permanent" => new OneCTransportException(
+                OneCTransportFailureReason.MalformedResponse, "Malformed."),
+            _ => null
         };
         RecordingDispatcher dispatcher = new(Batch(scenario));
         OneCImportGate gate = new();
         using IDisposable? heldLease = scenario == "busy"
             ? gate.Acquire(OneCImportGate.Warehouses)
             : null;
-        OneCReferenceSynchronizationService service = CreateService(source, dispatcher, gate);
 
-        ReferenceSynchronizationResult result = scenario == "sku-folder"
-            ? await service.SynchronizeStockKeepingUnitAsync(
-                ExternalRefKey,
-                TestContext.Current.CancellationToken)
-            : await service.SynchronizeWarehouseAsync(
+        ReferenceSynchronizationResult result;
+        int currentReadCount;
+        if (scenario == "sku-folder")
+        {
+            StubStockKeepingUnitSource source = new(
+                StockKeepingUnit(isFolder: true),
+                exception);
+            StockKeepingUnitOneCSynchronizer synchronizer = new(
+                source,
+                new UnusedUnitOfMeasureSynchronizer(),
+                dispatcher,
+                gate,
+                TimeProvider.System,
+                NullLogger<StockKeepingUnitOneCSynchronizer>.Instance);
+            result = await synchronizer.SynchronizeAsync(
                 ExternalRefKey,
                 TestContext.Current.CancellationToken);
+            currentReadCount = source.CurrentReadCount;
+        }
+        else
+        {
+            StubWarehouseSource source = new(
+                scenario == "not-found" ? null : Warehouse(
+                    isFolder: scenario == "warehouse-folder",
+                    isDeletionMarked: scenario == "unlinked-deletion"),
+                exception);
+            WarehouseOneCSynchronizer synchronizer = CreateWarehouseSynchronizer(
+                source,
+                dispatcher,
+                gate);
+            result = await synchronizer.SynchronizeAsync(
+                ExternalRefKey,
+                TestContext.Current.CancellationToken);
+            currentReadCount = source.CurrentReadCount;
+        }
 
         Assert.Equal(expectedOutcome, result.Outcome);
         Assert.Equal(ExternalRefKey, result.ExternalRefKey);
         Assert.Equal(retrySuitable, result.RetrySuitable);
         bool shouldDispatch = scenario is "applied" or "unchanged" or "unlinked-deletion";
         Assert.Equal(shouldDispatch ? 1 : 0, dispatcher.CallCount);
-        Assert.Equal(scenario == "busy" ? 0 : 1, source.CurrentReadCount);
+        Assert.Equal(scenario == "busy" ? 0 : 1, currentReadCount);
     }
 
-    [Theory]
-    [InlineData(OneCReferenceType.Warehouse)]
-    [InlineData(OneCReferenceType.UnitOfMeasure)]
-    [InlineData(OneCReferenceType.StockKeepingUnit)]
-    internal async Task SynchronizeAsync_DispatchesTheSupportedTypeAndKey(
-        OneCReferenceType referenceType)
+    [Fact]
+    public async Task UnitOfMeasureSynchronizer_MapsAndDispatchesWithoutFolderBehavior()
     {
-        StubODataClient source = new()
-        {
-            Warehouse = Warehouse(isFolder: false, isDeletionMarked: false),
-            UnitOfMeasure = UnitOfMeasure(),
-            StockKeepingUnit = StockKeepingUnit(isFolder: false)
-        };
+        StubUnitOfMeasureSource source = new(UnitOfMeasure());
         RecordingDispatcher dispatcher = new(Batch("applied"));
-        OneCReferenceSynchronizationService service = CreateService(
+        UnitOfMeasureOneCSynchronizer synchronizer = new(
             source,
             dispatcher,
-            new OneCImportGate());
+            new OneCImportGate(),
+            TimeProvider.System,
+            NullLogger<UnitOfMeasureOneCSynchronizer>.Instance);
 
-        await service.SynchronizeAsync(
-            referenceType,
+        ReferenceSynchronizationResult result = await synchronizer.SynchronizeAsync(
             ExternalRefKey,
             TestContext.Current.CancellationToken);
 
-        Assert.Equal(referenceType, source.LastReadType);
-        Assert.Equal(ExternalRefKey, source.LastExternalRefKey);
-        Type expectedCommandType = referenceType switch
-        {
-            OneCReferenceType.Warehouse => typeof(ImportWarehouses.Command),
-            OneCReferenceType.UnitOfMeasure => typeof(ImportUnitsOfMeasure.Command),
-            OneCReferenceType.StockKeepingUnit => typeof(ImportStockKeepingUnits.Command),
-            _ => throw new ArgumentOutOfRangeException(nameof(referenceType))
-        };
-        Assert.Equal(expectedCommandType, dispatcher.LastCommand?.GetType());
+        Assert.Equal(ReferenceSynchronizationOutcome.Applied, result.Outcome);
+        Assert.Equal(1, source.CurrentReadCount);
+        Assert.IsType<ImportUnitsOfMeasure.Command>(dispatcher.LastCommand);
     }
 
     [Fact]
@@ -120,53 +123,46 @@ public sealed class OneCReferenceSynchronizationServiceTests
     {
         using CancellationTokenSource cancellation = new();
         cancellation.Cancel();
-        StubODataClient source = new()
-        {
-            Warehouse = Warehouse(isFolder: false, isDeletionMarked: false)
-        };
-        OneCReferenceSynchronizationService service = CreateService(
+        StubWarehouseSource source = new(
+            Warehouse(isFolder: false, isDeletionMarked: false),
+            exception: null);
+        WarehouseOneCSynchronizer synchronizer = CreateWarehouseSynchronizer(
             source,
             new RecordingDispatcher(Batch("applied")),
             new OneCImportGate());
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            service.SynchronizeAsync(
-                OneCReferenceType.Warehouse,
-                ExternalRefKey,
-                cancellation.Token));
+            synchronizer.SynchronizeAsync(ExternalRefKey, cancellation.Token));
     }
 
-    private static OneCReferenceSynchronizationService CreateService(
-        IOneCODataClient source,
+    private static WarehouseOneCSynchronizer CreateWarehouseSynchronizer(
+        IWarehouseOneCSource source,
         ICommandDispatcher dispatcher,
         OneCImportGate gate) =>
         new(
             source,
             dispatcher,
-            Options.Create(new OneCOptions
-            {
-                Enabled = true,
-                BaseUrl = "https://onec.example.test/odata/",
-                Username = "operator",
-                Password = "secret",
-                WarehousesEntitySet = "Catalog_Warehouses",
-                UnitsOfMeasureEntitySet = OneCOptions.DefaultUnitsOfMeasureEntitySet,
-                NomenclatureEntitySet = "Catalog_Nomenclature"
-            }),
+            Options.Create(OptionsValue()),
             gate,
             TimeProvider.System,
-            NullLogger<OneCReferenceSynchronizationService>.Instance);
+            NullLogger<WarehouseOneCSynchronizer>.Instance);
+
+    private static OneCOptions OptionsValue() => new()
+    {
+        Enabled = true,
+        BaseUrl = "https://onec.example.test/odata/",
+        Username = "operator",
+        Password = "secret",
+        WarehousesEntitySet = "Catalog_Warehouses",
+        UnitsOfMeasureEntitySet = OneCOptions.DefaultUnitsOfMeasureEntitySet,
+        NomenclatureEntitySet = "Catalog_Nomenclature"
+    };
 
     private static ReferenceImportBatchResult Batch(string scenario) => scenario switch
     {
         "unchanged" => new(1, 0, 0, 1, 0, 0, []),
         "unlinked-deletion" => new(
-            1,
-            0,
-            0,
-            0,
-            1,
-            0,
+            1, 0, 0, 0, 1, 0,
             [new ReferenceImportRecordError(
                 ExternalRefKey,
                 "WH",
@@ -175,7 +171,7 @@ public sealed class OneCReferenceSynchronizationServiceTests
         _ => new(1, 1, 0, 0, 0, 0, [])
     };
 
-    private static Catalog_Склады Warehouse(bool isFolder, bool isDeletionMarked) => new()
+    private static WarehouseSourceRecord Warehouse(bool isFolder, bool isDeletionMarked) => new()
     {
         Ref_Key = ExternalRefKey,
         DataVersion = [1],
@@ -185,7 +181,7 @@ public sealed class OneCReferenceSynchronizationServiceTests
         DeletionMark = isDeletionMarked
     };
 
-    private static Catalog_Номенклатура StockKeepingUnit(bool isFolder) => new()
+    private static StockKeepingUnitSourceRecord StockKeepingUnit(bool isFolder) => new()
     {
         Ref_Key = ExternalRefKey,
         DataVersion = [1],
@@ -195,7 +191,7 @@ public sealed class OneCReferenceSynchronizationServiceTests
         ЕдиницаИзмерения_Key = Guid.NewGuid()
     };
 
-    private static Catalog_УпаковкиЕдиницыИзмерения UnitOfMeasure() => new()
+    private static UnitOfMeasureSourceRecord UnitOfMeasure() => new()
     {
         Ref_Key = ExternalRefKey,
         DataVersion = [1],
@@ -205,54 +201,82 @@ public sealed class OneCReferenceSynchronizationServiceTests
         МеждународноеСокращение = "ea"
     };
 
-    private sealed class StubODataClient : IOneCODataClient
+    private sealed class StubWarehouseSource(
+        WarehouseSourceRecord? record,
+        Exception? exception) : IWarehouseOneCSource
     {
-        public Catalog_Склады? Warehouse { get; init; }
-        public Catalog_УпаковкиЕдиницыИзмерения? UnitOfMeasure { get; init; }
-        public Catalog_Номенклатура? StockKeepingUnit { get; init; }
-        public Exception? Exception { get; init; }
         public int CurrentReadCount { get; private set; }
-        public OneCReferenceType? LastReadType { get; private set; }
-        public Guid? LastExternalRefKey { get; private set; }
 
-        public void ValidateConfiguration() { }
-        public Task TestConnectionAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-        public Task<IReadOnlyList<Catalog_Склады>> ReadWarehousesAsync(CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<Catalog_Склады>>([]);
-        public Task<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>> ReadUnitsOfMeasureAsync(
+        public Task<IReadOnlyList<WarehouseSourceRecord>> ReadAllAsync(
             CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>>([]);
-        public async IAsyncEnumerable<IReadOnlyList<Catalog_Номенклатура>> ReadNomenclaturePagesAsync(
+            Task.FromResult<IReadOnlyList<WarehouseSourceRecord>>([]);
+
+        public Task<WarehouseSourceRecord?> ReadCurrentAsync(
+            Guid externalRefKey,
+            CancellationToken cancellationToken)
+        {
+            CurrentReadCount++;
+            Assert.Equal(ExternalRefKey, externalRefKey);
+            return exception is null
+                ? Task.FromResult(record)
+                : Task.FromException<WarehouseSourceRecord?>(exception);
+        }
+
+        public Task ProbeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
+    private sealed class StubUnitOfMeasureSource(UnitOfMeasureSourceRecord record)
+        : IUnitOfMeasureOneCSource
+    {
+        public int CurrentReadCount { get; private set; }
+
+        public Task<IReadOnlyList<UnitOfMeasureSourceRecord>> ReadAllAsync(
+            CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<UnitOfMeasureSourceRecord>>([]);
+
+        public Task<UnitOfMeasureSourceRecord?> ReadCurrentAsync(
+            Guid externalRefKey,
+            CancellationToken cancellationToken)
+        {
+            CurrentReadCount++;
+            return Task.FromResult<UnitOfMeasureSourceRecord?>(record);
+        }
+
+        public Task ProbeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
+    private sealed class StubStockKeepingUnitSource(
+        StockKeepingUnitSourceRecord record,
+        Exception? exception) : IStockKeepingUnitOneCSource
+    {
+        public int CurrentReadCount { get; private set; }
+
+        public async IAsyncEnumerable<IReadOnlyList<StockKeepingUnitSourceRecord>> ReadPagesAsync(
             [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             await Task.CompletedTask;
             yield break;
         }
 
-        public Task<Catalog_Склады?> ReadWarehouseAsync(
+        public Task<StockKeepingUnitSourceRecord?> ReadCurrentAsync(
             Guid externalRefKey,
-            CancellationToken cancellationToken) =>
-            Return(Warehouse, OneCReferenceType.Warehouse, externalRefKey);
-        public Task<Catalog_УпаковкиЕдиницыИзмерения?> ReadUnitOfMeasureAsync(
-            Guid externalRefKey,
-            CancellationToken cancellationToken) =>
-            Return(UnitOfMeasure, OneCReferenceType.UnitOfMeasure, externalRefKey);
-        public Task<Catalog_Номенклатура?> ReadStockKeepingUnitAsync(
-            Guid externalRefKey,
-            CancellationToken cancellationToken) =>
-            Return(StockKeepingUnit, OneCReferenceType.StockKeepingUnit, externalRefKey);
-
-        private Task<T?> Return<T>(
-            T? value,
-            OneCReferenceType referenceType,
-            Guid externalRefKey)
-            where T : class
+            CancellationToken cancellationToken)
         {
             CurrentReadCount++;
-            LastReadType = referenceType;
-            LastExternalRefKey = externalRefKey;
-            return Exception is null ? Task.FromResult(value) : Task.FromException<T?>(Exception);
+            return exception is null
+                ? Task.FromResult<StockKeepingUnitSourceRecord?>(record)
+                : Task.FromException<StockKeepingUnitSourceRecord?>(exception);
         }
+
+        public Task ProbeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    }
+
+    private sealed class UnusedUnitOfMeasureSynchronizer : IUnitOfMeasureOneCSynchronizer
+    {
+        public Task<ReferenceSynchronizationResult> SynchronizeAsync(
+            Guid externalRefKey,
+            CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("Folder handling must not invoke dependency repair.");
     }
 
     private sealed class RecordingDispatcher(ReferenceImportBatchResult batch) : ICommandDispatcher

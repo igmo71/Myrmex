@@ -4,13 +4,17 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Myrmex.AspNetCore.Security;
+using Myrmex.Integrations.OneC.Common.Transport;
 using Myrmex.Integrations.OneC.Configuration;
+using Myrmex.Integrations.OneC.Connection;
 using Myrmex.Integrations.OneC.Endpoints;
-using Myrmex.Integrations.OneC.Imports;
 using Myrmex.Integrations.OneC.Notifications;
 using Myrmex.Integrations.OneC.Security;
-using Myrmex.Integrations.OneC.Transport;
+using Myrmex.Integrations.OneC.StockKeepingUnits;
+using Myrmex.Integrations.OneC.UnitsOfMeasure;
+using Myrmex.Integrations.OneC.Warehouses;
 using Myrmex.Integrations.Persistence;
 using Myrmex.Integrations.Persistence.SqlServer;
 using Myrmex.Integrations.Synchronization;
@@ -39,7 +43,7 @@ public sealed class IntegrationAuthorizationEndpointTests
     [Fact]
     public async Task OneCEndpoint_WhenAnonymous_Returns401WithoutSourceAccess()
     {
-        RecordingOneCClient source = new();
+        RecordingOneCSources source = new();
         await using WebApplication app = CreateApp(source);
         await app.StartAsync(TestContext.Current.CancellationToken);
 
@@ -54,7 +58,7 @@ public sealed class IntegrationAuthorizationEndpointTests
     [Fact]
     public async Task OneCEndpoint_WhenUnprivileged_Returns403WithoutSourceAccess()
     {
-        RecordingOneCClient source = new();
+        RecordingOneCSources source = new();
         await using WebApplication app = CreateApp(source);
         await app.StartAsync(TestContext.Current.CancellationToken);
 
@@ -73,8 +77,8 @@ public sealed class IntegrationAuthorizationEndpointTests
     public async Task OneCAdminAndImportEndpoints_WhenEligibleRole_ReturnSuccess(
         string role)
     {
-        RecordingOneCClient source = new();
-        RecordingOneCImportService importService = new();
+        RecordingOneCSources source = new();
+        RecordingOneCImports importService = new();
         await using WebApplication app = CreateApp(source, importService);
         await app.StartAsync(TestContext.Current.CancellationToken);
 
@@ -98,7 +102,7 @@ public sealed class IntegrationAuthorizationEndpointTests
             }
         }
 
-        Assert.Equal(1, source.CallCount);
+        Assert.Equal(3, source.CallCount);
         Assert.Equal(ImportPaths.Length, importService.CallCount);
     }
 
@@ -109,9 +113,9 @@ public sealed class IntegrationAuthorizationEndpointTests
         string? role,
         HttpStatusCode expectedStatus)
     {
-        RecordingOneCImportService importService = new();
+        RecordingOneCImports importService = new();
         await using WebApplication app = CreateApp(
-            new RecordingOneCClient(),
+            new RecordingOneCSources(),
             importService);
         await app.StartAsync(TestContext.Current.CancellationToken);
 
@@ -130,7 +134,7 @@ public sealed class IntegrationAuthorizationEndpointTests
     [Fact]
     public async Task NotificationEndpoint_WhenIntegrationApiKeyIsValid_ReturnsAccepted()
     {
-        await using WebApplication app = CreateApp(new RecordingOneCClient());
+        await using WebApplication app = CreateApp(new RecordingOneCSources());
         await app.StartAsync(TestContext.Current.CancellationToken);
 
         using HttpResponseMessage response = await SendNotificationAsync(
@@ -147,7 +151,7 @@ public sealed class IntegrationAuthorizationEndpointTests
     public async Task NotificationEndpoint_WhenIntegrationApiKeyIsMissingOrInvalid_Returns401(
         string? apiKey)
     {
-        await using WebApplication app = CreateApp(new RecordingOneCClient());
+        await using WebApplication app = CreateApp(new RecordingOneCSources());
         await app.StartAsync(TestContext.Current.CancellationToken);
 
         using HttpResponseMessage response = await SendNotificationAsync(
@@ -161,7 +165,7 @@ public sealed class IntegrationAuthorizationEndpointTests
     [Fact]
     public async Task NotificationEndpoint_WhenOnlyApiSessionCookieIsPresent_Returns401()
     {
-        await using WebApplication app = CreateApp(new RecordingOneCClient());
+        await using WebApplication app = CreateApp(new RecordingOneCSources());
         await app.StartAsync(TestContext.Current.CancellationToken);
 
         string cookie = app.Services.CreateApiSessionCookie(
@@ -182,8 +186,8 @@ public sealed class IntegrationAuthorizationEndpointTests
     public async Task OneCAdminAndImportEndpoints_WhenMachineApiKeyIsPresent_Return401(
         string path)
     {
-        RecordingOneCClient source = new();
-        RecordingOneCImportService importService = new();
+        RecordingOneCSources source = new();
+        RecordingOneCImports importService = new();
         await using WebApplication app = CreateApp(source, importService);
         await app.StartAsync(TestContext.Current.CancellationToken);
 
@@ -199,14 +203,22 @@ public sealed class IntegrationAuthorizationEndpointTests
     }
 
     private static WebApplication CreateApp(
-        IOneCODataClient source,
-        IOneCImportService? importService = null)
+        RecordingOneCSources source,
+        RecordingOneCImports? importService = null)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
-        builder.Services.AddSingleton(source);
-        builder.Services.AddSingleton(
-            importService ?? new RecordingOneCImportService());
+        RecordingOneCImports imports = importService ?? new RecordingOneCImports();
+        OneCConnectionTest connectionTest = new(
+            new StubTransport(),
+            source,
+            source,
+            source,
+            NullLogger<OneCConnectionTest>.Instance);
+        builder.Services.AddSingleton(connectionTest);
+        builder.Services.AddSingleton<IWarehouseOneCImport>(imports);
+        builder.Services.AddSingleton<IUnitOfMeasureOneCImport>(imports);
+        builder.Services.AddSingleton<IStockKeepingUnitOneCImport>(imports);
         builder.Services.AddSingleton<TimeProvider>(
             new FixedTimeProvider(CheckedAtUtc));
         builder.Services.AddTestApiSessionAuthentication();
@@ -297,63 +309,81 @@ public sealed class IntegrationAuthorizationEndpointTests
         return new HttpClient { BaseAddress = new Uri(address) };
     }
 
-    private sealed class RecordingOneCClient : IOneCODataClient
+    private sealed class StubTransport : IOneCODataTransport
+    {
+        public void ValidateConfiguration() { }
+
+        public Task<IReadOnlyList<T>> ReadCollectionAsync<T>(
+            string entitySet,
+            IEnumerable<KeyValuePair<string, string>> parameters,
+            CancellationToken cancellationToken)
+            where T : class => throw new NotSupportedException();
+    }
+
+    private sealed class RecordingOneCSources :
+        IWarehouseOneCSource,
+        IUnitOfMeasureOneCSource,
+        IStockKeepingUnitOneCSource
     {
         public int CallCount { get; private set; }
 
-        public void ValidateConfiguration()
-        {
-        }
-
-        public Task TestConnectionAsync(CancellationToken cancellationToken)
-        {
-            CallCount++;
-            return Task.CompletedTask;
-        }
-
-        public Task<IReadOnlyList<Catalog_Склады>> ReadWarehousesAsync(
+        public Task<IReadOnlyList<WarehouseSourceRecord>> ReadAllAsync(
             CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<Catalog_Склады>>([]);
+            Task.FromResult<IReadOnlyList<WarehouseSourceRecord>>([]);
 
-        public Task<Catalog_Склады?> ReadWarehouseAsync(
+        public Task<WarehouseSourceRecord?> ReadCurrentAsync(
             Guid externalRefKey,
-            CancellationToken cancellationToken) => Task.FromResult<Catalog_Склады?>(null);
+            CancellationToken cancellationToken) => Task.FromResult<WarehouseSourceRecord?>(null);
 
-        public Task<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>>
-            ReadUnitsOfMeasureAsync(CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<Catalog_УпаковкиЕдиницыИзмерения>>([]);
+        Task IWarehouseOneCSource.ProbeAsync(CancellationToken cancellationToken) => ProbeAsync();
 
-        public Task<Catalog_УпаковкиЕдиницыИзмерения?> ReadUnitOfMeasureAsync(
-            Guid externalRefKey,
+        Task<IReadOnlyList<UnitOfMeasureSourceRecord>> IUnitOfMeasureOneCSource.ReadAllAsync(
             CancellationToken cancellationToken) =>
-            Task.FromResult<Catalog_УпаковкиЕдиницыИзмерения?>(null);
+            Task.FromResult<IReadOnlyList<UnitOfMeasureSourceRecord>>([]);
 
-        public async IAsyncEnumerable<IReadOnlyList<Catalog_Номенклатура>>
-            ReadNomenclaturePagesAsync(
-                [EnumeratorCancellation] CancellationToken cancellationToken)
+        Task<UnitOfMeasureSourceRecord?> IUnitOfMeasureOneCSource.ReadCurrentAsync(
+            Guid externalRefKey,
+            CancellationToken cancellationToken) => Task.FromResult<UnitOfMeasureSourceRecord?>(null);
+
+        Task IUnitOfMeasureOneCSource.ProbeAsync(CancellationToken cancellationToken) => ProbeAsync();
+
+        public async IAsyncEnumerable<IReadOnlyList<StockKeepingUnitSourceRecord>> ReadPagesAsync(
+            [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             await Task.CompletedTask;
             yield break;
         }
 
-        public Task<Catalog_Номенклатура?> ReadStockKeepingUnitAsync(
+        Task<StockKeepingUnitSourceRecord?> IStockKeepingUnitOneCSource.ReadCurrentAsync(
             Guid externalRefKey,
-            CancellationToken cancellationToken) => Task.FromResult<Catalog_Номенклатура?>(null);
+            CancellationToken cancellationToken) =>
+            Task.FromResult<StockKeepingUnitSourceRecord?>(null);
+
+        Task IStockKeepingUnitOneCSource.ProbeAsync(CancellationToken cancellationToken) => ProbeAsync();
+
+        private Task ProbeAsync()
+        {
+            CallCount++;
+            return Task.CompletedTask;
+        }
     }
 
-    private sealed class RecordingOneCImportService : IOneCImportService
+    private sealed class RecordingOneCImports :
+        IWarehouseOneCImport,
+        IUnitOfMeasureOneCImport,
+        IStockKeepingUnitOneCImport
     {
         public int CallCount { get; private set; }
 
-        public Task<OneCImportResponse> ImportWarehousesAsync(
+        Task<OneCImportResponse> IWarehouseOneCImport.ImportAsync(
             CancellationToken cancellationToken) =>
             CompleteAsync("warehouses");
 
-        public Task<OneCImportResponse> ImportUnitsOfMeasureAsync(
+        Task<OneCImportResponse> IUnitOfMeasureOneCImport.ImportAsync(
             CancellationToken cancellationToken) =>
             CompleteAsync("uoms");
 
-        public Task<OneCImportResponse> ImportStockKeepingUnitsAsync(
+        Task<OneCImportResponse> IStockKeepingUnitOneCImport.ImportAsync(
             CancellationToken cancellationToken) =>
             CompleteAsync("skus");
 

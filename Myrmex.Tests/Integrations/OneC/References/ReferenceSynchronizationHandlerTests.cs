@@ -1,4 +1,4 @@
-using Myrmex.Integrations.OneC.References;
+using Myrmex.Integrations.OneC.Common.References;
 using Myrmex.Integrations.Synchronization;
 using Myrmex.Integrations.Synchronization.Processing;
 
@@ -14,29 +14,14 @@ public sealed class ReferenceSynchronizationHandlerTests
     [InlineData(ReferenceSynchronizationOutcome.TransientFailure, SynchronizationHandlerResultKind.TransientFailure)]
     [InlineData(ReferenceSynchronizationOutcome.NotFound, SynchronizationHandlerResultKind.PermanentFailure)]
     [InlineData(ReferenceSynchronizationOutcome.PermanentFailure, SynchronizationHandlerResultKind.PermanentFailure)]
-    internal async Task Handler_MapsInternalOutcomeToExistingFeature104Result(
+    internal void Mapper_MapsInternalOutcomeToExistingFeature104Result(
         ReferenceSynchronizationOutcome outcome,
         SynchronizationHandlerResultKind expectedKind)
     {
-        Guid externalRefKey = Guid.NewGuid();
-        StubSynchronizationService service = new(Result(externalRefKey, outcome));
-        WarehouseReferenceSynchronizationHandler handler = new(service);
-        SynchronizationRequest request = new()
-        {
-            SourceSystem = "OneC",
-            SourceInstance = "main",
-            EntityType = SynchronizationEntityTypes.Warehouse,
-            ExternalId = externalRefKey.ToString("D"),
-            ExternalDataVersion = [1],
-            ReceivedAtUtc = DateTimeOffset.UtcNow
-        };
-
-        SynchronizationHandlerResult result = await handler.HandleAsync(
-            request,
-            TestContext.Current.CancellationToken);
+        ReferenceSynchronizationHandlerResultMapper mapper = new();
+        SynchronizationHandlerResult result = mapper.Map(Result(Guid.NewGuid(), outcome));
 
         Assert.Equal(expectedKind, result.Kind);
-        Assert.Equal(externalRefKey, service.ExternalRefKey);
         Assert.DoesNotContain(
             nameof(ReferenceSynchronizationOutcome.NotFound),
             Enum.GetNames<SynchronizationStatus>());
@@ -61,32 +46,4 @@ public sealed class ReferenceSynchronizationHandlerTests
                 "Expected diagnostic.",
                 retrySuitable: outcome is ReferenceSynchronizationOutcome.Busy or
                     ReferenceSynchronizationOutcome.TransientFailure);
-
-    private sealed class StubSynchronizationService(ReferenceSynchronizationResult result)
-        : IOneCReferenceSynchronizationService
-    {
-        public Guid? ExternalRefKey { get; private set; }
-
-        public Task<ReferenceSynchronizationResult> SynchronizeAsync(
-            OneCReferenceType referenceType,
-            Guid externalRefKey,
-            CancellationToken cancellationToken) =>
-            Task.FromResult(result);
-
-        public Task<ReferenceSynchronizationResult> SynchronizeWarehouseAsync(
-            Guid externalRefKey,
-            CancellationToken cancellationToken)
-        {
-            ExternalRefKey = externalRefKey;
-            return Task.FromResult(result);
-        }
-
-        public Task<ReferenceSynchronizationResult> SynchronizeUnitOfMeasureAsync(
-            Guid externalRefKey,
-            CancellationToken cancellationToken) => throw new NotSupportedException();
-
-        public Task<ReferenceSynchronizationResult> SynchronizeStockKeepingUnitAsync(
-            Guid externalRefKey,
-            CancellationToken cancellationToken) => throw new NotSupportedException();
-    }
 }

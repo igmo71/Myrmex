@@ -6,12 +6,16 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using Myrmex.AspNetCore.Security;
+using Myrmex.Integrations.OneC.Common.Imports;
+using Myrmex.Integrations.OneC.Common.References;
+using Myrmex.Integrations.OneC.Common.Transport;
 using Myrmex.Integrations.OneC.Configuration;
-using Myrmex.Integrations.OneC.Imports;
+using Myrmex.Integrations.OneC.Connection;
 using Myrmex.Integrations.OneC.Notifications;
-using Myrmex.Integrations.OneC.References;
 using Myrmex.Integrations.OneC.Security;
-using Myrmex.Integrations.OneC.Transport;
+using Myrmex.Integrations.OneC.StockKeepingUnits;
+using Myrmex.Integrations.OneC.UnitsOfMeasure;
+using Myrmex.Integrations.OneC.Warehouses;
 using Myrmex.Integrations.Persistence;
 using Myrmex.Integrations.Persistence.SqlServer;
 using Myrmex.Integrations.Synchronization;
@@ -71,7 +75,7 @@ public static class OneCIntegrationModule
         services.AddSingleton<OneCChangeNotificationValidator>();
         services.AddScoped<SynchronizationRequestFactory>();
         services.AddScoped<SynchronizationRequestStore>();
-        services.AddScoped<IOneCReferenceSynchronizationService, OneCReferenceSynchronizationService>();
+        services.AddSingleton<ReferenceSynchronizationHandlerResultMapper>();
         services.AddScoped<ISynchronizationHandler, WarehouseReferenceSynchronizationHandler>();
         services.AddScoped<ISynchronizationHandler, UnitOfMeasureReferenceSynchronizationHandler>();
         services.AddScoped<ISynchronizationHandler, StockKeepingUnitReferenceSynchronizationHandler>();
@@ -81,14 +85,27 @@ public static class OneCIntegrationModule
 
         services.AddSingleton<SqlServerDuplicateSynchronizationRequestDetector>();
 
-        services.AddHttpClient<IOneCODataClient, OneCODataClient>(client =>
+        services.AddHttpClient<IOneCODataTransport, OneCODataTransport>(client =>
         {
             client.Timeout = Timeout.InfiniteTimeSpan;
         });
 
         services.AddSingleton<OneCImportGate>();
+        services.AddScoped<OneCImportResponseFactory>();
 
-        services.AddScoped<IOneCImportService, OneCImportService>();
+        services.AddScoped<IWarehouseOneCSource, WarehouseOneCSource>();
+        services.AddScoped<IWarehouseOneCImport, WarehouseOneCImport>();
+        services.AddScoped<IWarehouseOneCSynchronizer, WarehouseOneCSynchronizer>();
+
+        services.AddScoped<IUnitOfMeasureOneCSource, UnitOfMeasureOneCSource>();
+        services.AddScoped<IUnitOfMeasureOneCImport, UnitOfMeasureOneCImport>();
+        services.AddScoped<IUnitOfMeasureOneCSynchronizer, UnitOfMeasureOneCSynchronizer>();
+
+        services.AddScoped<IStockKeepingUnitOneCSource, StockKeepingUnitOneCSource>();
+        services.AddScoped<IStockKeepingUnitOneCImport, StockKeepingUnitOneCImport>();
+        services.AddScoped<IStockKeepingUnitOneCSynchronizer, StockKeepingUnitOneCSynchronizer>();
+
+        services.AddScoped<OneCConnectionTest>();
 
         return services;
     }

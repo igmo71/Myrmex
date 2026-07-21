@@ -3,8 +3,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Myrmex.AspNetCore.Security;
-using Myrmex.Integrations.OneC.Imports;
-using Myrmex.Integrations.OneC.Transport;
+using Myrmex.Integrations.OneC.Common.Imports;
+using Myrmex.Integrations.OneC.Common.Transport;
+using Myrmex.Integrations.OneC.Connection;
+using Myrmex.Integrations.OneC.StockKeepingUnits;
+using Myrmex.Integrations.OneC.UnitsOfMeasure;
+using Myrmex.Integrations.OneC.Warehouses;
 using Myrmex.Shared.Integrations.OneC;
 
 namespace Myrmex.Integrations.OneC.Endpoints;
@@ -38,33 +42,63 @@ public static class OneCEndpoints
     }
 
     private static Task<IResult> ImportWarehousesAsync(
-        IOneCImportService importService,
+        IWarehouseOneCImport importOperation,
         CancellationToken cancellationToken) =>
-        ImportAsync(
-            importService.ImportWarehousesAsync,
-            cancellationToken);
+        ImportWarehouseAsync(importOperation, cancellationToken);
 
     private static Task<IResult> ImportUnitsOfMeasureAsync(
-        IOneCImportService importService,
+        IUnitOfMeasureOneCImport importOperation,
         CancellationToken cancellationToken) =>
-        ImportAsync(
-            importService.ImportUnitsOfMeasureAsync,
-            cancellationToken);
+        ImportUnitOfMeasureAsync(importOperation, cancellationToken);
 
     private static Task<IResult> ImportStockKeepingUnitsAsync(
-        IOneCImportService importService,
+        IStockKeepingUnitOneCImport importOperation,
         CancellationToken cancellationToken) =>
-        ImportAsync(
-            importService.ImportStockKeepingUnitsAsync,
-            cancellationToken);
+        ImportStockKeepingUnitAsync(importOperation, cancellationToken);
 
-    private static async Task<IResult> ImportAsync(
-        Func<CancellationToken, Task<OneCImportResponse>> import,
+    private static async Task<IResult> ImportWarehouseAsync(
+        IWarehouseOneCImport importOperation,
         CancellationToken cancellationToken)
     {
         try
         {
-            return TypedResults.Ok(await import(cancellationToken));
+            return TypedResults.Ok(await importOperation.ImportAsync(cancellationToken));
+        }
+        catch (OneCImportAlreadyInProgressException exception)
+        {
+            return CreateAlreadyInProgressProblem(exception);
+        }
+        catch (OneCTransportException exception)
+        {
+            return CreateProblem(exception);
+        }
+    }
+
+    private static async Task<IResult> ImportUnitOfMeasureAsync(
+        IUnitOfMeasureOneCImport importOperation,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return TypedResults.Ok(await importOperation.ImportAsync(cancellationToken));
+        }
+        catch (OneCImportAlreadyInProgressException exception)
+        {
+            return CreateAlreadyInProgressProblem(exception);
+        }
+        catch (OneCTransportException exception)
+        {
+            return CreateProblem(exception);
+        }
+    }
+
+    private static async Task<IResult> ImportStockKeepingUnitAsync(
+        IStockKeepingUnitOneCImport importOperation,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return TypedResults.Ok(await importOperation.ImportAsync(cancellationToken));
         }
         catch (OneCImportAlreadyInProgressException exception)
         {
@@ -77,13 +111,13 @@ public static class OneCEndpoints
     }
 
     private static async Task<IResult> TestConnectionAsync(
-        IOneCODataClient client,
+        OneCConnectionTest connectionTest,
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
         try
         {
-            await client.TestConnectionAsync(cancellationToken);
+            await connectionTest.TestAsync(cancellationToken);
             return TypedResults.Ok(new OneCConnectionTestResponse(
                 timeProvider.GetUtcNow(),
                 IsReady: true,

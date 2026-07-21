@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Myrmex.Integrations.OneC.Transport;
+namespace Myrmex.Integrations.OneC.Common.Transport;
 
 internal sealed class OneCODataCollectionResponse<T>
 {
