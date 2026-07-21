@@ -28,17 +28,17 @@ As a warehouse user, I need each SKU's available physical characteristics to be 
 
 ### User Story 2 - View Available Characteristics (Priority: P2)
 
-As a warehouse user viewing an SKU in the existing WebApp, I need to see its available normalized physical characteristics with clear units so that I can understand the physical properties of one base unit.
+As a warehouse user viewing an SKU in the existing WebApp SKU details or edit view, I need to see its available normalized physical characteristics with clear units so that I can understand the physical properties of one base unit.
 
 **Why this priority**: Synchronized data delivers immediate user value only when it is visible and unambiguous in the existing SKU experience.
 
-**Independent Test**: Open existing SKU views for records with all, some, and none of the supported characteristics and verify that available values and units are clear, missing values cause no error, and no edit action is offered.
+**Independent Test**: Open the existing SKU details or edit view for records with all, some, and none of the supported characteristics and verify that available values and units are clear, missing values cause no error, and no edit action is offered. SKU lists, lookups, and grids do not need to display the characteristics.
 
 **Acceptance Scenarios**:
 
-1. **Given** an SKU with one or more synchronized characteristics, **When** a user opens that SKU in the WebApp, **Then** each available value is displayed with its canonical unit and is identified as applying to one base unit.
-2. **Given** an SKU with one or more absent characteristics, **When** a user opens that SKU in the WebApp, **Then** the page remains usable and does not present an absent value as zero.
-3. **Given** a synchronized characteristic displayed in the WebApp, **When** the user views it, **Then** no control permits the user to edit that value.
+1. **Given** an SKU with one or more synchronized characteristics, **When** a user opens that SKU's existing details or edit view, **Then** each available value is displayed with its canonical unit and is identified as applying to one base unit.
+2. **Given** an SKU with one or more absent characteristics, **When** a user opens that SKU's existing details or edit view, **Then** the page remains usable and does not present an absent value as zero.
+3. **Given** a synchronized characteristic displayed on the SKU details or edit view, **When** the user views it, **Then** no control permits the user to edit that value.
 
 ---
 
@@ -60,7 +60,7 @@ As a data administrator, I need repeated synchronization to replace changed valu
 
 - A characteristic whose `Использовать` flag is false is absent even if its remaining source fields contain values.
 - A characteristic is absent when its referenced unit cannot be found, its measurement type does not match the characteristic, or its source or conversion denominator is zero.
-- A missing, incomplete, non-numeric, or otherwise invalid source value makes only that characteristic absent; it does not reject the SKU or suppress other valid characteristics.
+- A missing, incomplete, non-numeric, or otherwise invalid source value makes only that characteristic absent; it does not reject the SKU or suppress other valid characteristics, and the normalization problem is reported through existing synchronization diagnostics or logging.
 - A valid normalized value of zero remains a known zero and is distinguishable from an absent characteristic.
 - Very small or large valid values retain enough precision to represent the source conversion without silently becoming absent or zero.
 - Volume remains independent: it can exist without length, and it is never calculated from length or any other dimension.
@@ -81,10 +81,11 @@ As a data administrator, I need repeated synchronization to replace changed valu
 - **FR-009**: Each characteristic MUST be resolved independently so invalid or absent data for one does not prevent other valid characteristics from being synchronized.
 - **FR-010**: Volume MUST be taken only from its independent 1C volume source and MUST NOT be derived from length or other dimensions.
 - **FR-011**: Repeated synchronization MUST replace changed valid values and clear previously stored values that are now disabled or unresolvable.
-- **FR-012**: Existing SKU WebApp views MUST display every available normalized characteristic with an unambiguous canonical unit and MUST handle absent characteristics without error or misleading zero values.
-- **FR-013**: Characteristics populated from 1C MUST be read-only in the WebApp.
+- **FR-012**: The existing SKU details or edit view in the WebApp MUST display every available normalized characteristic with an unambiguous canonical unit and MUST handle absent characteristics without error or misleading zero values; SKU lists, lookups, and grids are not required to display these characteristics.
+- **FR-013**: Characteristics populated from 1C MUST be read-only on the SKU details or edit view.
 - **FR-014**: This feature MUST NOT add packaging levels, SKU packaging, width, height, depth, packaging dimensions, LPN or handling-unit behavior, storage-capacity validation, putaway calculations, automatic location selection, a general-purpose units framework, or changes to receipt and inventory processes.
 - **FR-015**: This feature MUST limit imported unit data to the information needed to validate and normalize the four supported SKU characteristics.
+- **FR-016**: An unresolvable characteristic MUST NOT reject the SKU or block other valid characteristics, and its normalization problem MUST be reported through the existing synchronization diagnostics or logging mechanism without introducing a new diagnostics subsystem or workflow.
 
 ### Key Entities
 
@@ -99,10 +100,8 @@ As a data administrator, I need repeated synchronization to replace changed valu
 - **SC-001**: Across an acceptance set covering every supported characteristic and source unit, 100% of valid source values match the expected canonical values after synchronization.
 - **SC-002**: Across cases with disabled, incomplete, mismatched, unknown, or invalid source data, 100% of affected characteristics are absent rather than represented as zero, while independently valid characteristics remain available.
 - **SC-003**: After a repeated synchronization, 100% of tested changed values are refreshed and 100% of tested disabled or newly unresolvable values are cleared.
-- **SC-004**: In user acceptance testing, at least 90% of participants correctly identify every available characteristic, its unit, and which characteristics are absent on their first inspection of an SKU view.
-- **SC-005**: At least 95% of SKU views containing physical characteristics display their available values within two seconds under normal operating conditions, with no errors caused by missing characteristics.
-- **SC-006**: Synchronizing a representative batch of 10,000 SKUs takes no more than 10% longer than the established baseline for the same batch without physical-characteristic processing.
-- **SC-007**: Review of delivered scope finds zero new workflows for packaging, manual characteristic editing, separate imports, receipt processing, inventory processing, capacity validation, or putaway selection.
+- **SC-004**: Across SKU details or edit views covering all, some, and none of the supported characteristics, 100% of available values are shown read-only with their canonical units, while absent values cause no error and are not presented as zero.
+- **SC-005**: Review of delivered scope finds zero new workflows for packaging, manual characteristic editing, separate imports, receipt processing, inventory processing, capacity validation, diagnostics, or putaway selection.
 
 ## Assumptions
 
@@ -110,5 +109,6 @@ As a data administrator, I need repeated synchronization to replace changed valu
 - Existing authorization for viewing SKU details also governs access to the displayed characteristics.
 - The established 1C synchronization schedule, triggering behavior, failure reporting, and retry behavior remain unchanged.
 - Existing numeric precision and rounding policy for business measurements is sufficient for normalized characteristic values and will be applied consistently.
-- A source characteristic is valid only when its referenced unit's measurement type matches that characteristic and both the source and conversion ratios are mathematically valid.
-- The WebApp's existing SKU experience is the presentation location; this feature does not add a separate physical-characteristics screen.
+- A source characteristic is valid only when its referenced unit's measurement type matches that characteristic and both the source and conversion ratios are mathematically valid. Zero numerators and normalized zero values remain valid; absence is distinct from numeric zero.
+- The expected, but not yet confirmed, conversion interpretation is `source numerator / source denominator × unit numerator / unit denominator`. The implementation plan MUST validate this interpretation against representative real 1C records before implementation.
+- The WebApp's existing SKU details or edit view is the presentation location; this feature does not add a separate physical-characteristics screen or require the characteristics on SKU lists, lookups, or grids.
