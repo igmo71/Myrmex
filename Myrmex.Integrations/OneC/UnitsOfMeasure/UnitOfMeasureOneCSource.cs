@@ -52,12 +52,13 @@ internal sealed class UnitOfMeasureOneCSource(
                 ],
                 cancellationToken);
 
-        if (records.Count == 0)
+        if (records.Count != 1)
         {
-            return null;
+            throw MalformedCurrentObject();
         }
 
-        if (records.Count != 1 || records[0].Ref_Key != externalRefKey ||
+        if (records[0].Ref_Key != externalRefKey ||
+            records[0].DataVersion is null ||
             records[0].DataVersion.Length is < 1 or > MaximumDataVersionLength)
         {
             throw MalformedCurrentObject();

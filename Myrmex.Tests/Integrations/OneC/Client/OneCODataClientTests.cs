@@ -306,6 +306,7 @@ public sealed class OneCODataClientTests
             "$select=Ref_Key,DataVersion,DeletionMark,Code,Description,НаименованиеПолное,МеждународноеСокращение",
             query,
             StringComparison.Ordinal);
+        Assert.Contains("$orderby=Ref_Key", query, StringComparison.Ordinal);
         Assert.DoesNotContain("IsFolder", query, StringComparison.Ordinal);
         UnitOfMeasureSourceRecord record = Assert.Single(records);
         Assert.Equal("Штука полная", record.НаименованиеПолное);
@@ -349,6 +350,10 @@ public sealed class OneCODataClientTests
         }
 
         string query = Uri.UnescapeDataString(requestUri!.Query);
+        Assert.Contains(
+            "$select=Ref_Key,DataVersion,DeletionMark,IsFolder,Code,Description,НаименованиеПолное,Артикул,ЕдиницаИзмерения_Key",
+            query,
+            StringComparison.Ordinal);
         Assert.Contains("$orderby=Ref_Key", query, StringComparison.Ordinal);
         Assert.Contains("$skip=0", query, StringComparison.Ordinal);
         Assert.Contains("$top=2", query, StringComparison.Ordinal);
@@ -409,6 +414,8 @@ public sealed class OneCODataClientTests
         Assert.Contains("$skip=0", queries[0], StringComparison.Ordinal);
         Assert.Contains("$skip=2", queries[1], StringComparison.Ordinal);
         Assert.Contains("$skip=4", queries[2], StringComparison.Ordinal);
+        Assert.All(queries, query =>
+            Assert.DoesNotContain("$filter", query, StringComparison.Ordinal));
     }
 
     [Fact]
@@ -502,18 +509,57 @@ public sealed class OneCODataClientTests
             JsonResponse(new { value = records })));
         Harness harness = CreateHarness(httpClient);
 
-        if (count == 0)
-        {
-            Assert.Null(await harness.WarehouseSource.ReadCurrentAsync(
-                RefKey,
-                TestContext.Current.CancellationToken));
-            return;
-        }
-
         OneCTransportException exception = await Assert.ThrowsAsync<OneCTransportException>(() =>
             harness.WarehouseSource.ReadCurrentAsync(
                 RefKey,
                 TestContext.Current.CancellationToken));
+        Assert.Equal(OneCTransportFailureReason.MalformedResponse, exception.Reason);
+    }
+
+    [Theory]
+    [InlineData("warehouse")]
+    [InlineData("uom")]
+    [InlineData("sku")]
+    public async Task Sources_WhenCurrentDataVersionIsNull_ReturnMalformedResponse(
+        string referenceType)
+    {
+        using HttpClient httpClient = new(new StubHttpMessageHandler(_ =>
+            JsonResponse(new
+            {
+                value = new[]
+                {
+                    new Dictionary<string, object?>
+                    {
+                        ["Ref_Key"] = RefKey,
+                        ["DataVersion"] = null
+                    }
+                }
+            })));
+        Harness harness = CreateHarness(httpClient);
+        Func<Task> read = referenceType switch
+        {
+            "warehouse" => async () =>
+            {
+                _ = await harness.WarehouseSource.ReadCurrentAsync(
+                    RefKey,
+                    TestContext.Current.CancellationToken);
+            },
+            "uom" => async () =>
+            {
+                _ = await harness.UnitOfMeasureSource.ReadCurrentAsync(
+                    RefKey,
+                    TestContext.Current.CancellationToken);
+            },
+            _ => async () =>
+            {
+                _ = await harness.StockKeepingUnitSource.ReadCurrentAsync(
+                    RefKey,
+                    TestContext.Current.CancellationToken);
+            }
+        };
+
+        OneCTransportException exception = await Assert.ThrowsAsync<OneCTransportException>(read);
+
         Assert.Equal(OneCTransportFailureReason.MalformedResponse, exception.Reason);
     }
 
