@@ -82,12 +82,13 @@ internal sealed class StockKeepingUnitOneCSource(
                 ],
                 cancellationToken);
 
-        if (records.Count != 1)
+        if (records.Count == 0)
         {
-            throw MalformedCurrentObject();
+            return null;
         }
 
-        if (records[0].Ref_Key != externalRefKey ||
+        if (records.Count != 1 ||
+            records[0].Ref_Key != externalRefKey ||
             records[0].DataVersion is null ||
             records[0].DataVersion.Length is < 1 or > MaximumDataVersionLength)
         {

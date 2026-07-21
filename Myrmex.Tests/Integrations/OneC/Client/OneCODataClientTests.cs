@@ -1,5 +1,3 @@
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -9,6 +7,8 @@ using Myrmex.Integrations.OneC.Connection;
 using Myrmex.Integrations.OneC.StockKeepingUnits;
 using Myrmex.Integrations.OneC.UnitsOfMeasure;
 using Myrmex.Integrations.OneC.Warehouses;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 
 namespace Myrmex.Tests.Integrations.OneC.Client;
 
@@ -505,15 +505,32 @@ public sealed class OneCODataClientTests
                 Description = "Warehouse"
             })
             .ToArray();
+
         using HttpClient httpClient = new(new StubHttpMessageHandler(_ =>
             JsonResponse(new { value = records })));
+
         Harness harness = CreateHarness(httpClient);
 
-        OneCTransportException exception = await Assert.ThrowsAsync<OneCTransportException>(() =>
-            harness.WarehouseSource.ReadCurrentAsync(
-                RefKey,
-                TestContext.Current.CancellationToken));
-        Assert.Equal(OneCTransportFailureReason.MalformedResponse, exception.Reason);
+        if (count == 0)
+        {
+            WarehouseSourceRecord? result =
+                await harness.WarehouseSource.ReadCurrentAsync(
+                    RefKey,
+                    TestContext.Current.CancellationToken);
+
+            Assert.Null(result);
+            return;
+        }
+
+        OneCTransportException exception =
+            await Assert.ThrowsAsync<OneCTransportException>(() =>
+                harness.WarehouseSource.ReadCurrentAsync(
+                    RefKey,
+                    TestContext.Current.CancellationToken));
+
+        Assert.Equal(
+            OneCTransportFailureReason.MalformedResponse,
+            exception.Reason);
     }
 
     [Theory]
@@ -543,13 +560,15 @@ public sealed class OneCODataClientTests
                 _ = await harness.WarehouseSource.ReadCurrentAsync(
                     RefKey,
                     TestContext.Current.CancellationToken);
-            },
+            }
+            ,
             "uom" => async () =>
             {
                 _ = await harness.UnitOfMeasureSource.ReadCurrentAsync(
                     RefKey,
                     TestContext.Current.CancellationToken);
-            },
+            }
+            ,
             _ => async () =>
             {
                 _ = await harness.StockKeepingUnitSource.ReadCurrentAsync(
