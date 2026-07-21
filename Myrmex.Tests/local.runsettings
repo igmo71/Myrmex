@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<RunSettings>
-  <RunConfiguration>
-    <EnvironmentVariables>
-      <MYRMEX_WMS_TEST_CONNECTION>Data Source=vm-bi-sql.dobroga.local;Initial Catalog=Myrmex_test;Persist Security Info=True;User ID=sa;Password=Ser45zx;Encrypt=False;TrustServerCertificate=True</MYRMEX_WMS_TEST_CONNECTION>
-    </EnvironmentVariables>
-  </RunConfiguration>
-</RunSettings>
