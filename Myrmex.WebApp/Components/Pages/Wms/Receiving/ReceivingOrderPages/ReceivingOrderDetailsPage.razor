@@ -9,7 +9,10 @@
 
 <PageTitle>@Localizer["Receiving.DetailsTitle"]</PageTitle>
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
-    @if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
     else if (_order is null)
     {
         @if (!string.IsNullOrWhiteSpace(_error))
@@ -39,19 +42,25 @@
                     }
                 </MudStack>
             </MudStack>
-            @if (!string.IsNullOrWhiteSpace(_message)) { <MudAlert Severity="Severity.Info">@_message</MudAlert> }
-            @if (!string.IsNullOrWhiteSpace(_error)) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+            @if (!string.IsNullOrWhiteSpace(_message))
+            {
+                <MudAlert Severity="Severity.Info">@_message</MudAlert>
+            }
+            @if (!string.IsNullOrWhiteSpace(_error))
+            {
+                <MudAlert Severity="Severity.Error">@_error</MudAlert>
+            }
             <MudPaper Class="pa-4">
                 <MudGrid>
-                    <MudItem xs="12" md="4"><MudText Typo="Typo.caption">@Localizer["Common.Warehouse"]</MudText><MudText>@_order.Warehouse.Code - @_order.Warehouse.Name</MudText></MudItem>
-                    <MudItem xs="12" md="4"><MudText Typo="Typo.caption">@Localizer["Receiving.Location"]</MudText><MudText>@_order.ReceivingLocation.Code - @_order.ReceivingLocation.Name</MudText></MudItem>
-                    <MudItem xs="4"><MudText Typo="Typo.caption">@Localizer["Receiving.Planned"]</MudText><MudText>@_order.TotalPlannedQuantity.ToString("0.####")</MudText></MudItem>
-                    <MudItem xs="4"><MudText Typo="Typo.caption">@Localizer["Receiving.Received"]</MudText><MudText>@_order.TotalReceivedQuantity.ToString("0.####")</MudText></MudItem>
-                    <MudItem xs="4"><MudText Typo="Typo.caption">@Localizer["Receiving.Remaining"]</MudText><MudText>@_order.TotalRemainingQuantity.ToString("0.####")</MudText></MudItem>
-                    <MudItem xs="6" md="3"><MudText Typo="Typo.caption">@Localizer["Common.Created"]</MudText><MudText>@FormatDateTime(_order.CreatedAtUtc)</MudText></MudItem>
-                    <MudItem xs="6" md="3"><MudText Typo="Typo.caption">@Localizer["Common.Updated"]</MudText><MudText>@FormatDateTime(_order.UpdatedAtUtc)</MudText></MudItem>
-                    <MudItem xs="6" md="3"><MudText Typo="Typo.caption">@Localizer["Receiving.StartedAt"]</MudText><MudText>@FormatDateTime(_order.StartedAtUtc)</MudText></MudItem>
-                    <MudItem xs="6" md="3"><MudText Typo="Typo.caption">@Localizer["Receiving.CompletedAt"]</MudText><MudText>@FormatDateTime(_order.CompletedAtUtc)</MudText></MudItem>
+                    <MudItem xs="6" md="2"><MudText Typo="Typo.caption">@Localizer["Common.Warehouse"]</MudText><MudText>@_order.Warehouse.Code - @_order.Warehouse.Name</MudText></MudItem>
+                    <MudItem xs="6" md="2"><MudText Typo="Typo.caption">@Localizer["Receiving.Location"]</MudText><MudText>@_order.ReceivingLocation.Code - @_order.ReceivingLocation.Name</MudText></MudItem>
+                    <MudItem xs="4" md="1"><MudText Typo="Typo.caption">@Localizer["Receiving.Planned"]</MudText><MudText>@_order.TotalPlannedQuantity.ToString("0.####")</MudText></MudItem>
+                    <MudItem xs="4" md="1"><MudText Typo="Typo.caption">@Localizer["Receiving.Received"]</MudText><MudText>@_order.TotalReceivedQuantity.ToString("0.####")</MudText></MudItem>
+                    <MudItem xs="4" md="1"><MudText Typo="Typo.caption">@Localizer["Receiving.Remaining"]</MudText><MudText>@_order.TotalRemainingQuantity.ToString("0.####")</MudText></MudItem>
+                    <MudItem xs="6" md="1"><MudText Typo="Typo.caption">@Localizer["Common.Created"]</MudText><MudText>@FormatDateTime(_order.CreatedAtUtc)</MudText></MudItem>
+                    <MudItem xs="6" md="1"><MudText Typo="Typo.caption">@Localizer["Receiving.StartedAt"]</MudText><MudText>@FormatDateTime(_order.StartedAtUtc)</MudText></MudItem>
+                    <MudItem xs="6" md="1"><MudText Typo="Typo.caption">@Localizer["Receiving.CompletedAt"]</MudText><MudText>@FormatDateTime(_order.CompletedAtUtc)</MudText></MudItem>
+                    <MudItem xs="6" md="1"><MudText Typo="Typo.caption">@Localizer["Common.Updated"]</MudText><MudText>@FormatDateTime(_order.UpdatedAtUtc)</MudText></MudItem>
                     @if (_order.InventoryTransactionId.HasValue)
                     {
                         <MudItem xs="12"><MudButton Variant="Variant.Text" Disabled="_saving" OnClick="OpenTransactionAsync">@Localizer["Receiving.Transaction"]: @_order.InventoryTransactionId.Value</MudButton></MudItem>
@@ -61,8 +70,17 @@
             <MudTable Items="_order.Lines" Dense="true" Bordered="true" Hover="true">
                 <HeaderContent><MudTh>@Localizer["Common.Sku"]</MudTh><MudTh>@Localizer["Sku.BaseUnitOfMeasure"]</MudTh><MudTh>@Localizer["Receiving.Planned"]</MudTh><MudTh>@Localizer["Receiving.Received"]</MudTh><MudTh>@Localizer["Receiving.Remaining"]</MudTh><MudTh>@Localizer["Common.Actions"]</MudTh></HeaderContent>
                 <RowTemplate>
-                    <MudTd>@context.Sku.Code - @context.Sku.Name</MudTd><MudTd>@FormatBaseUnitOfMeasure(context)</MudTd><MudTd>@context.PlannedQuantity.ToString("0.####")</MudTd><MudTd>@context.ReceivedQuantity.ToString("0.####")</MudTd><MudTd>@context.RemainingQuantity.ToString("0.####")</MudTd>
-                    <MudTd>@if (_order.Status == ReceivingOrderStatusDetails.InProgress && context.RemainingQuantity > 0) { <MudButton Size="Size.Small" Disabled="_saving" OnClick="@(() => ReceiveAsync(context))">@Localizer["Receiving.Receive"]</MudButton> }</MudTd>
+                    <MudTd>@context.Sku.Code - @context.Sku.Name</MudTd>
+                    <MudTd>@FormatBaseUnitOfMeasure(context)</MudTd>
+                    <MudTd>@context.PlannedQuantity.ToString("0.####")</MudTd>
+                    <MudTd>@context.ReceivedQuantity.ToString("0.####")</MudTd>
+                    <MudTd>@context.RemainingQuantity.ToString("0.####")</MudTd>
+                    <MudTd>
+                        @if (_order.Status == ReceivingOrderStatusDetails.InProgress && context.RemainingQuantity > 0)
+                        {
+                            <MudButton Size="Size.Small" Disabled="_saving" OnClick="@(() => ReceiveAsync(context))">@Localizer["Receiving.Receive"]</MudButton>
+                        }
+                    </MudTd>
                 </RowTemplate>
             </MudTable>
         </MudStack>
