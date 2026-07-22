@@ -87,6 +87,19 @@ internal static class StockKeepingUnitPhysicalCharacteristicsNormalizer
             return null;
         }
 
+        if (sourceNumerator.Value < 0m)
+        {
+            issues.Add(new Issue(characteristic, IssueReason.NegativeSourceNumerator, unitExternalRefKey));
+            return null;
+        }
+
+        if (sourceDenominator.Value < 0m)
+        {
+            issues.Add(new Issue(characteristic, IssueReason.NegativeSourceDenominator, unitExternalRefKey));
+
+            return null;
+        }
+
         if (!unitExternalRefKey.HasValue || unitExternalRefKey.Value == Guid.Empty)
         {
             issues.Add(new Issue(characteristic, IssueReason.MissingUnitReference, unitExternalRefKey));
@@ -105,10 +118,7 @@ internal static class StockKeepingUnitPhysicalCharacteristicsNormalizer
             return null;
         }
 
-        if (!string.Equals(
-                unit.ТипИзмеряемойВеличины,
-                expectedMeasurementType,
-                StringComparison.Ordinal))
+        if (!string.Equals(unit.ТипИзмеряемойВеличины, expectedMeasurementType, StringComparison.Ordinal))
         {
             issues.Add(new Issue(characteristic, IssueReason.MeasurementTypeMismatch, unitExternalRefKey));
             return null;
@@ -129,6 +139,18 @@ internal static class StockKeepingUnitPhysicalCharacteristicsNormalizer
         if (unit.Знаменатель.Value == 0m)
         {
             issues.Add(new Issue(characteristic, IssueReason.ZeroUnitDenominator, unitExternalRefKey));
+            return null;
+        }
+
+        if (unit.Числитель.Value < 0m)
+        {
+            issues.Add(new Issue(characteristic, IssueReason.NegativeUnitNumerator, unitExternalRefKey));
+            return null;
+        }
+
+        if (unit.Знаменатель.Value < 0m)
+        {
+            issues.Add(new Issue(characteristic, IssueReason.NegativeUnitDenominator, unitExternalRefKey));
             return null;
         }
 
@@ -181,6 +203,8 @@ internal static class StockKeepingUnitPhysicalCharacteristicsNormalizer
     {
         MissingSourceRatio,
         ZeroSourceDenominator,
+        NegativeSourceDenominator,
+        NegativeSourceNumerator,
         MissingUnitReference,
         UnitNotFound,
         UnitDeletionMarked,
@@ -188,6 +212,8 @@ internal static class StockKeepingUnitPhysicalCharacteristicsNormalizer
         MissingUnitRatio,
         ZeroUnitNumerator,
         ZeroUnitDenominator,
+        NegativeUnitNumerator,
+        NegativeUnitDenominator,
         ArithmeticOverflow,
         PersistenceOverflow,
         PersistenceScaleUnderflow
