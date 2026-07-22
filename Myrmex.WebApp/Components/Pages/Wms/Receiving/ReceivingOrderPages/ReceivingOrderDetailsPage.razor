@@ -1,9 +1,11 @@
 @page "/wms/receiving-orders/{ReceivingOrderId:guid}"
+@using Myrmex.Shared.Wms.Inventory
 @using Myrmex.WebApp.Components.Pages.Wms.Inventory.InventoryLedgerPages
 @inject WmsReceivingApiClient ReceivingApiClient
 @inject WmsInventoryApiClient InventoryApiClient
 @inject IDialogService DialogService
 @inject NavigationManager Navigation
+@inject IStringLocalizer<SharedResource> Localizer
 
 <PageTitle>@Localizer["Receiving.DetailsTitle"]</PageTitle>
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">

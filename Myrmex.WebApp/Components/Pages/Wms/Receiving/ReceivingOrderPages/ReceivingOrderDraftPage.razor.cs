@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Localization;
 using MudBlazor;
 using Myrmex.Shared.Wms.Catalog;
 using Myrmex.Shared.Wms.Receiving;
 using Myrmex.Shared.Wms.Topology;
+using Myrmex.WebApp.Localization;
 using Myrmex.WebApp.Wms.Api;
 using Myrmex.WebApp.Wms.Receiving;
 using Myrmex.WebApp.Wms.Topology;
@@ -16,6 +18,7 @@ public partial class ReceivingOrderDraftPage
     [Inject] protected WmsReceivingApiClient ReceivingApiClient { get; set; } = null!;
     [Inject] protected IDialogService DialogService { get; set; } = null!;
     [Inject] protected NavigationManager Navigation { get; set; } = null!;
+    [Inject] protected IStringLocalizer<SharedResource> Localizer { get; set; } = null!;
 
     protected string? Number { get; set; }
     protected WarehouseLookupItem? Warehouse { get; set; }
@@ -80,7 +83,9 @@ public partial class ReceivingOrderDraftPage
         {
             return await TopologyApiClient.LookupStorageLocationsAsync(Warehouse.Id, new()
             {
-                SearchText = value, Take = 20, SelectableOnly = true,
+                SearchText = value,
+                Take = 20,
+                SelectableOnly = true,
                 StorageLocationTypeCode = StorageLocationTypeCodes.Receiving
             }, token);
         }
