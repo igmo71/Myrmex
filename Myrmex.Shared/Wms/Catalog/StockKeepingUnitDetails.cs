@@ -6,6 +6,10 @@ public sealed record StockKeepingUnitDetails(
     string Name,
     string? Description,
     Guid BaseUnitOfMeasureId,
+    decimal? WeightKilograms,
+    decimal? LengthMetres,
+    decimal? AreaSquareMetres,
+    decimal? VolumeCubicMetres,
     bool IsActive,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? UpdatedAtUtc);

@@ -38,6 +38,14 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
 
     public bool IsActive { get; private set; } = true;
 
+    public decimal? WeightKilograms { get; private set; }
+
+    public decimal? LengthMetres { get; private set; }
+
+    public decimal? AreaSquareMetres { get; private set; }
+
+    public decimal? VolumeCubicMetres { get; private set; }
+
     internal ExternalImportState? ImportState { get; set; }
 
     public Guid? ExternalRefKey => ImportState?.RefKey;
@@ -55,6 +63,10 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
         string? code,
         string? name,
         Guid? baseUnitOfMeasureId,
+        decimal? weightKilograms,
+        decimal? lengthMetres,
+        decimal? areaSquareMetres,
+        decimal? volumeCubicMetres,
         bool isDeletionMarked,
         DateTimeOffset importedAtUtc)
     {
@@ -86,8 +98,17 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
             return validationResult;
         }
 
+        bool physicalCharacteristicsChanged = WeightKilograms != weightKilograms ||
+            LengthMetres != lengthMetres ||
+            AreaSquareMetres != areaSquareMetres ||
+            VolumeCubicMetres != volumeCubicMetres;
+
         if (isDeletionMarked)
         {
+            WeightKilograms = weightKilograms;
+            LengthMetres = lengthMetres;
+            AreaSquareMetres = areaSquareMetres;
+            VolumeCubicMetres = volumeCubicMetres;
             RecordImport(externalRefKey, externalDataVersion!, importedAtUtc);
             if (IsActive)
             {
@@ -96,6 +117,10 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
             else
             {
                 Touch();
+            }
+            if (physicalCharacteristicsChanged)
+            {
+                AddDomainEvent(new StockKeepingUnitDetailsUpdatedDomainEvent(Id));
             }
             return DomainValidationResult.Valid;
         }
@@ -111,13 +136,18 @@ internal sealed class StockKeepingUnit : AggregateRoot, IActivatable
         Guid normalizedBaseUnitOfMeasureId = baseUnitOfMeasureId!.Value;
         bool detailsChanged = !string.Equals(Code, normalizedCode, StringComparison.Ordinal) ||
             !string.Equals(Name, normalizedName, StringComparison.Ordinal) ||
-            BaseUnitOfMeasureId != normalizedBaseUnitOfMeasureId;
+            BaseUnitOfMeasureId != normalizedBaseUnitOfMeasureId ||
+            physicalCharacteristicsChanged;
         bool wasInactive = !IsActive;
 
         RecordImport(externalRefKey, externalDataVersion!, importedAtUtc);
         Code = normalizedCode;
         Name = normalizedName;
         BaseUnitOfMeasureId = normalizedBaseUnitOfMeasureId;
+        WeightKilograms = weightKilograms;
+        LengthMetres = lengthMetres;
+        AreaSquareMetres = areaSquareMetres;
+        VolumeCubicMetres = volumeCubicMetres;
         Reactivate();
 
         if (detailsChanged)

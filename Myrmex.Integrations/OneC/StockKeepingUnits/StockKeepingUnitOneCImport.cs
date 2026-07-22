@@ -3,6 +3,7 @@ using Myrmex.AppDispatching.CommandDispatching;
 using Myrmex.Core.Results;
 using Myrmex.Integrations.OneC.Common.Imports;
 using Myrmex.Integrations.OneC.Common.Transport;
+using Myrmex.Integrations.OneC.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Catalog.Features.Imports;
 using Myrmex.Shared.Integrations.OneC;
 using System.Diagnostics;
@@ -16,6 +17,7 @@ internal interface IStockKeepingUnitOneCImport
 
 internal sealed class StockKeepingUnitOneCImport(
     IStockKeepingUnitOneCSource source,
+    IUnitOfMeasureOneCSource unitOfMeasureSource,
     IOneCODataTransport transport,
     ICommandDispatcher commandDispatcher,
     OneCImportGate importGate,
@@ -61,6 +63,10 @@ internal sealed class StockKeepingUnitOneCImport(
 
         try
         {
+            IReadOnlyDictionary<Guid, UnitOfMeasureSourceRecord> units =
+                (await unitOfMeasureSource.ReadAllAsync(cancellationToken))
+                .ToDictionary(unit => unit.Ref_Key);
+
             await foreach (IReadOnlyList<StockKeepingUnitSourceRecord> page in
                 source.ReadPagesAsync(cancellationToken))
             {
@@ -73,17 +79,25 @@ internal sealed class StockKeepingUnitOneCImport(
                         ReferenceImportRecordErrorReasons.SourceFolder,
                         "The 1С nomenclature record is a folder/group and was skipped."))
                     .ToList();
-                List<ImportStockKeepingUnits.Item> items = page
-                    .Where(record => !record.IsFolder)
-                    .Select(record => new ImportStockKeepingUnits.Item(
+                List<ImportStockKeepingUnits.Item> items = [];
+                foreach (StockKeepingUnitSourceRecord record in page.Where(record => !record.IsFolder))
+                {
+                    StockKeepingUnitPhysicalCharacteristicsNormalizer.Result normalized =
+                        StockKeepingUnitPhysicalCharacteristicsNormalizer.Normalize(record, units);
+                    LogNormalizationIssues(record.Ref_Key, normalized.Issues);
+                    items.Add(new ImportStockKeepingUnits.Item(
                         record.Ref_Key,
                         record.DataVersion,
                         record.Code?.Trim(),
                         FirstNonEmpty(record.НаименованиеПолное, record.Description),
                         record.ЕдиницаИзмерения_Key,
+                        normalized.WeightKilograms,
+                        normalized.LengthMetres,
+                        normalized.AreaSquareMetres,
+                        normalized.VolumeCubicMetres,
                         record.DeletionMark,
-                        importedAtUtc))
-                    .ToList();
+                        importedAtUtc));
+                }
 
                 if (items.Count == 0)
                 {
@@ -156,6 +170,21 @@ internal sealed class StockKeepingUnitOneCImport(
     {
         string? value = string.IsNullOrWhiteSpace(preferred) ? fallback : preferred;
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private void LogNormalizationIssues(
+        Guid stockKeepingUnitExternalRefKey,
+        IEnumerable<StockKeepingUnitPhysicalCharacteristicsNormalizer.Issue> issues)
+    {
+        foreach (StockKeepingUnitPhysicalCharacteristicsNormalizer.Issue issue in issues)
+        {
+            logger.LogWarning(
+                "1С SKU {ExternalRefKey} physical characteristic {Characteristic} could not be normalized: {Reason}. Unit: {UnitExternalRefKey}.",
+                stockKeepingUnitExternalRefKey,
+                issue.Characteristic,
+                issue.Reason,
+                issue.UnitExternalRefKey);
+        }
     }
 
     private void LogResult(OneCImportResponse response, double durationMilliseconds)

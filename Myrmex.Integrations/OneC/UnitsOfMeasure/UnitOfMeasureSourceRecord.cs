@@ -24,4 +24,13 @@ internal sealed class UnitOfMeasureSourceRecord
 
     [JsonPropertyName("МеждународноеСокращение")]
     public string? МеждународноеСокращение { get; init; }
+
+    [JsonPropertyName("ТипИзмеряемойВеличины")]
+    public string? ТипИзмеряемойВеличины { get; init; }
+
+    [JsonPropertyName("Числитель")]
+    public decimal? Числитель { get; init; }
+
+    [JsonPropertyName("Знаменатель")]
+    public decimal? Знаменатель { get; init; }
 }

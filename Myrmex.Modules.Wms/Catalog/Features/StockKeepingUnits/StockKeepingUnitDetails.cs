@@ -14,6 +14,10 @@ internal static class StockKeepingUnitDetailsMapping
             stockKeepingUnit.Name,
             stockKeepingUnit.Description,
             stockKeepingUnit.BaseUnitOfMeasureId,
+            stockKeepingUnit.WeightKilograms,
+            stockKeepingUnit.LengthMetres,
+            stockKeepingUnit.AreaSquareMetres,
+            stockKeepingUnit.VolumeCubicMetres,
             stockKeepingUnit.IsActive,
             stockKeepingUnit.CreatedAtUtc,
             stockKeepingUnit.UpdatedAtUtc);
@@ -26,6 +30,10 @@ internal static class StockKeepingUnitDetailsMapping
             stockKeepingUnit.Name,
             stockKeepingUnit.Description,
             stockKeepingUnit.BaseUnitOfMeasureId,
+            stockKeepingUnit.WeightKilograms,
+            stockKeepingUnit.LengthMetres,
+            stockKeepingUnit.AreaSquareMetres,
+            stockKeepingUnit.VolumeCubicMetres,
             stockKeepingUnit.IsActive,
             stockKeepingUnit.CreatedAtUtc,
             stockKeepingUnit.UpdatedAtUtc);

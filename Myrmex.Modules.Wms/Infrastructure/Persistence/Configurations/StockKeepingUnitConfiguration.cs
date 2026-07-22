@@ -47,6 +47,22 @@ internal sealed class StockKeepingUnitConfiguration : IEntityTypeConfiguration<S
         builder.Property(x => x.IsActive)
             .IsRequired();
 
+        builder.Property(x => x.WeightKilograms)
+            .HasPrecision(28, 12)
+            .IsRequired(false);
+
+        builder.Property(x => x.LengthMetres)
+            .HasPrecision(28, 12)
+            .IsRequired(false);
+
+        builder.Property(x => x.AreaSquareMetres)
+            .HasPrecision(28, 12)
+            .IsRequired(false);
+
+        builder.Property(x => x.VolumeCubicMetres)
+            .HasPrecision(28, 12)
+            .IsRequired(false);
+
         builder.Ignore(x => x.ExternalRefKey);
         builder.Ignore(x => x.ExternalDataVersion);
         builder.Ignore(x => x.LastImportedAtUtc);
