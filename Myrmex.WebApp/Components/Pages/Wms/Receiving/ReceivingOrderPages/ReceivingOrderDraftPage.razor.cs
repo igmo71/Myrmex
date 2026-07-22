@@ -13,6 +13,9 @@ namespace Myrmex.WebApp.Components.Pages.Wms.Receiving.ReceivingOrderPages;
 
 public partial class ReceivingOrderDraftPage
 {
+    private const string ConcurrencyConflictCode = "ReceivingOrder.ConcurrencyConflict";
+    private const string InvalidStateCode = "ReceivingOrder.InvalidState";
+
     [Parameter] public Guid? ReceivingOrderId { get; set; }
     [Inject] protected WmsTopologyApiClient TopologyApiClient { get; set; } = null!;
     [Inject] protected WmsReceivingApiClient ReceivingApiClient { get; set; } = null!;
@@ -166,7 +169,7 @@ public partial class ReceivingOrderDraftPage
 
             if (result.IsFailure || result.Value is null)
             {
-                if (IsEditMode && result.Error?.Status == StatusCodes.Status409Conflict)
+                if (IsEditMode && IsStaleDraftConflict(result.Error))
                 {
                     SaveBlockedByConflict = true;
                     ErrorMessage = null;
@@ -190,6 +193,13 @@ public partial class ReceivingOrderDraftPage
             Saving = false;
         }
     }
+
+    private static bool IsStaleDraftConflict(ApiError? error) =>
+        error is
+        {
+            Status: StatusCodes.Status409Conflict,
+            Code: ConcurrencyConflictCode or InvalidStateCode
+        };
 
     protected async Task ReloadLatestAsync()
     {
