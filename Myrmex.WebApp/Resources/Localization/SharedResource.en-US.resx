@@ -451,4 +451,18 @@
   <data name="Receiving.Status.Draft" xml:space="preserve"><value>Draft</value></data>
   <data name="Receiving.Status.InProgress" xml:space="preserve"><value>In progress</value></data>
   <data name="Receiving.Status.Completed" xml:space="preserve"><value>Completed</value></data>
+  <data name="Receiving.EditTitle" xml:space="preserve"><value>Edit receiving order Draft</value></data>
+  <data name="Receiving.ChangeSku" xml:space="preserve"><value>Change SKU</value></data>
+  <data name="Receiving.RemoveLine" xml:space="preserve"><value>Remove line</value></data>
+  <data name="Receiving.UpdateError" xml:space="preserve"><value>Could not save the receiving order Draft.</value></data>
+  <data name="Receiving.EditDraftOnly" xml:space="preserve"><value>Only Draft receiving orders can be edited.</value></data>
+  <data name="Receiving.DraftConflictGuidance" xml:space="preserve"><value>The Draft changed after it was loaded. Your complete unsaved plan remains visible, but Save is disabled. Reload latest to discard local changes before continuing.</value></data>
+  <data name="Receiving.ReloadLatestTitle" xml:space="preserve"><value>Discard local changes?</value></data>
+  <data name="Receiving.ReloadLatestPrompt" xml:space="preserve"><value>Reloading will permanently discard the complete unsaved local plan and replace it with current server data.</value></data>
+  <data name="Receiving.ReloadLatestDiscard" xml:space="preserve"><value>Reload latest / discard local changes</value></data>
+  <data name="Receiving.DeleteAction" xml:space="preserve"><value>Delete Draft</value></data>
+  <data name="Receiving.DeleteTitle" xml:space="preserve"><value>Delete receiving order Draft?</value></data>
+  <data name="Receiving.DeletePrompt" xml:space="preserve"><value>Permanently delete Draft {0} and all its lines? Its order number will be available for reuse.</value></data>
+  <data name="Receiving.DeleteError" xml:space="preserve"><value>Could not delete the receiving order Draft.</value></data>
+  <data name="Receiving.DeleteConflictReloaded" xml:space="preserve"><value>The order changed or is no longer Draft. Current details were reloaded; nothing was deleted.</value></data>
 </root>

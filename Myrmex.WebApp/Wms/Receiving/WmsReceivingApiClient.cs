@@ -1,5 +1,6 @@
 using Myrmex.Shared.Wms.Receiving;
 using Myrmex.WebApp.Wms.Api;
+using System.Web;
 
 namespace Myrmex.WebApp.Wms.Receiving;
 
@@ -16,6 +17,24 @@ public sealed class WmsReceivingApiClient(HttpClient httpClient)
         CancellationToken cancellationToken = default) =>
         httpClient.PostAsApiResultAsync<ReceivingOrderDetails>(
             "/api/wms/receiving-orders", request, cancellationToken);
+
+    public Task<ApiResult<ReceivingOrderDetails>> TryUpdateReceivingOrderDraftAsync(
+        Guid orderId,
+        UpdateReceivingOrderDraftRequest request,
+        CancellationToken cancellationToken = default) =>
+        httpClient.PutAsApiResultAsync<ReceivingOrderDetails>(
+            $"/api/wms/receiving-orders/{orderId}", request, cancellationToken);
+
+    public Task<ApiResult<bool>> TryDeleteReceivingOrderDraftAsync(
+        Guid orderId,
+        string expectedOrderVersion,
+        CancellationToken cancellationToken = default)
+    {
+        string encodedVersion = HttpUtility.UrlEncode(expectedOrderVersion);
+        return httpClient.DeleteAsApiResultAsync(
+            $"/api/wms/receiving-orders/{orderId}?expectedOrderVersion={encodedVersion}",
+            cancellationToken);
+    }
 
     public Task<ApiResult<ReceivingOrderDetails>> TryStartReceivingOrderAsync(
         Guid orderId,

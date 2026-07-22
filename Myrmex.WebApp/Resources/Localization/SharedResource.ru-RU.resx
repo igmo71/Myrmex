@@ -1374,4 +1374,18 @@
   <data name="Receiving.Status.Draft" xml:space="preserve"><value>Черновик</value></data>
   <data name="Receiving.Status.InProgress" xml:space="preserve"><value>В работе</value></data>
   <data name="Receiving.Status.Completed" xml:space="preserve"><value>Завершён</value></data>
+  <data name="Receiving.EditTitle" xml:space="preserve"><value>Редактирование черновика приходного ордера</value></data>
+  <data name="Receiving.ChangeSku" xml:space="preserve"><value>Изменить SKU</value></data>
+  <data name="Receiving.RemoveLine" xml:space="preserve"><value>Удалить строку</value></data>
+  <data name="Receiving.UpdateError" xml:space="preserve"><value>Не удалось сохранить черновик приходного ордера.</value></data>
+  <data name="Receiving.EditDraftOnly" xml:space="preserve"><value>Редактировать можно только черновик приходного ордера.</value></data>
+  <data name="Receiving.DraftConflictGuidance" xml:space="preserve"><value>Черновик изменился после загрузки. Полный несохранённый план остаётся видимым, но сохранение отключено. Загрузите актуальные данные, чтобы отказаться от локальных изменений.</value></data>
+  <data name="Receiving.ReloadLatestTitle" xml:space="preserve"><value>Отказаться от локальных изменений?</value></data>
+  <data name="Receiving.ReloadLatestPrompt" xml:space="preserve"><value>Повторная загрузка безвозвратно удалит полный несохранённый локальный план и заменит его актуальными данными сервера.</value></data>
+  <data name="Receiving.ReloadLatestDiscard" xml:space="preserve"><value>Загрузить актуальное / отменить локальные изменения</value></data>
+  <data name="Receiving.DeleteAction" xml:space="preserve"><value>Удалить черновик</value></data>
+  <data name="Receiving.DeleteTitle" xml:space="preserve"><value>Удалить черновик приходного ордера?</value></data>
+  <data name="Receiving.DeletePrompt" xml:space="preserve"><value>Безвозвратно удалить черновик {0} и все его строки? Номер ордера станет доступен для повторного использования.</value></data>
+  <data name="Receiving.DeleteError" xml:space="preserve"><value>Не удалось удалить черновик приходного ордера.</value></data>
+  <data name="Receiving.DeleteConflictReloaded" xml:space="preserve"><value>Ордер изменился или больше не является черновиком. Загружены актуальные данные; удаление не выполнено.</value></data>
 </root>

@@ -19,6 +19,10 @@ internal static class ReceivingOrderEndpoints
             .WithName("GetReceivingOrderById").WithSummary("Get Receiving Order By Id");
         group.MapPost("", CreateAsync)
             .WithName("CreateReceivingOrder").WithSummary("Create Receiving Order");
+        group.MapPut("/{receivingOrderId:guid}", UpdateDraftAsync)
+            .WithName("UpdateReceivingOrderDraft").WithSummary("Update Receiving Order Draft");
+        group.MapDelete("/{receivingOrderId:guid}", DeleteDraftAsync)
+            .WithName("DeleteReceivingOrderDraft").WithSummary("Delete Receiving Order Draft");
         group.MapPost("/{receivingOrderId:guid}/start", StartAsync)
             .WithName("StartReceivingOrder").WithSummary("Start Receiving Order");
         group.MapPost("/{receivingOrderId:guid}/lines/{lineId:guid}/receive", ReceiveLineAsync)
@@ -65,6 +69,43 @@ internal static class ReceivingOrderEndpoints
             StartReceivingOrder.Command,
             ServiceResult<ReceivingOrderDetails>>(
             new(receivingOrderId, request.ExpectedOrderVersion, actorContext.ActorId), cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> UpdateDraftAsync(
+        Guid receivingOrderId,
+        UpdateReceivingOrderDraftRequest request,
+        IActorContext actorContext,
+        ICommandDispatcher dispatcher,
+        CancellationToken cancellationToken)
+    {
+        ServiceResult<ReceivingOrderDetails> result = await dispatcher.DispatchAsync<
+            UpdateReceivingOrderDraft.Command,
+            ServiceResult<ReceivingOrderDetails>>(
+            new(
+                receivingOrderId,
+                request.Number,
+                request.WarehouseId,
+                request.ReceivingLocationId,
+                request.ExpectedOrderVersion,
+                request.Lines,
+                actorContext.ActorId),
+            cancellationToken);
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> DeleteDraftAsync(
+        Guid receivingOrderId,
+        string? expectedOrderVersion,
+        IActorContext actorContext,
+        ICommandDispatcher dispatcher,
+        CancellationToken cancellationToken)
+    {
+        ServiceResult result = await dispatcher.DispatchAsync<
+            DeleteReceivingOrderDraft.Command,
+            ServiceResult>(
+            new(receivingOrderId, expectedOrderVersion, actorContext.ActorId),
+            cancellationToken);
         return result.ToHttpResult();
     }
 

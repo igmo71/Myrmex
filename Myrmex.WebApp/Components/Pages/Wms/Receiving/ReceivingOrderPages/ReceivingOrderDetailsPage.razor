@@ -3,6 +3,7 @@
 @inject WmsReceivingApiClient ReceivingApiClient
 @inject WmsInventoryApiClient InventoryApiClient
 @inject IDialogService DialogService
+@inject NavigationManager Navigation
 
 <PageTitle>@Localizer["Receiving.DetailsTitle"]</PageTitle>
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
@@ -15,6 +16,12 @@
                 <MudStack Row="true">
                     @if (_order.Status == ReceivingOrderStatusDetails.Draft)
                     {
+                        <MudButton Variant="Variant.Outlined" Disabled="_saving" OnClick="EditDraft">
+                            @Localizer["Common.Edit"]
+                        </MudButton>
+                        <MudButton Color="Color.Error" Variant="Variant.Outlined" Disabled="_saving" OnClick="DeleteDraftAsync">
+                            @Localizer["Receiving.DeleteAction"]
+                        </MudButton>
                         <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="_saving" OnClick="StartAsync">@Localizer["Receiving.Start"]</MudButton>
                     }
                     @if (_order.Status == ReceivingOrderStatusDetails.InProgress && _order.TotalRemainingQuantity == 0)
@@ -90,6 +97,63 @@
         DialogResult? result = await dialog.Result;
         if (result is { Canceled: false, Data: ReceivingOrderDetails updated }) { _order = updated; return; }
         if (result?.Data as string == ReceiveReceivingOrderLineDialog.ConflictResult) { await LoadAsync(); _message = Localizer["Receiving.ConflictReloaded"]; }
+    }
+
+    private void EditDraft()
+    {
+        if (_order is not null)
+        {
+            Navigation.NavigateTo($"/wms/receiving-orders/{_order.Id}/edit");
+        }
+    }
+
+    private async Task DeleteDraftAsync()
+    {
+        if (_order is null || _order.Status != ReceivingOrderStatusDetails.Draft)
+        {
+            return;
+        }
+
+        bool? confirmed = await DialogService.ShowMessageBoxAsync(
+            Localizer["Receiving.DeleteTitle"].Value,
+            Localizer["Receiving.DeletePrompt", _order.Number].Value,
+            yesText: Localizer["Receiving.DeleteAction"].Value,
+            cancelText: Localizer["Common.Cancel"].Value);
+        if (confirmed != true)
+        {
+            return;
+        }
+
+        _saving = true;
+        _error = null;
+        try
+        {
+            ApiResult<bool> result = await ReceivingApiClient.TryDeleteReceivingOrderDraftAsync(
+                _order.Id,
+                _order.OrderVersion);
+            if (result.IsFailure)
+            {
+                if (result.Error?.Status == StatusCodes.Status409Conflict)
+                {
+                    await LoadAsync();
+                    _message = Localizer["Receiving.DeleteConflictReloaded"];
+                    return;
+                }
+
+                _error = result.Error?.Message ?? Localizer["Receiving.DeleteError"];
+                return;
+            }
+
+            Navigation.NavigateTo("/wms/receiving-orders");
+        }
+        catch (Exception exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 
     private async Task OpenTransactionAsync()
