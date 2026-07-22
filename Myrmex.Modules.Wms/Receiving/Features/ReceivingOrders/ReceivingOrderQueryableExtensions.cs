@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Myrmex.Modules.Wms.Receiving.Domain.ReceivingOrders;
 using Myrmex.Shared.Wms.Receiving;
 
@@ -57,8 +56,7 @@ internal static class ReceivingOrderQueryableExtensions
         if (!string.IsNullOrWhiteSpace(query.NormalizedSearchText))
         {
             string searchText = query.NormalizedSearchText;
-            queryable = queryable.Where(order =>
-                EF.Functions.Like(order.Number, $"%{searchText}%"));
+            queryable = queryable.Where(order => order.Number.Contains(searchText));
         }
 
         if (query.WarehouseId is Guid warehouseId)
