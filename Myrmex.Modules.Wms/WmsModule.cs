@@ -11,6 +11,7 @@ using Myrmex.Modules.Wms.DemoData.Endpoints;
 using Myrmex.Modules.Wms.DemoData.Features;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Inventory.Endpoints;
+using Myrmex.Modules.Wms.Receiving.Endpoints;
 using Myrmex.Modules.Wms.Topology.Endpoints;
 
 namespace Myrmex.Modules.Wms;
@@ -41,6 +42,7 @@ public static class WmsModule
         endpoints.MapTopologyEndpoints();
         endpoints.MapCatalogEndpoints();
         endpoints.MapInventoryEndpoints();
+        endpoints.MapReceivingEndpoints();
 
         WmsDemoDataOptions options = endpoints.ServiceProvider
             .GetRequiredService<IOptions<WmsDemoDataOptions>>()

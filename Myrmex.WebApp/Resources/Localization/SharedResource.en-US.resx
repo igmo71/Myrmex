@@ -427,4 +427,28 @@
   <data name="IdentityUsers.Create.Validation.EmailRequired" xml:space="preserve"><value>Email is required.</value></data>
   <data name="IdentityUsers.Create.Validation.RolesRequired" xml:space="preserve"><value>Select at least one role.</value></data>
   <data name="IdentityUsers.Create.Validation.TemporaryPasswordRequired" xml:space="preserve"><value>Temporary password is required.</value></data>
+  <data name="Receiving.CreateTitle" xml:space="preserve"><value>Create receiving order</value></data>
+  <data name="Receiving.DetailsTitle" xml:space="preserve"><value>Receiving order</value></data>
+  <data name="Receiving.Number" xml:space="preserve"><value>Order number</value></data>
+  <data name="Receiving.Location" xml:space="preserve"><value>Receiving location</value></data>
+  <data name="Receiving.AddSku" xml:space="preserve"><value>Add SKU</value></data>
+  <data name="Receiving.SelectSku" xml:space="preserve"><value>Select SKU</value></data>
+  <data name="Receiving.Planned" xml:space="preserve"><value>Planned</value></data>
+  <data name="Receiving.Received" xml:space="preserve"><value>Received</value></data>
+  <data name="Receiving.Remaining" xml:space="preserve"><value>Remaining</value></data>
+  <data name="Receiving.Receive" xml:space="preserve"><value>Receive</value></data>
+  <data name="Receiving.ReceiveQuantity" xml:space="preserve"><value>Quantity to receive</value></data>
+  <data name="Receiving.Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Receiving.Transaction" xml:space="preserve"><value>Inventory transaction</value></data>
+  <data name="Receiving.Started" xml:space="preserve"><value>Receiving started.</value></data>
+  <data name="Receiving.Completed" xml:space="preserve"><value>Receiving completed.</value></data>
+  <data name="Receiving.ConflictReloaded" xml:space="preserve"><value>The order changed concurrently. Current details were reloaded.</value></data>
+  <data name="Receiving.CreateValidation" xml:space="preserve"><value>Enter a number, select a warehouse and receiving location, and add positive planned quantities.</value></data>
+  <data name="Receiving.QuantityInvalid" xml:space="preserve"><value>Quantity must be positive and cannot exceed remaining quantity.</value></data>
+  <data name="Receiving.CreateError" xml:space="preserve"><value>Could not create the receiving order.</value></data>
+  <data name="Receiving.ReceiveError" xml:space="preserve"><value>Could not receive the quantity.</value></data>
+  <data name="Receiving.ActionError" xml:space="preserve"><value>Could not complete the receiving action.</value></data>
+  <data name="Receiving.Status.Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Receiving.Status.InProgress" xml:space="preserve"><value>In progress</value></data>
+  <data name="Receiving.Status.Completed" xml:space="preserve"><value>Completed</value></data>
 </root>

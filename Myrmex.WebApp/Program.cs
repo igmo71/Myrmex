@@ -90,6 +90,12 @@ builder.Services.AddScoped<WmsInventoryApiClient>(services => new(
         "WmsInventoryApiClient",
         new Uri("https+http://apiservice"))));
 
+builder.Services.AddHttpClient("WmsReceivingApiClient");
+builder.Services.AddScoped<Myrmex.WebApp.Wms.Receiving.WmsReceivingApiClient>(services => new(
+    services.GetRequiredService<ProtectedApiClientFactory>().CreateClient(
+        "WmsReceivingApiClient",
+        new Uri("https+http://apiservice"))));
+
 #pragma warning disable EXTEXP0001
 builder.Services.AddHttpClient("OneCIntegrationApiClient")
 .RemoveAllResilienceHandlers(); // Long-running import calls must not be cut by default Aspire HTTP resilience timeout.

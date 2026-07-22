@@ -1,0 +1,50 @@
+@inject WmsCatalogApiClient WmsCatalogApiClient
+
+<MudDialog>
+    <DialogContent>
+        <MudAutocomplete T="StockKeepingUnitLookupItem"
+                         Label="@Localizer["Common.Sku"]"
+                         Variant="Variant.Outlined"
+                         Required="true"
+                         MinCharacters="0"
+                         MaxItems="20"
+                         DebounceInterval="300"
+                         SearchFunc="SearchAsync"
+                         ToStringFunc="FormatSku"
+                         @bind-Value="_selected" />
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-3">@_error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@Localizer["Common.Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="@(_selected is null)" OnClick="Add">
+            @Localizer["Receiving.AddSku"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public IReadOnlyCollection<Guid> ExcludedSkuIds { get; set; } = [];
+    private StockKeepingUnitLookupItem? _selected;
+    private string? _error;
+
+    private async Task<IEnumerable<StockKeepingUnitLookupItem>> SearchAsync(string value, CancellationToken token)
+    {
+        try
+        {
+            IReadOnlyList<StockKeepingUnitLookupItem> items = await WmsCatalogApiClient.LookupStockKeepingUnitsAsync(
+                new() { SearchText = value, Take = 20, SelectableOnly = true }, token);
+            return items.Where(x => !ExcludedSkuIds.Contains(x.Id));
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { return []; }
+        catch (Exception exception) { _error = exception.Message; return []; }
+    }
+
+    private void Add() => MudDialog.Close(DialogResult.Ok(_selected!));
+    private void Cancel() => MudDialog.Cancel();
+    private static string FormatSku(StockKeepingUnitLookupItem? sku) =>
+        sku is null ? string.Empty : $"{sku.Code} - {sku.Name}";
+}

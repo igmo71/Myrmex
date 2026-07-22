@@ -1,0 +1,52 @@
+@inject WmsReceivingApiClient ReceivingApiClient
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="2">
+            <MudText Typo="Typo.subtitle1">@Line.Sku.Code - @Line.Sku.Name</MudText>
+            <MudText>@Localizer["Receiving.Planned"]: @Line.PlannedQuantity.ToString("0.####")</MudText>
+            <MudText>@Localizer["Receiving.Received"]: @Line.ReceivedQuantity.ToString("0.####")</MudText>
+            <MudText>@Localizer["Receiving.Remaining"]: @Line.RemainingQuantity.ToString("0.####")</MudText>
+            <MudNumericField T="decimal" Label="@Localizer["Receiving.ReceiveQuantity"]"
+                             Variant="Variant.Outlined" Min="@(0.0001m)" Max="@Line.RemainingQuantity"
+                             Format="0.####" Required="true" @bind-Value="_quantity" />
+            @if (!string.IsNullOrWhiteSpace(_error)) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_saving">@Localizer["Common.Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="_saving">
+            @Localizer["Receiving.Receive"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    public const string ConflictResult = "ReceivingOrderConflict";
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter, EditorRequired] public ReceivingOrderDetails Order { get; set; } = null!;
+    [Parameter, EditorRequired] public ReceivingOrderLineDetails Line { get; set; } = null!;
+    private decimal _quantity;
+    private bool _saving;
+    private string? _error;
+
+    protected override void OnInitialized() => _quantity = Line.RemainingQuantity;
+
+    private async Task SaveAsync()
+    {
+        if (_quantity <= 0 || _quantity > Line.RemainingQuantity) { _error = Localizer["Receiving.QuantityInvalid"]; return; }
+        _saving = true;
+        ApiResult<ReceivingOrderDetails> result = await ReceivingApiClient.TryReceiveLineAsync(
+            Order.Id, Line.Id, new(_quantity, Order.OrderVersion));
+        _saving = false;
+        if (result.IsFailure)
+        {
+            if (result.Error?.Status == StatusCodes.Status409Conflict) { MudDialog.Close(DialogResult.Ok(ConflictResult)); return; }
+            _error = result.Error?.Message ?? Localizer["Receiving.ReceiveError"];
+            return;
+        }
+        if (result.Value is not null) { MudDialog.Close(DialogResult.Ok(result.Value)); }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

@@ -1,0 +1,27 @@
+@page "/wms/receiving-orders/new"
+<PageTitle>@Localizer["Receiving.CreateTitle"]</PageTitle>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
+    <MudStack Spacing="3">
+        <MudText Typo="Typo.h5">@Localizer["Receiving.CreateTitle"]</MudText>
+        <MudTextField T="string" Label="@Localizer["Receiving.Number"]" Variant="Variant.Outlined" @bind-Value="Number" />
+        <MudAutocomplete T="WarehouseLookupItem" Label="@Localizer["Common.Warehouse"]" Variant="Variant.Outlined"
+                         Required="true" MinCharacters="0" SearchFunc="SearchWarehousesAsync" ToStringFunc="FormatWarehouse"
+                         Value="Warehouse" ValueChanged="WarehouseChangedAsync" />
+        <MudAutocomplete T="StorageLocationLookupItem" Label="@Localizer["Receiving.Location"]" Variant="Variant.Outlined"
+                         Required="true" Disabled="@(Warehouse is null)" MinCharacters="0" SearchFunc="SearchLocationsAsync"
+                         ToStringFunc="FormatLocation" @bind-Value="Location" />
+        <MudStack Row="true"><MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Outlined" OnClick="AddSkuAsync">@Localizer["Receiving.AddSku"]</MudButton></MudStack>
+        <MudTable Items="Lines" Dense="true" Bordered="true">
+            <HeaderContent><MudTh>@Localizer["Common.Sku"]</MudTh><MudTh>@Localizer["Receiving.Planned"]</MudTh><MudTh>@Localizer["Common.Actions"]</MudTh></HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Sku.Code - @context.Sku.Name</MudTd>
+                <MudTd><MudNumericField T="decimal" Min="@(0.0001m)" Format="0.####" @bind-Value="context.PlannedQuantity" /></MudTd>
+                <MudTd><MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => Remove(context))" /></MudTd>
+            </RowTemplate>
+        </MudTable>
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage)) { <MudAlert Severity="Severity.Error">@ErrorMessage</MudAlert> }
+        <MudStack Row="true" Justify="Justify.FlexEnd">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="Saving" OnClick="SaveAsync">@Localizer["Common.Create"]</MudButton>
+        </MudStack>
+    </MudStack>
+</MudContainer>
