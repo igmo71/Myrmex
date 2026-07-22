@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
+using Myrmex.Shared.Wms.Topology;
 
 namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Configurations;
 
@@ -125,6 +126,18 @@ internal sealed class StorageLocationTypeConfiguration : IEntityTypeConfiguratio
                 Description = "System storage location type reserved for external inventory transfer transit.",
                 IsSystem = true,
                 SortOrder = 70,
+                CreatedAtUtc = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                UpdatedAtUtc = (DateTimeOffset?)null,
+                IsActive = true
+            },
+            new
+            {
+                Id = WmsSeedIds.StorageLocationTypeReceiving,
+                Code = StorageLocationTypeCodes.Receiving,
+                Name = "Receiving",
+                Description = "Storage location for receiving inventory.",
+                IsSystem = true,
+                SortOrder = 80,
                 CreatedAtUtc = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
                 UpdatedAtUtc = (DateTimeOffset?)null,
                 IsActive = true

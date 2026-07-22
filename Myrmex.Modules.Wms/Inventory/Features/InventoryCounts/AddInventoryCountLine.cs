@@ -8,6 +8,7 @@ using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryCounts;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
+using Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 using Myrmex.Shared.Wms.Inventory;
 
 namespace Myrmex.Modules.Wms.Inventory.Features.InventoryCounts;
@@ -207,21 +208,24 @@ internal static class AddInventoryCountLine
                     nameof(Command.StorageLocationId));
             }
 
-            if (!location.IsActive)
+            StorageLocationEligibility.Result eligibility =
+                StorageLocationEligibility.Evaluate(location);
+
+            if (!eligibility.IsLocationActive)
             {
                 return ServiceError.Validation<StorageLocation>(
                     "StorageLocation is inactive",
                     nameof(Command.StorageLocationId));
             }
 
-            if (!location.StorageLocationType.IsActive)
+            if (!eligibility.IsTypeActive)
             {
                 return ServiceError.Validation<StorageLocationType>(
                     "StorageLocationType is inactive",
                     nameof(Command.StorageLocationId));
             }
 
-            if (!location.StorageLocationStatus.IsActive)
+            if (!eligibility.IsStatusActive)
             {
                 return ServiceError.Validation<StorageLocationStatus>(
                     "StorageLocationStatus is inactive",

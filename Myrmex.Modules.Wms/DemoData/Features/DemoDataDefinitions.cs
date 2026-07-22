@@ -1,3 +1,5 @@
+using Myrmex.Shared.Wms.Topology;
+
 namespace Myrmex.Modules.Wms.DemoData.Features;
 
 internal static class DemoDataDefinitions
@@ -39,6 +41,7 @@ internal static class DemoDataDefinitions
 
     public static readonly IReadOnlyList<LocationDefinition> Locations =
     [
+        new("RCV-01", "Место приёмки 01", "RCV", StorageLocationTypeCodes.Receiving, "AVAILABLE", false),
         new("RCV-DOCK-01", "Док приёмки 01", "RCV", "DOCK", "AVAILABLE", false),
         new("RCV-DOCK-02", "Док приёмки 02", "RCV", "DOCK", "AVAILABLE", false),
         new("BULK-A-01-01", "Паллетная ячейка A-01-01", "BULK", "PALLET_RACK", "AVAILABLE", false),

@@ -140,4 +140,23 @@ internal static class WmsDatabaseNames
     public const string InventoryCountLineCurrentPairUniqueIndex = "UX_wms_inventory_count_lines_current_pair";
     public const string InventoryCountLineAppliedInventoryTransactionUniqueIndex = "UX_wms_inventory_count_lines_applied_inventory_transaction_id";
     public const string InventoryCountLineSupersedesUniqueIndex = "UX_wms_inventory_count_lines_supersedes_inventory_count_line_id";
+
+    public const int ReceivingOrderStatusMaxLength = 32;
+
+    public const string ReceivingOrdersTable = "receiving_orders";
+    public const string ReceivingOrderPrimaryKey = "PK_wms_receiving_orders";
+    public const string ReceivingOrderWarehouseForeignKey = "FK_wms_receiving_orders_warehouses_warehouse_id";
+    public const string ReceivingOrderReceivingLocationForeignKey = "FK_wms_receiving_orders_storage_locations_receiving_location_id";
+    public const string ReceivingOrderInventoryTransactionForeignKey = "FK_wms_receiving_orders_inventory_transactions_inventory_transaction_id";
+    public const string ReceivingOrderNumberUniqueIndex = "UX_wms_receiving_orders_number";
+    public const string ReceivingOrderWarehouseIdIndex = "IX_wms_receiving_orders_warehouse_id";
+    public const string ReceivingOrderReceivingLocationIdIndex = "IX_wms_receiving_orders_receiving_location_id";
+    public const string ReceivingOrderInventoryTransactionIdUniqueIndex = "UX_wms_receiving_orders_inventory_transaction_id";
+
+    public const string ReceivingOrderLinesTable = "receiving_order_lines";
+    public const string ReceivingOrderLinePrimaryKey = "PK_wms_receiving_order_lines";
+    public const string ReceivingOrderLineReceivingOrderForeignKey = "FK_wms_receiving_order_lines_receiving_orders_receiving_order_id";
+    public const string ReceivingOrderLineStockKeepingUnitForeignKey = "FK_wms_receiving_order_lines_stock_keeping_units_stock_keeping_unit_id";
+    public const string ReceivingOrderLineReceivingOrderIdStockKeepingUnitIdUniqueIndex = "UX_wms_receiving_order_lines_receiving_order_id_stock_keeping_unit_id";
+    public const string ReceivingOrderLineStockKeepingUnitIdIndex = "IX_wms_receiving_order_lines_stock_keeping_unit_id";
 }

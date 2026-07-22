@@ -11,6 +11,7 @@ using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryTransactions;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
+using Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 using Myrmex.Shared.Wms.Inventory;
 
 namespace Myrmex.Modules.Wms.Inventory.Features.InventoryBalances;
@@ -469,7 +470,10 @@ internal static class MoveInventoryBalance
         string role,
         string property)
     {
-        if (!location.IsActive)
+        StorageLocationEligibility.Result eligibility =
+            StorageLocationEligibility.Evaluate(location);
+
+        if (!eligibility.IsLocationActive)
         {
             return ValidationError(
                 "InventoryBalance.InactiveStorageLocation",
@@ -477,7 +481,7 @@ internal static class MoveInventoryBalance
                 property);
         }
 
-        if (!location.StorageLocationType.IsActive)
+        if (!eligibility.IsTypeActive)
         {
             return ValidationError(
                 "InventoryBalance.InactiveStorageLocationType",
@@ -485,7 +489,7 @@ internal static class MoveInventoryBalance
                 property);
         }
 
-        if (!location.StorageLocationStatus.IsActive)
+        if (!eligibility.IsStatusActive)
         {
             return ValidationError(
                 "InventoryBalance.InactiveStorageLocationStatus",

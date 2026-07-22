@@ -9,6 +9,7 @@ internal static class WmsSeedIds
     public static readonly Guid StorageLocationTypeDock = Guid.Parse("018f0000-0000-7000-8000-000000000005");
     public static readonly Guid StorageLocationTypeInternalTransit = Guid.Parse("018f0000-0000-7000-8000-000000000006");
     public static readonly Guid StorageLocationTypeExternalTransit = Guid.Parse("018f0000-0000-7000-8000-000000000007");
+    public static readonly Guid StorageLocationTypeReceiving = Guid.Parse("018f0000-0000-7000-8000-000000000008");
 
     public static readonly Guid StorageLocationStatusAvailable = Guid.Parse("018f0000-0000-7000-8000-000000000101");
     public static readonly Guid StorageLocationStatusBlocked = Guid.Parse("018f0000-0000-7000-8000-000000000102");

@@ -53,10 +53,7 @@ internal static class LookupStorageLocations
 
             if (query.SelectableOnly)
             {
-                queryable = queryable.Where(x =>
-                    x.IsActive &&
-                    x.StorageLocationType.IsActive &&
-                    x.StorageLocationStatus.IsActive);
+                queryable = queryable.WhereSelectable();
             }
 
             if (!string.IsNullOrWhiteSpace(query.StorageLocationTypeCode))
