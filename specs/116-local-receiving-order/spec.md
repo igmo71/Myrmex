@@ -14,7 +14,7 @@
 
 - Q: How does full-plan Draft replacement handle line identity? → A: Reconcile by LineId: update retained lines, remove omitted lines, assign IDs only to new lines, and reject foreign line IDs.
 - Q: What result does a losing concurrent completion request receive? → A: Reload and return the current Completed result if another request completed the order; do not retry posting, and return conflict only if it remains uncompleted.
-- Q: Which StorageLocations are eligible as a ReceivingLocation? → A: An active location in the selected Warehouse whose type and status are active and which passes existing inventory-balance eligibility; no dedicated receiving-location type.
+- Q: Which StorageLocations are eligible as a ReceivingLocation? → A: An active location in the selected Warehouse whose active StorageLocationType represents Receiving and which passes existing inventory-balance eligibility; use the existing StorageLocation entity without a generalized capability framework.
 - Q: Is Receiving Order deletion supported? → A: Permanently delete Draft orders and their lines only, with the current aggregate version and no inventory effect; release the number, and add no archive, soft-delete, or cancellation.
 - Q: How is large-order and WebApp success validated without unavailable usability studies? → A: Use deterministic WebApp workflow, information-display, and 300-line functional acceptance checks, with no performance SLA, load benchmark, or formal usability study.
 
@@ -30,8 +30,8 @@ As a warehouse receiving user, I need to create a receiving order, record the go
 
 **Acceptance Scenarios**:
 
-1. **Given** active warehouse data and a new unique order number, **When** a user creates an order with a receiving location and valid planned SKU lines, **Then** a Draft order is available with zero received quantity and no inventory effect.
-2. **Given** a valid Draft order, **When** the user starts receiving, **Then** the order becomes In Progress, records when receiving started, and locks its header and plan.
+1. **Given** active warehouse data, an eligible Receiving location, and a new unique order number, **When** a user creates an order with valid planned SKU lines, **Then** a Draft order is available with zero received quantity and no inventory effect.
+2. **Given** a valid Draft order whose receiving location remains eligible, **When** the user starts receiving, **Then** the order becomes In Progress, records when receiving started, and locks its header and plan.
 3. **Given** an In Progress order, **When** the user records a positive quantity against a planned line, **Then** that quantity is added to the line's received total without changing inventory.
 4. **Given** every line is fully received, **When** the user completes the order, **Then** the order becomes Completed, inventory at the receiving location increases by each line's received quantity, and one receiving transaction contains one positive entry per line.
 5. **Given** completion cannot commit every order and inventory change together, **When** completion fails, **Then** the order remains uncompleted and no partial inventory or transaction result remains.
@@ -53,6 +53,7 @@ As a warehouse planner, I need to revise the receiving order header and complete
 2. **Given** a Draft order, **When** the replacement plan has no lines, duplicate SKUs, inactive references, or an invalid warehouse/location relationship, **Then** the revision is rejected and the existing Draft remains unchanged.
 3. **Given** an In Progress or Completed order, **When** a user attempts to change its header, line set, or planned quantities, **Then** the change is rejected.
 4. **Given** a current Draft order with no inventory effect, **When** the user deletes it using its current version, **Then** the order and all its lines are permanently removed together and its number becomes available for reuse.
+5. **Given** a selected Warehouse, **When** the user chooses a Receiving location while creating or editing a Draft, **Then** the WebApp offers only active locations in that Warehouse whose active StorageLocationType represents Receiving and which pass existing inventory-balance eligibility.
 
 ---
 
@@ -75,8 +76,9 @@ As a warehouse user, I need to search and filter receiving orders, open their fu
 
 - An empty or duplicate order number is rejected; normalization cannot turn a number into an empty value, and uniqueness applies across all local receiving orders.
 - A warehouse, receiving location, or SKU that is missing or inactive makes creation, Draft revision, or start invalid.
-- A receiving location whose related type or status is inactive, or where existing inventory-balance eligibility rules prohibit inventory, is rejected.
+- A receiving location whose StorageLocationType is inactive or does not represent Receiving, or where existing inventory-balance eligibility rules prohibit inventory, is rejected during creation, Draft revision, and Start.
 - A receiving location that does not belong to the order's warehouse is rejected.
+- A request that bypasses the WebApp's eligible-location choices is still subject to the same Receiving location validation.
 - An order with no lines, duplicate SKU lines, or a zero or negative planned quantity is rejected.
 - A Draft replacement that references a line ID belonging to another receiving order is rejected without changing the Draft.
 - A zero or negative receive operation, a line not belonging to the order, or a receive operation against a Draft or Completed order is rejected.
@@ -98,7 +100,7 @@ As a warehouse user, I need to search and filter receiving orders, open their fu
 
 - **FR-001**: The system MUST provide a standalone local receiving workflow that does not depend on 1C or any other external system.
 - **FR-002**: A receiving order MUST have a required, normalized, globally unique number entered by the user for this MVP.
-- **FR-003**: A receiving order MUST reference one existing active warehouse and one existing active storage location belonging to that warehouse. The location's related type and status MUST be active, and existing inventory-balance eligibility rules MUST allow inventory there; no dedicated receiving-location type is introduced.
+- **FR-003**: A receiving order MUST reference one existing active warehouse and one existing active StorageLocation belonging to that warehouse. The StorageLocation's active StorageLocationType MUST represent Receiving, and existing inventory-balance eligibility rules MUST allow inventory there.
 - **FR-004**: A receiving order MUST contain at least one planned line, and every line MUST reference an existing active SKU.
 - **FR-005**: Each SKU MUST appear at most once in a receiving order.
 - **FR-006**: All planned and received quantities MUST be expressed in the SKU's base unit of measure without packaging or unit conversion.
@@ -108,7 +110,7 @@ As a warehouse user, I need to search and filter receiving orders, open their fu
 - **FR-010**: Creation MUST save the header and complete initial planned line set as one valid Draft.
 - **FR-011**: While an order is Draft, users MUST be able to replace its editable header and complete planned line set as one operation. The replacement MUST reconcile existing lines by line ID: update retained lines, remove omitted lines, and assign IDs only to new lines.
 - **FR-012**: Draft creation and revision MUST reject the entire submitted plan when any header or line rule is invalid, including when a submitted line ID does not belong to the receiving order, leaving no partial plan change.
-- **FR-013**: Starting MUST revalidate the current header and full planned line set before moving a Draft order to In Progress and recording the start time.
+- **FR-013**: Starting MUST revalidate the current header, Receiving location eligibility, and full planned line set before moving a Draft order to In Progress and recording the start time.
 - **FR-014**: Repeating start for an In Progress order MUST return the current order without changing its start time; starting a Completed order MUST be rejected.
 - **FR-015**: After start, the order number, warehouse, receiving location, planned line set, SKUs, and planned quantities MUST be immutable.
 - **FR-016**: While an order is In Progress, users MUST be able to identify a line and increment its received quantity by a valid positive amount.
@@ -129,16 +131,18 @@ As a warehouse user, I need to search and filter receiving orders, open their fu
 - **FR-031**: After a successful mutation, the user-facing order view MUST refresh to show current quantities, status, timestamps, version, and available actions; conflicts MUST clearly direct the user to refresh.
 - **FR-032**: Important create, update, start, receive, completion, rejection, and conflict outcomes MUST be available to existing operational diagnostics with the relevant order, line, warehouse, location, SKU, quantity, transaction, and outcome identifiers where applicable.
 - **FR-033**: Failures for missing data, invalid data, invalid state, duplicate number, duplicate SKU, and concurrent changes MUST be presented consistently with existing WMS workflows.
-- **FR-034**: This feature MUST NOT add cancellation, partial completion, negative corrections, reversals, damaged or excess receipt, discrepancies, putaway, scanner/mobile execution, printing, notifications, supplier or purchase-order behavior, packaging, tracked item attributes, automatic numbering, external identity or synchronization, generalized workflow, generalized inventory posting, generic source-document, or generic idempotency capabilities.
+- **FR-034**: This feature MUST NOT add cancellation, partial completion, negative corrections, reversals, damaged or excess receipt, discrepancies, putaway, scanner/mobile execution, printing, notifications, supplier or purchase-order behavior, packaging, tracked item attributes, automatic numbering, external identity or synchronization, docks, doors, staging areas, putaway rules, multiple receiving-location categories, a generalized location-capability framework, generalized workflow, generalized inventory posting, generic source-document, or generic idempotency capabilities.
 - **FR-035**: The receiving capability MUST own the receiving order and its lines while using the existing inventory records as the sole inventory quantity and history source; it MUST NOT maintain a separate receiving inventory quantity.
 - **FR-036**: Users MUST be able to permanently delete a Draft receiving order using its current aggregate version. Deletion MUST remove the order and all its lines as one indivisible outcome, MUST be rejected for In Progress or Completed orders and for any order with an inventory transaction or inventory effect, and MUST release the unique order number for reuse. No archive, soft-delete, or cancellation behavior is included.
+- **FR-037**: The WebApp MUST offer only eligible Receiving locations for the selected Warehouse. The system MUST independently validate the same Receiving location rule during order creation, Draft revision, and Start.
 
 ### Key Entities
 
 - **Receiving Order**: The local warehouse document that owns the receiving plan and execution state. It has a unique number, warehouse, receiving location, lifecycle status, start and completion times, modification history, current version, optional completed inventory transaction reference, and its lines.
 - **Receiving Order Line**: A line owned by one receiving order that identifies one SKU and records positive planned quantity and accumulated received quantity in the SKU base unit. Its identity is preserved when retained during Draft replacement, and its state is derived from its quantities rather than stored separately.
 - **Warehouse**: The active warehouse in which the physical receipt occurs and to which the receiving location must belong.
-- **Storage Location**: The active location in the selected warehouse where completed quantities become inventory. Its related type and status are active and existing inventory-balance eligibility rules allow inventory there; no dedicated receiving type or separate staging-location concept is introduced.
+- **Storage Location**: The existing location entity used as the ReceivingLocation where completed quantities become inventory. It is active, belongs to the selected Warehouse, has an active StorageLocationType that represents Receiving, and passes existing inventory-balance eligibility rules; no separate ReceivingLocation entity or aggregate is introduced.
+- **Storage Location Type**: The existing classification that identifies whether a StorageLocation represents Receiving. This MVP uses one Receiving classification without introducing a generalized location-capability model or multiple receiving-location categories.
 - **SKU**: The active stock keeping unit planned and received on a line, with quantities expressed only in its base unit.
 - **Inventory Balance**: The authoritative quantity for one SKU at one storage location, created when eligible or increased only upon successful completion.
 - **Inventory Transaction**: The single Receiving-classified record of one completed order's inventory posting.
@@ -158,12 +162,15 @@ As a warehouse user, I need to search and filter receiving orders, open their fu
 - **SC-008**: In every defined WebApp state for the acceptance workflow, the UI shows the correct planned, received, and remaining quantities, current status, available actions, and resulting inventory transaction reference when completed.
 - **SC-009**: Search, warehouse/status filters, sorting, and paging return the expected order set in 100% of defined list acceptance cases.
 - **SC-010**: Review of the delivered scope finds zero introduced workflows or infrastructure for the excluded capabilities in FR-034.
+- **SC-011**: Across defined creation, Draft revision, Start, and WebApp location-selection acceptance cases, 100% of accepted Receiving locations belong to the selected Warehouse, are active, have an active StorageLocationType representing Receiving, and pass existing inventory-balance eligibility; all other locations are unavailable for selection or rejected.
 
 ## Assumptions
 
 - Existing WMS authorization determines who may view and mutate receiving orders; this feature introduces no new roles or permission model.
 - Existing warehouse, storage-location, SKU, inventory eligibility, quantity precision, time, paging, sorting, diagnostics, and conflict-display conventions remain authoritative and are reused.
-- A receiving location is represented by an existing storage location that passes the established topology and inventory eligibility rules; no new location category, dedicated receiving type, or staging entity is required.
+- Receiving location designation uses the existing StorageLocationType classification on the existing StorageLocation entity; no separate ReceivingLocation entity or aggregate is required.
+- The Receiving StorageLocationType's technical identifier and setup are planning decisions governed by existing repository patterns rather than requirements of this specification.
+- A single Receiving location category is sufficient for this MVP; docks, doors, staging areas, putaway rules, and generalized location capabilities remain outside scope.
 - Physical receipt is performed against one receiving order and one receiving location; multiple receiving sessions and split-location receipt are outside this MVP.
 - Users know the local receiving order number and enter it manually; automatic numbering and year-scoped numbering remain deferred.
 - A user resolves a conflict by refreshing and deliberately repeating the action if it is still appropriate; the full completion operation is not silently retried.
