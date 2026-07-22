@@ -15,6 +15,7 @@
             <MudButton Color="Color.Primary"
                        Variant="Variant.Filled"
                        StartIcon="@Icons.Material.Filled.Add"
+                       Disabled="@_busyOrderId.HasValue"
                        OnClick="Create">
                 @Localizer["Receiving.Create"]
             </MudButton>
@@ -36,12 +37,14 @@
                                SelectedStatusChanged="OnStatusChanged"
                                SearchText="@_searchText"
                                SearchTextChanged="OnSearchTextChanged"
+                               Disabled="@_busyOrderId.HasValue"
                                ReloadRequested="ReloadAsync" />
 
         <ReceivingOrderGrid @ref="_receivingOrderGrid"
                             LoadData="LoadReceivingOrdersAsync"
                             OpenRequested="Open"
                             EditRequested="Edit"
+                            BusyOrderId="@_busyOrderId"
                             DeleteRequested="DeleteAsync" />
     </MudStack>
 </MudContainer>

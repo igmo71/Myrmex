@@ -11,6 +11,8 @@
 - Dispatch: existing command/query dispatchers.
 - Success/error serialization: existing `ServiceResult` HTTP mapping and RFC Problem Details.
 
+The implementation maps this group through `ReceivingEndpoints` and `ReceivingOrderEndpoints`, dispatches to the handlers in `Receiving/Features/ReceivingOrders`, and exposes the same routes through `WmsReceivingApiClient`.
+
 ## Endpoints
 
 | Method | Route | Input | Success |
@@ -36,7 +38,7 @@ Create intentionally returns `200 OK`: current WMS create endpoints use the shar
 |---|---|---|
 | `Skip` | `int?` | Existing list normalization; default 0. |
 | `Take` | `int?` | Existing default/max list normalization. |
-| `SearchText` | `string?` | Trimmed search over normalized order Number. |
+| `SearchText` | `string?` | Normalized with `DomainText.NormalizeCode`, then contains-matched against normalized order Number. |
 | `WarehouseId` | `Guid?` | Optional exact filter. |
 | `Status` | `string?` | Optional exact supported status text. |
 | `SortBy` | `string?` | One supported `ReceivingOrderSortBy` value. |
@@ -71,6 +73,8 @@ Create intentionally returns `200 OK`: current WMS create endpoints use the shar
 - an existing order line omitted from the request: delete it;
 - duplicate or foreign LineId: reject the entire update;
 - duplicate final SKU: reject the entire update.
+
+The implemented retained-line SKU reassignment path validates the complete final plan first. When persisted SKU ownership must be released for a swap or reassignment, the handler uses the existing EF transaction convention with a savepoint when it joins an ambient transaction, removes the conflicting persisted line rows set-wise, and performs one tracked `SaveChangesAsync` before commit. Reassigned rows retain their original LineIds; failures roll back the transaction/savepoint and clear tracked state, so no intermediate plan is committed or exposed.
 
 ### ReceivingOrderActionRequest
 
@@ -156,7 +160,7 @@ Unknown status or sort values produce validation failure. Every sort adds a dete
 ## List Semantics
 
 - Query with `AsNoTracking`.
-- Search trims input and matches Number.
+- Search normalizes input with `DomainText.NormalizeCode` and contains-matches normalized Number.
 - Filters combine Warehouse and Status.
 - Count matching rows before paging.
 - Use existing normalized Skip/Take limits and `ListResult<T>`.

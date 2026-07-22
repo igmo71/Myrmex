@@ -1,6 +1,6 @@
 # Quickstart: Validate Local Receiving Order MVP
 
-This guide is for implementation and acceptance after the planned changes exist. It does not authorize running commands during planning. Migration generation, database update, build, application execution, and every acceptance procedure below remain explicitly user-owned. The guide uses existing paths and adds no testing or benchmark infrastructure.
+This guide is the user-owned post-implementation validation procedure. Migration generation, database update, build, application execution, and every acceptance procedure below remain explicitly user-owned and are not executed by `/speckit-implement`. The guide uses existing paths and adds no testing or benchmark infrastructure.
 
 ## 1. Review the Design Boundaries
 
@@ -27,7 +27,7 @@ Migration generation and application are user-owned actions. Before applying, ve
 - order rowversion and no line rowversion;
 - `decimal(18,4)` planned/received quantities;
 - the required unique normalized Number, unique order/SKU, unique filtered transaction-reference, and existing balance-pair integrity indexes;
-- only composite/non-unique list indexes justified by the generated query shape and existing WMS conventions, rather than a required single-column index for every filter/sort field;
+- no additional non-unique list index: the implemented query-shape review recorded in `research.md` found none justified; do not add one merely during migration generation;
 - one active system StorageLocationType with the shared `StorageLocationTypeCodes.Receiving` persisted code;
 - no ReceivingLocation table, soft-delete columns, cancellation state, source-document table, or generalized capability tables.
 
@@ -54,7 +54,7 @@ Through existing topology/catalog/demo workflows, ensure the environment contain
 - at least one SKU/location with an existing balance and one without a balance;
 - for the large-plan scenario, a representative 300-line functional acceptance dataset of distinct active SKUs.
 
-The planned topology seed adds the Receiving type through the established seed pattern, and the demo-data extension should provide at least one location using the shared Receiving type code without changing legacy DOCK identities. The dataset may be prepared through existing catalog/import/demo facilities; it does not add Receiving import behavior.
+The implemented topology seed adds the Receiving type through the established seed pattern, and the demo-data extension provides a location using the shared Receiving type code without changing legacy DOCK identities. The larger dataset may be prepared through existing catalog/import/demo facilities; it does not add Receiving import behavior.
 
 ## 5. Validate the End-to-End WebApp Workflow
 
@@ -110,7 +110,9 @@ Also submit an ineligible location through an authenticated client, bypassing We
 
 Use two browser sessions or authenticated clients that load the same OrderVersion.
 
-- Save two different Draft revisions: one succeeds; the other receives 409. The losing editor retains its complete unsaved plan and disables repeated Save until the user explicitly reloads/discards or resolves it against current data.
+- Save two different Draft revisions: one succeeds; the other receives `ReceivingOrder.ConcurrencyConflict`. The losing editor retains its complete unsaved plan, disables repeated Save, and offers a confirmed Reload latest/discard-local-changes action.
+- Trigger `ReceivingOrder.InvalidState` from a Draft editor whose order has concurrently left Draft; verify the same stale/current-state handling.
+- Trigger `ReceivingOrder.NumberConflict`, `ReceivingOrderLine.DuplicateSku`, and an unknown 409 response in a controlled client diagnostic; verify the editor preserves local state, displays the returned error normally, and keeps Save enabled for correction. Classification must use the Problem Details `code`, never message text.
 - Start versus Draft update: at most one mutation succeeds; the stale operation conflicts.
 - Receive two line increments from the same version: at most one succeeds; refresh shows the aggregate-wide current quantities.
 - Delete versus another Draft mutation: at most one succeeds; no partial line deletion remains.
@@ -152,6 +154,7 @@ Use the order details, Inventory Balances page, Inventory Ledger page, and struc
 - Verify supported sorting and paging, deterministic totals, and empty results.
 - Open details for Draft, InProgress, and Completed orders and verify timestamps, OrderVersion, lines, planned/received/remaining quantities, status, available actions, and transaction reference.
 - Verify 400 for malformed input/version, 404 for absent records, and 409 for lifecycle, uniqueness, over-receipt, incomplete completion, and concurrency failures using existing Problem Details with `code` and `property`.
+- Verify `ReceivingOrder.InvalidPersistedState` uses the shared failure mapping to HTTP 500 Problem Details, not an unhandled exception, 409 response, or Receiving-specific envelope.
 - Confirm structured logs include action/outcome and relevant order, line, warehouse, location, SKU, quantity, and transaction identifiers without a new logging subsystem.
 - Submit a plan with multiple missing/inactive references and verify stable fail-fast ordering: request/version, target order and lifecycle/version when applicable, LineId/plan structure, Warehouse, ReceivingLocation, then SKU/base-UOM by first request occurrence, independent of database row order.
 

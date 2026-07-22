@@ -10,15 +10,15 @@
     {
       <MudStack Spacing="3">
         <MudText Typo="Typo.h5">@PageTitleText</MudText>
-        <MudTextField T="string" Label="@Localizer["Receiving.Number"]" Variant="Variant.Outlined" @bind-Value="Number" />
+        <MudTextField T="string" Label="@Localizer["Receiving.Number"]" Variant="Variant.Outlined" Disabled="Saving" @bind-Value="Number" />
         <MudAutocomplete T="WarehouseLookupItem" Label="@Localizer["Common.Warehouse"]" Variant="Variant.Outlined"
-                         Required="true" MinCharacters="0" SearchFunc="SearchWarehousesAsync" ToStringFunc="FormatWarehouse"
+                         Required="true" Disabled="Saving" MinCharacters="0" SearchFunc="SearchWarehousesAsync" ToStringFunc="FormatWarehouse"
                          Value="Warehouse" ValueChanged="WarehouseChangedAsync" />
         <MudAutocomplete T="StorageLocationLookupItem" Label="@Localizer["Receiving.Location"]" Variant="Variant.Outlined"
-                         Required="true" Disabled="@(Warehouse is null)" MinCharacters="0" SearchFunc="SearchLocationsAsync"
+                         Required="true" Disabled="@(Saving || Warehouse is null)" MinCharacters="0" SearchFunc="SearchLocationsAsync"
                          ToStringFunc="FormatLocation" @bind-Value="Location" />
         <MudStack Row="true" AlignItems="AlignItems.Center">
-            <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Outlined" OnClick="AddSkuAsync">@Localizer["Receiving.AddSku"]</MudButton>
+            <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Outlined" Disabled="Saving" OnClick="AddSkuAsync">@Localizer["Receiving.AddSku"]</MudButton>
             <MudTextField T="string" Label="@Localizer["Receiving.SearchLines"]" Variant="Variant.Outlined"
                           Margin="Margin.Dense" Clearable="true" Immediate="true" DebounceInterval="200"
                           Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
@@ -28,12 +28,12 @@
             <HeaderContent><MudTh>@Localizer["Common.Sku"]</MudTh><MudTh>@Localizer["Receiving.Planned"]</MudTh><MudTh>@Localizer["Common.Actions"]</MudTh></HeaderContent>
             <RowTemplate>
                 <MudTd>@context.Sku.Code - @context.Sku.Name</MudTd>
-                <MudTd><MudNumericField T="decimal" Min="@(0.0001m)" Format="0.####" @bind-Value="context.PlannedQuantity" /></MudTd>
+                <MudTd><MudNumericField T="decimal" Min="@(0.0001m)" Format="0.####" Disabled="Saving" @bind-Value="context.PlannedQuantity" /></MudTd>
                 <MudTd>
-                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => ChangeSkuAsync(context))">@Localizer["Receiving.ChangeSku"]</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" Disabled="Saving" OnClick="@(() => ChangeSkuAsync(context))">@Localizer["Receiving.ChangeSku"]</MudButton>
                     <MudTooltip Text="@Localizer["Receiving.RemoveLine"]">
                         <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
-                                       aria-label="@Localizer["Receiving.RemoveLine"]" OnClick="@(() => Remove(context))" />
+                                       Disabled="Saving" aria-label="@Localizer["Receiving.RemoveLine"]" OnClick="@(() => Remove(context))" />
                     </MudTooltip>
                 </MudTd>
             </RowTemplate>
@@ -46,7 +46,7 @@
             <MudAlert Severity="Severity.Warning">
                 <MudStack Spacing="2">
                     <MudText>@Localizer["Receiving.DraftConflictGuidance"]</MudText>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick="ReloadLatestAsync">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Warning" Disabled="Saving" OnClick="ReloadLatestAsync">
                         @Localizer["Receiving.ReloadLatestDiscard"]
                     </MudButton>
                 </MudStack>

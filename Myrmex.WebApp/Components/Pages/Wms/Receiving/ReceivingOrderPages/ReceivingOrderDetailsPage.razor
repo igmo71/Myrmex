@@ -10,7 +10,14 @@
 <PageTitle>@Localizer["Receiving.DetailsTitle"]</PageTitle>
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
     @if (_loading) { <MudProgressLinear Indeterminate="true" /> }
-    else if (_order is not null)
+    else if (_order is null)
+    {
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <MudAlert Severity="Severity.Error">@_error</MudAlert>
+        }
+    }
+    else
     {
         <MudStack Spacing="3">
             <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
@@ -41,17 +48,21 @@
                     <MudItem xs="4"><MudText Typo="Typo.caption">@Localizer["Receiving.Planned"]</MudText><MudText>@_order.TotalPlannedQuantity.ToString("0.####")</MudText></MudItem>
                     <MudItem xs="4"><MudText Typo="Typo.caption">@Localizer["Receiving.Received"]</MudText><MudText>@_order.TotalReceivedQuantity.ToString("0.####")</MudText></MudItem>
                     <MudItem xs="4"><MudText Typo="Typo.caption">@Localizer["Receiving.Remaining"]</MudText><MudText>@_order.TotalRemainingQuantity.ToString("0.####")</MudText></MudItem>
+                    <MudItem xs="6" md="3"><MudText Typo="Typo.caption">@Localizer["Common.Created"]</MudText><MudText>@FormatDateTime(_order.CreatedAtUtc)</MudText></MudItem>
+                    <MudItem xs="6" md="3"><MudText Typo="Typo.caption">@Localizer["Common.Updated"]</MudText><MudText>@FormatDateTime(_order.UpdatedAtUtc)</MudText></MudItem>
+                    <MudItem xs="6" md="3"><MudText Typo="Typo.caption">@Localizer["Receiving.StartedAt"]</MudText><MudText>@FormatDateTime(_order.StartedAtUtc)</MudText></MudItem>
+                    <MudItem xs="6" md="3"><MudText Typo="Typo.caption">@Localizer["Receiving.CompletedAt"]</MudText><MudText>@FormatDateTime(_order.CompletedAtUtc)</MudText></MudItem>
                     @if (_order.InventoryTransactionId.HasValue)
                     {
-                        <MudItem xs="12"><MudButton Variant="Variant.Text" OnClick="OpenTransactionAsync">@Localizer["Receiving.Transaction"]: @_order.InventoryTransactionId.Value</MudButton></MudItem>
+                        <MudItem xs="12"><MudButton Variant="Variant.Text" Disabled="_saving" OnClick="OpenTransactionAsync">@Localizer["Receiving.Transaction"]: @_order.InventoryTransactionId.Value</MudButton></MudItem>
                     }
                 </MudGrid>
             </MudPaper>
             <MudTable Items="_order.Lines" Dense="true" Bordered="true" Hover="true">
-                <HeaderContent><MudTh>@Localizer["Common.Sku"]</MudTh><MudTh>@Localizer["Receiving.Planned"]</MudTh><MudTh>@Localizer["Receiving.Received"]</MudTh><MudTh>@Localizer["Receiving.Remaining"]</MudTh><MudTh>@Localizer["Common.Actions"]</MudTh></HeaderContent>
+                <HeaderContent><MudTh>@Localizer["Common.Sku"]</MudTh><MudTh>@Localizer["Sku.BaseUnitOfMeasure"]</MudTh><MudTh>@Localizer["Receiving.Planned"]</MudTh><MudTh>@Localizer["Receiving.Received"]</MudTh><MudTh>@Localizer["Receiving.Remaining"]</MudTh><MudTh>@Localizer["Common.Actions"]</MudTh></HeaderContent>
                 <RowTemplate>
-                    <MudTd>@context.Sku.Code - @context.Sku.Name</MudTd><MudTd>@context.PlannedQuantity.ToString("0.####")</MudTd><MudTd>@context.ReceivedQuantity.ToString("0.####")</MudTd><MudTd>@context.RemainingQuantity.ToString("0.####")</MudTd>
-                    <MudTd>@if (_order.Status == ReceivingOrderStatusDetails.InProgress && context.RemainingQuantity > 0) { <MudButton Size="Size.Small" OnClick="@(() => ReceiveAsync(context))">@Localizer["Receiving.Receive"]</MudButton> }</MudTd>
+                    <MudTd>@context.Sku.Code - @context.Sku.Name</MudTd><MudTd>@FormatBaseUnitOfMeasure(context)</MudTd><MudTd>@context.PlannedQuantity.ToString("0.####")</MudTd><MudTd>@context.ReceivedQuantity.ToString("0.####")</MudTd><MudTd>@context.RemainingQuantity.ToString("0.####")</MudTd>
+                    <MudTd>@if (_order.Status == ReceivingOrderStatusDetails.InProgress && context.RemainingQuantity > 0) { <MudButton Size="Size.Small" Disabled="_saving" OnClick="@(() => ReceiveAsync(context))">@Localizer["Receiving.Receive"]</MudButton> }</MudTd>
                 </RowTemplate>
             </MudTable>
         </MudStack>
@@ -69,7 +80,7 @@
     protected override Task OnParametersSetAsync() => LoadAsync();
     private async Task LoadAsync()
     {
-        _loading = true; _error = null;
+        _loading = true; _error = null; _order = null;
         try { _order = await ReceivingApiClient.GetReceivingOrderByIdAsync(ReceivingOrderId); }
         catch (Exception exception) { _error = exception.Message; }
         finally { _loading = false; }
@@ -81,24 +92,48 @@
     private async Task ExecuteAsync(Func<Task<ApiResult<ReceivingOrderDetails>>> action, string success)
     {
         _saving = true; _error = null;
-        ApiResult<ReceivingOrderDetails> result = await action();
-        _saving = false;
-        if (result.IsFailure || result.Value is null)
+        try
         {
-            if (result.Error?.Status == StatusCodes.Status409Conflict) { await LoadAsync(); _message = Localizer["Receiving.ConflictReloaded"]; }
-            else { _error = result.Error?.Message ?? Localizer["Receiving.ActionError"]; }
-            return;
+            ApiResult<ReceivingOrderDetails> result = await action();
+            if (result.IsFailure || result.Value is null)
+            {
+                if (result.Error?.Status == StatusCodes.Status409Conflict) { await LoadAsync(); _message = Localizer["Receiving.ConflictReloaded"]; }
+                else { _error = result.Error?.Message ?? Localizer["Receiving.ActionError"]; }
+                return;
+            }
+            _order = result.Value; _message = success;
         }
-        _order = result.Value; _message = success;
+        catch (Exception exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 
     private async Task ReceiveAsync(ReceivingOrderLineDetails line)
     {
-        DialogParameters parameters = new() { [nameof(ReceiveReceivingOrderLineDialog.Order)] = _order!, [nameof(ReceiveReceivingOrderLineDialog.Line)] = line };
-        IDialogReference dialog = await DialogService.ShowAsync<ReceiveReceivingOrderLineDialog>(Localizer["Receiving.Receive"].Value, parameters, new() { CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.Small });
-        DialogResult? result = await dialog.Result;
-        if (result is { Canceled: false, Data: ReceivingOrderDetails updated }) { _order = updated; return; }
-        if (result?.Data as string == ReceiveReceivingOrderLineDialog.ConflictResult) { await LoadAsync(); _message = Localizer["Receiving.ConflictReloaded"]; }
+        if (_saving) return;
+        _saving = true;
+        _error = null;
+        try
+        {
+            DialogParameters parameters = new() { [nameof(ReceiveReceivingOrderLineDialog.Order)] = _order!, [nameof(ReceiveReceivingOrderLineDialog.Line)] = line };
+            IDialogReference dialog = await DialogService.ShowAsync<ReceiveReceivingOrderLineDialog>(Localizer["Receiving.Receive"].Value, parameters, new() { CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.Small });
+            DialogResult? result = await dialog.Result;
+            if (result is { Canceled: false, Data: ReceivingOrderDetails updated }) { _order = updated; return; }
+            if (result?.Data as string == ReceiveReceivingOrderLineDialog.ConflictResult) { await LoadAsync(); _message = Localizer["Receiving.ConflictReloaded"]; }
+        }
+        catch (Exception exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 
     private void EditDraft()
@@ -161,6 +196,9 @@
     private async Task OpenTransactionAsync()
     {
         if (_order?.InventoryTransactionId is not Guid transactionId) return;
+        if (_saving) return;
+        _saving = true;
+        _error = null;
         try
         {
             InventoryTransactionDetails transaction = await InventoryApiClient.GetInventoryTransactionByIdAsync(transactionId);
@@ -168,6 +206,7 @@
             await DialogService.ShowAsync<InventoryTransactionDetailsDialog>(Localizer["Receiving.Transaction"].Value, parameters, new() { CloseButton = true, FullWidth = true, MaxWidth = MaxWidth.Large });
         }
         catch (Exception exception) { _error = exception.Message; }
+        finally { _saving = false; }
     }
 
     private string FormatStatus(string status) => status switch
@@ -177,4 +216,12 @@
         ReceivingOrderStatusDetails.Completed => Localizer["Receiving.Status.Completed"],
         _ => status
     };
+
+    private static string FormatDateTime(DateTimeOffset? value) =>
+        value.HasValue ? value.Value.ToLocalTime().ToString("g") : "—";
+
+    private static string FormatBaseUnitOfMeasure(ReceivingOrderLineDetails line) =>
+        string.IsNullOrWhiteSpace(line.Sku.BaseUom.Symbol)
+            ? line.Sku.BaseUom.Code
+            : $"{line.Sku.BaseUom.Code} ({line.Sku.BaseUom.Symbol})";
 }

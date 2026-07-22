@@ -13,6 +13,8 @@ Add one localized Receiving navigation entry under WMS and these full-page route
 
 Creation and complete-document editing never use a modal dialog.
 
+The implemented route components are `ReceivingOrderPages/Index.razor`, `ReceivingOrderDraftPage.razor`, and `ReceivingOrderDetailsPage.razor`; focused SKU selection and line receipt remain the two small dialogs named `SelectReceivingOrderSkuDialog` and `ReceiveReceivingOrderLineDialog`.
+
 ## List Page
 
 Follow the existing WMS MudDataGrid server-data pattern:
@@ -76,7 +78,8 @@ Do not render one autocomplete control for every line. Select/Change opens one s
 - Create sends `CreateReceivingOrderRequest` and navigates to details on success.
 - Edit sends the complete `UpdateReceivingOrderDraftRequest` with current OrderVersion.
 - On edit success, replace local state with returned details or navigate to details.
-- On HTTP 409, do not auto-retry and do not silently discard the unsaved complete plan. Show explicit current-data conflict guidance, disable repeated Save, and provide a confirmed Reload latest/discard-local-changes action. Keep the local plan visible so the user may resolve it manually, but add no automatic or three-way merge, automatic replay, or generalized conflict-resolution workflow.
+- Classify only HTTP 409 responses whose Problem Details `code` is `ReceivingOrder.ConcurrencyConflict` or `ReceivingOrder.InvalidState` as stale/current-state conflicts. For those codes, do not auto-retry or silently discard the unsaved complete plan: show explicit current-data conflict guidance, disable repeated Save, and provide a confirmed Reload latest/discard-local-changes action. Keep the local plan visible, but add no automatic or three-way merge, automatic replay, or generalized conflict-resolution workflow.
+- For `ReceivingOrder.NumberConflict`, `ReceivingOrderLine.DuplicateSku`, any other known business failure, and an unknown HTTP 409 code, preserve local state, display the returned Problem Details error normally, and keep Save enabled so the user can correct and resubmit. Never classify conflicts by message text.
 
 ## Details and Execution Page
 

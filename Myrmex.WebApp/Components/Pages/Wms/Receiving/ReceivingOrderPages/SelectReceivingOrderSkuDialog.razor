@@ -7,12 +7,30 @@
                          Label="@Localizer["Common.Sku"]"
                          Variant="Variant.Outlined"
                          Required="true"
+                         AutoFocus="true"
+                         Clearable="true"
+                         ShowProgressIndicator="true"
                          MinCharacters="0"
                          MaxItems="20"
                          DebounceInterval="300"
                          SearchFunc="SearchAsync"
+                         ResetValueOnEmptyText="true"
+                         CoerceText="false"
+                         CoerceValue="false"
                          ToStringFunc="FormatSku"
-                         @bind-Value="_selected" />
+                         @bind-Value="_selected">
+            <ItemTemplate>
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        @Localizer["Sku.BaseUnitOfMeasure"]: @FormatBaseUnitOfMeasure(context)
+                    </MudText>
+                </MudStack>
+            </ItemTemplate>
+            <NoItemsTemplate>
+                <MudText>@Localizer["Sku.NoneFound"]</MudText>
+            </NoItemsTemplate>
+        </MudAutocomplete>
         @if (!string.IsNullOrWhiteSpace(_error))
         {
             <MudAlert Severity="Severity.Error" Class="mt-3">@_error</MudAlert>
@@ -34,6 +52,7 @@
 
     private async Task<IEnumerable<StockKeepingUnitLookupItem>> SearchAsync(string value, CancellationToken token)
     {
+        _error = null;
         try
         {
             IReadOnlyList<StockKeepingUnitLookupItem> items = await WmsCatalogApiClient.LookupStockKeepingUnitsAsync(
@@ -48,4 +67,9 @@
     private void Cancel() => MudDialog.Cancel();
     private static string FormatSku(StockKeepingUnitLookupItem? sku) =>
         sku is null ? string.Empty : $"{sku.Code} - {sku.Name}";
+
+    private static string FormatBaseUnitOfMeasure(StockKeepingUnitLookupItem sku) =>
+        string.IsNullOrWhiteSpace(sku.BaseUnitOfMeasureSymbol)
+            ? sku.BaseUnitOfMeasureCode
+            : $"{sku.BaseUnitOfMeasureCode} ({sku.BaseUnitOfMeasureSymbol})";
 }

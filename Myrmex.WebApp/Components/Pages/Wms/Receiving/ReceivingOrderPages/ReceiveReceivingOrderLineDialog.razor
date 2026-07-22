@@ -10,13 +10,13 @@
             <MudText>@Localizer["Receiving.Remaining"]: @Line.RemainingQuantity.ToString("0.####")</MudText>
             <MudNumericField T="decimal" Label="@Localizer["Receiving.ReceiveQuantity"]"
                              Variant="Variant.Outlined" Min="@(0.0001m)" Max="@Line.RemainingQuantity"
-                             Format="0.####" Required="true" @bind-Value="_quantity" />
+                             Format="0.####" Required="true" AutoFocus="true" Disabled="_saving" @bind-Value="_quantity" />
             @if (!string.IsNullOrWhiteSpace(_error)) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
         </MudStack>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel" Disabled="_saving">@Localizer["Common.Cancel"]</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="_saving">
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@(!CanSave)">
             @Localizer["Receiving.Receive"]
         </MudButton>
     </DialogActions>
@@ -30,6 +30,7 @@
     private decimal _quantity;
     private bool _saving;
     private string? _error;
+    private bool CanSave => !_saving && _quantity > 0 && _quantity <= Line.RemainingQuantity;
 
     protected override void OnInitialized() => _quantity = Line.RemainingQuantity;
 
@@ -37,16 +38,27 @@
     {
         if (_quantity <= 0 || _quantity > Line.RemainingQuantity) { _error = Localizer["Receiving.QuantityInvalid"]; return; }
         _saving = true;
-        ApiResult<ReceivingOrderDetails> result = await ReceivingApiClient.TryReceiveLineAsync(
-            Order.Id, Line.Id, new(_quantity, Order.OrderVersion));
-        _saving = false;
-        if (result.IsFailure)
+        _error = null;
+        try
         {
-            if (result.Error?.Status == StatusCodes.Status409Conflict) { MudDialog.Close(DialogResult.Ok(ConflictResult)); return; }
-            _error = result.Error?.Message ?? Localizer["Receiving.ReceiveError"];
-            return;
+            ApiResult<ReceivingOrderDetails> result = await ReceivingApiClient.TryReceiveLineAsync(
+                Order.Id, Line.Id, new(_quantity, Order.OrderVersion));
+            if (result.IsFailure)
+            {
+                if (result.Error?.Status == StatusCodes.Status409Conflict) { MudDialog.Close(DialogResult.Ok(ConflictResult)); return; }
+                _error = result.Error?.Message ?? Localizer["Receiving.ReceiveError"];
+                return;
+            }
+            if (result.Value is not null) { MudDialog.Close(DialogResult.Ok(result.Value)); }
         }
-        if (result.Value is not null) { MudDialog.Close(DialogResult.Ok(result.Value)); }
+        catch (Exception exception)
+        {
+            _error = exception.Message;
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 
     private void Cancel() => MudDialog.Cancel();

@@ -93,6 +93,7 @@
                 <MudTooltip Text="@Localizer["Receiving.Open"]">
                     <MudIconButton Icon="@Icons.Material.Filled.Visibility"
                                    Size="Size.Small"
+                                   Disabled="@BusyOrderId.HasValue"
                                    aria-label="@Localizer["Receiving.Open"]"
                                    OnClick="@(() => OpenRequested.InvokeAsync(context.Item))" />
                 </MudTooltip>
@@ -101,6 +102,7 @@
                     <MudTooltip Text="@Localizer["Common.Edit"]">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                        Size="Size.Small"
+                                       Disabled="@BusyOrderId.HasValue"
                                        aria-label="@Localizer["Common.Edit"]"
                                        OnClick="@(() => EditRequested.InvokeAsync(context.Item))" />
                     </MudTooltip>
@@ -108,6 +110,7 @@
                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                        Color="Color.Error"
                                        Size="Size.Small"
+                                       Disabled="@BusyOrderId.HasValue"
                                        aria-label="@Localizer["Receiving.DeleteAction"]"
                                        OnClick="@(() => DeleteRequested.InvokeAsync(context.Item))" />
                     </MudTooltip>
@@ -130,6 +133,7 @@
     [Parameter] public EventCallback<ReceivingOrderListItem> OpenRequested { get; set; }
     [Parameter] public EventCallback<ReceivingOrderListItem> EditRequested { get; set; }
     [Parameter] public EventCallback<ReceivingOrderListItem> DeleteRequested { get; set; }
+    [Parameter] public Guid? BusyOrderId { get; set; }
 
     private MudDataGrid<ReceivingOrderListItem>? _dataGrid;
     private static readonly int[] PageSizeOptions = [10, 25, 50, 100];

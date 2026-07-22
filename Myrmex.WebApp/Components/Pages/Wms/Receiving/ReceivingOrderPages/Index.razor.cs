@@ -24,6 +24,7 @@ public partial class Index
     private string? _searchText;
     private string? _errorMessage;
     private string? _message;
+    private Guid? _busyOrderId;
 
     private async Task<GridData<ReceivingOrderListItem>> LoadReceivingOrdersAsync(
         ReceivingOrderGridRequest gridRequest,
@@ -119,6 +120,7 @@ public partial class Index
 
         _errorMessage = null;
         _message = null;
+        _busyOrderId = order.Id;
         try
         {
             ApiResult<bool> result = await ReceivingApiClient.TryDeleteReceivingOrderDraftAsync(
@@ -145,6 +147,10 @@ public partial class Index
         catch (Exception exception)
         {
             _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _busyOrderId = null;
         }
     }
 
