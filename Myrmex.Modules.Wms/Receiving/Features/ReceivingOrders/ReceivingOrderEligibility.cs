@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
+using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Receiving.Domain.ReceivingOrders;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
@@ -54,6 +55,14 @@ internal static class ReceivingOrderEligibility
                 receivingLocationProperty);
         }
 
+        if (location.StorageLocationType is null ||
+            location.StorageLocationStatus is null)
+        {
+            return ReceivingOrderErrors.ReceivingLocationInvalid(
+                "Receiving StorageLocation has invalid type or status references.",
+                receivingLocationProperty);
+        }
+
         StorageLocationEligibility.Result selectability =
             StorageLocationEligibility.Evaluate(location);
         if (!selectability.IsSelectable)
@@ -95,6 +104,13 @@ internal static class ReceivingOrderEligibility
             {
                 return ServiceError.Validation<StockKeepingUnit>(
                     "StockKeepingUnit is inactive",
+                    property);
+            }
+
+            if (sku.BaseUnitOfMeasure is null)
+            {
+                return ServiceError.NotFound<UnitOfMeasure>(
+                    "BaseUnitOfMeasure not found",
                     property);
             }
 

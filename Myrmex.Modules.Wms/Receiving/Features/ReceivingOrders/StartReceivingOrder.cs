@@ -23,10 +23,10 @@ internal static class StartReceivingOrder
             Command command,
             CancellationToken cancellationToken = default)
         {
-            List<DomainValidationFailure> errors = Validate(command, out byte[]? version);
-            if (errors.Count > 0)
+            DomainValidationFailure? idError = ValidateId(command);
+            if (idError is not null)
             {
-                return ServiceResult<ReceivingOrderDetails>.Invalid(errors);
+                return ServiceResult<ReceivingOrderDetails>.Invalid([idError]);
             }
 
             ReceivingOrder? order = await dbContext.ReceivingOrders
@@ -47,6 +47,15 @@ internal static class StartReceivingOrder
             {
                 return ServiceResult<ReceivingOrderDetails>.Fail(
                     ReceivingOrderErrors.InvalidState("Completed receiving orders cannot be started."));
+            }
+
+            DomainValidationFailure? versionError = ReceivingOrderVersion.Parse(
+                command.ExpectedOrderVersion,
+                nameof(Command.ExpectedOrderVersion),
+                out byte[]? version);
+            if (versionError is not null)
+            {
+                return ServiceResult<ReceivingOrderDetails>.Invalid([versionError]);
             }
 
             if (!order.RowVersion.SequenceEqual(version!))
@@ -93,23 +102,14 @@ internal static class StartReceivingOrder
         }
     }
 
-    private static List<DomainValidationFailure> Validate(Command command, out byte[]? version)
+    private static DomainValidationFailure? ValidateId(Command command)
     {
-        List<DomainValidationFailure> errors = [];
         if (!command.ReceivingOrderId.HasValue || command.ReceivingOrderId.Value == Guid.Empty)
         {
-            errors.Add(DomainValidationFailure.Required<ReceivingOrder>(nameof(Command.ReceivingOrderId)));
+            return DomainValidationFailure.Required<ReceivingOrder>(
+                nameof(Command.ReceivingOrderId));
         }
 
-        DomainValidationFailure? versionError = ReceivingOrderVersion.Parse(
-            command.ExpectedOrderVersion,
-            nameof(Command.ExpectedOrderVersion),
-            out version);
-        if (versionError is not null)
-        {
-            errors.Add(versionError);
-        }
-
-        return errors;
+        return null;
     }
 }
