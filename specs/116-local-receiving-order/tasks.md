@@ -47,8 +47,9 @@
 - [ ] T014 [P] Add Receiving table/index/constraint names and duplicate Number/order-SKU exception mappings in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs` and `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsPersistenceExceptionMapper.cs`
 - [ ] T015 Configure restrictive relationships, aggregate rowversion, `decimal(18,4)` columns, unique normalized Number, unique order/SKU, and filtered unique InventoryTransactionId in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/ReceivingOrderConfiguration.cs` and `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/ReceivingOrderLineConfiguration.cs`
 - [ ] T016 [P] Register ReceivingOrder and ReceivingOrderLine sets in the existing WMS context in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs`
+- [ ] T047 After T010 and T011, review every existing workflow directly affected by extracting/reusing `StorageLocationEligibility` and preserve its prior accepted/rejected location behavior and error semantics, removing duplicate active location/type/status checks only when behavior remains unchanged and never intentionally broadening/narrowing Adjustment, Count, Transfer, or other workflows for Issue #116, in `Myrmex.Modules.Wms/Topology/Features/StorageLocations/StorageLocationEligibility.cs`, `Myrmex.Modules.Wms/Topology/Features/StorageLocations/LookupStorageLocations.cs`, `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/InventoryBalanceCreateEligibility.cs`, `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs`, `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/AddInventoryCountLine.cs`, `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/CreateInventoryTransfer.cs`, and `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/MoveInventoryBalance.cs`
 
-**Checkpoint**: The shared contracts, aggregate, authoritative location eligibility, and EF model are ready for user-story slices. Do not generate or apply the migration as part of these tasks; hand that action to the user through `quickstart.md`.
+**Critical checkpoint**: Phase 2 is complete only after T047 verifies the T010/T011 shared eligibility refactor across every directly affected existing workflow. No US1, US2, or US3 implementation may begin until T047 is complete. The shared contracts, aggregate, authoritative location eligibility, and EF model are then ready for user-story slices. Do not generate or apply the migration as part of these tasks; hand that action to the user through `quickstart.md`.
 
 ---
 
@@ -121,11 +122,10 @@
 
 ---
 
-## Phase 6: Polish & Cross-Cutting Review
+## Phase 6: Polish & Documentation Review
 
-**Purpose**: Close consistency, diagnostics, accessibility, and handoff gaps without expanding Issue #116.
+**Purpose**: Close accessibility, documentation consistency, and handoff gaps without expanding Issue #116.
 
-- [ ] T047 Review every existing workflow directly affected by extracting/reusing `StorageLocationEligibility` and preserve its prior accepted/rejected location behavior and error semantics, removing duplicate active location/type/status checks only when behavior remains unchanged and never intentionally broadening/narrowing Adjustment, Count, Transfer, or other workflows for Issue #116, in `Myrmex.Modules.Wms/Topology/Features/StorageLocations/StorageLocationEligibility.cs`, `Myrmex.Modules.Wms/Topology/Features/StorageLocations/LookupStorageLocations.cs`, `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/InventoryBalanceCreateEligibility.cs`, `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs`, `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/AddInventoryCountLine.cs`, `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/CreateInventoryTransfer.cs`, and `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/MoveInventoryBalance.cs`
 - [ ] T048 Audit localized labels, disabled action states, icon tooltips, dialog focus, and keyboard behavior across `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/Index.razor`, `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDraftPage.razor`, `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDetailsPage.razor`, `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/SelectReceivingOrderSkuDialog.razor`, and `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceiveReceivingOrderLineDialog.razor`
 - [ ] T049 Reconcile final implementation-facing names, routes, error codes, user-owned migration/build/run/acceptance instructions, and excluded weight/1C scope with the approved plan without weakening specification behavior to match accidental implementation differences; do not modify `spec.md` unless a direct contradiction is discovered and explicitly reported, in `specs/116-local-receiving-order/quickstart.md`, `specs/116-local-receiving-order/contracts/receiving-orders-api-contract.md`, and `specs/116-local-receiving-order/contracts/receiving-orders-webapp-contract.md`
 
@@ -136,28 +136,29 @@
 ### Phase Dependencies
 
 - **Phase 1 — Setup**: Starts immediately. T003 depends on T001; T004 depends on T003.
-- **Phase 2 — Foundational**: Depends on Phase 1. T011 depends on T010; T013 depends on T002, T005, and T012; T015/T016 depend on the aggregate model, with T015 also using T014 names.
-- **Phase 3 — User Story 1**: Depends on Phase 2. This is the MVP and establishes create/details/execution shells reused by later stories.
-- **Phase 4 — User Story 2**: Depends on Phase 2 plus the US1 create/details/API-client/editor shells needed to obtain and revise a Draft.
-- **Phase 5 — User Story 3**: Its list-query and list-component work can begin after Phase 2; its complete find-and-execute checkpoint depends on the US1 execution page and US2 Draft editor behavior.
-- **Phase 6 — Polish**: Depends on all selected user stories. T047 specifically follows T010/T011 and reviews all existing workflows affected by the shared eligibility extraction before handoff.
+- **Phase 2 — Foundational**: Depends on Phase 1. T011 depends on T010; T013 depends on T002, T005, and T012; T015/T016 depend on the aggregate model, with T015 also using T014 names. T047 depends on T010 and T011, is scheduled as the final Phase 2 review after T016, and blocks every user-story phase.
+- **Phase 3 — User Story 1**: Depends on completed Phase 2, including T047. This is the MVP and establishes create/details/execution shells reused by later stories.
+- **Phase 4 — User Story 2**: Depends on completed Phase 2, including T047, plus the US1 create/details/API-client/editor shells needed to obtain and revise a Draft.
+- **Phase 5 — User Story 3**: Depends on completed Phase 2, including T047; its complete find-and-execute checkpoint also depends on the US1 execution page and US2 Draft editor behavior.
+- **Phase 6 — Polish & Documentation**: Contains only T048 and T049 and depends on all selected user stories.
 
 ### User Story Dependencies
 
 ```text
-Setup → Foundational → US1 (MVP)
-                         ├──→ US2
-                         └──→ US3 list/details completion
-Foundational ─────────────────→ US3 list-query work may start early
-US1 + US2 + US3 → Polish
+Setup → Foundational T005–T016 → T047 eligibility regression gate
+                                      ├──→ US1 (MVP)
+                                      ├──→ US2
+                                      └──→ US3
+US1 + US2 + US3 → Polish & Documentation (T048–T049)
 ```
 
-- **US1 (P1)**: First deliverable; no dependency on another user story.
-- **US2 (P2)**: Uses US1 creation/details surfaces but its reconciliation/deletion rules remain independently testable.
-- **US3 (P3)**: List work is parallelizable after Foundation; the full story integrates the US1 execution and US2 editor surfaces.
+- **US1 (P1)**: First deliverable after the T047 foundational gate; no dependency on another user story.
+- **US2 (P2)**: Begins only after the T047 foundational gate and uses US1 creation/details surfaces, while its reconciliation/deletion rules remain independently testable.
+- **US3 (P3)**: Begins only after the T047 foundational gate; the full story integrates the US1 execution and US2 editor surfaces.
 
-### Within-Story Dependencies
+### Within-Phase and Story Dependencies
 
+- **Foundational**: T011 follows T010. T047 depends on T010 and T011, runs as the final review after T016, and must complete before T017–T046 begin.
 - **US1**: T023–T026 depend on T018 and the aggregate; T026 also depends on T017. T027 follows backend handlers. T028 depends on T020/T021. T029 depends on T020. T030 depends on T019, T020, T027, and T029.
 - **US2**: T033 follows T031/T032. T034 follows T033. T035 follows T034. T036 follows T032/T033.
 - **US3**: T039 follows T038. T042 follows T039–T041. T045 follows T038 so it evaluates the actual query shape.
@@ -165,8 +166,8 @@ US1 + US2 + US3 → Polish
 ### Parallel Opportunities
 
 - T001 and T002 can run together.
-- After Setup, T005–T010 and T012/T014 can be distributed by file; T011 waits for T010 and T013 waits for its domain prerequisites.
-- At US1 start, T017–T021 can run in parallel. After T018, T024 and T025 can run together; after T020, T028 and T029 can proceed on separate page/dialog files.
+- After Setup, T005–T010 and T012/T014 can be distributed by file; T011 waits for T010 and T013 waits for its domain prerequisites. T047 depends on T010/T011, is deliberately completed after T016 as the final foundational gate, and cannot run in parallel with downstream user-story implementation.
+- Only after T047 completes, T017–T021 can run in parallel at US1 start. After T018, T024 and T025 can run together; after T020, T028 and T029 can proceed on separate page/dialog files.
 - T031 and T032 can run in parallel for US2.
 - For US3, T040, T041, T043, and T044 target separate concerns/files and can run in parallel subject to the listed prerequisites.
 - T022, T037, and T046 all edit the same `SharedResource*.resx` files and must run serially in task-ID order; they are not parallel opportunities even if different user stories are staffed concurrently.
@@ -214,14 +215,15 @@ Task T044: Navigation
 
 ### MVP First — User Story 1
 
-1. Complete Setup and Foundational phases.
-2. Complete US1 domain orchestration, endpoints, API client, create editor, and execution page.
-3. Stop at the US1 checkpoint and hand migration generation/application, build, application execution, and acceptance execution to the user through `quickstart.md`.
-4. Do not create test infrastructure, posting frameworks, source-document frameworks, location capabilities, weight fields, or 1C weight normalization.
+1. Complete Setup and foundational tasks T005–T016.
+2. Complete T047 to finish Phase 2 as the blocking shared-eligibility regression gate; do not begin any user-story implementation before it passes review.
+3. Complete US1 domain orchestration, endpoints, API client, create editor, and execution page.
+4. Stop at the US1 checkpoint and hand migration generation/application, build, application execution, and acceptance execution to the user through `quickstart.md`.
+5. Do not create test infrastructure, posting frameworks, source-document frameworks, location capabilities, weight fields, or 1C weight normalization.
 
 ### Incremental Delivery
 
-1. **Foundation**: Shared constants, decimal boundary, aggregate, eligibility, contracts, and EF configuration.
+1. **Foundation**: Shared constants, decimal boundary, aggregate, eligibility, contracts, and EF configuration, followed by the blocking T047 regression review of every directly affected existing location workflow.
 2. **US1 MVP**: Draft → InProgress → Completed with one atomic inventory posting.
 3. **US2**: Stable-identity Draft replacement and guarded physical Draft deletion.
 4. **US3**: List/discovery plus representative 300-line WebApp behavior.
