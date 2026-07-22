@@ -38,9 +38,11 @@ Use one reusable page component for create and edit modes.
 - Number text input.
 - Warehouse lookup using the existing selectable Warehouse endpoint.
 - ReceivingLocation lookup disabled until Warehouse is selected.
-- ReceivingLocation lookup always sends `SelectableOnly=true` and `StorageLocationTypeCode=RECEIVING`.
+- ReceivingLocation lookup always sends `SelectableOnly=true` and `StorageLocationTypeCode=StorageLocationTypeCodes.Receiving`; UI code imports the shared Topology-owned constant and does not repeat the raw persisted code.
 - Changing Warehouse clears the selected ReceivingLocation and any cached location results.
 - Edit mode loads and preserves `OrderVersion`; create mode has none.
+
+The lookup offers only locations that satisfy the authoritative rule: active Warehouse, active location in that Warehouse, active Receiving type, and current status/other inventory-selectability eligibility. The backend revalidates the same rule on Create, Update Draft, and Start.
 
 ### Line State
 
@@ -72,9 +74,9 @@ Do not render one autocomplete control for every line. Select/Change opens one s
 ### Save and Conflict Behavior
 
 - Create sends `CreateReceivingOrderRequest` and navigates to details on success.
-- Edit sends the complete `UpdateReceivingOrderRequest` with current OrderVersion.
+- Edit sends the complete `UpdateReceivingOrderDraftRequest` with current OrderVersion.
 - On edit success, replace local state with returned details or navigate to details.
-- On HTTP 409, do not auto-retry and do not silently discard unsaved page state. Show an explicit “order changed” message and a Reload latest/discard-local-changes action; disable further save until the user reloads.
+- On HTTP 409, do not auto-retry and do not silently discard the unsaved complete plan. Show an explicit “order changed” message and actions to reload/discard local changes or resolve them against current data; disable repeated Save until the user explicitly completes one of those paths.
 
 ## Details and Execution Page
 
@@ -102,13 +104,13 @@ One small dialog accepts a strictly positive increment for one line, shows plann
 
 - Replace page details with every successful Start/Receive/Complete response.
 - A concurrently resolved Complete returned as success is shown as ordinary Completed state.
-- On true HTTP 409, reload current details, show clear conflict/refresh guidance, and require a deliberate retry.
+- On true HTTP 409, execution actions may reload current details, show clear conflict/refresh guidance, and require a deliberate retry because they have no comparable large unsaved page plan.
 - Never automatically retry inventory posting or another mutation.
 - Use the existing Inventory Transaction details dialog/client when opening the completion reference.
 
-## 300-Line Functional Dataset
+## Representative 300-Line Functional Acceptance Dataset
 
-The page must support exactly 300 distinct active SKU lines as a deterministic functional scenario:
+The page must support a representative 300-line functional acceptance dataset without treating it as a maximum or performance target. The deterministic procedure uses exactly 300 distinct active SKU lines:
 
 1. Create a 300-line Draft through the WebApp.
 2. Reopen it and verify all 300 identities and quantities.

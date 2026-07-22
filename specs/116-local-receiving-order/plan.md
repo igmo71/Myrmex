@@ -10,7 +10,7 @@
 
 Add a Receiving-owned vertical slice to the existing WMS module. A `ReceivingOrder` aggregate with separately persisted lines will support Draft create, full-plan reconciliation, Draft deletion, Start, incremental line receipt, and idempotent Complete. Completion will directly update or create existing Inventory Balances, create one multi-entry `Receiving` Inventory Transaction, set the completed order invariant, and persist the entire outcome through one EF Core `SaveChangesAsync` call.
 
-Reuse the existing StorageLocation entity and taxonomy by adding one seeded system type with the planning code `RECEIVING`. The current `DOCK` type is not reused because it represents both receiving and shipping docks while dock behavior is outside this feature. Existing warehouse-scoped location lookup, active topology rules, inventory-balance eligibility, rowversion, unique-constraint mapping, list/query, Minimal API, Problem Details, MudBlazor, localization, and operational logging patterns remain authoritative. No external integration, generalized workflow, inventory-posting engine, location-capability framework, or new test infrastructure is introduced.
+Reuse the existing StorageLocation entity and taxonomy by adding one seeded system type with code `RECEIVING` through the established topology seed pattern. A single Topology-owned `StorageLocationTypeCodes.Receiving` constant supplies that code to seeding, validation, lookup, and WebApp code. The current `DOCK` type is not reused because it represents both receiving and shipping docks while dock behavior is outside this feature. One authoritative Receiving-location rule requires an active Warehouse, an active location in that Warehouse, an active Receiving type, and the current inventory/selectability eligibility rules; handlers delegate overlapping active status checks to the reused eligibility logic instead of duplicating them. Existing rowversion, unique-constraint mapping, list/query, Minimal API, Problem Details, MudBlazor, localization, and operational logging patterns remain authoritative. No external integration, generalized workflow, inventory-posting engine, location-capability framework, or new test infrastructure is introduced.
 
 ## Technical Context
 
@@ -18,19 +18,19 @@ Reuse the existing StorageLocation entity and taxonomy by adding one seeded syst
 
 **Primary Dependencies**: ASP.NET Core Minimal APIs, Entity Framework Core SQL Server 10.0.10, the existing command/query dispatchers and `ServiceResult` mappings, Blazor WebApp, MudBlazor 9, and existing WMS shared contracts
 
-**Storage**: Existing SQL Server `wms` schema; two new Receiving tables, one new seeded `RECEIVING` StorageLocationType row, restrictive foreign keys, SQL Server rowversion on Receiving Order, existing Inventory Balance/Transaction/Ledger tables, and one generated migration
+**Storage**: Existing SQL Server `wms` schema; two new Receiving tables, one new seeded `RECEIVING` StorageLocationType row, restrictive foreign keys, SQL Server rowversion on Receiving Order, existing Inventory Balance/Transaction/Ledger tables, and one user-generated migration
 
-**Testing**: The current tracked repository and solution contain no test project or test sources. Use deterministic domain/API/persistence/WebApp acceptance scenarios in [quickstart.md](quickstart.md), existing build and application smoke paths, and the 300-line functional dataset. Do not restore or create a test project, browser framework, benchmark, or load-test harness as part of this feature.
+**Testing**: The current tracked repository and solution contain no test project or test sources. User-owned validation uses deterministic domain/API/persistence/WebApp acceptance scenarios in [quickstart.md](quickstart.md), existing build and application smoke paths, and a representative 300-line functional acceptance dataset. Do not restore or create a test project, browser framework, benchmark, or load-test harness as part of this feature.
 
 **Target Platform**: Existing ASP.NET Core API and Blazor WebApp, locally orchestrated through the current Aspire host
 
 **Project Type**: Modular-monolith web application with WMS module, shared contracts, Minimal API, SQL Server persistence, and server-rendered Blazor WebApp
 
-**Performance Goals**: No latency, throughput, or load target. Exactly 300 planned lines is a deterministic functional acceptance dataset, not a performance SLA.
+**Performance Goals**: No latency, throughput, or load target. A representative 300-line functional acceptance dataset validates behavior and is not a performance SLA or supported-line maximum.
 
-**Constraints**: Local-only workflow; statuses exactly Draft/InProgress/Completed; base-unit `decimal(18,4)` quantities; globally unique normalized user-entered Number; retained Draft line IDs preserved; only aggregate-level concurrency; no inventory effect before completion; one Receiving transaction and one positive ledger entry per line; one save for order/balances/transaction/entries; no automatic posting retry; Draft-only physical deletion; Receiving location must use the active `RECEIVING` type and pass existing eligibility; full-page create/edit/execution; no new test infrastructure
+**Constraints**: Local-only workflow; statuses exactly Draft/InProgress/Completed; base-unit `decimal(18,4)` quantities and persistence-range validation before save; globally unique normalized user-entered Number; retained Draft line IDs preserved even when their SKU changes; only aggregate-level concurrency; no inventory effect before completion; one Receiving transaction and one positive ledger entry per line; one save for order/balances/transaction/entries; no automatic posting retry; Draft-only guarded physical deletion; Receiving location must satisfy the one authoritative rule through the shared Receiving type code and existing eligibility; full-page create/edit/execution; no weight fields or calculations; no new test infrastructure
 
-**Scale/Scope**: One aggregate and line entity, eight endpoints including Draft deletion, five mutating workflows, two read workflows, one topology seed plus demo Receiving location, one server-driven list page, one reusable full-page Draft editor, one full-page execution view, one small quantity dialog, and functional validation with up to 300 distinct SKU lines
+**Scale/Scope**: One aggregate and line entity, eight endpoints including Draft deletion, five mutating workflows, two read workflows, one topology seed plus demo Receiving location, one server-driven list page, one reusable full-page Draft editor, one full-page execution view, one small quantity dialog, and a representative 300-line functional acceptance dataset
 
 ## Constitution Check
 
@@ -46,7 +46,7 @@ Reuse the existing StorageLocation entity and taxonomy by adding one seeded syst
 
 - **I. Clear Warehouse Behavior — PASS**: [data-model.md](data-model.md) defines the lifecycle invariant, quantity constraints, Receiving location eligibility, line reconciliation, atomic posting, idempotency, and Draft deletion without introducing unrelated warehouse concepts.
 - **II. Explicit Ownership — PASS**: [receiving-orders-api-contract.md](contracts/receiving-orders-api-contract.md) and [receiving-orders-webapp-contract.md](contracts/receiving-orders-webapp-contract.md) keep Receiving commands inside the Receiving capability, use Topology only for eligible lookup, and delegate all quantity/history mutation to existing Inventory domain behavior.
-- **III. Outcome-First Simplicity — PASS**: The completed design uses one `RECEIVING` seed instead of a capability framework, one aggregate rowversion instead of line versions, explicit restrictive deletion instead of soft delete, one focused SKU dialog instead of hundreds of autocomplete controls, and one EF save instead of events, retries, or a posting framework.
+- **III. Outcome-First Simplicity — PASS**: The completed design uses one Receiving type seed and one shared Topology-owned code constant instead of a capability framework, one aggregate rowversion instead of line versions, guarded physical Draft deletion instead of a lifecycle state or soft delete, one focused SKU dialog instead of hundreds of autocomplete controls, and one EF save instead of events, retries, or a posting framework.
 
 All constitution gates pass. No exception or complexity justification is required.
 
@@ -70,6 +70,8 @@ specs/116-local-receiving-order/
 
 ```text
 Myrmex.Modules.Wms/
+├── Domain/
+│   └── WmsQuantityPersistence.cs
 ├── Receiving/
 │   ├── Domain/ReceivingOrders/
 │   │   ├── ReceivingOrder.cs
@@ -96,7 +98,9 @@ Myrmex.Modules.Wms/
 │       ├── InventoryTransaction.cs
 │       └── InventoryTransactionType.cs
 ├── Topology/
-│   └── Features/StorageLocations/LookupStorageLocations.cs
+│   └── Features/StorageLocations/
+│       ├── LookupStorageLocations.cs
+│       └── StorageLocationEligibility.cs
 ├── DemoData/Features/
 │   ├── DemoDataDefinitions.cs
 │   └── WmsDemoDataSeeder.cs
@@ -112,17 +116,20 @@ Myrmex.Modules.Wms/
     └── Migrations/
 
 Myrmex.Shared/
-└── Wms/Receiving/
-    ├── ReceivingOrderListRequest.cs
-    ├── ReceivingOrderListItem.cs
-    ├── ReceivingOrderDetails.cs
-    ├── ReceivingOrderLineDetails.cs
-    ├── ReceivingOrderStatusDetails.cs
-    ├── ReceivingOrderSortBy.cs
-    ├── CreateReceivingOrderRequest.cs
-    ├── UpdateReceivingOrderRequest.cs
-    ├── ReceiveReceivingOrderLineRequest.cs
-    └── ReceivingOrderActionRequest.cs
+└── Wms/
+    ├── Topology/
+    │   └── StorageLocationTypeCodes.cs
+    └── Receiving/
+        ├── ReceivingOrderListRequest.cs
+        ├── ReceivingOrderListItem.cs
+        ├── ReceivingOrderDetails.cs
+        ├── ReceivingOrderLineDetails.cs
+        ├── ReceivingOrderStatusDetails.cs
+        ├── ReceivingOrderSortBy.cs
+        ├── CreateReceivingOrderRequest.cs
+        ├── UpdateReceivingOrderDraftRequest.cs
+        ├── ReceiveReceivingOrderLineRequest.cs
+        └── ReceivingOrderActionRequest.cs
 
 Myrmex.WebApp/
 ├── Wms/
@@ -147,14 +154,14 @@ Myrmex.WebApp/
 
 ## Phase 0: Research Output
 
-[research.md](research.md) records the capability boundary, aggregate design, Receiving location type, persistence constraints, Draft reconciliation/deletion, version transport, atomic posting, concurrent completion behavior, public interface, UI strategy, logging, demo data, and proportional validation decisions. No planning clarification remains.
+[research.md](research.md) records the capability boundary, aggregate design, authoritative Receiving-location rule and shared code constant, persistence constraints, Draft reconciliation/deletion, existing rowversion and HTTP conventions, decimal limits, atomic posting and traceability, concurrent completion behavior, deterministic validation, list/query choices, UI strategy, logging, demo data, and proportional validation decisions. No planning clarification remains.
 
 ## Phase 1: Design & Contracts
 
 - [data-model.md](data-model.md) defines Receiving Order/Line fields, relationships, constraints, state transitions, topology classification, inventory posting inputs, and concurrency/idempotency rules.
 - [receiving-orders-api-contract.md](contracts/receiving-orders-api-contract.md) defines shared request/response shapes, routes, status/error semantics, list behavior, and version handling.
-- [receiving-orders-webapp-contract.md](contracts/receiving-orders-webapp-contract.md) defines the list, full-page Draft editor, eligible location lookup, focused SKU selector, execution page, local 300-line handling, and conflict UX.
-- [quickstart.md](quickstart.md) defines migration review, runnable post-implementation commands, deterministic local workflow validation, Draft identity/deletion, eligibility, atomicity, idempotency, concurrency, list behavior, and the 300-line functional scenario.
+- [receiving-orders-webapp-contract.md](contracts/receiving-orders-webapp-contract.md) defines the list, full-page Draft editor, eligible location lookup, focused SKU selector, execution page, representative 300-line handling, and distinct Draft/execution conflict UX.
+- [quickstart.md](quickstart.md) defines user-owned migration/build/run steps plus deterministic local workflow validation, Draft identity/deletion, eligibility, decimal boundaries, traceability, atomicity, idempotency, concurrency, list behavior, and the representative 300-line functional acceptance dataset.
 
 ## Complexity Tracking
 

@@ -30,7 +30,7 @@
 
 ## Decision: Preserve Retained Draft Line IDs During Complete-Plan Reconciliation
 
-**Decision**: An update materializes and validates the full proposed Draft before mutation. Every non-null LineId must be unique and belong to the loaded aggregate. Retained lines update in place, omitted lines are removed, and null-ID lines are created. The final proposed set must have at least one line, unique SKUs, and positive planned quantities. The aggregate returns removed lines so the handler can mark them for explicit deletion.
+**Decision**: An update materializes and validates the full proposed Draft before mutation. Every non-null LineId must be unique and belong to the loaded aggregate. Retained lines update in place, omitted lines are removed, and null-ID lines are created. A retained Draft line may change SKU while preserving its LineId; LineId, not SKU, is the reconciliation identity. The final proposed set must have at least one line, unique SKUs, and positive planned quantities. The aggregate returns removed lines so the handler can mark them for explicit deletion.
 
 **Rationale**: This implements the clarification exactly, preserves stable identities, and prevents partial in-memory mutation when a later submitted line is invalid.
 
@@ -42,7 +42,7 @@
 
 ## Decision: Use Aggregate-Level Rowversion Only
 
-**Decision**: Add SQL Server RowVersion only to `ReceivingOrder`. Encode it as Base64 `OrderVersion` in read models and parse exactly eight bytes in a Receiving-specific version helper. Draft update, Draft delete, Start, Receive, and Complete require the expected order version for an actual mutation. Every child mutation touches the order so the parent row changes; EF rowversion catches races between validation and save.
+**Decision**: Add SQL Server RowVersion only to `ReceivingOrder`. Encode it as Base64 `OrderVersion` in read models and parse exactly eight bytes in a small static `ReceivingOrderVersion` helper analogous to the existing `InventoryCountVersion`; do not add a Receiving-specific value object. Draft update, Draft delete, Start, Receive, and Complete require the expected order version for an actual mutation. Every child mutation touches the order so the parent row changes; EF rowversion catches races between validation and save.
 
 Idempotent reads of current state are ordered before version rejection: Start on an already InProgress order returns current details; Complete on a valid already Completed order returns current details. Lines have no independent version.
 
@@ -56,9 +56,9 @@ Idempotent reads of current state are ordered before version rejection: Start on
 
 ## Decision: Add One Seeded `RECEIVING` StorageLocationType
 
-**Decision**: Add one active system `StorageLocationType` with technical code `RECEIVING`, a stable `WmsSeedIds` identifier, and the established `HasData`/migration pattern. Do not reuse `DOCK`: its current description covers both receiving and shipping and the specification excludes dock behavior. Do not add a capability flag, separate ReceivingLocation entity, or multiple Receiving categories.
+**Decision**: Add one active system `StorageLocationType` with technical code `RECEIVING`, a stable `WmsSeedIds` identifier, and the established `HasData`/migration pattern. Add one Topology-owned public constant, `StorageLocationTypeCodes.Receiving`, in `Myrmex.Shared.Wms.Topology`; seeding, validation, lookup requests, demo definitions, and WebApp code reference that constant instead of scattering raw code comparisons. Do not reuse `DOCK`: its current description covers both receiving and shipping and the specification excludes dock behavior. Do not add a capability flag, separate ReceivingLocation entity, or multiple Receiving categories.
 
-Add at least one new local demo location using `RECEIVING` so the workflow is demonstrable. Keep existing DOCK demo identities unchanged rather than silently reclassifying them.
+Add at least one new local demo location using `StorageLocationTypeCodes.Receiving` so the workflow is demonstrable. Keep existing DOCK demo identities unchanged rather than silently reclassifying them.
 
 **Rationale**: Existing special location semantics are represented with seeded system type rows and exact code comparisons. One new type makes Receiving unambiguous while preserving the existing topology model.
 
@@ -71,11 +71,11 @@ Add at least one new local demo location using `RECEIVING` so the workflow is de
 
 ## Decision: Reuse Existing Lookup and Validate Receiving Eligibility Server-Side
 
-**Decision**: The WebApp calls the existing warehouse-scoped StorageLocation lookup with `SelectableOnly=true` and `StorageLocationTypeCode=RECEIVING`. This already restricts results to the selected Warehouse and active location/type/status. Create, Update Draft, and Start independently load and validate the active Warehouse, active location, warehouse ownership, active status, active exact Receiving type, and line SKU eligibility.
+**Decision**: Define one authoritative rule: the Warehouse is active; the StorageLocation is active and belongs to that Warehouse; its active StorageLocationType has `StorageLocationTypeCodes.Receiving`; and its current StorageLocationStatus plus all other conditions pass the existing authoritative inventory/selectability eligibility rules. Create, Update Draft, and Start call the same narrow Receiving eligibility orchestration. The orchestration checks Receiving-specific warehouse ownership and type semantics while delegating location/type/status selectability to one reused Topology-owned eligibility predicate/result; `InventoryBalanceCreateEligibility` also reuses that predicate rather than independently repeating the same status checks.
 
-For missing balance creation during completion, reuse the existing Inventory Balance eligibility rules for active SKU/base UOM and active location/type/status. Use set-based loading for 300 distinct lines and apply the same narrow rules without per-line database queries.
+The WebApp calls the existing warehouse-scoped StorageLocation lookup with `SelectableOnly=true` and `StorageLocationTypeCode=StorageLocationTypeCodes.Receiving`. The lookup uses the same selectability predicate and type constant, so it offers only eligible Receiving locations, but backend validation remains authoritative because topology may change or a client may bypass the UI. Missing-balance creation additionally reuses the existing SKU/base-UOM eligibility. Use set-based loading for a representative 300-line functional acceptance dataset and validate in request order without per-line database queries.
 
-**Rationale**: Lookup filtering improves UX but is not a security or correctness boundary. Server validation prevents crafted requests and catches topology changes between editing and Start.
+**Rationale**: Lookup filtering improves UX but is not a security or correctness boundary. One shared location eligibility source prevents lookup, Receiving, and balance creation from drifting or duplicating active-status checks while server validation prevents crafted requests and catches topology changes between editing and Start.
 
 **Alternatives considered**:
 
@@ -83,9 +83,11 @@ For missing balance creation during completion, reuse the existing Inventory Bal
 - Trust the WebApp selection: rejected because clients can bypass it and eligibility may change.
 - Add generalized location capabilities: rejected as out of scope.
 
-## Decision: Persist Restrictive Relationships and Explicit Draft Deletion
+## Decision: Persist Restrictive Relationships and Guard Physical Draft Deletion
 
-**Decision**: Add restrictive foreign keys from orders to Warehouse, ReceivingLocation, and optional InventoryTransaction; from lines to order and SKU; and keep parent-to-lines delete behavior restrictive. Draft deletion loads order and lines, validates the expected order version, Draft state, null transaction/completion fields, and zero inventory effect, explicitly removes lines then the order, and calls SaveChanges once. The physical delete releases the unique Number.
+**Decision**: Add restrictive foreign keys from orders to Warehouse, ReceivingLocation, and optional InventoryTransaction; from lines to order and SKU; and keep parent-to-lines delete behavior restrictive. Draft deletion is not an aggregate lifecycle transition and adds no `Deleted` status or aggregate delete-validation operation. The application handler loads the stored aggregate and lines, validates the expected order version, and permits physical removal only when the stored status is Draft with no inventory transaction or inventory effect. It explicitly removes lines then the order and calls SaveChanges once, releasing the unique Number.
+
+Valid Draft invariants already require zero received quantity and null start/completion/transaction fields. Encountering a stored Draft with any received quantity is an invalid persisted-state failure and blocks deletion; zero received quantity is a defensive consistency check, not an additional legal Draft state. Add `CanBeDeleted` or `EnsureCanDelete` only if implementation proves a domain member materially clarifies the handler; no aggregate delete method is required by the plan.
 
 **Rationale**: Existing WMS documents use restrictive relationships. Explicit dependent removal supports the clarified Draft-only delete without enabling cascade removal of completed documents or inventory history.
 
@@ -95,11 +97,11 @@ For missing balance creation during completion, reuse the existing Inventory Bal
 - Soft delete/archive: rejected by the clarification.
 - Cancellation: rejected because the lifecycle supports exactly three statuses.
 
-## Decision: Add Named Constraints and One Migration
+## Decision: Keep Integrity Indexes and Derive List Indexes From Query Shape
 
-**Decision**: Add unique indexes for normalized Number and `(ReceivingOrderId, StockKeepingUnitId)`, a unique filtered index for non-null InventoryTransactionId, and indexes for WarehouseId, ReceivingLocationId, Status, and CreatedAtUtc. Map duplicate Number and duplicate order/SKU violations through `WmsPersistenceExceptionMapper`; retain the existing balance-pair race detector. Generate one migration for the Receiving tables, constraints, relationships, rowversion, and `RECEIVING` seed.
+**Decision**: Add the required unique indexes for normalized Number and `(ReceivingOrderId, StockKeepingUnitId)`, plus a unique filtered index for non-null InventoryTransactionId; retain the existing unique balance `(StockKeepingUnitId, StorageLocationId)` index. Map duplicate Number and duplicate order/SKU violations through `WmsPersistenceExceptionMapper`. Do not prescribe a separate single-column index for every filter or sort field. During implementation, inspect the generated Receiving list SQL and existing WMS configurations, then add only justified composite/non-unique indexes, with `(WarehouseId, Status, CreatedAtUtc)` as a candidate rather than a requirement. The user-generated migration contains the Receiving tables, justified indexes, constraints, relationships, rowversion, and Receiving type seed.
 
-**Rationale**: Domain checks provide immediate feedback; named database constraints close concurrency and integrity gaps and fit existing SQL Server exception mapping.
+**Rationale**: Named database constraints close concurrency and integrity gaps and fit existing SQL Server exception mapping. Query-shape review avoids speculative index proliferation while allowing a composite index that matches the actual common filter/order path.
 
 **Alternatives considered**:
 
@@ -107,11 +109,13 @@ For missing balance creation during completion, reuse the existing Inventory Bal
 - Add a numbering table/service: rejected because Number remains user-entered.
 - Add a generic source-document reference: rejected because the order directly references its one transaction.
 
-## Decision: Create One Narrow Multi-Entry Receiving Transaction Factory
+## Decision: Create One Narrow Multi-Entry Receiving Transaction Factory and Direct Trace Link
 
-**Decision**: Extend `InventoryTransactionType` with `Receiving` and add `InventoryTransaction.CreateReceiving(changes, reason, occurredAtUtc, out transaction)`. Each feature-specific change contains SKU, receiving location, positive delta, balance before, and balance after. Require a non-empty set and positive deltas, and delegate entry consistency to existing `InventoryLedgerEntry.Create`.
+**Decision**: Extend `InventoryTransactionType` with `Receiving` and add `InventoryTransaction.CreateReceiving(receivingLocationId, changes, reason, occurredAtUtc, out transaction)`. Pass the single order `ReceivingLocationId` once. Each feature-specific change contains only SKU, positive quantity delta, balance before, and balance after. Require a non-empty set and positive deltas, and delegate entry consistency to existing `InventoryLedgerEntry.Create`.
 
-**Rationale**: Inventory already owns transaction and entry validation. A narrow factory creates exactly one transaction with one entry per order line without pretending Receiving is an Adjustment or Transfer.
+`ReceivingOrder.InventoryTransactionId` remains the authoritative direct order-to-transaction link. Use one stable, invariant, non-localized reason convention containing both identifiers: `ReceivingOrder {ReceivingOrderId:D} Number {NormalizedNumber}`. Do not add a generic source-document abstraction or an Inventory-owned Receiving reference. Reverse navigation may later be composed in a query/read model by joining the direct link, without changing aggregate ownership.
+
+**Rationale**: Inventory already owns transaction and entry validation. A narrow factory creates exactly one transaction with one entry per order line, avoids repeating invariant location data, and leaves document ownership with Receiving while providing stable human and diagnostic traceability.
 
 **Alternatives considered**:
 
@@ -121,7 +125,9 @@ For missing balance creation during completion, reuse the existing Inventory Bal
 
 ## Decision: Complete Through One Save and No Posting Event
 
-**Decision**: The completion handler bulk-loads existing balances for all line SKU/location pairs, creates eligible missing balances, increases existing balances through domain behavior, constructs the one Receiving transaction, completes the order with the transaction ID and common UTC timestamp, adds all new entities, and invokes exactly one `SaveChangesAsync`. Rely on EF Core's transaction for a multi-command save. Mirror the existing `MoveInventoryBalance` pattern by capturing tracked aggregate domain events before save and dispatching/clearing them only after a successful save; no event creates the Receiving inventory effect. Do not split validation/posting into separate saves.
+**Decision**: The completion handler bulk-loads existing balances for all line SKU/location pairs, creates eligible missing balances, increases existing balances through domain behavior, constructs the one Receiving transaction, completes the order with the transaction ID and common UTC timestamp, adds all new entities, and invokes exactly one `SaveChangesAsync`. Before that call, validate every planned quantity, receipt increment, accumulated received quantity, balance before/after, transaction delta, and calculated balance-after value against SQL Server `decimal(18,4)` scale and range. Rely on EF Core's transaction for a multi-command save. Mirror the existing `MoveInventoryBalance` pattern by capturing tracked aggregate domain events before save and dispatching/clearing them only after a successful save; no event creates the Receiving inventory effect. Do not split validation/posting into separate saves.
+
+Repository research found consistent `HasPrecision(18, 4)` mappings but no shared range validator. Add one minimal static WMS-domain helper, `WmsQuantityPersistence`, for the `decimal(18,4)` boundary (maximum absolute value `99,999,999,999,999.9999` and no more than four fractional digits) and reuse it across the Receiving aggregate and Inventory posting inputs/calculations instead of adding Receiving-only magic limits. This feature adds no weight fields, normalization, or calculations.
 
 **Rationale**: Existing transfer flows assemble balance, transaction, and document changes before saving. One save is the smallest boundary that guarantees all-or-nothing persistence.
 
@@ -133,7 +139,7 @@ For missing balance creation during completion, reuse the existing Inventory Bal
 
 ## Decision: Resolve Concurrent Completion by Observation, Never Retry
 
-**Decision**: If the initially loaded order is validly Completed, return it immediately. For an InProgress mutation, verify its version, assemble posting, and save once. On order/balance rowversion failure or the existing missing-balance unique race, clear the failed tracked graph and reload the order no-tracking. Return the current Completed details if another request established the completed invariant; otherwise return a 409 posting/concurrency conflict. Never rerun posting inside the handler.
+**Decision**: If the initially loaded order satisfies the complete persisted Completed invariant, return it immediately. For an InProgress mutation, verify its version, assemble posting, and save once. On order/balance rowversion failure or the existing missing-balance unique race, clear the failed tracked graph and reload the order with all lines no-tracking. Return current details only when the reload has `Status == Completed`, non-null `StartedAtUtc`, non-null `CompletedAtUtc`, non-null `InventoryTransactionId`, and every line fully received. If it is not Completed, return the appropriate 409 posting/concurrency conflict. If it claims Completed but any invariant member is missing, return a stable invalid-persisted-state failure. Never rerun posting inside the handler.
 
 **Rationale**: This satisfies both idempotent repeated completion and the no-duplicate/no-auto-retry decisions. Reload is observation, not execution.
 
@@ -145,9 +151,9 @@ For missing balance creation during completion, reuse the existing Inventory Bal
 
 ## Decision: Expose the Established Minimal API and Shared Contract Surface
 
-**Decision**: Add an authorized `/api/wms/receiving-orders` group with list, details, create, update, Draft delete, start, line receive, and complete routes. Use separate create/update line request shapes so create never accepts IDs while update accepts nullable IDs for retained/new semantics. Return `ReceivingOrderDetails` from successful mutations, 204 from deletion, `ListResult<T>` from list, and existing Problem Details mappings for 400/404/409 outcomes. Add one narrow non-generic WebApp HTTP helper overload for successful no-content DELETE responses; retain the existing generic readers for all payload responses.
+**Decision**: Add an authorized `/api/wms/receiving-orders` group with list, details, create, Draft update, Draft delete, start, line receive, and complete routes. Use separate create/update line request shapes so create never accepts IDs while `UpdateReceivingOrderDraftRequest` accepts nullable IDs for retained/new semantics. Return `ReceivingOrderDetails` with `200 OK` from successful create and other payload mutations, 204 from deletion, `ListResult<T>` from list, and existing Problem Details mappings. The repository's shared generic `ServiceResult<T>.ToHttpResult()` maps all successful payloads—including current WMS creates—to `200 OK`; introducing a Receiving-only `201 Created` path would break that deliberate endpoint convention, so the plan retains 200 and documents the reason. Add one narrow non-generic WebApp HTTP helper overload for successful no-content DELETE responses; retain the existing generic readers for all payload responses.
 
-**Rationale**: This follows current dispatch and HTTP conventions and keeps internal entities private.
+**Rationale**: This follows current dispatch, naming, and HTTP conventions and keeps internal entities private. Existing public WMS status containers are named `InventoryCountStatusDetails` and `InventoryTransferStatusDetails`, so retain `ReceivingOrderStatusDetails` rather than introducing the inconsistent `ReceivingOrderStatuses` name.
 
 **Alternatives considered**:
 
@@ -157,17 +163,39 @@ For missing balance creation during completion, reuse the existing Inventory Bal
 
 ## Decision: Use Full Pages and One Focused SKU Search Dialog
 
-**Decision**: Add list, Draft editor, and execution pages at the specified Receiving routes. The Draft editor holds the complete unpaged plan in page state, uses one dense table, opens one focused server-backed SKU search dialog per Select/Change action, rejects duplicates locally, and filters displayed rows locally without filtering the submitted backing collection. Changing Warehouse clears ReceivingLocation; location lookup always filters by `RECEIVING`.
+**Decision**: Add list, Draft editor, and execution pages at the specified Receiving routes. The Draft editor holds the complete unpaged plan in page state, uses one dense table, opens one focused server-backed SKU search dialog per Select/Change action, rejects duplicates locally, and filters displayed rows locally without filtering the submitted backing collection. Changing Warehouse clears ReceivingLocation; location lookup always filters with `StorageLocationTypeCodes.Receiving`.
 
-The execution page mirrors the current Inventory Count details pattern: header/status, planned/received/remaining columns, state-gated actions, one small receive-quantity dialog, transaction link, refresh after mutation, and explicit reload guidance on conflict. It never automatically retries.
+On a Draft save conflict, preserve the unsaved complete plan, show current-data resolution choices, and disable repeated Save until the user explicitly reloads/discards or resolves the plan against current details. The execution page mirrors the current Inventory Count details pattern: header/status, planned/received/remaining columns, state-gated actions, one small receive-quantity dialog, transaction link, refresh after mutation, and explicit conflict guidance. Because execution actions have no comparable large unsaved page state, a true execution conflict may reload current details. Neither flow automatically retries.
 
-**Rationale**: Existing modal create patterns are unsuitable for 300 lines, and hundreds of live autocomplete controls would be unnecessarily heavy. Current full-page inventory execution already provides the closest UX and conflict pattern.
+**Rationale**: Existing modal create patterns are unsuitable for a representative 300-line functional acceptance dataset, and hundreds of live autocomplete controls would be unnecessarily heavy. Current full-page inventory execution already provides the closest UX and conflict pattern.
 
 **Alternatives considered**:
 
 - Complete-document modal: rejected by the specification.
-- One autocomplete per line: rejected for the 300-line functional case.
+- One autocomplete per line: rejected for a representative 300-line functional acceptance dataset.
 - Server paging of unsaved lines, spreadsheet controls, or bulk import: rejected as unnecessary scope.
+
+## Decision: Validate Multiple References in Stable Fail-Fast Order
+
+**Decision**: Follow the established WMS fail-fast style but make ordering explicit for set-based plans. Validate request/version shape first; for existing-order commands, load the target and validate its current lifecycle/version; validate submitted LineId/plan structure in request order; then validate the Warehouse; then the ReceivingLocation with the authoritative rule; then SKUs/base UOMs in the order of each SKU's first appearance; then remaining aggregate and persistence constraints. Create omits the target-order step. Set-based database reads populate keyed results, but the handler walks the original request order to choose the first failure and never relies on database result order.
+
+**Rationale**: Current WMS handlers return the first encountered validation failure. Reapplying that convention after bulk loading gives deterministic behavior for multiple invalid references without creating a multi-error framework.
+
+**Alternatives considered**:
+
+- Return whichever invalid row the database yields first: rejected because SQL row order is undefined.
+- Accumulate every reference error: rejected because it changes the established fail-fast contract and is unnecessary for the MVP.
+
+## Decision: Keep Aggregate-Total Sort Because the Existing WMS List Convention Supports It
+
+**Decision**: Retain `TotalPlannedQuantity` in the initial sort surface. Repository research confirms that the comparable Inventory Transfer list deliberately exposes and translates aggregate-total sorts including `TotalRequestedQuantity`, `TotalPickedQuantity`, `TotalPlacedQuantity`, and `TotalInTransitQuantity`. Receiving implements only the operationally useful planned total alongside Number, Status, WarehouseCode, and lifecycle timestamps; every sort retains an ID tie-breaker.
+
+**Rationale**: The architectural-review condition for retaining the aggregate sort is met by an existing WMS list with an equivalent summed planned/requested quantity. This is a query contract choice, not a requirement for a dedicated single-column index.
+
+**Alternatives considered**:
+
+- Remove all aggregate-total sorts: rejected because it would be less consistent with the comparable operational WMS list.
+- Add received and remaining total sorts as well: rejected because the MVP needs only the narrow, useful initial surface.
 
 ## Decision: Reuse Existing Structured Logging
 
@@ -182,7 +210,7 @@ The execution page mirrors the current Inventory Count details pattern: header/s
 
 ## Decision: Use Deterministic Acceptance Because No Tracked Test Infrastructure Exists
 
-**Decision**: Do not restore or create `Myrmex.Tests`, xUnit, browser/component tests, benchmarks, or load infrastructure. The tracked solution currently has only production projects; `Myrmex.Tests` contains ignored build remnants but no tracked project or sources. Validate through the existing build/application paths and the deterministic scenarios in [quickstart.md](quickstart.md), including domain rules through public behavior, persistence/atomicity, API error mapping, WebApp workflow, and exactly 300 distinct lines without timing assertions.
+**Decision**: Do not restore or create `Myrmex.Tests`, xUnit, browser/component tests, benchmarks, or load infrastructure. The tracked solution currently has only production projects; `Myrmex.Tests` contains ignored build remnants but no tracked project or sources. User-owned validation uses the existing build/application paths and the deterministic scenarios in [quickstart.md](quickstart.md), including domain rules through public behavior, persistence/atomicity, API error mapping, WebApp workflow, and a representative 300-line functional acceptance dataset without timing assertions. The deterministic large-plan procedure uses exactly 300 distinct lines.
 
 If project policy later authorizes restoring a test project, use the former repository conventions rather than inventing another framework, but that is not part of this plan.
 
