@@ -53,22 +53,28 @@ internal sealed class ReceivingOrder : AggregateRoot
         _lines.Count > 0 && _lines.All(line => line.IsFullyReceived);
 
     public bool HasCompletePersistedCompletedInvariant =>
+        HasValidCorePersistenceInvariant &&
         Status == ReceivingOrderStatus.Completed &&
         StartedAtUtc.HasValue &&
         CompletedAtUtc.HasValue &&
         InventoryTransactionId.HasValue &&
         InventoryTransactionId.Value != Guid.Empty &&
-        IsFullyReceived;
+        _lines.All(line => line.ReceivedQuantity == line.PlannedQuantity);
 
     public bool HasValidDraftPersistenceInvariant =>
+        HasValidCorePersistenceInvariant &&
         Status == ReceivingOrderStatus.Draft &&
-        !string.IsNullOrWhiteSpace(Number) &&
-        Number.Length <= NumberMaxLength &&
-        WarehouseId != Guid.Empty &&
-        ReceivingLocationId != Guid.Empty &&
         !StartedAtUtc.HasValue &&
         !CompletedAtUtc.HasValue &&
         !InventoryTransactionId.HasValue &&
+        _lines.All(line => line.ReceivedQuantity == 0);
+
+    private bool HasValidCorePersistenceInvariant =>
+        !string.IsNullOrWhiteSpace(Number) &&
+        Number.Length <= NumberMaxLength &&
+        string.Equals(Number, DomainText.NormalizeCode(Number), StringComparison.Ordinal) &&
+        WarehouseId != Guid.Empty &&
+        ReceivingLocationId != Guid.Empty &&
         _lines.Count > 0 &&
         _lines.All(line =>
             line.Id != Guid.Empty &&
@@ -76,7 +82,9 @@ internal sealed class ReceivingOrder : AggregateRoot
             line.StockKeepingUnitId != Guid.Empty &&
             line.PlannedQuantity > 0 &&
             WmsQuantityPersistence.IsExactlyRepresentable(line.PlannedQuantity) &&
-            line.ReceivedQuantity == 0) &&
+            line.ReceivedQuantity >= 0 &&
+            WmsQuantityPersistence.IsExactlyRepresentable(line.ReceivedQuantity) &&
+            line.ReceivedQuantity <= line.PlannedQuantity) &&
         _lines.Select(line => line.StockKeepingUnitId).Distinct().Count() == _lines.Count;
 
     internal sealed record DraftLine(
