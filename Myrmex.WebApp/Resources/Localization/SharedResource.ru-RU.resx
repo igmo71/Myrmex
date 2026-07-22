@@ -1388,4 +1388,18 @@
   <data name="Receiving.DeletePrompt" xml:space="preserve"><value>Безвозвратно удалить черновик {0} и все его строки? Номер ордера станет доступен для повторного использования.</value></data>
   <data name="Receiving.DeleteError" xml:space="preserve"><value>Не удалось удалить черновик приходного ордера.</value></data>
   <data name="Receiving.DeleteConflictReloaded" xml:space="preserve"><value>Ордер изменился или больше не является черновиком. Загружены актуальные данные; удаление не выполнено.</value></data>
+  <data name="Nav.ReceivingOrders" xml:space="preserve"><value>Приходные ордера</value></data>
+  <data name="Receiving.PageTitle" xml:space="preserve"><value>Приходные ордера</value></data>
+  <data name="Receiving.Heading" xml:space="preserve"><value>Приходные ордера</value></data>
+  <data name="Receiving.Description" xml:space="preserve"><value>Поиск, изменение и выполнение запланированных приёмок.</value></data>
+  <data name="Receiving.Create" xml:space="preserve"><value>Создать приходный ордер</value></data>
+  <data name="Receiving.SearchByNumber" xml:space="preserve"><value>Поиск по номеру ордера</value></data>
+  <data name="Receiving.SearchLines" xml:space="preserve"><value>Поиск текущих строк по коду или наименованию SKU</value></data>
+  <data name="Receiving.LineCount" xml:space="preserve"><value>Строки</value></data>
+  <data name="Receiving.StartedAt" xml:space="preserve"><value>Начат</value></data>
+  <data name="Receiving.CompletedAt" xml:space="preserve"><value>Завершён</value></data>
+  <data name="Receiving.Open" xml:space="preserve"><value>Открыть приходный ордер</value></data>
+  <data name="Receiving.NoMatches" xml:space="preserve"><value>Нет приходных ордеров, соответствующих выбранным фильтрам.</value></data>
+  <data name="Receiving.NoLineMatches" xml:space="preserve"><value>Нет текущих строк, соответствующих поиску SKU.</value></data>
+  <data name="Receiving.Deleted" xml:space="preserve"><value>Черновик приходного ордера удалён.</value></data>
 </root>

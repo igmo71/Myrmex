@@ -195,6 +195,10 @@ On a Draft save conflict, preserve the unsaved complete plan, show current-data 
 **Alternatives considered**:
 
 - Remove all aggregate-total sorts: rejected because it would be less consistent with the comparable operational WMS list.
+
+### Implemented list-index review
+
+The implemented query independently combines normalized Number search, optional Warehouse and Status filters, seven supported sorts, paging, and an ID tie-breaker. The existing unique Number index remains required for integrity, while the existing Warehouse index supports the only high-selectivity foreign-key filter. Leading-wildcard Number search and aggregate `TotalPlannedQuantity` sorting cannot benefit from a conventional additional composite index, and no single composite ordering matches the independently selectable filter/sort combinations. Consistent with the local MVP and existing WMS convention, no additional non-unique Receiving Order list index is justified without observed production query evidence.
 - Add received and remaining total sorts as well: rejected because the MVP needs only the narrow, useful initial surface.
 
 ## Decision: Reuse Existing Structured Logging

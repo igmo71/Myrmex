@@ -17,8 +17,14 @@
         <MudAutocomplete T="StorageLocationLookupItem" Label="@Localizer["Receiving.Location"]" Variant="Variant.Outlined"
                          Required="true" Disabled="@(Warehouse is null)" MinCharacters="0" SearchFunc="SearchLocationsAsync"
                          ToStringFunc="FormatLocation" @bind-Value="Location" />
-        <MudStack Row="true"><MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Outlined" OnClick="AddSkuAsync">@Localizer["Receiving.AddSku"]</MudButton></MudStack>
-        <MudTable Items="Lines" Dense="true" Bordered="true">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Outlined" OnClick="AddSkuAsync">@Localizer["Receiving.AddSku"]</MudButton>
+            <MudTextField T="string" Label="@Localizer["Receiving.SearchLines"]" Variant="Variant.Outlined"
+                          Margin="Margin.Dense" Clearable="true" Immediate="true" DebounceInterval="200"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          @bind-Value="LineSearchText" Class="flex-grow-1" />
+        </MudStack>
+        <MudTable Items="VisibleLines" Dense="true" Bordered="true">
             <HeaderContent><MudTh>@Localizer["Common.Sku"]</MudTh><MudTh>@Localizer["Receiving.Planned"]</MudTh><MudTh>@Localizer["Common.Actions"]</MudTh></HeaderContent>
             <RowTemplate>
                 <MudTd>@context.Sku.Code - @context.Sku.Name</MudTd>
@@ -31,6 +37,9 @@
                     </MudTooltip>
                 </MudTd>
             </RowTemplate>
+            <NoRecordsContent>
+                <MudText>@Localizer["Receiving.NoLineMatches"]</MudText>
+            </NoRecordsContent>
         </MudTable>
         @if (SaveBlockedByConflict)
         {

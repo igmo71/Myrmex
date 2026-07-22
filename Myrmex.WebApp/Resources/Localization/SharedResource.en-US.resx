@@ -465,4 +465,18 @@
   <data name="Receiving.DeletePrompt" xml:space="preserve"><value>Permanently delete Draft {0} and all its lines? Its order number will be available for reuse.</value></data>
   <data name="Receiving.DeleteError" xml:space="preserve"><value>Could not delete the receiving order Draft.</value></data>
   <data name="Receiving.DeleteConflictReloaded" xml:space="preserve"><value>The order changed or is no longer Draft. Current details were reloaded; nothing was deleted.</value></data>
+  <data name="Nav.ReceivingOrders" xml:space="preserve"><value>Receiving orders</value></data>
+  <data name="Receiving.PageTitle" xml:space="preserve"><value>Receiving orders</value></data>
+  <data name="Receiving.Heading" xml:space="preserve"><value>Receiving orders</value></data>
+  <data name="Receiving.Description" xml:space="preserve"><value>Find, revise, and execute planned receipts.</value></data>
+  <data name="Receiving.Create" xml:space="preserve"><value>Create receiving order</value></data>
+  <data name="Receiving.SearchByNumber" xml:space="preserve"><value>Search order number</value></data>
+  <data name="Receiving.SearchLines" xml:space="preserve"><value>Search current lines by SKU code or name</value></data>
+  <data name="Receiving.LineCount" xml:space="preserve"><value>Lines</value></data>
+  <data name="Receiving.StartedAt" xml:space="preserve"><value>Started</value></data>
+  <data name="Receiving.CompletedAt" xml:space="preserve"><value>Completed</value></data>
+  <data name="Receiving.Open" xml:space="preserve"><value>Open receiving order</value></data>
+  <data name="Receiving.NoMatches" xml:space="preserve"><value>No receiving orders match the current filters.</value></data>
+  <data name="Receiving.NoLineMatches" xml:space="preserve"><value>No current lines match this SKU search.</value></data>
+  <data name="Receiving.Deleted" xml:space="preserve"><value>Receiving order Draft deleted.</value></data>
 </root>

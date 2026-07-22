@@ -1,0 +1,47 @@
+@page "/wms/receiving-orders"
+@inject IStringLocalizer<SharedResource> Localizer
+
+<PageTitle>@Localizer["Receiving.PageTitle"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-4">
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <div>
+                <MudText Typo="Typo.h5">@Localizer["Receiving.Heading"]</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    @Localizer["Receiving.Description"]
+                </MudText>
+            </div>
+            <MudButton Color="Color.Primary"
+                       Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="Create">
+                @Localizer["Receiving.Create"]
+            </MudButton>
+        </MudStack>
+
+        @if (!string.IsNullOrWhiteSpace(_message))
+        {
+            <MudAlert Severity="Severity.Info">@_message</MudAlert>
+        }
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+        }
+
+        <ReceivingOrderFilters SelectedWarehouse="@_selectedWarehouse"
+                               SelectedWarehouseChanged="OnWarehouseChanged"
+                               SearchWarehouses="SearchWarehousesAsync"
+                               SelectedStatus="@_selectedStatus"
+                               SelectedStatusChanged="OnStatusChanged"
+                               SearchText="@_searchText"
+                               SearchTextChanged="OnSearchTextChanged"
+                               ReloadRequested="ReloadAsync" />
+
+        <ReceivingOrderGrid @ref="_receivingOrderGrid"
+                            LoadData="LoadReceivingOrdersAsync"
+                            OpenRequested="Open"
+                            EditRequested="Edit"
+                            DeleteRequested="DeleteAsync" />
+    </MudStack>
+</MudContainer>

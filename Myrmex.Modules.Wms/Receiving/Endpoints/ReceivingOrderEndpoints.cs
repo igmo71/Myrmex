@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Routing;
 using Myrmex.AppDispatching.CommandDispatching;
 using Myrmex.AppDispatching.QueryDispatching;
 using Myrmex.AspNetCore.Results;
+using Myrmex.Core.Application.Queries;
 using Myrmex.Core.Application.Security;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Receiving.Features.ReceivingOrders;
+using Myrmex.Shared.Common;
 using Myrmex.Shared.Wms.Receiving;
 
 namespace Myrmex.Modules.Wms.Receiving.Endpoints;
@@ -15,6 +17,8 @@ internal static class ReceivingOrderEndpoints
 {
     public static RouteGroupBuilder MapReceivingOrderEndpoints(this RouteGroupBuilder group)
     {
+        group.MapGet("", ListAsync)
+            .WithName("ListReceivingOrders").WithSummary("List Receiving Orders");
         group.MapGet("/{receivingOrderId:guid}", GetAsync)
             .WithName("GetReceivingOrderById").WithSummary("Get Receiving Order By Id");
         group.MapPost("", CreateAsync)
@@ -30,6 +34,33 @@ internal static class ReceivingOrderEndpoints
         group.MapPost("/{receivingOrderId:guid}/complete", CompleteAsync)
             .WithName("CompleteReceivingOrder").WithSummary("Complete Receiving Order");
         return group;
+    }
+
+    private static async Task<IResult> ListAsync(
+        [AsParameters] ReceivingOrderListRequest request,
+        IQueryDispatcher dispatcher,
+        CancellationToken cancellationToken)
+    {
+        var query = new ListReceivingOrders.Query
+        {
+            Skip = request.Skip ?? 0,
+            Take = request.Take ?? ListQuery.DefaultTake,
+            SearchText = request.SearchText,
+            NormalizedSearchText = ListReceivingOrders.NormalizeSearchText(request.SearchText),
+            WarehouseId = request.WarehouseId,
+            StatusText = request.Status,
+            Status = ListReceivingOrders.ParseStatus(request.Status),
+            SortBy = request.SortBy,
+            SortDescending = request.SortDescending ?? true
+        };
+
+        ServiceResult<ListResult<ReceivingOrderListItem>> result =
+            await dispatcher.DispatchAsync<
+                ListReceivingOrders.Query,
+                ServiceResult<ListResult<ReceivingOrderListItem>>>(
+                query,
+                cancellationToken);
+        return result.ToHttpResult();
     }
 
     private static async Task<IResult> GetAsync(

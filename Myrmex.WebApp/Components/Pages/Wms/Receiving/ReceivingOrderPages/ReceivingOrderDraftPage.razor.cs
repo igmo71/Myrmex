@@ -31,10 +31,23 @@ public partial class ReceivingOrderDraftPage
     protected bool Saving { get; set; }
     protected bool SaveBlockedByConflict { get; set; }
     protected string? ErrorMessage { get; set; }
+    protected string? LineSearchText { get; set; }
     private string? ExpectedOrderVersion { get; set; }
     private Guid? _loadedOrderId;
 
     protected bool IsEditMode => ReceivingOrderId.HasValue && ReceivingOrderId.Value != Guid.Empty;
+    protected IEnumerable<DraftLine> VisibleLines
+    {
+        get
+        {
+            string searchText = LineSearchText?.Trim() ?? string.Empty;
+            return searchText.Length == 0
+                ? Lines
+                : Lines.Where(line =>
+                    line.Sku.Code.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                    line.Sku.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+        }
+    }
     protected bool CanSave => !IsEditMode || !string.IsNullOrWhiteSpace(ExpectedOrderVersion);
     protected string PageTitleText => IsEditMode
         ? Localizer["Receiving.EditTitle"]
@@ -56,6 +69,7 @@ public partial class ReceivingOrderDraftPage
             Location = null;
             ExpectedOrderVersion = null;
             Lines.Clear();
+            LineSearchText = null;
             SaveBlockedByConflict = false;
             ErrorMessage = null;
             _loadedOrderId = null;
@@ -256,6 +270,7 @@ public partial class ReceivingOrderDraftPage
                     true,
                     true),
                 line.PlannedQuantity)));
+            LineSearchText = null;
             SaveBlockedByConflict = false;
             _loadedOrderId = order.Id;
         }
