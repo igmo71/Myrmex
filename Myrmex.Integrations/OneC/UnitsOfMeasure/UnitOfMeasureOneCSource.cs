@@ -23,7 +23,8 @@ internal sealed class UnitOfMeasureOneCSource(
 {
     private const int MaximumDataVersionLength = 128;
     private const string Projection =
-        "Ref_Key,DataVersion,DeletionMark,Code,Description,НаименованиеПолное,МеждународноеСокращение";
+        "Ref_Key,DataVersion,DeletionMark,Code,Description,НаименованиеПолное,МеждународноеСокращение," +
+        "ТипИзмеряемойВеличины,Числитель,Знаменатель";
 
     public Task<IReadOnlyList<UnitOfMeasureSourceRecord>> ReadAllAsync(
         CancellationToken cancellationToken) =>

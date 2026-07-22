@@ -18,6 +18,7 @@ internal interface IStockKeepingUnitOneCSynchronizer
 
 internal sealed class StockKeepingUnitOneCSynchronizer(
     IStockKeepingUnitOneCSource source,
+    IUnitOfMeasureOneCSource unitOfMeasureSource,
     IUnitOfMeasureOneCSynchronizer unitOfMeasureSynchronizer,
     ICommandDispatcher commandDispatcher,
     OneCImportGate importGate,
@@ -69,12 +70,21 @@ internal sealed class StockKeepingUnitOneCSynchronizer(
             }
             else
             {
+                IReadOnlyDictionary<Guid, UnitOfMeasureSourceRecord> units =
+                    await ReadPhysicalUnitsAsync(record, cancellationToken);
+                StockKeepingUnitPhysicalCharacteristicsNormalizer.Result normalized =
+                    StockKeepingUnitPhysicalCharacteristicsNormalizer.Normalize(record, units);
+                LogNormalizationIssues(record.Ref_Key, normalized.Issues);
                 ImportStockKeepingUnits.Item item = new(
                     record.Ref_Key,
                     record.DataVersion,
                     record.Code?.Trim(),
                     FirstNonEmpty(record.НаименованиеПолное, record.Description),
                     record.ЕдиницаИзмерения_Key,
+                    normalized.WeightKilograms,
+                    normalized.LengthMetres,
+                    normalized.AreaSquareMetres,
+                    normalized.VolumeCubicMetres,
                     record.DeletionMark,
                     timeProvider.GetUtcNow());
                 result = await ApplyWithBoundedRepairAsync(item, cancellationToken);
@@ -90,6 +100,53 @@ internal sealed class StockKeepingUnitOneCSynchronizer(
                 exception.Reason);
             LogResult(result);
             return result;
+        }
+    }
+
+    private async Task<IReadOnlyDictionary<Guid, UnitOfMeasureSourceRecord>> ReadPhysicalUnitsAsync(
+        StockKeepingUnitSourceRecord record,
+        CancellationToken cancellationToken)
+    {
+        Guid[] unitExternalRefKeys =
+        [
+            .. new Guid?[]
+            {
+                record.ВесИспользовать ? record.ВесЕдиницаИзмерения_Key : null,
+                record.ДлинаИспользовать ? record.ДлинаЕдиницаИзмерения_Key : null,
+                record.ПлощадьИспользовать ? record.ПлощадьЕдиницаИзмерения_Key : null,
+                record.ОбъемИспользовать ? record.ОбъемЕдиницаИзмерения_Key : null
+            }
+            .Where(key => key.HasValue && key.Value != Guid.Empty)
+            .Select(key => key!.Value)
+            .Distinct()
+        ];
+
+        Dictionary<Guid, UnitOfMeasureSourceRecord> units = [];
+        foreach (Guid unitExternalRefKey in unitExternalRefKeys)
+        {
+            UnitOfMeasureSourceRecord? unit = await unitOfMeasureSource.ReadCurrentAsync(
+                unitExternalRefKey,
+                cancellationToken);
+            if (unit is not null)
+            {
+                units[unitExternalRefKey] = unit;
+            }
+        }
+        return units;
+    }
+
+    private void LogNormalizationIssues(
+        Guid stockKeepingUnitExternalRefKey,
+        IEnumerable<StockKeepingUnitPhysicalCharacteristicsNormalizer.Issue> issues)
+    {
+        foreach (StockKeepingUnitPhysicalCharacteristicsNormalizer.Issue issue in issues)
+        {
+            logger.LogWarning(
+                "1С SKU {ExternalRefKey} physical characteristic {Characteristic} could not be normalized: {Reason}. Unit: {UnitExternalRefKey}.",
+                stockKeepingUnitExternalRefKey,
+                issue.Characteristic,
+                issue.Reason,
+                issue.UnitExternalRefKey);
         }
     }
 

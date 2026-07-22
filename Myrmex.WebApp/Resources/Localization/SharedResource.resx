@@ -316,6 +316,11 @@
   <data name="InventoryTransfer.View" xml:space="preserve"><value>View transfer</value></data>
   <data name="Sku.BaseUnitOfMeasure" xml:space="preserve"><value>Base UoM</value></data>
   <data name="Sku.BaseUnitOfMeasureRequired" xml:space="preserve"><value>Base UoM is required.</value></data>
+  <data name="Sku.PhysicalCharacteristics" xml:space="preserve"><value>Physical characteristics per base unit</value></data>
+  <data name="Sku.Weight" xml:space="preserve"><value>Weight</value></data>
+  <data name="Sku.Length" xml:space="preserve"><value>Length</value></data>
+  <data name="Sku.Area" xml:space="preserve"><value>Area</value></data>
+  <data name="Sku.Volume" xml:space="preserve"><value>Volume</value></data>
   <data name="Sku.Created" xml:space="preserve"><value>SKU created.</value></data>
   <data name="Sku.CreateTitle" xml:space="preserve"><value>Create SKU</value></data>
   <data name="Sku.Deactivated" xml:space="preserve"><value>SKU deactivated.</value></data>

@@ -25,7 +25,11 @@ internal sealed class StockKeepingUnitOneCSource(
 {
     private const int MaximumDataVersionLength = 128;
     private const string Projection =
-        "Ref_Key,DataVersion,DeletionMark,IsFolder,Code,Description,НаименованиеПолное,Артикул,ЕдиницаИзмерения_Key";
+        "Ref_Key,DataVersion,DeletionMark,IsFolder,Code,Description,НаименованиеПолное,Артикул,ЕдиницаИзмерения_Key," +
+        "ВесИспользовать,ВесЧислитель,ВесЗнаменатель,ВесЕдиницаИзмерения_Key," +
+        "ДлинаИспользовать,ДлинаЧислитель,ДлинаЗнаменатель,ДлинаЕдиницаИзмерения_Key," +
+        "ПлощадьИспользовать,ПлощадьЧислитель,ПлощадьЗнаменатель,ПлощадьЕдиницаИзмерения_Key," +
+        "ОбъемИспользовать,ОбъемЧислитель,ОбъемЗнаменатель,ОбъемЕдиницаИзмерения_Key";
 
     public async IAsyncEnumerable<IReadOnlyList<StockKeepingUnitSourceRecord>> ReadPagesAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken)

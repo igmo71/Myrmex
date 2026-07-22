@@ -1053,6 +1053,21 @@
   <data name="Sku.BaseUnitOfMeasureRequired" xml:space="preserve">
     <value>Выберите базовую единицу измерения.</value>
   </data>
+  <data name="Sku.PhysicalCharacteristics" xml:space="preserve">
+    <value>Физические характеристики базовой единицы</value>
+  </data>
+  <data name="Sku.Weight" xml:space="preserve">
+    <value>Вес</value>
+  </data>
+  <data name="Sku.Length" xml:space="preserve">
+    <value>Длина</value>
+  </data>
+  <data name="Sku.Area" xml:space="preserve">
+    <value>Площадь</value>
+  </data>
+  <data name="Sku.Volume" xml:space="preserve">
+    <value>Объём</value>
+  </data>
   <data name="Sku.Created" xml:space="preserve">
     <value>SKU создан.</value>
   </data>

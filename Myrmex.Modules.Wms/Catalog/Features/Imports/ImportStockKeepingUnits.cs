@@ -24,6 +24,10 @@ public static class ImportStockKeepingUnits
         string? Code,
         string? Name,
         Guid? BaseUnitOfMeasureExternalRefKey,
+        decimal? WeightKilograms,
+        decimal? LengthMetres,
+        decimal? AreaSquareMetres,
+        decimal? VolumeCubicMetres,
         bool IsDeletionMarked,
         DateTimeOffset ImportedAtUtc);
 
@@ -148,7 +152,12 @@ public static class ImportStockKeepingUnits
                 }
 
                 bool isLinked = byExternalRefKey.TryGetValue(item.ExternalRefKey, out StockKeepingUnit? linked);
-                if (isLinked && linked!.HasExternalDataVersion(item.ExternalDataVersion))
+                if (isLinked &&
+                    linked!.HasExternalDataVersion(item.ExternalDataVersion) &&
+                    linked.WeightKilograms == item.WeightKilograms &&
+                    linked.LengthMetres == item.LengthMetres &&
+                    linked.AreaSquareMetres == item.AreaSquareMetres &&
+                    linked.VolumeCubicMetres == item.VolumeCubicMetres)
                 {
                     unchanged++;
                     continue;
@@ -163,8 +172,12 @@ public static class ImportStockKeepingUnits
                         item.Code,
                         item.Name,
                         baseUnitOfMeasureId: null,
+                        weightKilograms: item.WeightKilograms,
+                        lengthMetres: item.LengthMetres,
+                        areaSquareMetres: item.AreaSquareMetres,
+                        volumeCubicMetres: item.VolumeCubicMetres,
                         isDeletionMarked: true,
-                        item.ImportedAtUtc);
+                        importedAtUtc: item.ImportedAtUtc);
                     if (!deletionResult.IsValid)
                     {
                         failed++;
@@ -210,8 +223,12 @@ public static class ImportStockKeepingUnits
                         item.Code,
                         item.Name,
                         baseUnit.Id,
+                        item.WeightKilograms,
+                        item.LengthMetres,
+                        item.AreaSquareMetres,
+                        item.VolumeCubicMetres,
                         isDeletionMarked: false,
-                        item.ImportedAtUtc);
+                        importedAtUtc: item.ImportedAtUtc);
                     if (!updateResult.IsValid)
                     {
                         failed++;
@@ -253,8 +270,12 @@ public static class ImportStockKeepingUnits
                     item.Code,
                     item.Name,
                     baseUnit.Id,
+                    item.WeightKilograms,
+                    item.LengthMetres,
+                    item.AreaSquareMetres,
+                    item.VolumeCubicMetres,
                     isDeletionMarked: false,
-                    item.ImportedAtUtc);
+                    importedAtUtc: item.ImportedAtUtc);
                 if (!importResult.IsValid)
                 {
                     failed++;

@@ -1,4 +1,5 @@
 @using MudBlazor
+@using System.Globalization
 @using Myrmex.Shared.Common
 @using Myrmex.WebApp.Wms.Api
 @using Myrmex.WebApp.Wms.Catalog
@@ -55,6 +56,30 @@
                     }
                 </MudSelect>
 
+                @if (IsEditMode && Sku is not null)
+                {
+                    <MudDivider />
+                    <MudText Typo="Typo.subtitle2">@Localizer["Sku.PhysicalCharacteristics"]</MudText>
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.caption">@Localizer["Sku.Weight"]</MudText>
+                            <MudText>@FormatCharacteristic(Sku.WeightKilograms, "kg")</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.caption">@Localizer["Sku.Length"]</MudText>
+                            <MudText>@FormatCharacteristic(Sku.LengthMetres, "m")</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.caption">@Localizer["Sku.Area"]</MudText>
+                            <MudText>@FormatCharacteristic(Sku.AreaSquareMetres, "m²")</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudText Typo="Typo.caption">@Localizer["Sku.Volume"]</MudText>
+                            <MudText>@FormatCharacteristic(Sku.VolumeCubicMetres, "m³")</MudText>
+                        </MudItem>
+                    </MudGrid>
+                }
+
                 @if (!string.IsNullOrWhiteSpace(_errorMessage))
                 {
                     <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
@@ -104,6 +129,11 @@
     private bool IsEditMode => Sku is not null;
 
     private string Title => IsEditMode ? Localizer["Sku.EditTitle"] : Localizer["Sku.CreateTitle"];
+
+    private string FormatCharacteristic(decimal? value, string unit) =>
+        value.HasValue
+            ? $"{value.Value.ToString("0.############", CultureInfo.CurrentCulture)} {unit}"
+            : Localizer["Common.NotAvailable"];
 
     protected override async Task OnInitializedAsync()
     {

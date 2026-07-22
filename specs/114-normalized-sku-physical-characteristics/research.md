@@ -2,7 +2,7 @@
 
 **Date**: 2026-07-21
 
-**Status**: Complete; provisional formula requires an early implementation verification
+**Status**: Complete; formula confirmed sufficiently for implementation from the supplied issue #114 evidence
 
 ## Decision: Use the Evidence-Backed Provisional Conversion Formula
 
@@ -10,7 +10,7 @@
 
 `normalized value = source numerator / source denominator × unit numerator / unit denominator`
 
-This is the working 1C source-contract interpretation. Before coding or finalizing the normalizer behavior, verify it against additional representative linked 1C SKU and unit records. If real data contradicts it, stop formula-dependent implementation and update this research, the plan, contracts, and implementation approach.
+This is the working 1C source-contract interpretation. It is confirmed sufficiently for implementation by the supplied linked weight example and unit-factor orientation. It has not yet been independently validated with linked non-unity SKU examples for every measurement type. If later real data contradicts it, stop formula-dependent implementation and update this research, the plan, contracts, and implementation approach before proceeding.
 
 **Rationale**: Supplied 1C samples establish the expected unit-factor orientation:
 
@@ -24,21 +24,19 @@ This is the working 1C source-contract interpretation. Before coding or finalizi
 | Metre | `1 / 1` | 1 metre |
 | Square metre | `1 / 1` | 1 square metre |
 
-The supplied SKU weight sample has source value `0.001 / 1` and kilogram factor `1 / 1`, producing `0.001 kg` under the formula. These examples are sufficient to proceed with Phase 1 planning without requiring samples for every measurement type.
+The supplied SKU weight record has `ВесЧислитель = 0.001`, `ВесЗнаменатель = 1`, and `ВесЕдиницаИзмерения_Key = d6c72a80-ab2e-11ef-bab0-00155d01d113`. Its linked kilogram unit has `ТипИзмеряемойВеличины = Вес`, `Числитель = 1`, and `Знаменатель = 1`, producing the known canonical result `0.001 kg` under the formula. Together with the supplied non-unity unit factors, this is sufficient evidence to implement the planned interpretation without requiring linked examples for every measurement type.
 
-The repository's current source projections do not yet read the physical fields and contain no existing conversion arithmetic. Consequently, additional linked-record comparison remains an implementation prerequisite rather than a claim that every publication variant has already been proven.
+The repository's current source projections do not yet read the physical fields and contain no existing conversion arithmetic. The supplied evidence confirms the formula sufficiently for this implementation but does not prove every publication variant or independently validate linked non-unity SKU examples for every measurement type.
 
-**Implementation prerequisite**:
+**Later contradiction handling**:
 
-1. Before editing the normalizer, obtain additional read-only linked SKU/unit records through approved access.
-2. Include at least one non-unity factor and an independently understood canonical result; all four measurement types are not required.
-3. Confirm the formula, actual JSON numeric field types, compatibility with ordinary nullable numeric DTO properties in the existing transport, exact `ТипИзмеряемойВеличины` values, and the planned persistence precision/scale.
-4. Record only the conclusion and any contract corrections needed; do not add raw credentials or source dumps.
-5. If any result contradicts the rule, update the research and design before continuing formula-dependent code.
+1. Do not block implementation waiting for credentials or more samples.
+2. Continue using ordinary nullable numeric DTO properties, the supplied `ТипИзмеряемойВеличины` values, and the planned persistence precision/scale.
+3. If later representative real data contradicts the formula, numeric shapes, wire values, or persistence assumptions, stop formula-dependent work and update the research and design before proceeding.
 
 **Alternatives considered**:
 
-- Block planning until all four measurement types have additional examples: rejected because the supplied samples already establish the working orientation.
+- Block implementation until all four measurement types have additional linked examples: rejected because the supplied weight example and unit catalog establish sufficient evidence for the working orientation.
 - Infer the rule only from field names: rejected because the supplied factor evidence is the planning basis.
 - Implement multiple orientations and choose heuristically: rejected as ambiguous behavior and unnecessary generalization.
 

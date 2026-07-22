@@ -26,6 +26,14 @@ Generate one normal WMS migration for the four nullable SKU columns using the re
 
 Use `decimal(28,12)` as the planned mapping unless the early representative-record verification demonstrates that different precision or scale is required. Any adjustment must remain four ordinary nullable decimal columns.
 
+After the entity and EF configuration are complete, the user generates the migration from the repository root:
+
+```powershell
+dotnet ef migrations add AddSkuPhysicalCharacteristics --project Myrmex.Modules.Wms --startup-project Myrmex.ApiService --context WmsDbContext --output-dir Infrastructure/Persistence/Migrations
+```
+
+Migration generation and application are user-owned actions. After generation, pause before application so the generated migration and `WmsDbContextModelSnapshot.cs` can be reviewed.
+
 ## 3. Build and Start the Existing Application
 
 Run these only after implementation:
