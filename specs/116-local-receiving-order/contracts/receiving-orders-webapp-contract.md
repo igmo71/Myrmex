@@ -76,7 +76,7 @@ Do not render one autocomplete control for every line. Select/Change opens one s
 - Create sends `CreateReceivingOrderRequest` and navigates to details on success.
 - Edit sends the complete `UpdateReceivingOrderDraftRequest` with current OrderVersion.
 - On edit success, replace local state with returned details or navigate to details.
-- On HTTP 409, do not auto-retry and do not silently discard the unsaved complete plan. Show an explicit “order changed” message and actions to reload/discard local changes or resolve them against current data; disable repeated Save until the user explicitly completes one of those paths.
+- On HTTP 409, do not auto-retry and do not silently discard the unsaved complete plan. Show explicit current-data conflict guidance, disable repeated Save, and provide a confirmed Reload latest/discard-local-changes action. Keep the local plan visible so the user may resolve it manually, but add no automatic or three-way merge, automatic replay, or generalized conflict-resolution workflow.
 
 ## Details and Execution Page
 

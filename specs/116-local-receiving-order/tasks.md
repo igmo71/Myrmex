@@ -21,7 +21,7 @@
 **Purpose**: Establish the shared constants and persistence-boundary convention required by all Receiving stories.
 
 - [ ] T001 [P] Add the Topology-owned `StorageLocationTypeCodes.Receiving` constant with persisted value `RECEIVING` in `Myrmex.Shared/Wms/Topology/StorageLocationTypeCodes.cs`
-- [ ] T002 [P] Add the shared static `decimal(18,4)` scale/range validator without weight behavior in `Myrmex.Modules.Wms/Domain/WmsQuantityPersistence.cs`
+- [ ] T002 [P] Add the shared static `WmsQuantityPersistence` helper that determines whether a decimal numeric value is exactly representable as `decimal(18,4)`, accepting CLR decimals with scale above four when discarded digits are only trailing zeroes; use it for Issue #116 Receiving paths only and do not retrofit unrelated Adjustment, Transfer, Inventory Count, or other quantity workflows, in `Myrmex.Modules.Wms/Domain/WmsQuantityPersistence.cs`
 - [ ] T003 Add the stable Receiving type seed ID and active system `HasData` row using `StorageLocationTypeCodes.Receiving` in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsSeedIds.cs` and `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/StorageLocationTypeConfiguration.cs`
 - [ ] T004 Add one demonstrable Receiving StorageLocation definition without reclassifying legacy DOCK identities in `Myrmex.Modules.Wms/DemoData/Features/DemoDataDefinitions.cs` and `Myrmex.Modules.Wms/DemoData/Features/WmsDemoDataSeeder.cs`
 
@@ -43,7 +43,7 @@
 - [ ] T010 [P] Extract one authoritative active location/type/status selectability predicate and make the existing lookup reuse it in `Myrmex.Modules.Wms/Topology/Features/StorageLocations/StorageLocationEligibility.cs` and `Myrmex.Modules.Wms/Topology/Features/StorageLocations/LookupStorageLocations.cs`
 - [ ] T011 Refactor balance-creation validation to delegate overlapping location/type/status checks to the Topology eligibility rule while retaining SKU/base-UOM validation in `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/InventoryBalanceCreateEligibility.cs`
 - [ ] T012 [P] Implement the owned ReceivingOrderLine entity with base-unit planned/received invariants and aggregate-only concurrency in `Myrmex.Modules.Wms/Receiving/Domain/ReceivingOrders/ReceivingOrderLine.cs`
-- [ ] T013 Implement ReceivingOrder creation, full-plan LineId reconciliation, retained-line SKU changes, lifecycle invariants, aggregate Touch behavior, and complete persisted-Completed invariant in `Myrmex.Modules.Wms/Receiving/Domain/ReceivingOrders/ReceivingOrder.cs`
+- [ ] T013 Implement ReceivingOrder creation, exact `decimal(18,4)` representability for new planned/accumulated quantities, full-plan LineId reconciliation, retained-line SKU changes, lifecycle invariants, aggregate Touch behavior, and complete persisted-Completed invariant in `Myrmex.Modules.Wms/Receiving/Domain/ReceivingOrders/ReceivingOrder.cs`
 - [ ] T014 [P] Add Receiving table/index/constraint names and duplicate Number/order-SKU exception mappings in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDatabaseNames.cs` and `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsPersistenceExceptionMapper.cs`
 - [ ] T015 Configure restrictive relationships, aggregate rowversion, `decimal(18,4)` columns, unique normalized Number, unique order/SKU, and filtered unique InventoryTransactionId in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/ReceivingOrderConfiguration.cs` and `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/ReceivingOrderLineConfiguration.cs`
 - [ ] T016 [P] Register ReceivingOrder and ReceivingOrderLine sets in the existing WMS context in `Myrmex.Modules.Wms/Infrastructure/Persistence/WmsDbContext.cs`
@@ -60,17 +60,17 @@
 
 ### Implementation for User Story 1
 
-- [ ] T017 [P] [US1] Add the Receiving transaction type and `CreateReceiving(receivingLocationId, changes, reason, occurredAtUtc, out transaction)` factory with one location argument, per-line SKU/delta/before/after values, persistence-bound validation, and stable non-localized reason support in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryTransactionType.cs` and `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryTransaction.cs`
+- [ ] T017 [P] [US1] Add the Receiving transaction type and `CreateReceiving(receivingLocationId, changes, reason, occurredAtUtc, out transaction)` factory with one location argument, per-line SKU/delta/before/after values, Receiving-scoped persistence-bound validation, and non-empty reason validation without knowledge of the Receiving Order reason format in `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryTransactionType.cs` and `Myrmex.Modules.Wms/Inventory/Domain/InventoryTransactions/InventoryTransaction.cs`
 - [ ] T018 [P] [US1] Implement the shared Receiving eligibility orchestration for active Warehouse, ownership, `StorageLocationTypeCodes.Receiving`, authoritative selectability, and deterministic SKU/base-UOM reference order in `Myrmex.Modules.Wms/Receiving/Features/ReceivingOrders/ReceivingOrderEligibility.cs`
 - [ ] T019 [P] [US1] Implement no-tracking details projection and mapping with ordered lines, totals, aggregate version, and direct transaction reference in `Myrmex.Modules.Wms/Receiving/Features/ReceivingOrders/ReceivingOrderQueryableExtensions.cs` and `Myrmex.Modules.Wms/Receiving/Features/ReceivingOrders/GetReceivingOrderById.cs`
 - [ ] T020 [P] [US1] Add the protected Receiving HTTP client and DI registration for details/create/start/receive/complete operations in `Myrmex.WebApp/Wms/Receiving/WmsReceivingApiClient.cs` and `Myrmex.WebApp/Program.cs`
 - [ ] T021 [P] [US1] Implement the focused server-backed active-SKU selector with duplicate-current-line prevention in `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/SelectReceivingOrderSkuDialog.razor`
-- [ ] T022 [P] [US1] Add invariant, English, and Russian strings needed for creation, execution, quantities, states, conflicts, and transaction display in `Myrmex.WebApp/Resources/Localization/SharedResource.resx`, `Myrmex.WebApp/Resources/Localization/SharedResource.en-US.resx`, and `Myrmex.WebApp/Resources/Localization/SharedResource.ru-RU.resx`
+- [ ] T022 [US1] Add invariant, English, and Russian strings needed for creation, execution, quantities, states, conflicts, and transaction display in `Myrmex.WebApp/Resources/Localization/SharedResource.resx`, `Myrmex.WebApp/Resources/Localization/SharedResource.en-US.resx`, and `Myrmex.WebApp/Resources/Localization/SharedResource.ru-RU.resx`
 - [ ] T023 [US1] Implement deterministic create validation, zero-received Draft persistence, 200-result details reload, and structured outcome logging in `Myrmex.Modules.Wms/Receiving/Features/ReceivingOrders/CreateReceivingOrder.cs`
 - [ ] T024 [P] [US1] Implement versioned Start with authoritative eligibility revalidation, immutable plan transition, idempotent InProgress response, and structured outcome logging in `Myrmex.Modules.Wms/Receiving/Features/ReceivingOrders/StartReceivingOrder.cs`
 - [ ] T025 [P] [US1] Implement aggregate-versioned positive line receipt, over-receipt protection, no inventory effect, decimal-bound validation, and structured outcome logging in `Myrmex.Modules.Wms/Receiving/Features/ReceivingOrders/ReceiveReceivingOrderLine.cs`
-- [ ] T026 [US1] Implement one-save atomic completion for balances/order/transaction/entries, direct InventoryTransactionId, stable reason, decimal-bound checks, full persisted-Completed reload invariant, conflict observation without posting retry, and structured outcome logging in `Myrmex.Modules.Wms/Receiving/Features/ReceivingOrders/CompleteReceivingOrder.cs`
-- [ ] T027 [US1] Map the authorized Receiving route group and the details/create/start/receive/complete endpoints with existing ServiceResult/Problem Details semantics in `Myrmex.Modules.Wms/Receiving/Endpoints/ReceivingEndpoints.cs`, `Myrmex.Modules.Wms/Receiving/Endpoints/ReceivingOrderEndpoints.cs`, and `Myrmex.Modules.Wms/WmsModule.cs`
+- [ ] T026 [US1] Implement one-save atomic completion for balances/order/transaction/entries, direct InventoryTransactionId, Receiving-owned construction of the invariant non-localized reason `ReceivingOrder {ReceivingOrderId:D} Number {NormalizedNumber}`, Receiving-scoped decimal-bound checks, full persisted-Completed reload invariant, conflict observation without posting retry, and structured outcome logging in `Myrmex.Modules.Wms/Receiving/Features/ReceivingOrders/CompleteReceivingOrder.cs`
+- [ ] T027 [US1] Map the authorized Receiving route group and details/create/start/receive/complete endpoints, and verify `ReceivingOrder.InvalidPersistedState` is returned as `ServiceErrorType.Failure` through the existing RFC Problem Details mapping to HTTP 500; if the shared path cannot represent that outcome, make only a narrow shared-mapper extension—never an unhandled exception, HTTP 409, or Receiving-specific envelope—in `Myrmex.Modules.Wms/Receiving/Endpoints/ReceivingEndpoints.cs`, `Myrmex.Modules.Wms/Receiving/Endpoints/ReceivingOrderEndpoints.cs`, `Myrmex.Modules.Wms/WmsModule.cs`, and `Myrmex.AspNetCore/Results/ServiceResultHttpExtensions.cs`
 - [ ] T028 [US1] Implement the full-page create-mode complete-plan editor with Warehouse-dependent eligible Receiving lookup, shared type-code constant, complete backing collection, and create navigation in `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDraftPage.razor` and `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDraftPage.razor.cs`
 - [ ] T029 [P] [US1] Implement the positive receive-quantity dialog with planned/received/remaining context and aggregate OrderVersion in `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceiveReceivingOrderLineDialog.razor`
 - [ ] T030 [US1] Implement the details/execution page with state-gated Start/Receive/Complete actions, mutation refresh, planned/received/remaining quantities, full transaction link, and reload-on-true-execution-conflict behavior in `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDetailsPage.razor`
@@ -91,9 +91,9 @@
 - [ ] T032 [P] [US2] Implement guarded physical Draft deletion with aggregate version, explicit atomic line/order removal, invalid-persisted-state defense, Number release, no Deleted lifecycle state, and structured logging in `Myrmex.Modules.Wms/Receiving/Features/ReceivingOrders/DeleteReceivingOrderDraft.cs`
 - [ ] T033 [US2] Add PUT/DELETE endpoint mappings, URL-encoded Base64 version handling, 204 no-content client support, and Receiving client methods in `Myrmex.Modules.Wms/Receiving/Endpoints/ReceivingOrderEndpoints.cs`, `Myrmex.WebApp/Wms/Api/WmsApiClientHttp.cs`, and `Myrmex.WebApp/Wms/Receiving/WmsReceivingApiClient.cs`
 - [ ] T034 [US2] Extend the Draft page to load edit-mode details and serialize full `UpdateReceivingOrderDraftRequest` reconciliation while preserving loaded LineIds through SKU/quantity edits in `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDraftPage.razor` and `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDraftPage.razor.cs`
-- [ ] T035 [US2] Preserve the complete unsaved Draft plan after HTTP 409, disable repeated Save, and implement explicit reload/discard/resolve-against-current actions in `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDraftPage.razor` and `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDraftPage.razor.cs`
+- [ ] T035 [US2] After HTTP 409 preserve the complete unsaved Draft plan, disable repeated Save, show explicit current-data conflict guidance, and provide a confirmed Reload latest/discard-local-changes action while keeping local state visible for optional manual resolution; do not add automatic/three-way merge, automatic replay, or generalized conflict resolution in `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDraftPage.razor` and `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDraftPage.razor.cs`
 - [ ] T036 [US2] Add Draft-only Edit/Delete actions, confirmation, successful navigation, and stale/non-Draft conflict guidance to `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDetailsPage.razor`
-- [ ] T037 [P] [US2] Add invariant, English, and Russian strings for Draft reconciliation, deletion, Number reuse, and unsaved-conflict resolution in `Myrmex.WebApp/Resources/Localization/SharedResource.resx`, `Myrmex.WebApp/Resources/Localization/SharedResource.en-US.resx`, and `Myrmex.WebApp/Resources/Localization/SharedResource.ru-RU.resx`
+- [ ] T037 [US2] Add invariant, English, and Russian strings for Draft reconciliation, deletion, Number reuse, and unsaved-conflict guidance in `Myrmex.WebApp/Resources/Localization/SharedResource.resx`, `Myrmex.WebApp/Resources/Localization/SharedResource.en-US.resx`, and `Myrmex.WebApp/Resources/Localization/SharedResource.ru-RU.resx`
 
 **Checkpoint**: User Story 2 independently proves full-plan reconciliation and guarded Draft deletion using Sections 6, 7, and 9 of `quickstart.md` under user-owned execution.
 
@@ -114,8 +114,8 @@
 - [ ] T042 [US3] Implement the server-driven Receiving list page, paging lifecycle, filters, create/open/edit/delete coordination, and conflict reload behavior in `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/Index.razor` and `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/Index.razor.cs`
 - [ ] T043 [P] [US3] Add case-insensitive local SKU code/name search that filters only rendered Draft rows while every save submits the complete backing plan in `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDraftPage.razor` and `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDraftPage.razor.cs`
 - [ ] T044 [P] [US3] Add the localized Receiving navigation link under WMS in `Myrmex.WebApp/Components/Layout/NavMenu.razor`
-- [ ] T045 [US3] Review the implemented list LINQ query shape and add only a justified composite non-unique index, if required by existing WMS conventions, in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/ReceivingOrderConfiguration.cs`
-- [ ] T046 [P] [US3] Add invariant, English, and Russian strings for navigation, list filters, columns, actions, empty states, and local line search in `Myrmex.WebApp/Resources/Localization/SharedResource.resx`, `Myrmex.WebApp/Resources/Localization/SharedResource.en-US.resx`, and `Myrmex.WebApp/Resources/Localization/SharedResource.ru-RU.resx`
+- [ ] T045 [US3] Review the implemented/generated list query shape and existing WMS conventions; either add a justified composite non-unique index in `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/ReceivingOrderConfiguration.cs` or document in `specs/116-local-receiving-order/research.md` that no additional index is justified, without adding an index merely to complete the task
+- [ ] T046 [US3] Add invariant, English, and Russian strings for navigation, list filters, columns, actions, empty states, and local line search in `Myrmex.WebApp/Resources/Localization/SharedResource.resx`, `Myrmex.WebApp/Resources/Localization/SharedResource.en-US.resx`, and `Myrmex.WebApp/Resources/Localization/SharedResource.ru-RU.resx`
 
 **Checkpoint**: User Story 3 is ready for the user-owned list/details checks and exactly-300-line deterministic procedure in Sections 11 and 13 of `quickstart.md`.
 
@@ -125,8 +125,9 @@
 
 **Purpose**: Close consistency, diagnostics, accessibility, and handoff gaps without expanding Issue #116.
 
-- [ ] T047 Audit localized labels, disabled action states, icon tooltips, dialog focus, and keyboard behavior across `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/Index.razor`, `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDraftPage.razor`, `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDetailsPage.razor`, `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/SelectReceivingOrderSkuDialog.razor`, and `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceiveReceivingOrderLineDialog.razor`
-- [ ] T048 [P] Reconcile final implementation-facing names, routes, error codes, user-owned migration/build/run/acceptance instructions, and excluded weight/1C scope in `specs/116-local-receiving-order/quickstart.md`, `specs/116-local-receiving-order/contracts/receiving-orders-api-contract.md`, and `specs/116-local-receiving-order/contracts/receiving-orders-webapp-contract.md`
+- [ ] T047 Review every existing workflow directly affected by extracting/reusing `StorageLocationEligibility` and preserve its prior accepted/rejected location behavior and error semantics, removing duplicate active location/type/status checks only when behavior remains unchanged and never intentionally broadening/narrowing Adjustment, Count, Transfer, or other workflows for Issue #116, in `Myrmex.Modules.Wms/Topology/Features/StorageLocations/StorageLocationEligibility.cs`, `Myrmex.Modules.Wms/Topology/Features/StorageLocations/LookupStorageLocations.cs`, `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/InventoryBalanceCreateEligibility.cs`, `Myrmex.Modules.Wms/Inventory/Features/InventoryAdjustments/AdjustInventoryBalance.cs`, `Myrmex.Modules.Wms/Inventory/Features/InventoryCounts/AddInventoryCountLine.cs`, `Myrmex.Modules.Wms/Inventory/Features/InventoryTransfers/CreateInventoryTransfer.cs`, and `Myrmex.Modules.Wms/Inventory/Features/InventoryBalances/MoveInventoryBalance.cs`
+- [ ] T048 Audit localized labels, disabled action states, icon tooltips, dialog focus, and keyboard behavior across `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/Index.razor`, `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDraftPage.razor`, `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceivingOrderDetailsPage.razor`, `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/SelectReceivingOrderSkuDialog.razor`, and `Myrmex.WebApp/Components/Pages/Wms/Receiving/ReceivingOrderPages/ReceiveReceivingOrderLineDialog.razor`
+- [ ] T049 Reconcile final implementation-facing names, routes, error codes, user-owned migration/build/run/acceptance instructions, and excluded weight/1C scope with the approved plan without weakening specification behavior to match accidental implementation differences; do not modify `spec.md` unless a direct contradiction is discovered and explicitly reported, in `specs/116-local-receiving-order/quickstart.md`, `specs/116-local-receiving-order/contracts/receiving-orders-api-contract.md`, and `specs/116-local-receiving-order/contracts/receiving-orders-webapp-contract.md`
 
 ---
 
@@ -139,7 +140,7 @@
 - **Phase 3 — User Story 1**: Depends on Phase 2. This is the MVP and establishes create/details/execution shells reused by later stories.
 - **Phase 4 — User Story 2**: Depends on Phase 2 plus the US1 create/details/API-client/editor shells needed to obtain and revise a Draft.
 - **Phase 5 — User Story 3**: Its list-query and list-component work can begin after Phase 2; its complete find-and-execute checkpoint depends on the US1 execution page and US2 Draft editor behavior.
-- **Phase 6 — Polish**: Depends on all selected user stories.
+- **Phase 6 — Polish**: Depends on all selected user stories. T047 specifically follows T010/T011 and reviews all existing workflows affected by the shared eligibility extraction before handoff.
 
 ### User Story Dependencies
 
@@ -165,10 +166,10 @@ US1 + US2 + US3 → Polish
 
 - T001 and T002 can run together.
 - After Setup, T005–T010 and T012/T014 can be distributed by file; T011 waits for T010 and T013 waits for its domain prerequisites.
-- At US1 start, T017–T022 can run in parallel. After T018, T024 and T025 can run together; after T020, T028 and T029 can proceed on separate page/dialog files.
-- T031 and T032 can run in parallel for US2, while T037 can proceed independently in localization files.
-- For US3, T040, T041, T043, T044, and T046 target separate concerns/files and can run in parallel subject to the listed prerequisites.
-- T048 can run alongside the final UI accessibility audit because it changes only specification artifacts.
+- At US1 start, T017–T021 can run in parallel. After T018, T024 and T025 can run together; after T020, T028 and T029 can proceed on separate page/dialog files.
+- T031 and T032 can run in parallel for US2.
+- For US3, T040, T041, T043, and T044 target separate concerns/files and can run in parallel subject to the listed prerequisites.
+- T022, T037, and T046 all edit the same `SharedResource*.resx` files and must run serially in task-ID order; they are not parallel opportunities even if different user stories are staffed concurrently.
 
 ---
 
@@ -182,7 +183,6 @@ Task T018: Receiving eligibility orchestration
 Task T019: Details projection/query
 Task T020: WebApp Receiving API client registration
 Task T021: Focused SKU selector
-Task T022: Core Receiving localization
 ```
 
 After T018:
@@ -197,7 +197,6 @@ Task T025: Receive-line handler
 ```text
 Task T031: Complete-plan Draft update handler
 Task T032: Guarded physical Draft delete handler
-Task T037: Draft edit/delete/conflict localization
 ```
 
 ### User Story 3
@@ -207,7 +206,6 @@ Task T040: Grid request and filter controls
 Task T041: Receiving grid
 Task T043: Draft local line search/backing-plan preservation
 Task T044: Navigation
-Task T046: List/search localization
 ```
 
 ---
@@ -236,5 +234,9 @@ Task T046: List/search localization
 - Draft deletion is physical persistence removal, never a `Deleted` lifecycle state.
 - Completion is attempted once per request and is never automatically retried.
 - `ReceivingOrder.InventoryTransactionId` remains the authoritative direct link; no generic source-document ownership is introduced.
+- `WmsQuantityPersistence` is applied in Issue #116 only to new Receiving inputs/calculations, `InventoryTransaction.CreateReceiving`, and InventoryBalance calculations directly used by Receiving completion; do not retrofit Adjustment, Transfer, Inventory Count, or other existing quantity workflows.
+- Exact `decimal(18,4)` representability is based on numeric value, so a CLR decimal with scale above four remains valid when only trailing zeroes would be removed.
+- Inventory validates only that `CreateReceiving` receives a non-empty reason; `CompleteReceivingOrder` owns the stable Receiving Order reason format.
+- Invalid persisted state must use the shared RFC Problem Details failure path to HTTP 500, never an unhandled exception, 409, or Receiving-specific error envelope.
 - A representative 300-line dataset is functional acceptance evidence, not a maximum or performance SLA.
 - SKU weight support and 1C weight normalization remain outside Issue #116.
