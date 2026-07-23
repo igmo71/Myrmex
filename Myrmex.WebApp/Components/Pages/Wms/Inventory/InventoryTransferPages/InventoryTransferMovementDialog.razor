@@ -18,6 +18,13 @@
                               Value="@SkuDisplay"
                               Disabled="true" />
 
+                <MudTextField T="string"
+                              Label="@Localizer["Sku.BaseUnitOfMeasure"]"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Value="@BaseUnitOfMeasureDisplay"
+                              Disabled="true" />
+
                 <MudGrid>
                     <MudItem xs="12" md="6">
                         <MudTextField T="string"
@@ -126,6 +133,11 @@
             : Line.RequestedQuantity - Line.MovedQuantity;
 
     private string SkuDisplay => $"{Line.Sku.Code} - {Line.Sku.Name}";
+
+    private string BaseUnitOfMeasureDisplay =>
+        string.IsNullOrWhiteSpace(Line.Sku.BaseUom.Symbol)
+            ? Line.Sku.BaseUom.Code
+            : Line.Sku.BaseUom.Symbol;
 
     private string FromLabel => IsPlace ? Localizer["InventoryTransfer.Transit"] : Localizer["Common.Source"];
 

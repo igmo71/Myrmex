@@ -205,7 +205,7 @@
     private string BaseUnitOfMeasureDisplay =>
         string.IsNullOrWhiteSpace(InventoryBalance.Sku.BaseUom.Symbol)
             ? InventoryBalance.Sku.BaseUom.Code
-            : $"{InventoryBalance.Sku.BaseUom.Code} ({InventoryBalance.Sku.BaseUom.Symbol})";
+            : InventoryBalance.Sku.BaseUom.Symbol;
 
     private Task OnDestinationStorageLocationChanged(StorageLocationLookupItem? value)
     {

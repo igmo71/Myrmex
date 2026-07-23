@@ -25,9 +25,10 @@
                               @bind-Value="LineSearchText" Class="flex-grow-1" />
             </MudStack>
             <MudTable Items="VisibleLines" Dense="true" Bordered="true">
-                <HeaderContent><MudTh>@Localizer["Common.Sku"]</MudTh><MudTh>@Localizer["Receiving.Planned"]</MudTh><MudTh>@Localizer["Common.Actions"]</MudTh></HeaderContent>
+                <HeaderContent><MudTh>@Localizer["Common.Sku"]</MudTh><MudTh>@Localizer["Sku.BaseUnitOfMeasure"]</MudTh><MudTh>@Localizer["Receiving.Planned"]</MudTh><MudTh>@Localizer["Common.Actions"]</MudTh></HeaderContent>
                 <RowTemplate>
                     <MudTd>@context.Sku.Code - @context.Sku.Name</MudTd>
+                    <MudTd>@FormatBaseUnitOfMeasure(context.Sku)</MudTd>
                     <MudTd>
                         <MudNumericField T="decimal"
                                          Format="0.###"

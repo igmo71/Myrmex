@@ -115,6 +115,6 @@
     {
         return string.IsNullOrWhiteSpace(entry.Sku.BaseUom.Symbol)
             ? entry.Sku.BaseUom.Code
-            : $"{entry.Sku.BaseUom.Code} ({entry.Sku.BaseUom.Symbol})";
+            : entry.Sku.BaseUom.Symbol;
     }
 }

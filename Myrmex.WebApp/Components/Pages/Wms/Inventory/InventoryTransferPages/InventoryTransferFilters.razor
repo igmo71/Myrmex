@@ -109,7 +109,12 @@
                              HelperText="&#160;"
                              Class="min-width-300">
                 <ItemTemplate>
-                    <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            @Localizer["Sku.BaseUnitOfMeasure"]: @FormatBaseUnitOfMeasure(context)
+                        </MudText>
+                    </MudStack>
                 </ItemTemplate>
                 <NoItemsTemplate>
                     <MudText>@Localizer["Sku.NoneFound"]</MudText>
@@ -285,4 +290,9 @@
 
     private static string FormatStockKeepingUnit(StockKeepingUnitLookupItem? stockKeepingUnit) =>
         stockKeepingUnit is null ? string.Empty : $"{stockKeepingUnit.Code} - {stockKeepingUnit.Name}";
+
+    private static string FormatBaseUnitOfMeasure(StockKeepingUnitLookupItem stockKeepingUnit) =>
+        string.IsNullOrWhiteSpace(stockKeepingUnit.BaseUnitOfMeasureSymbol)
+            ? stockKeepingUnit.BaseUnitOfMeasureCode
+            : stockKeepingUnit.BaseUnitOfMeasureSymbol;
 }

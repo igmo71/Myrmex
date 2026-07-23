@@ -127,7 +127,7 @@
     private string BaseUomDisplay =>
         string.IsNullOrWhiteSpace(CountLine.Sku.BaseUom.Symbol)
             ? CountLine.Sku.BaseUom.Code
-            : $"{CountLine.Sku.BaseUom.Code} ({CountLine.Sku.BaseUom.Symbol})";
+            : CountLine.Sku.BaseUom.Symbol;
 
     private decimal VarianceQuantity => _countedQuantity - CountLine.SystemQuantity;
 

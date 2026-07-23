@@ -71,5 +71,5 @@
     private static string FormatBaseUnitOfMeasure(StockKeepingUnitLookupItem sku) =>
         string.IsNullOrWhiteSpace(sku.BaseUnitOfMeasureSymbol)
             ? sku.BaseUnitOfMeasureCode
-            : $"{sku.BaseUnitOfMeasureCode} ({sku.BaseUnitOfMeasureSymbol})";
+            : sku.BaseUnitOfMeasureSymbol;
 }
