@@ -286,6 +286,11 @@ public partial class ReceivingOrderDraftPage
 
     protected static string FormatWarehouse(WarehouseLookupItem? item) => item is null ? string.Empty : $"{item.Code} - {item.Name}";
     protected static string FormatLocation(StorageLocationLookupItem? item) => item is null ? string.Empty : $"{item.Code} - {item.Name}";
+    protected static string FormatBaseUnitOfMeasure(StockKeepingUnitLookupItem sku) =>
+        string.IsNullOrWhiteSpace(sku.BaseUnitOfMeasureSymbol)
+            ? sku.BaseUnitOfMeasureCode
+            : sku.BaseUnitOfMeasureSymbol;
+
     protected sealed class DraftLine(Guid? lineId, StockKeepingUnitLookupItem sku, decimal plannedQuantity)
     {
         public Guid? LineId { get; } = lineId;

@@ -137,7 +137,8 @@ public static class ImportUnitsOfMeasure
 
                 if (byExternalRefKey.TryGetValue(item.ExternalRefKey, out UnitOfMeasure? linked))
                 {
-                    if (linked.HasExternalDataVersion(item.ExternalDataVersion))
+                    if (linked.HasExternalDataVersion(item.ExternalDataVersion) &&
+                        MatchesImportedState(linked, item))
                     {
                         unchanged++;
                         continue;
@@ -268,6 +269,25 @@ public static class ImportUnitsOfMeasure
                 byCode.Remove(oldCode);
             }
             byCode[unit.Code] = unit;
+        }
+
+        private static bool MatchesImportedState(UnitOfMeasure unit, Item item)
+        {
+            if (item.IsDeletionMarked)
+            {
+                return !unit.IsActive;
+            }
+
+            return unit.IsActive &&
+                string.Equals(unit.Code, DomainText.NormalizeCode(item.Code), StringComparison.Ordinal) &&
+                string.Equals(
+                    unit.Name,
+                    DomainText.NormalizeRequiredText(item.Name),
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    unit.Symbol,
+                    DomainText.NormalizeOptionalText(item.Symbol),
+                    StringComparison.Ordinal);
         }
 
         private static ReferenceImportRecordError Error(Item item, string reason, string message) =>

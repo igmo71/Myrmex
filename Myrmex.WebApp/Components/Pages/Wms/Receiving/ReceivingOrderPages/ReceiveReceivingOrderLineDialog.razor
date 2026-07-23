@@ -5,6 +5,7 @@
     <DialogContent>
         <MudStack Spacing="2">
             <MudText Typo="Typo.subtitle1">@Line.Sku.Code - @Line.Sku.Name</MudText>
+            <MudText>@Localizer["Sku.BaseUnitOfMeasure"]: @BaseUnitOfMeasureDisplay</MudText>
             <MudText>@Localizer["Receiving.Planned"]: @Line.PlannedQuantity.ToString("0.####")</MudText>
             <MudText>@Localizer["Receiving.Received"]: @Line.ReceivedQuantity.ToString("0.####")</MudText>
             <MudText>@Localizer["Receiving.Remaining"]: @Line.RemainingQuantity.ToString("0.####")</MudText>
@@ -41,6 +42,10 @@
     private bool _saving;
     private string? _error;
     private bool CanSave => !_saving && _quantity > 0 && _quantity <= Line.RemainingQuantity;
+    private string BaseUnitOfMeasureDisplay =>
+        string.IsNullOrWhiteSpace(Line.Sku.BaseUom.Symbol)
+            ? Line.Sku.BaseUom.Code
+            : Line.Sku.BaseUom.Symbol;
 
     protected override void OnInitialized() => _quantity = Line.RemainingQuantity;
 

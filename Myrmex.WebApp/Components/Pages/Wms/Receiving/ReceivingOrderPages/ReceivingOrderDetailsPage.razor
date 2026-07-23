@@ -241,5 +241,5 @@
     private static string FormatBaseUnitOfMeasure(ReceivingOrderLineDetails line) =>
         string.IsNullOrWhiteSpace(line.Sku.BaseUom.Symbol)
             ? line.Sku.BaseUom.Code
-            : $"{line.Sku.BaseUom.Code} ({line.Sku.BaseUom.Symbol})";
+            : line.Sku.BaseUom.Symbol;
 }

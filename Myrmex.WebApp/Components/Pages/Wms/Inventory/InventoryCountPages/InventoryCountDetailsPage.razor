@@ -580,5 +580,5 @@
     private static string FormatUom(InventoryCountLineDetails line) =>
         string.IsNullOrWhiteSpace(line.Sku.BaseUom.Symbol)
             ? line.Sku.BaseUom.Code
-            : $"{line.Sku.BaseUom.Code} ({line.Sku.BaseUom.Symbol})";
+            : line.Sku.BaseUom.Symbol;
 }

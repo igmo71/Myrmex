@@ -205,7 +205,7 @@
 
             return string.IsNullOrWhiteSpace(_selectedStockKeepingUnit.BaseUnitOfMeasureSymbol)
                 ? _selectedStockKeepingUnit.BaseUnitOfMeasureCode
-                : $"{_selectedStockKeepingUnit.BaseUnitOfMeasureCode} ({_selectedStockKeepingUnit.BaseUnitOfMeasureSymbol})";
+                : _selectedStockKeepingUnit.BaseUnitOfMeasureSymbol;
         }
     }
 

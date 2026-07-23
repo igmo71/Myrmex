@@ -13,9 +13,6 @@ internal sealed class UnitOfMeasureSourceRecord
     [JsonPropertyName("DeletionMark")]
     public bool DeletionMark { get; init; }
 
-    [JsonPropertyName("Code")]
-    public string? Code { get; init; }
-
     [JsonPropertyName("Description")]
     public string? Description { get; init; }
 

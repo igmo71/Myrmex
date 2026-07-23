@@ -112,7 +112,12 @@
                                                          SearchFunc="SearchStockKeepingUnitsAsync"
                                                          ToStringFunc="FormatStockKeepingUnit">
                                             <ItemTemplate>
-                                                <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                                                <MudStack Spacing="0">
+                                                    <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                        @Localizer["Sku.BaseUnitOfMeasure"]: @FormatBaseUnitOfMeasure(context)
+                                                    </MudText>
+                                                </MudStack>
                                             </ItemTemplate>
                                         </MudAutocomplete>
                                     </MudItem>
@@ -129,6 +134,12 @@
                                                          Format="0.###"
                                                          InputMode="@(InputMode.@decimal)"
                                                          @bind-Value="line.RequestedQuantity" />
+                                        @if (line.StockKeepingUnit is not null)
+                                        {
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                @Localizer["Sku.BaseUnitOfMeasure"]: @FormatBaseUnitOfMeasure(line.StockKeepingUnit)
+                                            </MudText>
+                                        }
                                     </MudItem>
 
                                     <MudItem xs="12" md="6">
@@ -567,6 +578,11 @@
 
     private static string FormatStockKeepingUnit(StockKeepingUnitLookupItem? stockKeepingUnit) =>
         stockKeepingUnit is null ? string.Empty : $"{stockKeepingUnit.Code} - {stockKeepingUnit.Name}";
+
+    private static string FormatBaseUnitOfMeasure(StockKeepingUnitLookupItem stockKeepingUnit) =>
+        string.IsNullOrWhiteSpace(stockKeepingUnit.BaseUnitOfMeasureSymbol)
+            ? stockKeepingUnit.BaseUnitOfMeasureCode
+            : stockKeepingUnit.BaseUnitOfMeasureSymbol;
 
     private sealed class TransferLineModel
     {

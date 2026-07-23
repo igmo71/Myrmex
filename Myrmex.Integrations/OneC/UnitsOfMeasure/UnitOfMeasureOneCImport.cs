@@ -60,9 +60,9 @@ internal sealed class UnitOfMeasureOneCImport(
                 .Select(record => new ImportUnitsOfMeasure.Item(
                     record.Ref_Key,
                     record.DataVersion,
-                    record.Code?.Trim(),
-                    FirstNonEmpty(record.НаименованиеПолное, record.Description),
-                    FirstNonEmpty(record.МеждународноеСокращение, record.Description),
+                    TrimToNull(record.МеждународноеСокращение),
+                    TrimToNull(record.НаименованиеПолное),
+                    TrimToNull(record.Description),
                     record.DeletionMark,
                     importedAtUtc))
                 .ToList();
@@ -116,11 +116,8 @@ internal sealed class UnitOfMeasureOneCImport(
         }
     }
 
-    private static string? FirstNonEmpty(string? preferred, string? fallback)
-    {
-        string? value = string.IsNullOrWhiteSpace(preferred) ? fallback : preferred;
-        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-    }
+    private static string? TrimToNull(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private void LogResult(OneCImportResponse response, double durationMilliseconds)
     {

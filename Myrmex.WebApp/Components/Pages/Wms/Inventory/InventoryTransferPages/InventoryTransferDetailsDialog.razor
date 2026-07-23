@@ -29,6 +29,7 @@
                     <MudTh>@Localizer["Common.Sku"]</MudTh>
                     <MudTh>@Localizer["Common.Source"]</MudTh>
                     <MudTh>@Localizer["Common.Destination"]</MudTh>
+                    <MudTh>@Localizer["Sku.BaseUnitOfMeasure"]</MudTh>
                     <MudTh>@Localizer["InventoryTransfer.Requested"]</MudTh>
                     <MudTh>@Localizer["InventoryTransfer.Moved"]</MudTh>
                     <MudTh>@Localizer["InventoryTransfer.Picked"]</MudTh>
@@ -42,6 +43,7 @@
                     <MudTd>@context.Sku.Code</MudTd>
                     <MudTd>@context.SourceStorageLocation.Code</MudTd>
                     <MudTd>@context.DestinationStorageLocation.Code</MudTd>
+                    <MudTd>@FormatBaseUnitOfMeasure(context)</MudTd>
                     <MudTd>@context.RequestedQuantity</MudTd>
                     <MudTd>@context.MovedQuantity</MudTd>
                     <MudTd>@context.PickedQuantity</MudTd>
@@ -90,6 +92,7 @@
                     <MudTh>@Localizer["Common.From"]</MudTh>
                     <MudTh>@Localizer["Common.To"]</MudTh>
                     <MudTh>@Localizer["Common.Quantity"]</MudTh>
+                    <MudTh>@Localizer["Sku.BaseUnitOfMeasure"]</MudTh>
                     <MudTh>@Localizer["InventoryTransfer.Transaction"]</MudTh>
                 </HeaderContent>
                 <RowTemplate>
@@ -99,6 +102,7 @@
                     <MudTd>@context.FromStorageLocation.Code</MudTd>
                     <MudTd>@context.ToStorageLocation.Code</MudTd>
                     <MudTd>@context.Quantity</MudTd>
+                    <MudTd>@FormatBaseUnitOfMeasure(context)</MudTd>
                     <MudTd>@context.InventoryTransactionId</MudTd>
                 </RowTemplate>
                 <NoRecordsContent>
@@ -191,4 +195,14 @@
         InventoryTransferMovementDialog.PlaceAction => Localizer["InventoryTransfer.PlaceLineTitle"],
         _ => Localizer["InventoryTransfer.MoveLineTitle"]
     };
+
+    private static string FormatBaseUnitOfMeasure(InventoryTransferLineDetails line) =>
+        string.IsNullOrWhiteSpace(line.Sku.BaseUom.Symbol)
+            ? line.Sku.BaseUom.Code
+            : line.Sku.BaseUom.Symbol;
+
+    private static string FormatBaseUnitOfMeasure(InventoryTransferMovementDetails movement) =>
+        string.IsNullOrWhiteSpace(movement.Sku.BaseUom.Symbol)
+            ? movement.Sku.BaseUom.Code
+            : movement.Sku.BaseUom.Symbol;
 }
