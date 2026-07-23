@@ -29,7 +29,7 @@
                                  Label="@Localizer["InventoryCount.SystemQuantity"]"
                                  Value="@CountLine.SystemQuantity"
                                  Culture="@QuantityCulture"
-                                 Format="0.####"
+                                 Format="0.###"
                                  Disabled="true" />
 
                 <MudTextField T="string"
@@ -43,11 +43,11 @@
                                  Label="@Localizer["InventoryBalance.CountedQuantity"]"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
-                                 Min="@(0m)"
+                                 Validation="@((Func<decimal, string?>)ValidatePositiveQuantity)"
                                  Required="true"
                                  RequiredError="@Localizer["InventoryBalance.CountedQuantityRequired"]"
                                  Culture="@QuantityCulture"
-                                 Format="0.####"
+                                 Format="0.###"
                                  InputMode="@(InputMode.@decimal)"
                                  @bind-Value="_countedQuantity" />
 
@@ -202,4 +202,7 @@
     }
 
     private void Cancel() => MudDialog.Cancel();
+
+    protected string? ValidatePositiveQuantity(decimal quantity) =>
+        quantity > 0 ? null : Localizer["Common.QuantityMustBePositive"].Value;
 }

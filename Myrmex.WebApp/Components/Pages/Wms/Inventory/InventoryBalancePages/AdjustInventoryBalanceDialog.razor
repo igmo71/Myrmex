@@ -43,7 +43,7 @@
                                  Value="InventoryBalance.Quantity"
                                  Disabled="true"
                                  Culture="@QuantityCulture"
-                                 Format="0.####" />
+                                 Format="0.###" />
 
                 <MudNumericField T="decimal"
                                  Label="@Localizer["InventoryBalance.CountedQuantity"]"
@@ -53,7 +53,7 @@
                                  Required="true"
                                  RequiredError="@Localizer["InventoryBalance.CountedQuantityRequired"]"
                                  Culture="@QuantityCulture"
-                                 Format="0.####"
+                                 Format="0.###"
                                  InputMode="@(InputMode.@decimal)"
                                  @bind-Value="_countedQuantity" />
 

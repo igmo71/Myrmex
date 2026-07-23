@@ -292,4 +292,7 @@ public partial class ReceivingOrderDraftPage
         public StockKeepingUnitLookupItem Sku { get; set; } = sku;
         public decimal PlannedQuantity { get; set; } = plannedQuantity;
     }
+
+    protected string? ValidatePositiveQuantity(decimal quantity) =>
+        quantity > 0 ? null : Localizer["Common.QuantityMustBePositive"].Value;
 }

@@ -122,11 +122,11 @@
                                                          Label="@Localizer["InventoryTransfer.RequestedQuantity"]"
                                                          Variant="Variant.Outlined"
                                                          Margin="Margin.Dense"
-                                                         Min="@(0.0001m)"
+                                                         Validation="@((Func<decimal, string?>)ValidatePositiveQuantity)"
                                                          Required="true"
                                                          RequiredError="@Localizer["InventoryTransfer.RequestedQuantityRequired"]"
                                                          Culture="@QuantityCulture"
-                                                         Format="0.####"
+                                                         Format="0.###"
                                                          InputMode="@(InputMode.@decimal)"
                                                          @bind-Value="line.RequestedQuantity" />
                                     </MudItem>
@@ -578,4 +578,7 @@
 
         public decimal RequestedQuantity { get; set; } = 1;
     }
+
+    protected string? ValidatePositiveQuantity(decimal quantity) =>
+        quantity > 0 ? null : Localizer["Common.QuantityMustBePositive"].Value;
 }

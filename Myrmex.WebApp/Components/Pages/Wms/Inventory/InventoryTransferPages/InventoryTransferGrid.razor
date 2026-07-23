@@ -36,14 +36,19 @@
             </CellTemplate>
         </TemplateColumn>
 
-        <TemplateColumn Title="@Localizer["InventoryTransfer.Requested"]"
+        <PropertyColumn Property="@(transfer => transfer.TotalRequestedQuantity)"
+                        Title="@Localizer["InventoryTransfer.Requested"]"
+                        SortBy="@(transfer => transfer.TotalRequestedQuantity)"
+                        Format="0.###" />
+
+        @* <TemplateColumn Title="@Localizer["InventoryTransfer.Requested"]"
                         Tag="@InventoryTransferSortBy.TotalRequestedQuantity"
                         SortBy="@(transfer => transfer.TotalRequestedQuantity)"
                         Sortable="true">
             <CellTemplate>
                 @context.Item.TotalRequestedQuantity
             </CellTemplate>
-        </TemplateColumn>
+        </TemplateColumn> *@
 
         <TemplateColumn Title="@Localizer["InventoryTransfer.Picked"]"
                         Tag="@InventoryTransferSortBy.TotalPickedQuantity"

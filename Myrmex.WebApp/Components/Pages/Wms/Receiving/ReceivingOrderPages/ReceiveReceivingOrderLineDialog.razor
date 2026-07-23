@@ -8,10 +8,20 @@
             <MudText>@Localizer["Receiving.Planned"]: @Line.PlannedQuantity.ToString("0.####")</MudText>
             <MudText>@Localizer["Receiving.Received"]: @Line.ReceivedQuantity.ToString("0.####")</MudText>
             <MudText>@Localizer["Receiving.Remaining"]: @Line.RemainingQuantity.ToString("0.####")</MudText>
-            <MudNumericField T="decimal" Label="@Localizer["Receiving.ReceiveQuantity"]"
-                             Variant="Variant.Outlined" Min="@(0.0001m)" Max="@Line.RemainingQuantity"
-                             Format="0.####" Required="true" AutoFocus="true" Disabled="_saving" @bind-Value="_quantity" />
-            @if (!string.IsNullOrWhiteSpace(_error)) { <MudAlert Severity="Severity.Error">@_error</MudAlert> }
+            <MudNumericField T="decimal"
+                             Label="@Localizer["Receiving.ReceiveQuantity"]"
+                             Variant="Variant.Outlined"
+                             Validation="@((Func<decimal, string?>)ValidatePositiveQuantity)"
+                             Max="@Line.RemainingQuantity"
+                             Format="0.###"
+                             Required="true"
+                             AutoFocus="true"
+                             Disabled="_saving"
+                             @bind-Value="_quantity" />
+            @if (!string.IsNullOrWhiteSpace(_error))
+            {
+                <MudAlert Severity="Severity.Error">@_error</MudAlert>
+            }
         </MudStack>
     </DialogContent>
     <DialogActions>
@@ -62,4 +72,7 @@
     }
 
     private void Cancel() => MudDialog.Cancel();
+
+    protected string? ValidatePositiveQuantity(decimal quantity) =>
+        quantity > 0 ? null : Localizer["Common.QuantityMustBePositive"].Value;
 }

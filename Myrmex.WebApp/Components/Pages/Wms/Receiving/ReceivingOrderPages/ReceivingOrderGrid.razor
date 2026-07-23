@@ -50,15 +50,15 @@
                         Title="@Localizer["Receiving.Planned"]"
                         Tag="@ReceivingOrderSortBy.TotalPlannedQuantity"
                         Sortable="true"
-                        Format="0.####" />
+                        Format="0.###" />
         <PropertyColumn Property="@(order => order.TotalReceivedQuantity)"
                         Title="@Localizer["Receiving.Received"]"
                         Sortable="false"
-                        Format="0.####" />
+                        Format="0.###" />
         <PropertyColumn Property="@(order => order.TotalRemainingQuantity)"
                         Title="@Localizer["Receiving.Remaining"]"
                         Sortable="false"
-                        Format="0.####" />
+                        Format="0.###" />
         <TemplateColumn Title="@Localizer["Common.Created"]"
                         Tag="@ReceivingOrderSortBy.CreatedAtUtc"
                         SortBy="@(order => order.CreatedAtUtc)"
