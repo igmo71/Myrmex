@@ -7,6 +7,7 @@ using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryTransfers;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
+using Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 using Myrmex.Shared.Wms.Inventory;
 
 namespace Myrmex.Modules.Wms.Inventory.Features.InventoryTransfers;
@@ -257,17 +258,20 @@ internal static class CreateInventoryTransfer
                 return ServiceError.Validation<InventoryTransfer>("TransitStorageLocation must belong to the transfer warehouse", nameof(Command.TransitStorageLocationId));
             }
 
-            if (!transitLocation.IsActive)
+            StorageLocationEligibility.Result eligibility =
+                StorageLocationEligibility.Evaluate(transitLocation);
+
+            if (!eligibility.IsLocationActive)
             {
                 return ServiceError.Validation<InventoryTransfer>("TransitStorageLocation is inactive", nameof(Command.TransitStorageLocationId));
             }
 
-            if (!transitLocation.StorageLocationStatus.IsActive)
+            if (!eligibility.IsStatusActive)
             {
                 return ServiceError.Validation<InventoryTransfer>("TransitStorageLocation status is inactive", nameof(Command.TransitStorageLocationId));
             }
 
-            if (!transitLocation.StorageLocationType.IsActive)
+            if (!eligibility.IsTypeActive)
             {
                 return ServiceError.Validation<InventoryTransfer>("TransitStorageLocation type is inactive", nameof(Command.TransitStorageLocationId));
             }
@@ -371,17 +375,20 @@ internal static class CreateInventoryTransfer
                 return ServiceError.Validation<InventoryTransferLine>($"{label} must belong to the transfer warehouse", property);
             }
 
-            if (!location.IsActive)
+            StorageLocationEligibility.Result eligibility =
+                StorageLocationEligibility.Evaluate(location);
+
+            if (!eligibility.IsLocationActive)
             {
                 return ServiceError.Validation<InventoryTransferLine>($"{label} is inactive", property);
             }
 
-            if (!location.StorageLocationStatus.IsActive)
+            if (!eligibility.IsStatusActive)
             {
                 return ServiceError.Validation<InventoryTransferLine>($"{label} status is inactive", property);
             }
 
-            if (!location.StorageLocationType.IsActive)
+            if (!eligibility.IsTypeActive)
             {
                 return ServiceError.Validation<InventoryTransferLine>($"{label} type is inactive", property);
             }

@@ -32,6 +32,10 @@ public sealed record ApiError(
     string Message,
     IReadOnlyDictionary<string, string> Extensions)
 {
+    public string? Code => Extensions.TryGetValue("code", out string? code)
+        ? code
+        : null;
+
     public static ApiError Create(
         int? status,
         string message,

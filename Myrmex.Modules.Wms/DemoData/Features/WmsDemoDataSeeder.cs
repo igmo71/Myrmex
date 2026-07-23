@@ -18,6 +18,7 @@ using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 using Myrmex.Modules.Wms.Topology.Domain.Zones;
 using Myrmex.Shared.Wms.DemoData;
 using Myrmex.Shared.Wms.Inventory;
+using Myrmex.Shared.Wms.Topology;
 
 namespace Myrmex.Modules.Wms.DemoData.Features;
 
@@ -190,7 +191,7 @@ internal sealed class WmsDemoDataSeeder(
         CancellationToken cancellationToken)
     {
         string[] requiredTypeCodes =
-            ["DOCK", "PALLET_RACK", "SHELF", "STAGING", "FLOOR", "INTERNAL_TRANSIT"];
+            ["DOCK", "PALLET_RACK", "SHELF", "STAGING", "FLOOR", "INTERNAL_TRANSIT", StorageLocationTypeCodes.Receiving];
         Dictionary<string, StorageLocationType> types = await dbContext.StorageLocationTypes
             .Where(x => requiredTypeCodes.Contains(x.Code))
             .ToDictionaryAsync(x => x.Code, cancellationToken);

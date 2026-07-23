@@ -1,0 +1,104 @@
+@using Myrmex.Shared.Wms.Topology
+@inject IStringLocalizer<SharedResource> Localizer
+
+<MudPaper Class="pa-4">
+    <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
+        <MudAutocomplete T="WarehouseLookupItem"
+                         Label="@Localizer["Common.Warehouse"]"
+                         Variant="Variant.Outlined"
+                         Margin="Margin.Dense"
+                         Clearable="true"
+                         ShowProgressIndicator="true"
+                         MinCharacters="0"
+                         DebounceInterval="300"
+                         MaxItems="20"
+                         ResetValueOnEmptyText="true"
+                         CoerceText="false"
+                         CoerceValue="false"
+                         Disabled="Disabled"
+                         Value="SelectedWarehouse"
+                         ValueChanged="OnWarehouseChanged"
+                         SearchFunc="SearchWarehouses"
+                         ToStringFunc="FormatWarehouse"
+                         HelperText="&#160;"
+                         Class="min-width-300">
+            <ItemTemplate>
+                <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+            </ItemTemplate>
+            <NoItemsTemplate>
+                <MudText>@Localizer["Warehouse.NoneFound"]</MudText>
+            </NoItemsTemplate>
+        </MudAutocomplete>
+
+        <MudSelect T="string"
+                   Label="@Localizer["Common.Status"]"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Clearable="true"
+                   Disabled="Disabled"
+                   Value="SelectedStatus"
+                   ValueChanged="OnStatusChanged"
+                   HelperText="&#160;"
+                   Class="min-width-220">
+            <MudSelectItem T="string" Value="@ReceivingOrderStatusDetails.Draft">
+                @Localizer["Receiving.Status.Draft"]
+            </MudSelectItem>
+            <MudSelectItem T="string" Value="@ReceivingOrderStatusDetails.InProgress">
+                @Localizer["Receiving.Status.InProgress"]
+            </MudSelectItem>
+            <MudSelectItem T="string" Value="@ReceivingOrderStatusDetails.Completed">
+                @Localizer["Receiving.Status.Completed"]
+            </MudSelectItem>
+        </MudSelect>
+
+        <MudTextField T="string"
+                      Label="@Localizer["Receiving.SearchByNumber"]"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Clearable="true"
+                      Disabled="Disabled"
+                      Immediate="true"
+                      DebounceInterval="300"
+                      Value="SearchText"
+                      ValueChanged="OnSearchTextChanged"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      HelperText="&#160;"
+                      Class="flex-grow-1" />
+
+        <MudButton Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   Disabled="Disabled"
+                   OnClick="OnReloadRequested">
+            @Localizer["Common.Refresh"]
+        </MudButton>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public WarehouseLookupItem? SelectedWarehouse { get; set; }
+    [Parameter] public EventCallback<WarehouseLookupItem?> SelectedWarehouseChanged { get; set; }
+    [Parameter]
+    public Func<string, CancellationToken, Task<IEnumerable<WarehouseLookupItem>>> SearchWarehouses { get; set; } =
+        (_, _) => Task.FromResult(Enumerable.Empty<WarehouseLookupItem>());
+    [Parameter] public string? SelectedStatus { get; set; }
+    [Parameter] public EventCallback<string?> SelectedStatusChanged { get; set; }
+    [Parameter] public string? SearchText { get; set; }
+    [Parameter] public EventCallback<string?> SearchTextChanged { get; set; }
+    [Parameter] public EventCallback ReloadRequested { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private Task OnWarehouseChanged(WarehouseLookupItem? value) =>
+        SelectedWarehouseChanged.InvokeAsync(value);
+
+    private Task OnStatusChanged(string? value) =>
+        SelectedStatusChanged.InvokeAsync(value);
+
+    private Task OnSearchTextChanged(string? value) =>
+        SearchTextChanged.InvokeAsync(value);
+
+    private Task OnReloadRequested() => ReloadRequested.InvokeAsync();
+
+    private static string FormatWarehouse(WarehouseLookupItem? warehouse) =>
+        warehouse is null ? string.Empty : $"{warehouse.Code} - {warehouse.Name}";
+}

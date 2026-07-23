@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
+using Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 
 namespace Myrmex.Modules.Wms.Inventory.Features.InventoryAdjustments;
 
@@ -23,18 +24,44 @@ internal static class InventoryBalanceCreateEligibility
             .Include(l => l.StorageLocationStatus)
             .FirstOrDefaultAsync(x => x.Id == balance.StorageLocationId, cancellationToken);
 
-        return (sku, location) switch
+        if (sku is null)
         {
-            (null, _) => ServiceError.NotFound<InventoryBalance>("StockKeepingUnit not found", "StockKeepingUnit"),
-            ({ IsActive: false }, _) => ServiceError.Validation<InventoryBalance>("StockKeepingUnit is inactive", "StockKeepingUnit"),
-            ({ BaseUnitOfMeasure.IsActive: false }, _) => ServiceError.Validation<InventoryBalance>("BaseUnitOfMeasure is inactive", "BaseUnitOfMeasure"),
+            return ServiceError.NotFound<InventoryBalance>("StockKeepingUnit not found", "StockKeepingUnit");
+        }
 
-            (_, null) => ServiceError.NotFound<InventoryBalance>("StorageLocation not found", "StorageLocation"),
-            (_, { IsActive: false }) => ServiceError.Validation<InventoryBalance>("StorageLocation is inactive", "StorageLocation"),
-            (_, { StorageLocationType.IsActive: false }) => ServiceError.Validation<InventoryBalance>("StorageLocationType is inactive", "StorageLocationType"),
-            (_, { StorageLocationStatus.IsActive: false }) => ServiceError.Validation<InventoryBalance>("StorageLocationStatus is inactive", "StorageLocationStatus"),
+        if (!sku.IsActive)
+        {
+            return ServiceError.Validation<InventoryBalance>("StockKeepingUnit is inactive", "StockKeepingUnit");
+        }
 
-            _ => null
-        };
+        if (!sku.BaseUnitOfMeasure.IsActive)
+        {
+            return ServiceError.Validation<InventoryBalance>("BaseUnitOfMeasure is inactive", "BaseUnitOfMeasure");
+        }
+
+        if (location is null)
+        {
+            return ServiceError.NotFound<InventoryBalance>("StorageLocation not found", "StorageLocation");
+        }
+
+        StorageLocationEligibility.Result eligibility =
+            StorageLocationEligibility.Evaluate(location);
+
+        if (!eligibility.IsLocationActive)
+        {
+            return ServiceError.Validation<InventoryBalance>("StorageLocation is inactive", "StorageLocation");
+        }
+
+        if (!eligibility.IsTypeActive)
+        {
+            return ServiceError.Validation<InventoryBalance>("StorageLocationType is inactive", "StorageLocationType");
+        }
+
+        if (!eligibility.IsStatusActive)
+        {
+            return ServiceError.Validation<InventoryBalance>("StorageLocationStatus is inactive", "StorageLocationStatus");
+        }
+
+        return null;
     }
 }

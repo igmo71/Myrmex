@@ -72,6 +72,24 @@ internal static class WmsApiClientHttp
         return await ReadApiResultAsync<T>(response, $"DELETE '{url}'", cancellationToken);
     }
 
+    public static async Task<ApiResult<bool>> DeleteAsApiResultAsync(
+        this HttpClient httpClient,
+        string url,
+        CancellationToken cancellationToken)
+    {
+        using HttpResponseMessage response = await httpClient.DeleteAsync(url, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            ApiError error = await ReadApiErrorAsync(
+                response,
+                $"DELETE '{url}'",
+                cancellationToken);
+            return ApiResult<bool>.Failure(error);
+        }
+
+        return ApiResult<bool>.Success(true);
+    }
+
     private static async Task<ApiResult<T>> ReadApiResultAsync<T>(
         HttpResponseMessage response,
         string operation,

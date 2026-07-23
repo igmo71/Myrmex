@@ -39,7 +39,7 @@
                                      Value="InventoryBalance.Quantity"
                                      Disabled="true"
                                      Culture="@QuantityCulture"
-                                     Format="0.####" />
+                                     Format="0.###" />
 
                     <MudTextField T="string"
                                   Label="@Localizer["Sku.BaseUnitOfMeasure"]"
@@ -79,12 +79,12 @@
                                      Label="@Localizer["InventoryBalance.QuantityToMove"]"
                                      Variant="Variant.Outlined"
                                      Margin="Margin.Dense"
-                                     Min="@(0.0001m)"
+                                     Validation="@((Func<decimal, string?>)ValidatePositiveQuantity)"
                                      Max="@InventoryBalance.Quantity"
                                      Required="true"
                                      RequiredError="@Localizer["Common.QuantityRequired"]"
                                      Culture="@QuantityCulture"
-                                     Format="0.####"
+                                     Format="0.###"
                                      InputMode="@(InputMode.@decimal)"
                                      Disabled="_isSaving || _hasConflict"
                                      @bind-Value="_quantity" />
@@ -364,4 +364,9 @@
 
     private static string FormatQuantity(decimal quantity) =>
         quantity.ToString("0.####", QuantityCulture);
+
+        
+
+    protected string? ValidatePositiveQuantity(decimal quantity) =>
+        quantity > 0 ? null : Localizer["Common.QuantityMustBePositive"].Value;
 }

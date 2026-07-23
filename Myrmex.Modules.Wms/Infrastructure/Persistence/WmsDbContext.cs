@@ -6,6 +6,7 @@ using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryCounts;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryTransfers;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryTransactions;
+using Myrmex.Modules.Wms.Receiving.Domain.ReceivingOrders;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 using Myrmex.Modules.Wms.Topology.Domain.Zones;
@@ -31,6 +32,8 @@ internal sealed class WmsDbContext(DbContextOptions<WmsDbContext> options)
     public DbSet<InventoryTransferMovement> InventoryTransferMovements => Set<InventoryTransferMovement>();
     public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
     public DbSet<InventoryLedgerEntry> InventoryLedgerEntries => Set<InventoryLedgerEntry>();
+    public DbSet<ReceivingOrder> ReceivingOrders => Set<ReceivingOrder>();
+    public DbSet<ReceivingOrderLine> ReceivingOrderLines => Set<ReceivingOrderLine>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

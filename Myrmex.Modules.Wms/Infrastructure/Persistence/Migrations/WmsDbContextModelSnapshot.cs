@@ -619,6 +619,110 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                     b.ToTable("inventory_transfer_movements", "wms");
                 });
 
+            modelBuilder.Entity("Myrmex.Modules.Wms.Receiving.Domain.ReceivingOrders.ReceivingOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("CompletedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("InventoryTransactionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<Guid>("ReceivingLocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("row_version");
+
+                    b.Property<DateTimeOffset?>("StartedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("WarehouseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id")
+                        .HasName("PK_wms_receiving_orders");
+
+                    b.HasIndex("InventoryTransactionId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_wms_receiving_orders_inventory_transaction_id")
+                        .HasFilter("[InventoryTransactionId] IS NOT NULL");
+
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasDatabaseName("UX_wms_receiving_orders_number");
+
+                    b.HasIndex("ReceivingLocationId")
+                        .HasDatabaseName("IX_wms_receiving_orders_receiving_location_id");
+
+                    b.HasIndex("WarehouseId")
+                        .HasDatabaseName("IX_wms_receiving_orders_warehouse_id");
+
+                    b.ToTable("receiving_orders", "wms");
+                });
+
+            modelBuilder.Entity("Myrmex.Modules.Wms.Receiving.Domain.ReceivingOrders.ReceivingOrderLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal>("PlannedQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("ReceivedQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<Guid>("ReceivingOrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("StockKeepingUnitId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("UpdatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id")
+                        .HasName("PK_wms_receiving_order_lines");
+
+                    b.HasIndex("StockKeepingUnitId")
+                        .HasDatabaseName("IX_wms_receiving_order_lines_stock_keeping_unit_id");
+
+                    b.HasIndex("ReceivingOrderId", "StockKeepingUnitId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_wms_receiving_order_lines_receiving_order_id_stock_keeping_unit_id");
+
+                    b.ToTable("receiving_order_lines", "wms");
+                });
+
             modelBuilder.Entity("Myrmex.Modules.Wms.Topology.Domain.StorageLocations.StorageLocation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -897,6 +1001,17 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                             IsSystem = true,
                             Name = "External transit",
                             SortOrder = 70
+                        },
+                        new
+                        {
+                            Id = new Guid("018f0000-0000-7000-8000-000000000008"),
+                            Code = "RECEIVING",
+                            CreatedAtUtc = new DateTimeOffset(new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new TimeSpan(0, 0, 0, 0, 0)),
+                            Description = "Storage location for receiving inventory.",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Receiving",
+                            SortOrder = 80
                         });
                 });
 
@@ -1300,6 +1415,56 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                     b.Navigation("ToStorageLocation");
                 });
 
+            modelBuilder.Entity("Myrmex.Modules.Wms.Receiving.Domain.ReceivingOrders.ReceivingOrder", b =>
+                {
+                    b.HasOne("Myrmex.Modules.Wms.Inventory.Domain.InventoryTransactions.InventoryTransaction", "InventoryTransaction")
+                        .WithMany()
+                        .HasForeignKey("InventoryTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_wms_receiving_orders_inventory_transactions_inventory_transaction_id");
+
+                    b.HasOne("Myrmex.Modules.Wms.Topology.Domain.StorageLocations.StorageLocation", "ReceivingLocation")
+                        .WithMany()
+                        .HasForeignKey("ReceivingLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_wms_receiving_orders_storage_locations_receiving_location_id");
+
+                    b.HasOne("Myrmex.Modules.Wms.Topology.Domain.Warehouses.Warehouse", "Warehouse")
+                        .WithMany()
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_wms_receiving_orders_warehouses_warehouse_id");
+
+                    b.Navigation("InventoryTransaction");
+
+                    b.Navigation("ReceivingLocation");
+
+                    b.Navigation("Warehouse");
+                });
+
+            modelBuilder.Entity("Myrmex.Modules.Wms.Receiving.Domain.ReceivingOrders.ReceivingOrderLine", b =>
+                {
+                    b.HasOne("Myrmex.Modules.Wms.Receiving.Domain.ReceivingOrders.ReceivingOrder", "ReceivingOrder")
+                        .WithMany("Lines")
+                        .HasForeignKey("ReceivingOrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_wms_receiving_order_lines_receiving_orders_receiving_order_id");
+
+                    b.HasOne("Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits.StockKeepingUnit", "StockKeepingUnit")
+                        .WithMany()
+                        .HasForeignKey("StockKeepingUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_wms_receiving_order_lines_stock_keeping_units_stock_keeping_unit_id");
+
+                    b.Navigation("ReceivingOrder");
+
+                    b.Navigation("StockKeepingUnit");
+                });
+
             modelBuilder.Entity("Myrmex.Modules.Wms.Topology.Domain.StorageLocations.StorageLocation", b =>
                 {
                     b.HasOne("Myrmex.Modules.Wms.Topology.Domain.StorageLocations.StorageLocationStatus", "StorageLocationStatus")
@@ -1405,6 +1570,11 @@ namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Migrations
                     b.Navigation("Lines");
 
                     b.Navigation("Movements");
+                });
+
+            modelBuilder.Entity("Myrmex.Modules.Wms.Receiving.Domain.ReceivingOrders.ReceivingOrder", b =>
+                {
+                    b.Navigation("Lines");
                 });
 #pragma warning restore 612, 618
         }

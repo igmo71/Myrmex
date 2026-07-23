@@ -1,0 +1,203 @@
+@inject IStringLocalizer<SharedResource> Localizer
+
+<MudDataGrid T="ReceivingOrderListItem"
+             @ref="_dataGrid"
+             ServerData="LoadServerDataAsync"
+             Dense="true"
+             Hover="true"
+             Bordered="true"
+             Striped="true"
+             SortMode="SortMode.Single"
+             Filterable="false">
+    <Columns>
+        <TemplateColumn Title="@Localizer["Receiving.Number"]"
+                        Tag="@ReceivingOrderSortBy.Number"
+                        SortBy="@(order => order.Number)"
+                        Sortable="true">
+            <CellTemplate>
+                <MudLink Href="@($"/wms/receiving-orders/{context.Item.Id}")">
+                    @context.Item.Number
+                </MudLink>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Localizer["Common.Status"]"
+                        Tag="@ReceivingOrderSortBy.Status"
+                        SortBy="@(order => order.Status)"
+                        Sortable="true">
+            <CellTemplate>
+                <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Item.Status)">
+                    @FormatStatus(context.Item.Status)
+                </MudChip>
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Localizer["Common.Warehouse"]"
+                        Tag="@ReceivingOrderSortBy.WarehouseCode"
+                        SortBy="@(order => order.Warehouse.Code)"
+                        Sortable="true">
+            <CellTemplate>
+                @context.Item.Warehouse.Code - @context.Item.Warehouse.Name
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Localizer["Receiving.Location"]" Sortable="false">
+            <CellTemplate>
+                @context.Item.ReceivingLocation.Code - @context.Item.ReceivingLocation.Name
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="@(order => order.LineCount)"
+                        Title="@Localizer["Receiving.LineCount"]"
+                        Sortable="false" />
+        <PropertyColumn Property="@(order => order.TotalPlannedQuantity)"
+                        Title="@Localizer["Receiving.Planned"]"
+                        Tag="@ReceivingOrderSortBy.TotalPlannedQuantity"
+                        Sortable="true"
+                        Format="0.###" />
+        <PropertyColumn Property="@(order => order.TotalReceivedQuantity)"
+                        Title="@Localizer["Receiving.Received"]"
+                        Sortable="false"
+                        Format="0.###" />
+        <PropertyColumn Property="@(order => order.TotalRemainingQuantity)"
+                        Title="@Localizer["Receiving.Remaining"]"
+                        Sortable="false"
+                        Format="0.###" />
+        <TemplateColumn Title="@Localizer["Common.Created"]"
+                        Tag="@ReceivingOrderSortBy.CreatedAtUtc"
+                        SortBy="@(order => order.CreatedAtUtc)"
+                        Sortable="true">
+            <CellTemplate>
+                @context.Item.CreatedAtUtc.ToLocalTime().ToString("g")
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Localizer["Common.Updated"]" Sortable="false">
+            <CellTemplate>
+                @FormatDateTime(context.Item.UpdatedAtUtc)
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Localizer["Receiving.StartedAt"]"
+                        Tag="@ReceivingOrderSortBy.StartedAtUtc"
+                        SortBy="@(order => order.StartedAtUtc)"
+                        Sortable="true">
+            <CellTemplate>
+                @FormatDateTime(context.Item.StartedAtUtc)
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Localizer["Receiving.CompletedAt"]"
+                        Tag="@ReceivingOrderSortBy.CompletedAtUtc"
+                        SortBy="@(order => order.CompletedAtUtc)"
+                        Sortable="true">
+            <CellTemplate>
+                @FormatDateTime(context.Item.CompletedAtUtc)
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="@Localizer["Common.Actions"]" Sortable="false">
+            <CellTemplate>
+                <MudTooltip Text="@Localizer["Receiving.Open"]">
+                    <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                   Size="Size.Small"
+                                   Disabled="@BusyOrderId.HasValue"
+                                   aria-label="@Localizer["Receiving.Open"]"
+                                   OnClick="@(() => OpenRequested.InvokeAsync(context.Item))" />
+                </MudTooltip>
+                @if (context.Item.Status == ReceivingOrderStatusDetails.Draft)
+                {
+                    <MudTooltip Text="@Localizer["Common.Edit"]">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                       Size="Size.Small"
+                                       Disabled="@BusyOrderId.HasValue"
+                                       aria-label="@Localizer["Common.Edit"]"
+                                       OnClick="@(() => EditRequested.InvokeAsync(context.Item))" />
+                    </MudTooltip>
+                    <MudTooltip Text="@Localizer["Receiving.DeleteAction"]">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Color="Color.Error"
+                                       Size="Size.Small"
+                                       Disabled="@BusyOrderId.HasValue"
+                                       aria-label="@Localizer["Receiving.DeleteAction"]"
+                                       OnClick="@(() => DeleteRequested.InvokeAsync(context.Item))" />
+                    </MudTooltip>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <NoRecordsContent>
+        <MudText>@Localizer["Receiving.NoMatches"]</MudText>
+    </NoRecordsContent>
+    <PagerContent>
+        <MudDataGridPager T="ReceivingOrderListItem" PageSizeOptions="@PageSizeOptions" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+    [Parameter, EditorRequired]
+    public Func<ReceivingOrderGridRequest, CancellationToken, Task<GridData<ReceivingOrderListItem>>> LoadData { get; set; } = default!;
+
+    [Parameter] public EventCallback<ReceivingOrderListItem> OpenRequested { get; set; }
+    [Parameter] public EventCallback<ReceivingOrderListItem> EditRequested { get; set; }
+    [Parameter] public EventCallback<ReceivingOrderListItem> DeleteRequested { get; set; }
+    [Parameter] public Guid? BusyOrderId { get; set; }
+
+    private MudDataGrid<ReceivingOrderListItem>? _dataGrid;
+    private static readonly int[] PageSizeOptions = [10, 25, 50, 100];
+
+    private Task<GridData<ReceivingOrderListItem>> LoadServerDataAsync(
+        GridState<ReceivingOrderListItem> state,
+        CancellationToken cancellationToken)
+    {
+        SortDefinition<ReceivingOrderListItem>? sort = state.SortDefinitions.FirstOrDefault();
+        return LoadData(
+            new(
+                state.Page * state.PageSize,
+                state.PageSize,
+                ResolveSortBy(sort),
+                sort?.Descending ?? true),
+            cancellationToken);
+    }
+
+    private string ResolveSortBy(SortDefinition<ReceivingOrderListItem>? sort)
+    {
+        if (sort is null)
+        {
+            return ReceivingOrderSortBy.CreatedAtUtc;
+        }
+
+        Column<ReceivingOrderListItem>? column = _dataGrid?.GetColumnByPropertyName(sort.SortBy);
+        return column?.Tag as string ?? ReceivingOrderSortBy.CreatedAtUtc;
+    }
+
+    public Task ReloadServerDataAsync() =>
+        _dataGrid?.ReloadServerData() ?? Task.CompletedTask;
+
+    public async Task ResetAndReloadServerDataAsync()
+    {
+        if (_dataGrid is null)
+        {
+            return;
+        }
+
+        if (_dataGrid.CurrentPage == 0)
+        {
+            await _dataGrid.ReloadServerData();
+            return;
+        }
+
+        _dataGrid.NavigateTo(Page.First);
+    }
+
+    private string FormatStatus(string status) => status switch
+    {
+        ReceivingOrderStatusDetails.Draft => Localizer["Receiving.Status.Draft"],
+        ReceivingOrderStatusDetails.InProgress => Localizer["Receiving.Status.InProgress"],
+        ReceivingOrderStatusDetails.Completed => Localizer["Receiving.Status.Completed"],
+        _ => status
+    };
+
+    private static Color GetStatusColor(string status) => status switch
+    {
+        ReceivingOrderStatusDetails.Draft => Color.Default,
+        ReceivingOrderStatusDetails.InProgress => Color.Warning,
+        ReceivingOrderStatusDetails.Completed => Color.Success,
+        _ => Color.Default
+    };
+
+    private static string FormatDateTime(DateTimeOffset? value) =>
+        value.HasValue ? value.Value.ToLocalTime().ToString("g") : "—";
+}

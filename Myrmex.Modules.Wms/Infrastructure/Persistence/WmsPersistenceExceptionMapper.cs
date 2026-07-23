@@ -5,6 +5,7 @@ using Myrmex.Modules.Wms.Catalog.Domain.StockKeepingUnits;
 using Myrmex.Modules.Wms.Catalog.Domain.UnitsOfMeasure;
 using Myrmex.Modules.Wms.Infrastructure.Persistence.SqlServer;
 using Myrmex.Modules.Wms.Inventory.Domain.InventoryBalances;
+using Myrmex.Modules.Wms.Receiving.Domain.ReceivingOrders;
 using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 using Myrmex.Modules.Wms.Topology.Domain.Zones;
@@ -17,6 +18,18 @@ internal static class WmsPersistenceExceptionMapper
     {
         return exception.IsUniqueConstraintViolation(
             WmsDatabaseNames.InventoryBalanceStockKeepingUnitIdStorageLocationIdUniqueIndex);
+    }
+
+    public static bool IsReceivingOrderNumberDuplicate(DbUpdateException exception)
+    {
+        return exception.IsUniqueConstraintViolation(
+            WmsDatabaseNames.ReceivingOrderNumberUniqueIndex);
+    }
+
+    public static bool IsReceivingOrderLineSkuDuplicate(DbUpdateException exception)
+    {
+        return exception.IsUniqueConstraintViolation(
+            WmsDatabaseNames.ReceivingOrderLineReceivingOrderIdStockKeepingUnitIdUniqueIndex);
     }
 
     public static ServiceError? TryMap(DbUpdateException exception)
@@ -69,6 +82,22 @@ internal static class WmsPersistenceExceptionMapper
         {
             return ServiceError.Conflict<InventoryBalance>("StockKeepingUnitId - StorageLocationId already exists",
                 $"{nameof(InventoryBalance.StockKeepingUnitId)}-{nameof(InventoryBalance.StorageLocationId)}");
+        }
+        if (IsReceivingOrderNumberDuplicate(exception))
+        {
+            return new ServiceError(
+                ServiceErrorType.Conflict,
+                "ReceivingOrder.NumberConflict",
+                "Receiving order Number already exists.",
+                nameof(ReceivingOrder.Number));
+        }
+        if (IsReceivingOrderLineSkuDuplicate(exception))
+        {
+            return new ServiceError(
+                ServiceErrorType.Conflict,
+                "ReceivingOrderLine.DuplicateSku",
+                "Each SKU may appear only once in a receiving order.",
+                nameof(ReceivingOrderLine.StockKeepingUnitId));
         }
         return null;
     }
