@@ -31,7 +31,7 @@ internal sealed class ReceivingOrderOneCSource(
                 new("$format", "json"),
                 new("$select", Projection),
                 new("$expand", $"Товары($select={LineProjection})"),
-                new("$filter", $"Date ge datetime'{startDate:yyyy-MM-dd}T00:00:00' and Date lt datetime'{endExclusive:yyyy-MM-dd}T00:00:00'"),
+                new("$filter", $"Date ge datetime'{startDate:yyyy-MM-dd}T00:00:00' and Date lt datetime'{endExclusive:yyyy-MM-dd}T00:00:00' and Posted eq true and DeletionMark eq false and (Статус eq 'КПоступлению' or Статус eq 'ВРаботе' or Статус eq 'ТребуетсяОбработка')"),
                 new("$orderby", "Date,Ref_Key")
             ],
             cancellationToken);

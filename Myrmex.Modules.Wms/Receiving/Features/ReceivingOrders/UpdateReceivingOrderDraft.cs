@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Myrmex.Core.Application;
 using Myrmex.Core.Domain.Validation;
@@ -12,8 +11,6 @@ namespace Myrmex.Modules.Wms.Receiving.Features.ReceivingOrders;
 
 internal static class UpdateReceivingOrderDraft
 {
-    private const string SkuReconciliationSavepoint = "UpdateReceivingOrderDraftSkuReconciliation";
-
     internal sealed record Command(
         Guid? ReceivingOrderId,
         string? Number,
@@ -64,6 +61,7 @@ internal static class UpdateReceivingOrderDraft
                 .ToDictionary(line => line.Id, line => line.StockKeepingUnitId);
             UpdateReceivingOrderLineRequest[] requestLines = command.Lines?.ToArray() ?? [];
             DomainValidationResult replacement = ReceivingOrderDraftReconciler.Replace(
+                order,
                 command.Number,
                 command.WarehouseId,
                 command.ReceivingLocationId,
@@ -92,114 +90,12 @@ internal static class UpdateReceivingOrderDraft
                 return ServiceResult<ReceivingOrderDetails>.Fail(eligibilityError);
             }
 
-            ReceivingOrderLine[] reassignedLines =
-            [
-                .. order.Lines.Where(line =>
-                    persistedSkuByLineId.TryGetValue(line.Id, out Guid persistedSkuId) &&
-                    persistedSkuId != line.StockKeepingUnitId)
-            ];
-            ReceivingOrderLine[] newLines =
-            [
-                .. order.Lines.Where(line => !persistedSkuByLineId.ContainsKey(line.Id))
-            ];
-            Guid[] releasedLineIds =
-            [
-                .. removedLines
-                    .Concat(reassignedLines)
-                    .Select(line => line.Id)
-                    .Distinct()
-            ];
-
-            IDbContextTransaction? ownedTransaction = null;
-            IDbContextTransaction? transaction = null;
-            try
+            ServiceError? persistenceError = await ReceivingOrderDraftReconciler.PersistAsync(
+                dbContext, order, persistedSkuByLineId, removedLines,
+                nameof(Command.ExpectedOrderVersion), cancellationToken);
+            if (persistenceError is not null)
             {
-                if (releasedLineIds.Length > 0)
-                {
-                    if (dbContext.Database.CurrentTransaction is null)
-                    {
-                        ownedTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-                        transaction = ownedTransaction;
-                    }
-                    else
-                    {
-                        transaction = dbContext.Database.CurrentTransaction!;
-                        await transaction.CreateSavepointAsync(
-                            SkuReconciliationSavepoint,
-                            cancellationToken);
-                    }
-
-                    foreach (ReceivingOrderLine releasedLine in removedLines.Concat(reassignedLines))
-                    {
-                        dbContext.Entry(releasedLine).State = EntityState.Detached;
-                    }
-
-                    int releasedCount = await dbContext.ReceivingOrderLines
-                        .Where(line =>
-                            line.ReceivingOrderId == order.Id &&
-                            releasedLineIds.Contains(line.Id))
-                        .ExecuteDeleteAsync(cancellationToken);
-                    if (releasedCount != releasedLineIds.Length)
-                    {
-                        await RollbackAsync(transaction, ownedTransaction is not null);
-                        dbContext.ChangeTracker.Clear();
-                        return ServiceResult<ReceivingOrderDetails>.Fail(
-                            ReceivingOrderErrors.ConcurrencyConflict(
-                                nameof(Command.ExpectedOrderVersion)));
-                    }
-
-                    dbContext.ReceivingOrderLines.AddRange(reassignedLines);
-                }
-                else
-                {
-                    dbContext.ReceivingOrderLines.RemoveRange(removedLines);
-                }
-
-                dbContext.ReceivingOrderLines.AddRange(newLines);
-                await dbContext.SaveChangesAsync(cancellationToken);
-
-                if (ownedTransaction is not null)
-                {
-                    await transaction!.CommitAsync(cancellationToken);
-                }
-                else if (transaction is not null)
-                {
-                    await transaction.ReleaseSavepointAsync(
-                        SkuReconciliationSavepoint,
-                        cancellationToken);
-                }
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                await RollbackAsync(transaction, ownedTransaction is not null);
-                dbContext.ChangeTracker.Clear();
-                return ServiceResult<ReceivingOrderDetails>.Fail(
-                    ReceivingOrderErrors.ConcurrencyConflict(nameof(Command.ExpectedOrderVersion)));
-            }
-            catch (DbUpdateException exception)
-            {
-                await RollbackAsync(transaction, ownedTransaction is not null);
-                dbContext.ChangeTracker.Clear();
-                ServiceError? error = WmsPersistenceExceptionMapper.TryMap(exception);
-                if (error is not null)
-                {
-                    return ServiceResult<ReceivingOrderDetails>.Fail(error);
-                }
-
-                throw;
-            }
-            catch
-            {
-                await RollbackAsync(transaction, ownedTransaction is not null);
-                dbContext.ChangeTracker.Clear();
-                throw;
-            }
-            finally
-            {
-                if (ownedTransaction is not null)
-                {
-                    await ownedTransaction.DisposeAsync();
-                }
+                return ServiceResult<ReceivingOrderDetails>.Fail(persistenceError);
             }
 
             logger.LogInformation(
@@ -207,22 +103,6 @@ internal static class UpdateReceivingOrderDraft
                 "UpdateDraft", "Success", command.ActorId, order.Id, order.Number, order.Lines.Count, removedLines.Count);
             return await CreateReceivingOrder.LoadDetailsAsync(dbContext, order.Id, cancellationToken);
         }
-    }
-
-    private static Task RollbackAsync(
-        IDbContextTransaction? transaction,
-        bool ownsTransaction)
-    {
-        if (transaction is null)
-        {
-            return Task.CompletedTask;
-        }
-
-        return ownsTransaction
-            ? transaction.RollbackAsync(CancellationToken.None)
-            : transaction.RollbackToSavepointAsync(
-                SkuReconciliationSavepoint,
-                CancellationToken.None);
     }
 
     private static List<DomainValidationFailure> ValidateShape(

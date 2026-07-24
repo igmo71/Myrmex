@@ -68,15 +68,18 @@ public static class ImportExternalReceivingOrder
                 if (equal)
                 {
                     existing.RecordExternalImport(source.ExternalRefKey, source.DataVersion, command.ImportedAtUtc);
-                    await dbContext.SaveChangesAsync(cancellationToken);
+                    ServiceError? metadataError = await SaveAsync(dbContext, cancellationToken);
+                    if (metadataError is not null) return ServiceResult<Result>.Fail(metadataError);
                     return ServiceResult<Result>.Success(new("Skipped", "Unchanged", "The mapped Draft plan is unchanged."));
                 }
+                Dictionary<Guid, Guid> persistedSkuByLineId = existing.Lines.ToDictionary(line => line.Id, line => line.StockKeepingUnitId);
                 IReadOnlyList<ReceivingOrderLine> removed;
                 var replacement = ReceivingOrderDraftReconciler.Replace(existing, source.Number, warehouse.Id, location.Id, lines, out removed);
                 if (!replacement.IsValid) return ServiceResult<Result>.Invalid(replacement.Errors);
-                dbContext.ReceivingOrderLines.RemoveRange(removed);
                 existing.RecordExternalImport(source.ExternalRefKey, source.DataVersion, command.ImportedAtUtc);
-                await dbContext.SaveChangesAsync(cancellationToken);
+                ServiceError? persistenceError = await ReceivingOrderDraftReconciler.PersistAsync(
+                    dbContext, existing, persistedSkuByLineId, removed, nameof(Command), cancellationToken);
+                if (persistenceError is not null) return ServiceResult<Result>.Fail(persistenceError);
                 return ServiceResult<Result>.Success(new("Updated", null, null));
             }
 
@@ -84,22 +87,33 @@ public static class ImportExternalReceivingOrder
             if (!creation.IsValid) return ServiceResult<Result>.Invalid(creation.Errors);
             order!.RecordExternalImport(source.ExternalRefKey, source.DataVersion, command.ImportedAtUtc);
             dbContext.ReceivingOrders.Add(order);
-            try { await dbContext.SaveChangesAsync(cancellationToken); }
-            catch (DbUpdateException exception)
-            {
-                ServiceError? error = WmsPersistenceExceptionMapper.TryMap(exception);
-                if (error is null)
-                {
-                    throw;
-                }
-
-                return ServiceResult<Result>.Fail(error);
-            }
+            ServiceError? creationError = await SaveAsync(dbContext, cancellationToken);
+            if (creationError is not null) return ServiceResult<Result>.Fail(creationError);
             logger.LogInformation("External receiving order {ExternalRefKey} created local order {ReceivingOrderId}.", source.ExternalRefKey, order.Id);
             return ServiceResult<Result>.Success(new("Created", null, null));
         }
 
         private static ServiceResult<Result> Fail(string reason, string message) =>
             ServiceResult<Result>.Success(new("Failed", reason, message));
+
+        private static async Task<ServiceError?> SaveAsync(WmsDbContext dbContext, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return null;
+            }
+            catch (DbUpdateException exception)
+            {
+                dbContext.ChangeTracker.Clear();
+                ServiceError? error = WmsPersistenceExceptionMapper.TryMap(exception);
+                if (error is not null)
+                {
+                    return error;
+                }
+
+                throw;
+            }
+        }
     }
 }
