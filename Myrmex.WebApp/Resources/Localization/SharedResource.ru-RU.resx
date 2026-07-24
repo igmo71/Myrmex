@@ -1545,4 +1545,9 @@
   <data name="Common.QuantityMustBePositive" xml:space="preserve">
     <value>Количество должно быть положительным</value>
   </data>
+  <data name="Warehouse.DefaultReceivingLocation" xml:space="preserve"><value>Основная ячейка приёмки</value></data>
+  <data name="OneC.ReceivingOrders.StartDate" xml:space="preserve"><value>Дата начала</value></data>
+  <data name="OneC.ReceivingOrders.EndDate" xml:space="preserve"><value>Дата окончания</value></data>
+  <data name="OneC.ReceivingOrders.Action" xml:space="preserve"><value>Импортировать приходные ордера</value></data>
+  <data name="OneC.ReceivingOrders.InProgress" xml:space="preserve"><value>Импорт приходных ордеров</value></data>
 </root>

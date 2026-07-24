@@ -7,6 +7,7 @@ using Myrmex.Integrations.OneC.Common.Imports;
 using Myrmex.Integrations.OneC.Common.Transport;
 using Myrmex.Integrations.OneC.Connection;
 using Myrmex.Integrations.OneC.StockKeepingUnits;
+using Myrmex.Integrations.OneC.ReceivingOrders;
 using Myrmex.Integrations.OneC.UnitsOfMeasure;
 using Myrmex.Integrations.OneC.Warehouses;
 using Myrmex.Shared.Integrations.OneC;
@@ -38,6 +39,10 @@ public static class OneCEndpoints
             .WithName("ImportOneCStockKeepingUnits")
             .WithSummary("Import nomenclature from 1С as SKUs");
 
+        group.MapPost("/receiving-orders/import", ImportReceivingOrdersAsync)
+            .WithName("ImportOneCReceivingOrders")
+            .WithSummary("Import receiving orders from 1С");
+
         return endpoints;
     }
 
@@ -55,6 +60,12 @@ public static class OneCEndpoints
         IStockKeepingUnitOneCImport importOperation,
         CancellationToken cancellationToken) =>
         ImportStockKeepingUnitAsync(importOperation, cancellationToken);
+
+    private static async Task<IResult> ImportReceivingOrdersAsync(
+        ReceivingOrderImportRequest request,
+        IReceivingOrderOneCImport importOperation,
+        CancellationToken cancellationToken) =>
+        TypedResults.Ok(await importOperation.ImportAsync(request, cancellationToken));
 
     private static async Task<IResult> ImportWarehouseAsync(
         IWarehouseOneCImport importOperation,

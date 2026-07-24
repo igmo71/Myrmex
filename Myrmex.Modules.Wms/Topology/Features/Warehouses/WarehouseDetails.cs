@@ -13,6 +13,7 @@ internal static class WarehouseDetailsMapping
             warehouse.Code,
             warehouse.Name,
             warehouse.Description,
+            warehouse.DefaultReceivingLocationId,
             warehouse.IsActive,
             warehouse.CreatedAtUtc,
             warehouse.UpdatedAtUtc);
@@ -24,6 +25,7 @@ internal static class WarehouseDetailsMapping
             warehouse.Code,
             warehouse.Name,
             warehouse.Description,
+            warehouse.DefaultReceivingLocationId,
             warehouse.IsActive,
             warehouse.CreatedAtUtc,
             warehouse.UpdatedAtUtc);

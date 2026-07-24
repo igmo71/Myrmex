@@ -6,6 +6,7 @@ internal static class WmsDatabaseNames
     public const string WarehousePrimaryKey = "PK_wms_warehouses";
     public const string WarehouseCodeUniqueIndex = "UX_wms_warehouses_code";
     public const string WarehouseExternalRefKeyUniqueIndex = "UX_wms_warehouses_external_ref_key";
+    public const string WarehouseDefaultReceivingLocationForeignKey = "FK_wms_warehouses_storage_locations_default_receiving_location_id";
 
     public const string ZonesTable = "zones";
     public const string ZonePrimaryKey = "PK_wms_zones";
@@ -152,6 +153,7 @@ internal static class WmsDatabaseNames
     public const string ReceivingOrderWarehouseIdIndex = "IX_wms_receiving_orders_warehouse_id";
     public const string ReceivingOrderReceivingLocationIdIndex = "IX_wms_receiving_orders_receiving_location_id";
     public const string ReceivingOrderInventoryTransactionIdUniqueIndex = "UX_wms_receiving_orders_inventory_transaction_id";
+    public const string ReceivingOrderExternalRefKeyUniqueIndex = "UX_wms_receiving_orders_external_ref_key";
 
     public const string ReceivingOrderLinesTable = "receiving_order_lines";
     public const string ReceivingOrderLinePrimaryKey = "PK_wms_receiving_order_lines";

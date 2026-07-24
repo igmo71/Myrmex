@@ -12,6 +12,7 @@ using Myrmex.Integrations.OneC.Common.Transport;
 using Myrmex.Integrations.OneC.Configuration;
 using Myrmex.Integrations.OneC.Connection;
 using Myrmex.Integrations.OneC.Notifications;
+using Myrmex.Integrations.OneC.ReceivingOrders;
 using Myrmex.Integrations.OneC.Security;
 using Myrmex.Integrations.OneC.StockKeepingUnits;
 using Myrmex.Integrations.OneC.UnitsOfMeasure;
@@ -104,6 +105,9 @@ public static class OneCIntegrationModule
         services.AddScoped<IStockKeepingUnitOneCSource, StockKeepingUnitOneCSource>();
         services.AddScoped<IStockKeepingUnitOneCImport, StockKeepingUnitOneCImport>();
         services.AddScoped<IStockKeepingUnitOneCSynchronizer, StockKeepingUnitOneCSynchronizer>();
+
+        services.AddScoped<IReceivingOrderOneCSource, ReceivingOrderOneCSource>();
+        services.AddScoped<IReceivingOrderOneCImport, ReceivingOrderOneCImport>();
 
         services.AddScoped<OneCConnectionTest>();
 

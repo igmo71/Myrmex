@@ -1,6 +1,7 @@
 ﻿using Myrmex.Core.Domain;
 using Myrmex.Core.Domain.Validation;
 using Myrmex.Modules.Wms.Domain;
+using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
 
 namespace Myrmex.Modules.Wms.Topology.Domain.Warehouses;
 
@@ -28,6 +29,9 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
     public string? Description { get; private set; }
 
     public bool IsActive { get; private set; } = true;
+
+    public Guid? DefaultReceivingLocationId { get; private set; }
+    public StorageLocation? DefaultReceivingLocation { get; private set; }
 
     internal ExternalImportState? ImportState { get; set; }
 
@@ -102,6 +106,18 @@ internal sealed class Warehouse : AggregateRoot, IActivatable
         AddDomainEvent(new WarehouseDetailsUpdatedDomainEvent(Id));
 
         return DomainValidationResult.Valid;
+    }
+
+    public void SetDefaultReceivingLocation(Guid? storageLocationId)
+    {
+        if (DefaultReceivingLocationId == storageLocationId)
+        {
+            return;
+        }
+
+        DefaultReceivingLocationId = storageLocationId;
+        Touch();
+        AddDomainEvent(new WarehouseDetailsUpdatedDomainEvent(Id));
     }
 
     public DomainValidationResult ApplyImport(

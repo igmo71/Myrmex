@@ -36,6 +36,15 @@ internal sealed class WarehouseConfiguration : IEntityTypeConfiguration<Warehous
         builder.Property(x => x.IsActive)
             .IsRequired();
 
+        builder.Property(x => x.DefaultReceivingLocationId)
+            .IsRequired(false);
+
+        builder.HasOne(x => x.DefaultReceivingLocation)
+            .WithMany()
+            .HasForeignKey(x => x.DefaultReceivingLocationId)
+            .HasConstraintName(WmsDatabaseNames.WarehouseDefaultReceivingLocationForeignKey)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.Ignore(x => x.ExternalRefKey);
         builder.Ignore(x => x.ExternalDataVersion);
         builder.Ignore(x => x.LastImportedAtUtc);

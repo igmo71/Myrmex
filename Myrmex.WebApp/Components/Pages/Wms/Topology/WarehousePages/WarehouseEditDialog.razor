@@ -39,6 +39,19 @@
                               MaxLength="1000"
                               @bind-Value="_model.Description" />
 
+                @if (IsEditMode)
+                {
+                    <MudAutocomplete T="StorageLocationLookupItem"
+                                     Label="@Localizer[\"Warehouse.DefaultReceivingLocation\"]"
+                                     Value="_selectedReceivingLocation"
+                                     ValueChanged="OnReceivingLocationChanged"
+                                     SearchFunc="SearchReceivingLocationsAsync"
+                                     ToStringFunc="@(location => location is null ? string.Empty : $\"{location.Code} — {location.Name}\")"
+                                     Clearable="true"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense" />
+                }
+
                 @if (!string.IsNullOrWhiteSpace(_errorMessage))
                 {
                     <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
@@ -82,12 +95,13 @@
     private readonly WarehouseEditModel _model = new();
     private bool _isSaving;
     private string? _errorMessage;
+    private StorageLocationLookupItem? _selectedReceivingLocation;
 
     private bool IsEditMode => Warehouse is not null;
 
     private string Title => IsEditMode ? Localizer["Warehouse.EditTitle"] : Localizer["Warehouse.CreateTitle"];
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         if (Warehouse is null)
         {
@@ -96,6 +110,11 @@
 
         _model.Name = Warehouse.Name;
         _model.Description = Warehouse.Description;
+        if (Warehouse.DefaultReceivingLocationId is Guid locationId)
+        {
+            StorageLocationDetails location = await WmsTopologyApiClient.GetStorageLocationByIdAsync(locationId);
+            _selectedReceivingLocation = new(location.Id, location.WarehouseId, location.Code, location.Name, location.IsActive);
+        }
     }
 
     private async Task SaveAsync()
@@ -132,7 +151,8 @@
             {
                 UpdateWarehouseDetailsRequest request = new(
                     Name: _model.Name,
-                    Description: _model.Description);
+                    Description: _model.Description,
+                    DefaultReceivingLocationId: _selectedReceivingLocation?.Id);
 
                 result = await WmsTopologyApiClient.TryUpdateWarehouseDetailsAsync(
                     Warehouse.Id,
@@ -166,6 +186,37 @@
     private void Cancel()
     {
         MudDialog.Cancel();
+    }
+
+    private Task OnReceivingLocationChanged(StorageLocationLookupItem? location)
+    {
+        _selectedReceivingLocation = location;
+        return Task.CompletedTask;
+    }
+
+    private Task<IEnumerable<StorageLocationLookupItem>> SearchReceivingLocationsAsync(
+        string searchText,
+        CancellationToken cancellationToken)
+    {
+        if (Warehouse is null)
+        {
+            return Task.FromResult<IEnumerable<StorageLocationLookupItem>>([]);
+        }
+
+        return SearchAsync();
+
+        async Task<IEnumerable<StorageLocationLookupItem>> SearchAsync()
+        {
+            return await WmsTopologyApiClient.LookupStorageLocationsAsync(
+                Warehouse.Id,
+                new LookupStorageLocationsRequest
+                {
+                    SearchText = searchText,
+                    SelectableOnly = true,
+                    StorageLocationTypeCode = StorageLocationTypeCodes.Receiving
+                },
+                cancellationToken);
+        }
     }
 
     private sealed class WarehouseEditModel

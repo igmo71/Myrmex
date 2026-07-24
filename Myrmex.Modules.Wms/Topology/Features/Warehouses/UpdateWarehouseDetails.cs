@@ -5,6 +5,8 @@ using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
 using Myrmex.Modules.Wms.Topology.Domain.Warehouses;
+using Myrmex.Modules.Wms.Topology.Domain.StorageLocations;
+using Myrmex.Modules.Wms.Topology.Features.StorageLocations;
 using Myrmex.Shared.Wms.Topology;
 
 namespace Myrmex.Modules.Wms.Topology.Features.Warehouses;
@@ -14,7 +16,8 @@ internal static class UpdateWarehouseDetails
     internal sealed record Command(
         Guid WarehouseId,
         string? Name,
-        string? Description)
+        string? Description,
+        Guid? DefaultReceivingLocationId)
         : ICommand<ServiceResult<WarehouseDetails>>;
 
     internal sealed class Handler(
@@ -40,6 +43,25 @@ internal static class UpdateWarehouseDetails
             {
                 return ServiceResult<WarehouseDetails>.Invalid(validationResult.Errors);
             }
+
+            if (command.DefaultReceivingLocationId is Guid locationId)
+            {
+                StorageLocation? location = await dbContext.StorageLocations
+                    .Include(x => x.StorageLocationType)
+                    .Include(x => x.StorageLocationStatus)
+                    .SingleOrDefaultAsync(x => x.Id == locationId, cancellationToken);
+                if (location is null || location.WarehouseId != warehouse.Id ||
+                    location.StorageLocationType is null ||
+                    !StorageLocationEligibility.Evaluate(location).IsSelectable ||
+                    !string.Equals(location.StorageLocationType.Code, StorageLocationTypeCodes.Receiving, StringComparison.Ordinal))
+                {
+                    return ServiceResult<WarehouseDetails>.Fail(ServiceError.Validation<Warehouse>(
+                        "Default receiving location must be a selectable Receiving location in this warehouse.",
+                        nameof(Command.DefaultReceivingLocationId)));
+                }
+            }
+
+            warehouse.SetDefaultReceivingLocation(command.DefaultReceivingLocationId);
 
             ServiceResult saveResult = await dbContext
                 .SaveChangesAsServiceResultAsync(domainEventDispatcher, cancellationToken);

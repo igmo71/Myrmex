@@ -122,7 +122,8 @@ internal static class WarehouseEndpoints
         var command = new UpdateWarehouseDetails.Command(
             WarehouseId: warehouseId,
             Name: request.Name,
-            Description: request.Description);
+            Description: request.Description,
+            DefaultReceivingLocationId: request.DefaultReceivingLocationId);
 
         var result = await commandDispatcher
             .DispatchAsync<UpdateWarehouseDetails.Command, ServiceResult<WarehouseDetails>>(command, cancellationToken);

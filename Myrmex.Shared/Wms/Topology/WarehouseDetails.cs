@@ -5,6 +5,7 @@ public sealed record WarehouseDetails(
     string Code,
     string Name,
     string? Description,
+    Guid? DefaultReceivingLocationId,
     bool IsActive,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset? UpdatedAtUtc);

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Myrmex.Modules.Wms.Domain;
 using Myrmex.Modules.Wms.Receiving.Domain.ReceivingOrders;
 
 namespace Myrmex.Modules.Wms.Infrastructure.Persistence.Configurations;
@@ -17,6 +18,9 @@ internal sealed class ReceivingOrderConfiguration : IEntityTypeConfiguration<Rec
         builder.Ignore(x => x.IsFullyReceived);
         builder.Ignore(x => x.HasCompletePersistedCompletedInvariant);
         builder.Ignore(x => x.HasValidDraftPersistenceInvariant);
+        builder.Ignore(x => x.ExternalRefKey);
+        builder.Ignore(x => x.ExternalDataVersion);
+        builder.Ignore(x => x.LastImportedAtUtc);
 
         builder.Property(x => x.Number)
             .HasMaxLength(ReceivingOrder.NumberMaxLength)
@@ -45,6 +49,27 @@ internal sealed class ReceivingOrderConfiguration : IEntityTypeConfiguration<Rec
         builder.Property(x => x.RowVersion)
             .HasColumnName("row_version")
             .IsRowVersion();
+
+        builder.OwnsOne(x => x.ImportState, importState =>
+        {
+            importState.Property(x => x.RefKey)
+                .HasColumnName("ExternalRefKey")
+                .IsRequired();
+            importState.HasIndex(x => x.RefKey)
+                .IsUnique()
+                .HasFilter("[ExternalRefKey] IS NOT NULL")
+                .HasDatabaseName(WmsDatabaseNames.ReceivingOrderExternalRefKeyUniqueIndex);
+            importState.Property(x => x.DataVersion)
+                .HasField("_dataVersion")
+                .UsePropertyAccessMode(PropertyAccessMode.Field)
+                .HasColumnName("ExternalDataVersion")
+                .HasMaxLength(ExternalImportState.MaxDataVersionLength)
+                .IsRequired(false);
+            importState.Property(x => x.ImportedAtUtc)
+                .HasColumnName("LastImportedAtUtc")
+                .IsRequired();
+        });
+        builder.Navigation(x => x.ImportState).IsRequired(false);
 
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();

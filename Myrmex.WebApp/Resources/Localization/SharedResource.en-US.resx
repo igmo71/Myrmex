@@ -1545,4 +1545,9 @@
   <data name="Common.QuantityMustBePositive" xml:space="preserve">
     <value>Quantity must be positive</value>
   </data>
+  <data name="Warehouse.DefaultReceivingLocation" xml:space="preserve"><value>Default receiving location</value></data>
+  <data name="OneC.ReceivingOrders.StartDate" xml:space="preserve"><value>Start date</value></data>
+  <data name="OneC.ReceivingOrders.EndDate" xml:space="preserve"><value>End date</value></data>
+  <data name="OneC.ReceivingOrders.Action" xml:space="preserve"><value>Import receiving orders</value></data>
+  <data name="OneC.ReceivingOrders.InProgress" xml:space="preserve"><value>Importing receiving orders</value></data>
 </root>

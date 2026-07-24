@@ -63,7 +63,7 @@ internal static class UpdateReceivingOrderDraft
             Dictionary<Guid, Guid> persistedSkuByLineId = order.Lines
                 .ToDictionary(line => line.Id, line => line.StockKeepingUnitId);
             UpdateReceivingOrderLineRequest[] requestLines = command.Lines?.ToArray() ?? [];
-            DomainValidationResult replacement = order.ReplaceDraft(
+            DomainValidationResult replacement = ReceivingOrderDraftReconciler.Replace(
                 command.Number,
                 command.WarehouseId,
                 command.ReceivingLocationId,

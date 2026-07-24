@@ -15,6 +15,7 @@ internal sealed class OneCOptions
     public string? WarehousesEntitySet { get; set; }
     public string UnitsOfMeasureEntitySet { get; set; } = DefaultUnitsOfMeasureEntitySet;
     public string? NomenclatureEntitySet { get; set; }
+    public string? ReceivingOrdersEntitySet { get; set; }
     public bool WarehouseCodeAvailable { get; set; } = true;
     public bool UseFolderFilter { get; set; } = true;
     public int BatchSize { get; set; } = DefaultBatchSize;

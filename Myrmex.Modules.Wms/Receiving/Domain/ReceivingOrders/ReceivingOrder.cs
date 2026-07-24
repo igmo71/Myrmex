@@ -45,6 +45,14 @@ internal sealed class ReceivingOrder : AggregateRoot
     public Guid? InventoryTransactionId { get; private set; }
     public InventoryTransaction? InventoryTransaction { get; private set; }
 
+    internal ExternalImportState? ImportState { get; private set; }
+
+    public Guid? ExternalRefKey => ImportState?.RefKey;
+
+    public byte[]? ExternalDataVersion => ImportState?.DataVersion;
+
+    public DateTimeOffset? LastImportedAtUtc => ImportState?.ImportedAtUtc;
+
     public byte[] RowVersion { get; private set; } = [];
 
     public IReadOnlyCollection<ReceivingOrderLine> Lines => _lines.AsReadOnly();
@@ -68,6 +76,28 @@ internal sealed class ReceivingOrder : AggregateRoot
         !CompletedAtUtc.HasValue &&
         !InventoryTransactionId.HasValue &&
         _lines.All(line => line.ReceivedQuantity == 0);
+
+    public void RecordExternalImport(
+        Guid externalRefKey,
+        byte[] externalDataVersion,
+        DateTimeOffset importedAtUtc)
+    {
+        if (ImportState is null)
+        {
+            ImportState = ExternalImportState.Create(
+                externalRefKey,
+                externalDataVersion,
+                importedAtUtc);
+            return;
+        }
+
+        if (ImportState.RefKey != externalRefKey)
+        {
+            throw new InvalidOperationException("ReceivingOrder external identity cannot change.");
+        }
+
+        ImportState.RecordImport(externalDataVersion, importedAtUtc);
+    }
 
     private bool HasValidCorePersistenceInvariant =>
         !string.IsNullOrWhiteSpace(Number) &&

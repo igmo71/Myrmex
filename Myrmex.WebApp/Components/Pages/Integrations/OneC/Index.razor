@@ -41,6 +41,14 @@
                        Class="mt-3">
                 @(Localizer[IsWarehouseImporting ? "OneC.Import.Warehouses.InProgress" : "OneC.Import.Warehouses.Action"])
             </MudButton>
+            <MudDatePicker Label="@Localizer[\"OneC.ReceivingOrders.StartDate\"]" @bind-Date="_receivingStartDate" />
+            <MudDatePicker Label="@Localizer[\"OneC.ReceivingOrders.EndDate\"]" @bind-Date="_receivingEndDate" />
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Secondary"
+                       Disabled="@_isReceivingImporting"
+                       OnClick="ImportReceivingOrdersAsync">
+                @(Localizer[_isReceivingImporting ? "OneC.ReceivingOrders.InProgress" : "OneC.ReceivingOrders.Action"])
+            </MudButton>
             <MudButton Variant="Variant.Filled"
                        Color="Color.Secondary"
                        Disabled="@IsUomImporting"
@@ -109,6 +117,26 @@
                     }
                 </MudPaper>
             }
+            @if (_receivingImportResponse is not null)
+            {
+                <MudPaper Class="pa-2 mt-2" Elevation="1">
+                    <MudText>
+                        @Localizer["Common.Processed"]: @_receivingImportResponse.Processed;
+                        @Localizer["Common.Created"]: @_receivingImportResponse.Created;
+                        @Localizer["Common.Updated"]: @_receivingImportResponse.Updated;
+                        @Localizer["Common.Skipped"]: @_receivingImportResponse.Skipped;
+                        @Localizer["Common.Failed"]: @_receivingImportResponse.Failed.
+                    </MudText>
+                    @if (_receivingImportResponse.OperationError is not null)
+                    {
+                        <MudAlert Severity="Severity.Error" Dense="true">@_receivingImportResponse.OperationError.Message</MudAlert>
+                    }
+                    @foreach (ReceivingOrderImportDocumentResult result in _receivingImportResponse.Results)
+                    {
+                        <MudText Typo="Typo.body2">@(result.Number ?? result.ExternalRefKey?.ToString() ?? "—"): @result.Outcome @(result.Message ?? result.Reason)</MudText>
+                    }
+                </MudPaper>
+            }
         </MudStack>
     </MudStack>
 </MudContainer>
@@ -122,6 +150,10 @@
     private bool _isSkuImporting;
     private OneCImportResponse? _importResponse;
     private string? _importErrorMessage;
+    private DateTime? _receivingStartDate;
+    private DateTime? _receivingEndDate;
+    private bool _isReceivingImporting;
+    private ReceivingOrderImportResponse? _receivingImportResponse;
     private bool IsWarehouseImporting => _isWarehouseImporting;
     private bool IsUomImporting => _isUomImporting;
     private bool IsSkuImporting => _isSkuImporting;
@@ -205,6 +237,35 @@
         finally
         {
             _isSkuImporting = false;
+        }
+    }
+
+    private async Task ImportReceivingOrdersAsync()
+    {
+        _isReceivingImporting = true;
+        _importErrorMessage = null;
+        try
+        {
+            ApiResult<ReceivingOrderImportResponse> result = await ApiClient.ImportReceivingOrdersAsync(
+                new(
+                    _receivingStartDate is null ? null : DateOnly.FromDateTime(_receivingStartDate.Value),
+                    _receivingEndDate is null ? null : DateOnly.FromDateTime(_receivingEndDate.Value)));
+            if (result.IsSuccess)
+            {
+                _receivingImportResponse = result.Value;
+            }
+            else
+            {
+                _importErrorMessage = result.Error?.Message ?? Localizer["OneC.Import.Error"];
+            }
+        }
+        catch (Exception)
+        {
+            _importErrorMessage = Localizer["OneC.Import.ApiUnavailable"];
+        }
+        finally
+        {
+            _isReceivingImporting = false;
         }
     }
 

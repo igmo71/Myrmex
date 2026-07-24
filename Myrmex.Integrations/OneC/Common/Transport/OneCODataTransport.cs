@@ -124,6 +124,7 @@ internal sealed class OneCODataTransport(
             && !string.IsNullOrWhiteSpace(options.WarehousesEntitySet)
             && !string.IsNullOrWhiteSpace(options.UnitsOfMeasureEntitySet)
             && !string.IsNullOrWhiteSpace(options.NomenclatureEntitySet)
+            && !string.IsNullOrWhiteSpace(options.ReceivingOrdersEntitySet)
             && options.BatchSize is >= 1 and <= OneCOptions.MaximumBatchSize
             && options.TimeoutSeconds > 0;
 

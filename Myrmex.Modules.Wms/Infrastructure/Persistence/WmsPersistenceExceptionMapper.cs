@@ -26,6 +26,12 @@ internal static class WmsPersistenceExceptionMapper
             WmsDatabaseNames.ReceivingOrderNumberUniqueIndex);
     }
 
+    public static bool IsReceivingOrderExternalRefKeyDuplicate(DbUpdateException exception)
+    {
+        return exception.IsUniqueConstraintViolation(
+            WmsDatabaseNames.ReceivingOrderExternalRefKeyUniqueIndex);
+    }
+
     public static bool IsReceivingOrderLineSkuDuplicate(DbUpdateException exception)
     {
         return exception.IsUniqueConstraintViolation(
@@ -90,6 +96,14 @@ internal static class WmsPersistenceExceptionMapper
                 "ReceivingOrder.NumberConflict",
                 "Receiving order Number already exists.",
                 nameof(ReceivingOrder.Number));
+        }
+        if (IsReceivingOrderExternalRefKeyDuplicate(exception))
+        {
+            return new ServiceError(
+                ServiceErrorType.Conflict,
+                "ReceivingOrder.ExternalRefKeyConflict",
+                "Receiving order external reference key already exists.",
+                nameof(ReceivingOrder.ExternalRefKey));
         }
         if (IsReceivingOrderLineSkuDuplicate(exception))
         {
