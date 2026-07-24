@@ -1,6 +1,8 @@
 <!--
 Sync Impact Report
-- Version change: 2.0.0 → 2.0.1
+- Version change: 2.0.1 → 2.1.0
+- Requested baseline: 2.0.0 → 2.1.0; the current constitution was 2.0.1, so the applied
+  change is 2.0.1 → 2.1.0.
 - Modified principles: none
 - Preserved principles:
   - I. Domain Integrity First
@@ -14,6 +16,7 @@ Sync Impact Report
   - Reserved build, migration, commit, and pull request operations for the developer
   - Clarified that agents may review developer-generated EF Core migration files and
     report potential issues without generating, altering, or applying migrations
+  - Added developer-owned branch selection and exact Spec Kit feature numbering rules
 - Required prohibited extension hooks to be skipped even when marked mandatory
 - Templates and guidance:
   - ✅ reviewed, no change required in this amendment: .specify/templates/plan-template.md
@@ -82,6 +85,15 @@ signals and secure configuration keep the system supportable.
 
 - The baseline stack is .NET 10, ASP.NET Core Minimal APIs, EF Core with SQL Server,
   Aspire, and Blazor with MudBlazor. A plan MAY deviate only with explicit rationale.
+- The developer MUST create and select the working branch before invoking the agent. The
+  agent MUST NOT create, switch, rename, delete, or publish Git branches, and Spec Kit
+  workflows MUST run without creating or switching branches.
+- The Spec Kit feature directory number MUST be taken exactly from the numeric prefix of
+  the developer-provided input Markdown file created from the corresponding GitHub Issue.
+  The agent MUST NOT calculate the next available feature number or renumber a feature.
+  If the required feature number conflicts with an existing directory, the agent MUST
+  stop and report the conflict. For example:
+  `117-import-external-receiving-orders.md` → `specs/117-import-external-receiving-orders/`.
 - Nullable reference types and implicit usings remain enabled. Agents MUST preserve
   compile-time correctness through inspection and developer-provided build results.
 - Schema changes MUST describe persistence and migration impact. Migration generation and
@@ -119,4 +131,4 @@ obligations. Every plan and review MUST verify applicable MUST statements; an un
 violation blocks agent completion. `AGENTS.md` provides day-to-day guidance but cannot
 weaken this constitution.
 
-**Version**: 2.0.1 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-24
+**Version**: 2.1.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-24
