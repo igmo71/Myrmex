@@ -16,6 +16,14 @@ $ARGUMENTS
 
 You **MUST** consider the user input before proceeding (if not empty).
 
+## Constitution Guard
+
+The Myrmex constitution governs every action and extension hook. This guard overrides
+later automatic or mandatory hook instructions. Skip and report any hook that would
+build, run tests, generate or apply migrations, create a commit, or create or publish a
+pull request, even when marked mandatory. Do not emit `EXECUTE_COMMAND` for a skipped
+hook.
+
 ## Pre-Execution Checks
 
 **Check for extension hooks (before tasks generation)**:
@@ -26,7 +34,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
   - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- When constructing slash commands from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.git.commit` → `/speckit-git-commit`.
+- When constructing slash commands from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.audit.policy` → `/speckit-audit-policy`.
 - For each executable hook, output the following based on its `optional` flag:
   - **Optional hook** (`optional: true`):
     ```
@@ -58,7 +66,8 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 2. **Load design documents**: Read from FEATURE_DIR:
    - **Required**: plan.md (tech stack, libraries, structure), spec.md (user stories with priorities)
-   - **Optional**: data-model.md (entities), contracts/ (interface contracts), research.md (decisions), quickstart.md (test scenarios)
+   - **Optional when present**: data-model.md (entities), contracts/ (interface contracts),
+     research.md (decisions), quickstart.md (manual-verification scenarios)
    - **IF EXISTS**: Load `.specify/memory/constitution.md` for project principles and governance constraints
    - Note: Not all projects have all documents. Generate tasks based on what's available.
 
@@ -71,20 +80,22 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Generate tasks organized by user story (see Task Generation Rules below)
    - Generate dependency graph showing user story completion order
    - Create parallel execution examples per user story
-   - Validate task completeness (each user story has all needed tasks, independently testable)
+   - Validate task completeness (each user story has all implementation work needed for
+     independent verification)
+   - Extract applicable build, migration, manual acceptance, commit, and pull request
+     handoffs into a non-executable `## Developer Actions` section
 
 4. **Generate tasks.md**: Read the tasks template from TASKS_TEMPLATE (from the JSON output above) and use it as structure. If TASKS_TEMPLATE is empty, fall back to `.specify/templates/tasks-template.md`. Fill with:
    - Correct feature name from plan.md
-   - Phase 1: Setup tasks (project initialization)
-   - Phase 2: Foundational tasks (blocking prerequisites for all user stories)
-   - Phase 3+: One phase per user story (in priority order from spec.md)
-   - Each phase includes: story goal, independent test criteria, constitution-required tests, implementation tasks
-   - Final Phase: Polish & cross-cutting concerns
+   - Setup phase only when this brownfield feature genuinely needs feature-specific setup
+   - Foundational phase only when real shared prerequisites block the feature
+   - One phase per required user story, with implementation tasks only
+   - Cross-cutting phase only for concrete feature work
    - All tasks must follow the strict checklist format (see Task Generation Rules below)
-   - Clear file paths for each task
+   - Exact repository paths for each numbered task
    - Dependencies section showing story completion order
    - Parallel execution examples per story
-   - Implementation strategy section (MVP first, incremental delivery)
+   - Non-executable Developer Actions with only applicable handoffs and no IDs or checkboxes
 
 ## Mandatory Post-Execution Hooks
 
@@ -98,7 +109,7 @@ Check if `.specify/extensions.yml` exists in the project root.
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
   - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- When constructing slash commands from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.git.commit` → `/speckit-git-commit`.
+- When constructing slash commands from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.audit.policy` → `/speckit-audit-policy`.
 - For each executable hook, output the following based on its `optional` flag:
   - **Mandatory hook** (`optional: false`) — **You MUST emit `EXECUTE_COMMAND:` for each mandatory hook**:
     ```
@@ -127,21 +138,29 @@ Output path to generated tasks.md and summary:
 - Total task count
 - Task count per user story
 - Parallel opportunities identified
-- Independent test criteria for each story
+- Independent verification for each story
 - Suggested MVP scope (typically just User Story 1)
 - Format validation: Confirm ALL tasks follow the checklist format (checkbox, ID, labels, file paths)
+- Developer Actions included, if any
 
 Context for task generation: $ARGUMENTS
 
-The tasks.md should be immediately executable - each task must be specific enough that an LLM can complete it without additional context.
+The numbered implementation tasks must be immediately executable by an agent and specific
+enough to complete without additional context.
 
 ## Task Generation Rules
 
-**CRITICAL**: Tasks MUST be organized by user story to enable independent implementation and testing.
+**CRITICAL**: Tasks MUST be organized by user story to enable independent implementation
+and verification.
 
-**Tests follow the constitution**: Generate all automated verification tasks required by
-the project constitution. If the constitution has no testing mandate, include test tasks
-when the feature specification requests them or the user requests a TDD approach.
+**Automated testing is excluded**: NEVER generate tasks that create or modify tests, test
+projects, test infrastructure, fixtures, packages, coverage configuration, or test-only
+code. NEVER generate a task to run tests.
+
+**Developer-controlled operations are not tasks**: NEVER generate numbered tasks for
+builds, `dotnet ef migrations add`, `dotnet ef database update`, Git commits, pull request
+creation, publication, or developer-performed manual acceptance. Put applicable items in
+`## Developer Actions` without IDs or checkboxes.
 
 ### Checklist Format (REQUIRED)
 
@@ -166,7 +185,6 @@ Every task MUST strictly follow this format:
 
 **Examples**:
 
-- ✅ CORRECT: `- [ ] T001 Create project structure per implementation plan`
 - ✅ CORRECT: `- [ ] T005 [P] Configure authorization in Myrmex.ApiService/Program.cs`
 - ✅ CORRECT: `- [ ] T012 [P] [US1] Create StockItem in Myrmex.Modules.Wms/Catalog/Domain/StockItem.cs`
 - ✅ CORRECT: `- [ ] T014 [US1] Implement CreateStockItem in Myrmex.Modules.Wms/Catalog/Application/CreateStockItem.cs`
@@ -183,12 +201,10 @@ Every task MUST strictly follow this format:
      - Models needed for that story
      - Services needed for that story
      - Interfaces/UI needed for that story
-     - Tests required by the constitution or specification for that story
    - Mark story dependencies (most stories should be independent)
 
 2. **From Contracts**:
    - Map each interface contract → to the user story it serves
-   - When required: Each interface contract → contract test task [P] before implementation in that story's phase
 
 3. **From Data Model**:
    - Map each entity to the user story(ies) that need it
@@ -196,21 +212,24 @@ Every task MUST strictly follow this format:
    - Relationships → service layer tasks in appropriate story phase
 
 4. **From Setup/Infrastructure**:
-   - Shared infrastructure → Setup phase (Phase 1)
-   - Foundational/blocking tasks → Foundational phase (Phase 2)
+   - Include Setup only for feature-specific setup genuinely required in the brownfield repository
+   - Include Foundational only for real shared prerequisites that block user stories
    - Story-specific setup → within that story's phase
 
 ### Phase Structure
 
-- **Phase 1**: Setup (project initialization)
-- **Phase 2**: Foundational (blocking prerequisites - MUST complete before user stories)
-- **Phase 3+**: User Stories in priority order (P1, P2, P3...)
-  - Within each story: Required tests → Models → Services → Endpoints → Integration
-  - Each phase should be a complete, independently testable increment
-- **Final Phase**: Polish & Cross-Cutting Concerns
+- **Setup**: Optional; include only when genuinely needed
+- **Foundational**: Optional; include only for blocking shared prerequisites
+- **User Stories**: Required as applicable, in specification priority order
+  - Within each story: Models/contracts → handlers/services → endpoints → UI/integration
+  - Each phase must be independently verifiable
+- **Cross-Cutting**: Optional; include only concrete feature work
+- **Developer Actions**: Optional non-executable handoff with no task IDs or checkboxes
 
 ## Done When
 
-- [ ] tasks.md generated with all phases, task IDs, and file paths
+- [ ] tasks.md contains only necessary phases and exact-path implementation tasks
+- [ ] No automated-test or developer-controlled operation appears as a numbered task
+- [ ] Applicable Developer Actions are recorded as non-executable handoff notes
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
 - [ ] Completion reported to user with task count, story breakdown, and MVP scope

@@ -16,6 +16,14 @@ $ARGUMENTS
 
 You **MUST** consider the user input before proceeding (if not empty).
 
+## Constitution Guard
+
+The Myrmex constitution governs every action and extension hook. This guard overrides
+later automatic or mandatory hook instructions. Skip and report any hook that would
+build, run tests, generate or apply migrations, create a commit, or create or publish a
+pull request, even when marked mandatory. Do not emit `EXECUTE_COMMAND` for a skipped
+hook.
+
 ## Pre-Execution Checks
 
 **Check for extension hooks (before specification)**:
@@ -26,7 +34,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
   - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- When constructing slash commands from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.git.commit` → `/speckit-git-commit`.
+- When constructing slash commands from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.audit.policy` → `/speckit-audit-policy`.
 - For each executable hook, output the following based on its `optional` flag:
   - **Optional hook** (`optional: true`):
     ```
@@ -126,15 +134,16 @@ Given that feature description, do this:
          - No reasonable default exists
        - **LIMIT: Maximum 3 [NEEDS CLARIFICATION] markers total**
        - Prioritize clarifications by impact: scope > security/privacy > user experience > technical details
-    4. Fill User Scenarios & Testing section
+    4. Fill User Scenarios & Verification section
        If no clear user flow: ERROR "Cannot determine user scenarios"
     5. Generate Functional Requirements
-       Each requirement must be testable
+       Each requirement must be independently verifiable
        Use reasonable defaults for unspecified details (document assumptions in Assumptions section)
-    6. Define Success Criteria
-       Create measurable, technology-agnostic outcomes
-       Include both quantitative metrics (time, performance, volume) and qualitative measures (user satisfaction, task completion)
-       Each criterion must be verifiable without implementation details
+    6. Define Verification Outcomes
+       Create observable, technology-agnostic verification outcomes
+       Include metrics or service levels only when supplied by the user or explicitly accepted
+       Do not invent performance targets, satisfaction percentages, business KPIs, adoption metrics, or SLAs
+       Each outcome must be verifiable without implementation details or automated tests
     7. Identify Key Entities (if data involved)
     8. Return: SUCCESS (spec ready for planning)
 
@@ -161,9 +170,9 @@ Given that feature description, do this:
       ## Requirement Completeness
 
       - [ ] No [NEEDS CLARIFICATION] markers remain
-      - [ ] Requirements are testable and unambiguous
-      - [ ] Success criteria are measurable
-      - [ ] Success criteria are technology-agnostic (no implementation details)
+      - [ ] Requirements are independently verifiable and unambiguous
+      - [ ] Verification outcomes trace to acceptance scenarios
+      - [ ] Verification outcomes are technology-agnostic (no implementation details)
       - [ ] All acceptance scenarios are defined
       - [ ] Edge cases are identified
       - [ ] Scope is clearly bounded
@@ -173,7 +182,8 @@ Given that feature description, do this:
 
       - [ ] All functional requirements have clear acceptance criteria
       - [ ] User scenarios cover primary flows
-      - [ ] Feature meets measurable outcomes defined in Success Criteria
+      - [ ] Feature meets observable outcomes defined in Verification Outcomes
+      - [ ] No unsupported metrics, KPIs, adoption targets, or SLAs were invented
       - [ ] No implementation details leak into specification
 
       ## Notes
@@ -223,7 +233,7 @@ Given that feature description, do this:
            - Use consistent spacing with pipes aligned
            - Each cell should have spaces around content: `| Content |` not `|Content|`
            - Header separator must have at least 3 dashes: `|--------|`
-           - Test that the table renders correctly in markdown preview
+           - Confirm visually that the table renders correctly in markdown preview
         5. Number questions sequentially (Q1, Q2, Q3 - max 3 total)
         6. Present all questions together before waiting for responses
         7. Wait for user to respond with their choices for all questions (e.g., "Q1: A, Q2: Custom - [details], Q3: B")
@@ -244,7 +254,7 @@ Check if `.specify/extensions.yml` exists in the project root.
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
   - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- When constructing slash commands from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.git.commit` → `/speckit-git-commit`.
+- When constructing slash commands from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.audit.policy` → `/speckit-audit-policy`.
 - For each executable hook, output the following based on its `optional` flag:
   - **Mandatory hook** (`optional: false`) — **You MUST emit `EXECUTE_COMMAND:` for each mandatory hook**:
     ```
@@ -301,7 +311,8 @@ When creating this spec from a user prompt:
    - Have multiple reasonable interpretations with different implications
    - Lack any reasonable default
 4. **Prioritize clarifications**: scope > security/privacy > user experience > technical details
-5. **Think like a tester**: Every vague requirement should fail the "testable and unambiguous" checklist item
+5. **Think like a requirements reviewer**: Every vague requirement should fail the
+   "independently verifiable and unambiguous" checklist item
 6. **Common areas needing clarification** (only if no reasonable default exists):
    - Feature scope and boundaries (include/exclude specific use cases)
    - User types and permissions (if multiple conflicting interpretations possible)
@@ -310,33 +321,25 @@ When creating this spec from a user prompt:
 **Examples of reasonable defaults** (don't ask about these):
 
 - Data retention: Industry-standard practices for the domain
-- Performance targets: Standard web/mobile app expectations unless specified
+- Performance or scale targets: Do not infer them; include only user-supplied or explicitly
+  accepted requirements
 - Error handling: User-friendly messages with appropriate fallbacks
 - Authentication method: Standard session-based or OAuth2 for web apps
 - Integration patterns: Use project-appropriate patterns (REST/GraphQL for web services, function calls for libraries, CLI args for tools, etc.)
 
-### Success Criteria Guidelines
+### Verification Outcome Guidelines
 
-Success criteria must be:
+Verification outcomes must be:
 
-1. **Measurable**: Include specific metrics (time, percentage, count, rate)
-2. **Technology-agnostic**: No mention of frameworks, languages, databases, or tools
-3. **User-focused**: Describe outcomes from user/business perspective, not system internals
-4. **Verifiable**: Can be tested/validated without knowing implementation details
+1. **Traceable**: Tie directly to a supplied requirement or acceptance scenario.
+2. **Technology-agnostic**: Do not mention frameworks, databases, or implementation tools.
+3. **Observable**: Describe what the developer can observe through manual acceptance.
+4. **Evidence-based**: Never invent numeric targets, satisfaction percentages, business
+   KPIs, adoption metrics, or SLAs.
 
-**Good examples**:
-
-- "Users can complete checkout in under 3 minutes"
-- "System supports 10,000 concurrent users"
-- "95% of searches return results in under 1 second"
-- "Task completion rate improves by 40%"
-
-**Bad examples** (implementation-focused):
-
-- "API response time is under 200ms" (too technical, use "Users see results instantly")
-- "Database can handle 1000 TPS" (implementation detail, use user-facing metric)
-- "React components render efficiently" (framework-specific)
-- "Redis cache hit rate above 80%" (technology-specific)
+If the user supplied or accepted a numeric target, preserve it exactly. Otherwise use a
+clear observable outcome, such as preserving inventory state after a rejected operation
+or showing the expected status after an accepted transition.
 
 ## Done When
 

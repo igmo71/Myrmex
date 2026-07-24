@@ -2,34 +2,52 @@
 
 ## Project Structure & Module Organization
 
-`Myrmex.slnx` contains the .NET 10 modular monolith. `Myrmex.AppHost` is the Aspire development entry point and orchestrates Redis, `Myrmex.ApiService`, and `Myrmex.WebApp`. Warehouse behavior lives in `Myrmex.Modules.Wms`, grouped by vertical slices such as `Catalog`, `Inventory`, `Receiving`, and `Topology`; keep domain, application, endpoint, and persistence concerns in the appropriate slice. `Myrmex.Identity` and `Myrmex.Integrations` own authentication and external-system concerns. Reusable contracts belong in `Myrmex.Shared`, core abstractions in `Myrmex.Core`, and dispatch infrastructure in `Myrmex.AppDispatching`. Deployment and migration helpers are under `scripts/`.
+`Myrmex.slnx` contains the .NET 10 modular monolith. `Myrmex.AppHost` orchestrates Redis,
+`Myrmex.ApiService`, and `Myrmex.WebApp` through Aspire. Warehouse behavior belongs in
+`Myrmex.Modules.Wms`, grouped into vertical slices such as `Catalog`, `Inventory`,
+`Receiving`, and `Topology`. `Myrmex.Identity` and `Myrmex.Integrations` own authentication
+and external-system concerns. Put reusable transport contracts in `Myrmex.Shared`, core
+abstractions in `Myrmex.Core`, and dispatch infrastructure in `Myrmex.AppDispatching`.
 
-## Build, Test, and Development Commands
+## Developer-Controlled Operations
 
-- `dotnet restore Myrmex.slnx` restores NuGet dependencies.
-- `dotnet build Myrmex.slnx` compiles the complete solution with nullable analysis enabled.
-- `dotnet run --project Myrmex.AppHost` starts the local Aspire stack and its dashboard.
-- `dotnet format Myrmex.slnx --verify-no-changes` checks SDK formatting before review.
-- `dotnet test Myrmex.slnx` runs all test projects once tests are present.
+Automated testing is disabled. Agents MUST NOT create, modify, or run unit, integration,
+contract, regression, UI, or other tests; test projects; test infrastructure; fixtures;
+coverage configuration; or test-only code.
 
-Configure the `MyrmexDatabase` connection string before running the stack.
+Only the developer runs builds, generates or applies EF Core migrations, creates Git
+commits, and creates or publishes pull requests. Agents MUST NOT execute or claim success
+for commands such as `dotnet build Myrmex.slnx`, `dotnet ef migrations add <Name>`, or
+`dotnet ef database update`. Agents may prepare commands, migration notes, commit messages,
+pull request descriptions, and concise manual-verification steps, then review results
+provided by the developer.
 
 ## Coding Style & Naming Conventions
 
-Follow established C# style: four-space indentation, file-scoped namespaces, braces on new lines, and explicit types where they improve readability. Use PascalCase for types, methods, and public members; camelCase for parameters and locals; `_camelCase` for private fields; and the `Async` suffix for asynchronous methods. Keep nullable reference types clean rather than suppressing warnings. Prefer focused vertical-slice code and the repository's internal command/query dispatchers over introducing broad abstractions or MediatR.
+Use four-space indentation, file-scoped namespaces, braces on new lines, and explicit
+types where they improve readability. Use PascalCase for types, methods, and public
+members; camelCase for parameters and locals; `_camelCase` for private fields; and the
+`Async` suffix for asynchronous methods. Keep nullable reference types clean. Prefer
+focused vertical-slice code and the internal command/query dispatchers over new broad
+abstractions or MediatR.
 
-## Testing Guidelines
+## Architecture & Verification
 
-No test project or framework is currently configured. The constitution requires automated verification, so create affected-area test infrastructure as foundational work. Use projects named `Myrmex.<Area>.Tests`, mirror production namespaces, and name tests after observable behavior. Cover domain invariants and application handlers first; use integration tests for EF Core mappings, migrations, and HTTP endpoints. Ensure `dotnet test Myrmex.slnx` passes before submitting.
+`.specify/memory/constitution.md` governs domain boundaries, application contracts,
+verification, simplicity, and operational requirements. Specifications retain
+Given/When/Then acceptance scenarios and independently verifiable outcomes. Agents may
+inspect code and document developer-performed manual verification, but automated tests
+are outside the current process.
 
-## Architecture Governance
+## Commit & Pull Request Guidance
 
-`.specify/memory/constitution.md` is the authority for domain boundaries, application contracts, verification, simplicity, and operational requirements. Plans and pull requests must pass its applicable gates; document justified exceptions in the plan's Complexity Tracking table.
-
-## Commit & Pull Request Guidelines
-
-Recent commits are concise and imperative, commonly prefixed with an issue number, for example `#116 Fix receiving order filters.` Keep each commit focused. Pull requests should link the issue, summarize behavior and architectural impact, list verification commands, and call out schema migrations or configuration changes. Include screenshots for visible Blazor/MudBlazor changes.
+Recent commits are concise and imperative, commonly prefixed with an issue number, for
+example `#116 Fix receiving order filters.` Agents may suggest messages in that style.
+Prepared PR descriptions should link the issue, summarize domain and architectural impact,
+identify persistence or configuration changes, list developer-run verification, and
+request screenshots for visible Blazor/MudBlazor changes.
 
 ## Security & Configuration
 
-Do not commit passwords, API keys, connection strings, or staging `.env` files. Store local secrets with .NET user secrets or environment variables using the existing `Myrmex__...` naming pattern.
+Never commit passwords, API keys, connection strings, or staging `.env` files. Use .NET
+user secrets or environment variables with the existing `Myrmex__...` naming pattern.

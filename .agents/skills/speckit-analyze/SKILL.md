@@ -16,6 +16,14 @@ $ARGUMENTS
 
 You **MUST** consider the user input before proceeding (if not empty).
 
+## Constitution Guard
+
+The Myrmex constitution governs every action and extension hook. This guard overrides
+later automatic or mandatory hook instructions. Skip and report any hook that would
+build, run tests, generate or apply migrations, create a commit, or create or publish a
+pull request, even when marked mandatory. Do not emit `EXECUTE_COMMAND` for a skipped
+hook.
+
 ## Pre-Execution Checks
 
 **Check for extension hooks (before analysis)**:
@@ -26,7 +34,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
   - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- When constructing slash commands from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.git.commit` → `/speckit-git-commit`.
+- When constructing slash commands from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.audit.policy` → `/speckit-audit-policy`.
 - For each executable hook, output the following based on its `optional` flag:
   - **Optional hook** (`optional: true`):
     ```
@@ -83,7 +91,7 @@ Load only the minimal necessary context from each artifact:
 
 - Overview/Context
 - Functional Requirements
-- Success Criteria (measurable outcomes — e.g., performance, security, availability, user success, business impact)
+- Verification Outcomes, including only supplied or accepted quality constraints
 - User Stories
 - Edge Cases (if present)
 
@@ -110,9 +118,16 @@ Load only the minimal necessary context from each artifact:
 
 Create internal representations (do not include raw artifacts in output):
 
-- **Requirements inventory**: For each Functional Requirement (FR-###) and Success Criterion (SC-###), record a stable key. Use the explicit FR-/SC- identifier as the primary key when present, and optionally also derive an imperative-phrase slug for readability (e.g., "User can upload file" → `user-can-upload-file`). Include only Success Criteria items that require buildable work (e.g., load-testing infrastructure, security audit tooling), and exclude post-launch outcome metrics and business KPIs (e.g., "Reduce support tickets by 50%").
+- **Requirements inventory**: Record stable keys for Functional Requirements (FR-###),
+  Domain Rules (DR-###), Quality Attributes (QA-###), and Verification Outcomes (VO-### or
+  legacy SC-###). Include only items that require feature implementation. Exclude
+  developer-controlled gates, manual acceptance, unsupported metrics, and business KPIs.
 - **User story/action inventory**: Discrete user actions with acceptance criteria
-- **Task coverage mapping**: Map each task to one or more requirements or stories (inference by keyword / explicit reference patterns like IDs or key phrases)
+- **Task coverage mapping**: Map each permitted implementation task to one or more
+  requirements or stories. Do not count Developer Actions as tasks or requirement coverage.
+- **Task policy classification**: Identify any task that creates/modifies automated tests
+  or test infrastructure, runs tests/builds, generates/applies migrations, creates a
+  commit, or creates/publishes a pull request.
 - **Constitution rule set**: Extract principle names and MUST/SHOULD normative statements
 
 ### 4. Detection Passes (Token-Efficient Analysis)
@@ -126,12 +141,13 @@ Focus on high-signal findings. Limit to 50 findings total; aggregate remainder i
 
 #### B. Ambiguity Detection
 
-- Flag vague adjectives (fast, scalable, secure, intuitive, robust) lacking measurable criteria
+- Flag vague adjectives (fast, scalable, secure, intuitive, robust) lacking observable
+  criteria or a user-supplied metric
 - Flag unresolved placeholders (TODO, TKTK, ???, `<placeholder>`, etc.)
 
 #### C. Underspecification
 
-- Requirements with verbs but missing object or measurable outcome
+- Requirements with verbs but missing an object or independently verifiable outcome
 - User stories missing acceptance criteria alignment
 - Tasks referencing files or components not defined in spec/plan
 
@@ -139,12 +155,17 @@ Focus on high-signal findings. Limit to 50 findings total; aggregate remainder i
 
 - Any requirement or plan element conflicting with a MUST principle
 - Missing mandated sections or quality gates from constitution
+- Any automated-test task or agent-assigned build, migration generation/application,
+  commit, or pull request operation is a constitution violation
+- Any developer-controlled operation represented as a checkbox, task ID, or agent
+  completion criterion is a constitution violation
 
 #### E. Coverage Gaps
 
-- Requirements with zero associated tasks
-- Tasks with no mapped requirement/story
-- Success Criteria requiring buildable work (performance, security, availability) not reflected in tasks
+- Implementation requirements with zero associated permitted tasks
+- Permitted implementation tasks with no mapped requirement/story
+- Supplied quality requirements requiring implementation work but not reflected in tasks
+- Do not require implementation tasks for Developer Actions
 
 #### F. Inconsistency
 
@@ -157,8 +178,10 @@ Focus on high-signal findings. Limit to 50 findings total; aggregate remainder i
 
 Use this heuristic to prioritize findings:
 
-- **CRITICAL**: Violates constitution MUST, missing core spec artifact, or requirement with zero coverage that blocks baseline functionality
-- **HIGH**: Duplicate or conflicting requirement, ambiguous security/performance attribute, untestable acceptance criterion
+- **CRITICAL**: Violates a constitution MUST, including prohibited task types; missing
+  core spec artifacts; or baseline functionality with zero implementation coverage
+- **HIGH**: Duplicate or conflicting requirement, ambiguous supplied quality attribute,
+  or independently unverifiable acceptance criterion
 - **MEDIUM**: Terminology drift, missing non-functional task coverage, underspecified edge case
 - **LOW**: Style/wording improvements, minor redundancy not affecting execution order
 
@@ -183,11 +206,13 @@ Output a Markdown report (no file writes) with the following structure:
 
 **Unmapped Tasks:** (if any)
 
+**Prohibited Task Assignments:** (if any)
+
 **Metrics:**
 
 - Total Requirements
 - Total Tasks
-- Coverage % (requirements with >=1 task)
+- Coverage % (implementation requirements with >=1 permitted task)
 - Ambiguity Count
 - Duplication Count
 - Critical Issues Count
@@ -198,7 +223,9 @@ At end of report, output a concise Next Actions block:
 
 - If CRITICAL issues exist: Recommend resolving before `/speckit-implement`
 - If only LOW/MEDIUM: User may proceed, but provide improvement suggestions
-- Provide explicit command suggestions: e.g., "Run /speckit-specify with refinement", "Run /speckit-plan to adjust architecture", "Manually edit tasks.md to add coverage for 'performance-metrics'"
+- Provide explicit workflow suggestions, such as `/speckit-specify` for requirement
+  refinement, `/speckit-plan` for architecture correction, or `/speckit-tasks` to replace
+  prohibited tasks with implementation work and non-executable Developer Actions
 
 ### 8. Offer Remediation
 
@@ -213,7 +240,7 @@ After reporting, check if `.specify/extensions.yml` exists in the project root.
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
   - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- When constructing slash commands from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.git.commit` → `/speckit-git-commit`.
+- When constructing slash commands from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.audit.policy` → `/speckit-audit-policy`.
 - For each executable hook, output the following based on its `optional` flag:
   - **Optional hook** (`optional: true`):
     ```

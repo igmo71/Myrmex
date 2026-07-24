@@ -16,6 +16,14 @@ $ARGUMENTS
 
 You **MUST** consider the user input before proceeding (if not empty).
 
+## Constitution Guard
+
+The Myrmex constitution governs every action and extension hook. This guard overrides
+later automatic or mandatory hook instructions. Skip and report any hook that would
+build, run tests, generate or apply migrations, create a commit, or create or publish a
+pull request, even when marked mandatory. Do not emit `EXECUTE_COMMAND` for a skipped
+hook.
+
 ## Pre-Execution Checks
 
 **Check for extension hooks (before convergence)**:
@@ -27,7 +35,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
   - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- When constructing slash commands from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.git.commit` → `/speckit-git-commit`.
+- When constructing slash commands from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.audit.policy` → `/speckit-audit-policy`.
 - For each executable hook, output the following based on its `optional` flag:
   - **Optional hook** (`optional: true`):
 
@@ -112,8 +120,9 @@ Load only the minimal necessary context from each artifact:
 **From spec.md:**
 
 - Functional Requirements (FR-###)
-- Success Criteria (SC-###) — include only items requiring buildable work; exclude
-  post-launch outcome metrics and business KPIs
+- Verification Outcomes (VO-### or legacy SC-###) — include only items requiring
+  feature implementation; exclude developer-controlled gates, unsupported metrics,
+  post-launch outcomes, and business KPIs
 - User Stories and their Acceptance Scenarios
 - Edge Cases (if present)
 
@@ -137,9 +146,9 @@ Load only the minimal necessary context from each artifact:
 
 Create an internal model (do not echo raw artifacts):
 
-- **Requirements inventory**: one stable key per FR-### / SC-### / user-story acceptance
-  scenario (e.g. `US1/AC2`), plus the plan decisions and constitution principles that
-  impose buildable obligations.
+- **Requirements inventory**: one stable key per FR-### / DR-### / QA-### / VO-### (or
+  legacy SC-###) / user-story acceptance scenario (e.g. `US1/AC2`), plus plan decisions
+  and constitution principles that impose implementation obligations.
 - **Code-scope map**: from the file paths named in `plan.md` and `tasks.md`, plus a keyword
   search for the concepts each requirement describes, derive the set of source files and
   components in scope for assessment. Bound the assessment to these — do **not** infer
@@ -161,6 +170,13 @@ For each item in the intent inventory, inspect the current code in scope and pro
 
 Each `Finding` records: a stable id, the `source-ref` it traces to, the `gap-type`, a
 severity, and a short human-readable description with the evidence (the file/area observed).
+
+Classify existing and proposed work against the constitution. Automated tests and test
+infrastructure, test/build execution, migration generation/application, commits, and pull
+request operations are prohibited agent tasks. Report them as developer actions; never
+append them to `tasks.md`. A schema-related finding may produce a task for the feature's
+model or persistence configuration, while migration generation and application remain
+developer handoff notes.
 
 **Edge cases:**
 
@@ -198,34 +214,38 @@ Before appending anything, output a compact, severity-graded summary (no file wr
 
 ### 7. Append Convergence Tasks (or report converged)
 
-**If there are one or more actionable findings** (`tasks_appended` outcome):
+**If there are one or more permitted implementation findings** (`tasks_appended` outcome):
 
 Append to the **end** of `tasks.md`, per the append contract:
 
 1. Scan all existing task IDs; let `M` be the maximum. Determine the next phase number `N`
    (highest existing phase + 1).
 2. Write a single new section header `## Phase N: Convergence`.
-3. Emit one checklist item per actionable finding, ordered CRITICAL/HIGH first, assigning
+3. Emit one checklist item per permitted implementation finding, ordered CRITICAL/HIGH
+   first, assigning
    zero-padded IDs `T{M+1:03d}, T{M+2:03d}, …`:
 
    ```markdown
-   - [ ] T042 <imperative description> per <source-ref> (<gap-type>)
+   - [ ] T042 <imperative description with exact repository path> per <source-ref> (<gap-type>)
    ```
 
-   `<source-ref>` traces the task to its origin: e.g. `FR-003`, `SC-002`,
+   `<source-ref>` traces the task to its origin: e.g. `FR-003`, `VO-002`,
    `US1/AC2`, `plan: storage decision`, `Constitution II`.
 
    `<gap-type>` is one of `missing`, `partial`, `contradicts`, `unrequested`.
 
-   Constitution-violation tasks MUST be emitted first and described as
-   `CRITICAL`.
+   Permitted implementation tasks correcting constitution violations MUST be emitted
+   first and described as `CRITICAL`. Prohibited operations remain report-only developer
+   actions.
 4. Never reuse or renumber existing IDs. If a prior Convergence phase exists, add a new,
    separately-numbered one below it — do not touch the old one.
 
-**If there are no actionable findings** (`converged` outcome):
+**If there are no permitted implementation findings**:
 
 - Do **not** modify `tasks.md` at all — no empty phase header.
-- Report: **"✅ Converged — the implementation satisfies the spec, plan, and tasks."**
+- If no developer actions remain, report:
+  **"✅ Converged — the implementation satisfies the spec, plan, and tasks."**
+- If developer actions remain, report them without claiming convergence or completion.
 - Include the summary counts of what was checked.
 
 ### 8. Provide Next Actions (Handoff)
@@ -233,8 +253,10 @@ Append to the **end** of `tasks.md`, per the append contract:
 - On `tasks_appended`: state how many tasks were appended under which phase, and recommend
   running `/speckit-implement` to complete them; note that a follow-up converge
   run will find fewer or no remaining items.
-- On `converged`: recommend proceeding to review / opening a PR. No further implement pass
-  is needed for this feature's specified scope.
+- On `converged`: recommend developer review and developer-controlled pull request
+  creation. No further implement pass is needed for the specified scope.
+- Report developer-controlled operations as non-executable handoff notes. Do not create
+  task IDs or checkboxes for them and do not claim they succeeded.
 
 ### 9. Check for extension hooks
 
@@ -248,7 +270,7 @@ After producing the result, check if `.specify/extensions.yml` exists in the pro
   - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
 - Report the convergence outcome (`converged` or `tasks_appended`) in-session before listing
   any hooks, so users can decide whether to run optional follow-up commands.
-- When constructing slash commands from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.git.commit` → `/speckit-git-commit`.
+- When constructing slash commands from hook command names, replace dots (`.`) with hyphens (`-`). For example, `speckit.audit.policy` → `/speckit-audit-policy`.
 - For each executable hook, output the following based on its `optional` flag:
   - **Optional hook** (`optional: true`):
 
