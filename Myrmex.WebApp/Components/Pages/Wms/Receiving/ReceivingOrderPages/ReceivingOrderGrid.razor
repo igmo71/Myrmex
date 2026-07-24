@@ -35,7 +35,7 @@
                         SortBy="@(order => order.Warehouse.Code)"
                         Sortable="true">
             <CellTemplate>
-                @context.Item.Warehouse.Code - @context.Item.Warehouse.Name
+                @context.Item.Warehouse.Name
             </CellTemplate>
         </TemplateColumn>
         <TemplateColumn Title="@Localizer["Receiving.Location"]" Sortable="false">
