@@ -40,7 +40,17 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- [ ] Domain invariants and state transitions remain in domain/application code;
+      state mutations are validated and atomic.
+- [ ] The design stays within the owning module and vertical slice; cross-module
+      interactions use explicit contracts rather than shared persistence.
+- [ ] Commands, queries, DTOs, endpoints, and UI responsibilities are explicit and thin.
+- [ ] Automated unit, regression, and integration verification is planned for every
+      affected behavior and acceptance scenario.
+- [ ] The design is the smallest adequate solution; every new abstraction, dependency,
+      or framework has a current, documented use case.
+- [ ] Security, configuration, migrations, health checks, and diagnostics are addressed
+      wherever the feature affects them.
 
 ## Project Structure
 
@@ -65,39 +75,22 @@ specs/[###-feature]/
 -->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+Myrmex.Modules.Wms/
+└── <Capability>/
+    ├── Domain/
+    ├── Application/
+    ├── Endpoints/
+    └── Infrastructure/
 
-tests/
-├── contract/
-├── integration/
-└── unit/
+Myrmex.Shared/
+└── <Capability>/                 # Public request/response contracts
 
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
+Myrmex.WebApp/
+└── Components/Pages/<Capability>/
 
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+Myrmex.<Area>.Tests/
+├── Unit/
+└── Integration/
 ```
 
 **Structure Decision**: [Document the selected structure and reference the real

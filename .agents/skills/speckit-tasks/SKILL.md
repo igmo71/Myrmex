@@ -78,7 +78,7 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Phase 1: Setup tasks (project initialization)
    - Phase 2: Foundational tasks (blocking prerequisites for all user stories)
    - Phase 3+: One phase per user story (in priority order from spec.md)
-   - Each phase includes: story goal, independent test criteria, tests (if requested), implementation tasks
+   - Each phase includes: story goal, independent test criteria, constitution-required tests, implementation tasks
    - Final Phase: Polish & cross-cutting concerns
    - All tasks must follow the strict checklist format (see Task Generation Rules below)
    - Clear file paths for each task
@@ -139,7 +139,9 @@ The tasks.md should be immediately executable - each task must be specific enoug
 
 **CRITICAL**: Tasks MUST be organized by user story to enable independent implementation and testing.
 
-**Tests are OPTIONAL**: Only generate test tasks if explicitly requested in the feature specification or if user requests TDD approach.
+**Tests follow the constitution**: Generate all automated verification tasks required by
+the project constitution. If the constitution has no testing mandate, include test tasks
+when the feature specification requests them or the user requests a TDD approach.
 
 ### Checklist Format (REQUIRED)
 
@@ -165,9 +167,9 @@ Every task MUST strictly follow this format:
 **Examples**:
 
 - ✅ CORRECT: `- [ ] T001 Create project structure per implementation plan`
-- ✅ CORRECT: `- [ ] T005 [P] Implement authentication middleware in src/middleware/auth.py`
-- ✅ CORRECT: `- [ ] T012 [P] [US1] Create User model in src/models/user.py`
-- ✅ CORRECT: `- [ ] T014 [US1] Implement UserService in src/services/user_service.py`
+- ✅ CORRECT: `- [ ] T005 [P] Configure authorization in Myrmex.ApiService/Program.cs`
+- ✅ CORRECT: `- [ ] T012 [P] [US1] Create StockItem in Myrmex.Modules.Wms/Catalog/Domain/StockItem.cs`
+- ✅ CORRECT: `- [ ] T014 [US1] Implement CreateStockItem in Myrmex.Modules.Wms/Catalog/Application/CreateStockItem.cs`
 - ❌ WRONG: `- [ ] Create User model` (missing ID and Story label)
 - ❌ WRONG: `T001 [US1] Create model` (missing checkbox)
 - ❌ WRONG: `- [ ] [US1] Create User model` (missing Task ID)
@@ -181,12 +183,12 @@ Every task MUST strictly follow this format:
      - Models needed for that story
      - Services needed for that story
      - Interfaces/UI needed for that story
-     - If tests requested: Tests specific to that story
+     - Tests required by the constitution or specification for that story
    - Mark story dependencies (most stories should be independent)
 
 2. **From Contracts**:
    - Map each interface contract → to the user story it serves
-   - If tests requested: Each interface contract → contract test task [P] before implementation in that story's phase
+   - When required: Each interface contract → contract test task [P] before implementation in that story's phase
 
 3. **From Data Model**:
    - Map each entity to the user story(ies) that need it
@@ -203,7 +205,7 @@ Every task MUST strictly follow this format:
 - **Phase 1**: Setup (project initialization)
 - **Phase 2**: Foundational (blocking prerequisites - MUST complete before user stories)
 - **Phase 3+**: User Stories in priority order (P1, P2, P3...)
-  - Within each story: Tests (if requested) → Models → Services → Endpoints → Integration
+  - Within each story: Required tests → Models → Services → Endpoints → Integration
   - Each phase should be a complete, independently testable increment
 - **Final Phase**: Polish & Cross-Cutting Concerns
 

@@ -20,7 +20,11 @@ Follow established C# style: four-space indentation, file-scoped namespaces, bra
 
 ## Testing Guidelines
 
-No test project or testing framework is currently configured. New test suites should use projects named `Myrmex.<Area>.Tests`, mirror production namespaces, and name tests after observable behavior. Cover domain invariants and application handlers first; use integration tests for EF Core mappings, migrations, and HTTP endpoints. Ensure `dotnet test Myrmex.slnx` passes before submitting.
+No test project or framework is currently configured. The constitution requires automated verification, so create affected-area test infrastructure as foundational work. Use projects named `Myrmex.<Area>.Tests`, mirror production namespaces, and name tests after observable behavior. Cover domain invariants and application handlers first; use integration tests for EF Core mappings, migrations, and HTTP endpoints. Ensure `dotnet test Myrmex.slnx` passes before submitting.
+
+## Architecture Governance
+
+`.specify/memory/constitution.md` is the authority for domain boundaries, application contracts, verification, simplicity, and operational requirements. Plans and pull requests must pass its applicable gates; document justified exceptions in the plan's Complexity Tracking table.
 
 ## Commit & Pull Request Guidelines
 
