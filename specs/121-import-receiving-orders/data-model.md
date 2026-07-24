@@ -22,14 +22,18 @@ SKU, and UoM records.
 | Field | Type | Rules |
 |---|---|---|
 | `RefKey` | `Guid?` | The 1C document `Ref_Key`; null for locally created orders; unique when present. |
-| `DataVersion` | `byte[]?` | Opaque non-empty 1C `DataVersion`, up to the existing 128-byte limit. |
-| `ImportedAtUtc` | `DateTimeOffset?` | Time of the most recent successful create or Draft update. |
+| `DataVersion` | `byte[]?` | Opaque non-empty 1C `DataVersion`, up to the existing 128-byte limit; observation metadata, not a complete change detector. |
+| `ImportedAtUtc` | `DateTimeOffset?` | Time of the most recent successful create, update, or mapped-plan-equal Skip. |
 
 Rules:
 
 - A non-null external key maps to exactly one ReceivingOrder through a filtered unique
   database index.
-- A matching external key and matching data version is a Skipped, non-mutating result.
+- The 1C source research confirms only that a successful same-version reprocessing is
+  idempotent; it does not confirm that every mapped header/line change changes the opaque
+  version. Therefore, mapped Draft header and aggregated plan equality determines a Skip.
+- On a successful equal-plan Skip, the observed version and timestamp may be refreshed;
+  aggregate header and plan values are not changed.
 - Import state is created/updated only in the same WMS transaction as the corresponding
   Draft aggregate change.
 - A local order without import state is never selected by document number as an imported
@@ -49,6 +53,11 @@ Rules:
   Receiving location type.
 - Import fails the affected document with a precise configuration reason if this invariant
   is not met.
+- The setting is configured through the existing Warehouse edit flow: extend
+  `WarehouseDetails`, `UpdateWarehouseDetailsRequest`, `UpdateWarehouseDetails.Command`,
+  the existing WmsOperator-protected `PUT /api/wms/topology/warehouses/{warehouseId}`, and
+  `WarehouseEditDialog`. The dialog uses the existing warehouse-scoped storage-location
+  lookup filtered to selectable Receiving locations.
 
 ## Transient source mapping
 
@@ -64,6 +73,8 @@ The stable diagnostic line identity is `<document Ref_Key>:<LineNumber>`. It is 
 identify validation failures. Multiple valid source lines resolving to one local SKU are
 aggregated because a ReceivingOrder stores one line per SKU.
 
-`КоличествоУпаковок`, characteristics, purposes, serials, source order/sender, premise,
-and receiving zone do not need persistence for Draft plan import and are not introduced as
-new data structures.
+`КоличествоУпаковок` is not mapped because no package conversion is in scope. A non-empty
+`Упаковка_Key` fails that document with `UnsupportedPackage`; the repository-held 1C
+research explicitly specifies this limited behavior. Characteristics, purposes, serials,
+source order/sender, premise, and receiving zone do not need persistence for Draft plan
+import and are not introduced as new data structures.

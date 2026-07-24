@@ -11,9 +11,10 @@ adapter reads eligible `Document_ПриходныйОрдерНаТовары` d
 lines, maps them to source-neutral import data, resolves only already imported local
 references, and dispatches one WMS command per document. The WMS command owns durable
 external identity, Draft creation/reconciliation, and its own transaction. A unique
-external document key plus the stored data version makes a repeated successful import a
-no-op; per-document commands isolate failures and return Created, Updated, Skipped, or
-Failed outcomes to the existing 1C integration page.
+external document key prevents duplicate orders; mapped Draft header and plan comparison
+determines whether a repeated import is Skipped. Per-document commands isolate failures
+and return Created, Updated, Skipped, or Failed outcomes to the existing 1C integration
+page.
 
 ## Technical Context
 
@@ -48,14 +49,16 @@ and application rules.
 | Concern | Repository finding | Selected use for #121 |
 |---|---|---|
 | Draft receiving behavior | `ReceivingOrder.Create` and `ReplaceDraft` validate non-empty plans, unique SKU lines, and Draft state. `UpdateReceivingOrderDraft` owns the delete/reassign savepoint path. | Extract or introduce a narrow internal Draft reconciliation service in the Receiving slice and use it from both the existing edit command and the new import command. Do not duplicate aggregate mutation logic. |
-| 1C source contract | Research material records the verified source as `Document_ПриходныйОрдерНаТовары`, with `Товары` lines. The current OData transport reads typed collection DTOs with `$select`, `$filter`, `$orderby`, and `$expand` parameters. | Add typed adapter DTOs under `Myrmex.Integrations/OneC/ReceivingOrders`; raw Cyrillic properties remain there. Add a receiving-orders entity-set option and validate it with existing 1C settings. |
-| Eligibility and period | Source header provides `Ref_Key`, `DataVersion`, `DeletionMark`, `Number`, `Date`, `Posted`, `Склад_Key`, and `Статус`. The planned source states are `КПоступлению`, `ВРаботе`, and `ТребуетсяОбработка`; `Принят` is excluded. | Query a half-open source-date range `[start, day after end)` and process only posted, non-deleted documents in the three plan states. Reject invalid ranges before contacting 1C. |
-| Line mapping | A source line has parent `Ref_Key`, positive `LineNumber`, `Номенклатура_Key`, optional package/other context, and `Количество`. Its stable identity is `<document Ref_Key>:<LineNumber>`. | Use `Количество` as planned quantity. Reject unsupported non-empty `Упаковка_Key`; retain source line identity only in the transient diagnostic/result mapping. Group valid lines by resolved SKU because local ReceivingOrder permits one line per SKU. |
-| External identity | Warehouses, SKUs, and UoMs use an owned `ExternalImportState` with unique `ExternalRefKey`, opaque `DataVersion`, and imported timestamp. ReceivingOrder has no equivalent state today. | Reuse that value-object pattern on ReceivingOrder with a unique filtered external-key index. For this 1C-only feature, document `Ref_Key` is the durable local match key; no Integration-owned link is needed. |
-| Dependencies | Existing reference imports locate Warehouse and SKU by `ImportState.RefKey`; `ReceivingOrderEligibility` verifies active Warehouse, receiving StorageLocation, active SKU, and active base UoM. StorageLocation has no 1C import pattern. | Resolve Warehouse and SKU only from existing imported records. Resolve UoM transitively through each SKU's active base UoM. Resolve the receiving location from an explicitly configured local `Warehouse.DefaultReceivingLocationId`; no arbitrary location or source premise/zone mapping. |
+| 1C source contract | The permitted research branch's #105 issue, **Verified 1C source contract**, records `Document_ПриходныйОрдерНаТовары` with the `Товары` tabular section. It lists header `Ref_Key`, `DataVersion`, `DeletionMark`, `Number`, `Date`, `Posted`, `Склад_Key`, and `Статус`; and line `Ref_Key`, `LineNumber`, `Номенклатура_Key`, `Упаковка_Key`, `КоличествоУпаковок`, and `Количество`. `OneCODataTransport.ReadCollectionAsync` accepts the adapter's query parameters. | Add typed adapter DTOs under `Myrmex.Integrations/OneC/ReceivingOrders`; raw Cyrillic properties remain there. Add a receiving-orders entity-set option and validate it with existing 1C settings. |
+| Eligibility and period | The same research records `Date` as the document period field and defines eligible new documents as posted, non-deleted, and non-accepted. Its known non-accepted plan states are `КПоступлению`, `ВРаботе`, and `ТребуетсяОбработка`; `Принят` maps to Accepted. | Query a half-open source-`Date` range `[start, day after end)` and process only posted, non-deleted documents in the three plan states. Reject invalid ranges before contacting 1C. |
+| Line mapping | The research acceptance criteria state that `Товары.Количество` becomes local planned quantity, `КоличествоУпаковок` is source context, and non-empty `Упаковка_Key` has a precise unsupported-package failure. It also defines `<document Ref_Key>:<LineNumber>` as the stable line identity. | Use `Количество` as planned quantity. Ignore `КоличествоУпаковок` because no package conversion is in scope; reject a non-empty `Упаковка_Key` with `UnsupportedPackage` because it would require that excluded conversion. Keep line identity only in transient validation/result diagnostics. Group valid lines by resolved SKU because local ReceivingOrder permits one line per SKU. |
+| External identity and version | WMS imported references own `ExternalImportState`; `ExternalImportState` treats `DataVersion` as opaque bytes. The research only confirms same-version idempotency, not that every mapped header or line change changes `DataVersion`. | Reuse the value-object pattern on ReceivingOrder with a unique filtered external-key index. Store `DataVersion` as last-observed metadata, but compare the mapped Draft header and plan to decide whether import work is needed. |
+| Dependencies and warehouse configuration | Existing reference imports locate Warehouse and SKU by `ImportState.RefKey`; `ReceivingOrderEligibility` verifies active Warehouse, receiving StorageLocation, active SKU, and active base UoM. `LookupStorageLocations` already selects locations by Warehouse, selectability, and type. Warehouse editing currently has no default-location field. | Resolve Warehouse and SKU only from existing imported records. Resolve UoM transitively through each SKU's active base UoM. Extend the existing Warehouse edit flow to configure `Warehouse.DefaultReceivingLocationId`; no arbitrary location or source premise/zone mapping. |
 | UI and responses | The 1C page already starts manual imports, disables the initiating action, shows counters, operation errors, and per-record reasons. | Add a date-range import action and a receiving-order result model that uses Created/Updated/Skipped/Failed (rather than the reference import's Unchanged naming), then render it beside the existing import results. |
 | API and authorization | `/api/integrations/1c` is restricted to `WmsOperator`; endpoints are thin and delegate to scoped import operations. | Add `POST /api/integrations/1c/receiving-orders/import` with a date-range request and the existing authorization convention. |
 | Transactions and failure | Existing reference imports and Draft updates use owned transactions or savepoints; `UpdateReceivingOrderDraft` maps persistence conflicts. | The integration operation reads documents then dispatches one WMS command per document. Each command begins/uses only its WMS transaction and rolls back its own document on validation or persistence failure. Continue the loop after a document-level failure. No cross-context transaction is introduced. |
+
+Evidence references: `archive/105-1-synchronize-receiving-orders-from-external-systems:issues/105 Synchronize receiving orders from external systems.md` sections **Verified 1C source contract**, **Dependency resolution**, **Receiving location resolution**, and **Acceptance criteria**; current `Myrmex.Integrations/OneC/Common/Transport/OneCODataTransport.cs`; `Myrmex.Modules.Wms/Domain/ExternalImportState.cs`; `Myrmex.Modules.Wms/Receiving/Features/ReceivingOrders/ReceivingOrderEligibility.cs`; `Myrmex.Modules.Wms/Topology/Features/StorageLocations/LookupStorageLocations.cs`; and `Myrmex.WebApp/Components/Pages/Wms/Topology/WarehousePages/WarehouseEditDialog.razor`.
 
 ## Constitution Check
 
@@ -96,11 +99,11 @@ developer-controlled-operation rules.
    Warehouse default receiving location, and runs existing receiving eligibility checks.
    Missing, inactive, or invalid dependencies return a document-level failure; this
    feature never synchronizes or repairs them.
-6. The command finds a ReceivingOrder by its unique external `Ref_Key`. A matching
-   `DataVersion` returns Skipped. A missing match creates a Draft order; a matching Draft
-   reconciles it using the shared Draft reconciliation service; a matching non-Draft
-   returns Skipped. The command records the external data version only after the aggregate
-   change commits.
+6. The command finds a ReceivingOrder by its unique external `Ref_Key`. A missing match
+   creates a Draft order; a matching Draft compares and reconciles the mapped header and
+   plan using the shared Draft reconciliation service; a matching non-Draft returns
+   Skipped. `DataVersion` is stored only after the WMS result commits and never by itself
+   decides that header or plan reconciliation can be skipped.
 7. The import operation converts each command result to the operator response and logs
    aggregate counts and document-level failure context.
 
@@ -113,11 +116,18 @@ developer-controlled-operation rules.
   introduced.
 - The local plan is one line per resolved SKU. The command aggregates the source lines'
   `Количество` values with checked decimal arithmetic before aggregate validation.
-- On a Draft match, retained SKU lines retain their current local line IDs; missing SKUs
-  are removed and new SKUs receive new local IDs through the existing replacement rules.
-- A same-version document is Skipped without mutating header, lines, timestamps, or
-  import state. A newer version that maps to the same aggregate values may be recorded as
-  Updated because it advances the imported version; no duplicate lines are created.
+- On a Draft match, the mapped `Number`, `WarehouseId`, and derived
+  `ReceivingLocationId` overwrite the local Draft header. The mapped, aggregated SKU and
+  planned-quantity pairs replace the Draft plan. Retained SKUs retain their local line
+  IDs; missing SKUs are removed and new SKUs receive new local IDs through the existing
+  replacement rules.
+- Import never changes `Status`, received quantities, start/completion timestamps,
+  inventory transaction, aggregate identity, row version semantics, or created timestamp.
+  A non-Draft order is never changed.
+- Equality of the mapped header and aggregated plan is Skipped, regardless of whether the
+  opaque `DataVersion` changed. The current version and observation time may still be
+  recorded with that successful Skip. A mapped difference is Updated; no duplicate lines
+  are created.
 - WMS owns the entire document write in one transaction. A failed mutation clears/rolls
   back its tracked state before the next document command is dispatched.
 
@@ -132,13 +142,15 @@ developer-controlled-operation rules.
   state methods on the aggregate.
 - `Myrmex.Modules.Wms/Receiving/Features/ReceivingOrders/`: public inbound import command,
   dependency lookup, outcome mapping, and shared Draft reconciliation service.
-- `Myrmex.Modules.Wms/Topology/Domain/Warehouses/` and warehouse feature contracts:
-  default receiving-location configuration and validation.
+- `Myrmex.Modules.Wms/Topology/Domain/Warehouses/`, warehouse commands/endpoints, and
+  `Myrmex.Shared/Wms/Topology/`: default receiving-location state, validation, and DTOs.
 - `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/`: owned import-state and
   default-location mapping/indexes; database-name constants and persistence error mapping.
 - `Myrmex.Shared/Integrations/OneC/`: request and response DTOs for receiving-order import.
 - `Myrmex.WebApp/Integrations/OneC/` and `Components/Pages/Integrations/OneC/`: API client,
   date range form, busy state, counters, and per-document results.
+- `Myrmex.WebApp/Wms/Topology/` and `Components/Pages/Wms/Topology/WarehousePages/`: use
+  the existing per-Warehouse receiving-location lookup in the Warehouse edit dialog.
 
 ## Supporting Artifacts
 
@@ -191,10 +203,16 @@ The existing ReceivingOrder table needs an owned external import state containin
 on the key. This matches the existing imported reference model and is sufficient for
 durable 1C document matching and same-version idempotency.
 
-Warehouse needs an optional `DefaultReceivingLocationId` foreign key. Its value must point
-to a local selectable Receiving storage location belonging to that Warehouse; validation
-occurs when configuring it and again during import. Neither `Помещение_Key` nor
-`ЗонаПриемки_Key` is persisted or mapped to a local location in this feature.
+Warehouse needs an optional `DefaultReceivingLocationId` foreign key. Extend the existing
+`UpdateWarehouseDetails` domain/application/API path and its Shared request/details DTOs
+with this value. The application handler validates it against the selected Warehouse and
+the existing Receiving-location eligibility rules; the domain retains the setting only
+after that validation. The current `WmsOperator` topology route authorization applies
+unchanged. Extend `WarehouseEditDialog` for existing warehouses with an autocomplete
+backed by `LookupStorageLocationsAsync(warehouseId, ...)`, restricted to selectable
+Receiving locations, and show the current selection in warehouse details/listing. A new
+warehouse initially has no default because its locations cannot exist until after creation.
+Neither `Помещение_Key` nor `ЗонаПриемки_Key` is persisted or mapped to a local location.
 
 The developer must generate, review, and apply the resulting EF Core migration. The plan
 does not generate or modify migration files.
@@ -205,8 +223,8 @@ does not generate or modify migration files.
 - Generate, review, and apply the EF Core migration for the WMS schema changes.
 - Configure the receiving-order 1C entity set and a valid source connection using secure
   existing configuration practices; do not commit credentials.
-- Ensure each Warehouse used for import has an active, selectable local Receiving location
-  configured as its default receiving location.
+- Use the Warehouse edit page, as a WmsOperator, to select and save an active, selectable
+  Receiving location as each importing Warehouse's default receiving location.
 - Perform the manual acceptance scenarios in [quickstart.md](quickstart.md).
 - Create the Git commit and pull request when the implementation and developer review are
   complete.
