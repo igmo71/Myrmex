@@ -41,8 +41,8 @@
                        Class="mt-3">
                 @(Localizer[IsWarehouseImporting ? "OneC.Import.Warehouses.InProgress" : "OneC.Import.Warehouses.Action"])
             </MudButton>
-            <MudDatePicker Label="@Localizer[\"OneC.ReceivingOrders.StartDate\"]" @bind-Date="_receivingStartDate" />
-            <MudDatePicker Label="@Localizer[\"OneC.ReceivingOrders.EndDate\"]" @bind-Date="_receivingEndDate" />
+            <MudDatePicker Label="@Localizer["OneC.ReceivingOrders.StartDate"]" @bind-Date="_receivingStartDate" />
+            <MudDatePicker Label="@Localizer["OneC.ReceivingOrders.EndDate"]" @bind-Date="_receivingEndDate" />
             <MudButton Variant="Variant.Filled"
                        Color="Color.Secondary"
                        Disabled="@_isReceivingImporting"

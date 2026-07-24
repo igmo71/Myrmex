@@ -42,11 +42,11 @@
                 @if (IsEditMode)
                 {
                     <MudAutocomplete T="StorageLocationLookupItem"
-                                     Label="@Localizer[\"Warehouse.DefaultReceivingLocation\"]"
+                                     Label="@Localizer["Warehouse.DefaultReceivingLocation"]"
                                      Value="_selectedReceivingLocation"
                                      ValueChanged="OnReceivingLocationChanged"
                                      SearchFunc="SearchReceivingLocationsAsync"
-                                     ToStringFunc="@(location => location is null ? string.Empty : $\"{location.Code} — {location.Name}\")"
+                                     ToStringFunc="@(location => location is null ? string.Empty : $"{location.Code} — {location.Name}")"
                                      Clearable="true"
                                      Variant="Variant.Outlined"
                                      Margin="Margin.Dense" />

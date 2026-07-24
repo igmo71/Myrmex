@@ -16,9 +16,7 @@ internal sealed class ReceivingOrderOneCSource(
     IOneCODataTransport transport,
     IOptions<OneCOptions> options) : IReceivingOrderOneCSource
 {
-    private const string Projection = "Ref_Key,DataVersion,DeletionMark,Number,Date,Posted,Склад_Key,Статус";
-    private const string LineProjection = "Ref_Key,LineNumber,Номенклатура_Key,Упаковка_Key,КоличествоУпаковок,Количество";
-
+    private const string Projection = "Ref_Key,DataVersion,DeletionMark,Number,Date,Posted,Склад_Key,Статус,Товары/Ref_Key,Товары/LineNumber,Товары/Номенклатура_Key,Товары/Упаковка_Key,Товары/КоличествоУпаковок,Товары/Количество";
     public async Task<IReadOnlyList<ReceivingOrderSourceRecord>> ReadPeriodAsync(
         DateOnly startDate,
         DateOnly endDate,
@@ -30,7 +28,6 @@ internal sealed class ReceivingOrderOneCSource(
             [
                 new("$format", "json"),
                 new("$select", Projection),
-                new("$expand", $"Товары($select={LineProjection})"),
                 new("$filter", $"Date ge datetime'{startDate:yyyy-MM-dd}T00:00:00' and Date lt datetime'{endExclusive:yyyy-MM-dd}T00:00:00' and Posted eq true and DeletionMark eq false and (Статус eq 'КПоступлению' or Статус eq 'ВРаботе' or Статус eq 'ТребуетсяОбработка')"),
                 new("$orderby", "Date,Ref_Key")
             ],
