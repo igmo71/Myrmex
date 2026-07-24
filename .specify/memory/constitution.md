@@ -1,8 +1,7 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 2.0.0
-- Modified principles:
-  - IV. Verification Is Part of Delivery → IV. Developer-Controlled Verification
+- Version change: 2.0.0 → 2.0.1
+- Modified principles: none
 - Preserved principles:
   - I. Domain Integrity First
   - II. Modular Boundaries and Vertical Slices
@@ -13,14 +12,16 @@ Sync Impact Report
 - Changed governance:
   - Removed automated-testing mandates
   - Reserved build, migration, commit, and pull request operations for the developer
-  - Required prohibited extension hooks to be skipped even when marked mandatory
+  - Clarified that agents may review developer-generated EF Core migration files and
+    report potential issues without generating, altering, or applying migrations
+- Required prohibited extension hooks to be skipped even when marked mandatory
 - Templates and guidance:
-  - ✅ updated: .specify/templates/plan-template.md
-  - ✅ updated: .specify/templates/spec-template.md
-  - ✅ updated: .specify/templates/tasks-template.md
-  - ✅ updated: .specify/templates/constitution-template.md
-  - ✅ updated: AGENTS.md
-  - ✅ updated: all .agents/skills/speckit-*/SKILL.md files
+  - ✅ reviewed, no change required in this amendment: .specify/templates/plan-template.md
+  - ✅ reviewed, no change required in this amendment: .specify/templates/spec-template.md
+  - ✅ reviewed, no change required in this amendment: .specify/templates/tasks-template.md
+  - ✅ reviewed, no change required in this amendment: .specify/templates/constitution-template.md
+  - ✅ reviewed, no change required in this amendment: AGENTS.md
+  - ✅ reviewed, no change required in this amendment: all .agents/skills/speckit-*/SKILL.md files
   - ✅ reviewed, no change required: README.md
 - Follow-up TODOs: none
 -->
@@ -83,8 +84,10 @@ signals and secure configuration keep the system supportable.
   Aspire, and Blazor with MudBlazor. A plan MAY deviate only with explicit rationale.
 - Nullable reference types and implicit usings remain enabled. Agents MUST preserve
   compile-time correctness through inspection and developer-provided build results.
-- Schema changes MUST describe persistence and migration impact. The developer exclusively
-  generates, reviews, and applies EF Core migrations.
+- Schema changes MUST describe persistence and migration impact. Migration generation and
+  application are exclusively developer-controlled. The developer generates, reviews,
+  and applies EF Core migrations; agents MAY review developer-generated migration files
+  and report potential issues, but MUST NOT generate, alter, or apply migrations.
 - Shared contracts MUST remain serialization-safe and MUST NOT expose EF Core entities.
 - Authentication, authorization, external integration failures, atomicity, and
   observability MUST be addressed wherever a feature touches those concerns.
@@ -100,7 +103,8 @@ and tasks MUST represent applicable developer-controlled operations as non-execu
 handoff notes, never as agent tasks, task checkboxes, or agent completion criteria.
 Agents MAY prepare commands, migration notes, commit messages, pull request descriptions,
 and manual-verification steps, and MAY review results supplied by the developer. Agents
-MUST NOT execute these developer-controlled operations or claim that they succeeded.
+MAY review developer-generated EF Core migration files and report potential issues.
+Agents MUST NOT execute these developer-controlled operations or claim that they succeeded.
 
 ## Governance
 
@@ -115,4 +119,4 @@ obligations. Every plan and review MUST verify applicable MUST statements; an un
 violation blocks agent completion. `AGENTS.md` provides day-to-day guidance but cannot
 weaken this constitution.
 
-**Version**: 2.0.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-24
+**Version**: 2.0.1 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-24
