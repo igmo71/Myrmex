@@ -24,22 +24,6 @@ public static class ImportExternalReceivingOrder
     {
         public async Task<ServiceResult<Result>> HandleAsync(Command command, CancellationToken cancellationToken = default)
         {
-            dbContext.ChangeTracker.Clear();
-
-            try
-            {
-                return await HandleCoreAsync(command, cancellationToken);
-            }
-            finally
-            {
-                dbContext.ChangeTracker.Clear();
-            }
-        }
-
-        private async Task<ServiceResult<Result>> HandleCoreAsync(
-            Command command,
-            CancellationToken cancellationToken)
-        {
             Document source = command.Document;
 
             Warehouse? warehouse = await dbContext.Warehouses
@@ -126,11 +110,13 @@ public static class ImportExternalReceivingOrder
                     warehouse.Id,
                     location.Id,
                     mappedLines,
-                    out _);
+                    out _,
+                    out IReadOnlyList<ReceivingOrderLine> addedLines);
 
                 if (!replacement.IsValid)
                     return ServiceResult<Result>.Invalid(replacement.Errors);
 
+                dbContext.ReceivingOrderLines.AddRange(addedLines);
                 existing.RecordExternalImport(source.ExternalRefKey, source.DataVersion, command.ImportedAtUtc);
 
                 ServiceError? persistenceError = await SaveAsync(dbContext, logger, existing.Id, cancellationToken);

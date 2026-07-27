@@ -256,9 +256,11 @@ internal sealed class ReceivingOrder : AggregateRoot
         Guid? warehouseId,
         Guid? receivingLocationId,
         IEnumerable<ImportedDraftLine>? lines,
-        out IReadOnlyList<ReceivingOrderLine> removedLines)
+        out IReadOnlyList<ReceivingOrderLine> removedLines,
+        out IReadOnlyList<ReceivingOrderLine> addedLines)
     {
         removedLines = [];
+        addedLines = [];
 
         if (Status != ReceivingOrderStatus.Draft ||
             !HasValidDraftPersistenceInvariant)
@@ -291,6 +293,7 @@ internal sealed class ReceivingOrder : AggregateRoot
             .ToHashSet();
         ReceivingOrderLine[] removed =
             [.. _lines.Where(line => !importedSkuIds.Contains(line.StockKeepingUnitId))];
+        List<ReceivingOrderLine> added = [];
 
         Number = DomainText.NormalizeCode(number);
         WarehouseId = warehouseId!.Value;
@@ -318,6 +321,7 @@ internal sealed class ReceivingOrder : AggregateRoot
             }
 
             _lines.Add(line);
+            added.Add(line);
         }
 
         foreach (ReceivingOrderLine removedLine in removed)
@@ -326,6 +330,7 @@ internal sealed class ReceivingOrder : AggregateRoot
         }
 
         removedLines = removed;
+        addedLines = added;
         Touch();
         return DomainValidationResult.Valid;
     }
