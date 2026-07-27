@@ -67,11 +67,11 @@ public static class ImportExternalReceivingOrder
                 return Fail("SkuNotImported", "One or more source SKUs or their base units are unavailable locally.");
             }
 
-            List<(Guid StockKeepingUnitId, decimal PlannedQuantity)> mappedLines = source.Lines
+            List<ReceivingOrder.ImportedDraftLine> mappedLines = source.Lines
                 .GroupBy(x => skus[x.StockKeepingUnitExternalRefKey].Id)
-                .Select(x => (
-                    StockKeepingUnitId: x.Key,
-                    PlannedQuantity: x.Sum(line => line.PlannedQuantity)))
+                .Select(x => new ReceivingOrder.ImportedDraftLine(
+                    x.Key,
+                    x.Sum(line => line.PlannedQuantity)))
                 .ToList();
 
             ReceivingOrder? existing = await dbContext.ReceivingOrders
@@ -85,32 +85,12 @@ public static class ImportExternalReceivingOrder
                     return ServiceResult<Result>.Success(new("Skipped", "NonDraft", "The matching receiving order is no longer Draft."));
                 }
 
-                Dictionary<Guid, Guid> existingLineIdBySku = existing.Lines
-                    .ToDictionary(line => line.StockKeepingUnitId, line => line.Id);
-
-                List<ReceivingOrder.DraftLine> lines = mappedLines
-                    .Select(line =>
-                    {
-                        Guid? lineId = existingLineIdBySku.TryGetValue(
-                            line.StockKeepingUnitId,
-                            out Guid existingLineId)
-                            ? existingLineId
-                            : null;
-
-                        return new ReceivingOrder.DraftLine(
-                            lineId,
-                            line.StockKeepingUnitId,
-                            line.PlannedQuantity);
-                    })
-                    .ToList();
-
                 bool equal = existing.Number == source.Number &&
                      existing.WarehouseId == warehouse.Id &&
                      existing.ReceivingLocationId == location.Id &&
-                     existing.Lines.Count == lines.Count &&
+                     existing.Lines.Count == mappedLines.Count &&
                      existing.Lines.All(line =>
-                        lines.Any(candidate =>
-                            candidate.LineId == line.Id &&
+                        mappedLines.Any(candidate =>
                             candidate.StockKeepingUnitId == line.StockKeepingUnitId &&
                             candidate.PlannedQuantity == line.PlannedQuantity));
                 if (equal)
@@ -125,19 +105,20 @@ public static class ImportExternalReceivingOrder
                     return ServiceResult<Result>.Success(new("Skipped", "Unchanged", "The mapped Draft plan is unchanged."));
                 }
 
-                Dictionary<Guid, Guid> persistedSkuByLineId = existing.Lines.ToDictionary(line => line.Id, line => line.StockKeepingUnitId);
-
-
-                var replacement = ReceivingOrderDraftReconciler
-                    .Replace(existing, source.Number, warehouse.Id, location.Id, lines, out IReadOnlyList<ReceivingOrderLine> removed);
+                var replacement = existing.ReconcileImportedDraftPlan(
+                    source.Number,
+                    warehouse.Id,
+                    location.Id,
+                    mappedLines,
+                    out IReadOnlyList<ReceivingOrderLine> removed);
 
                 if (!replacement.IsValid)
                     return ServiceResult<Result>.Invalid(replacement.Errors);
 
                 existing.RecordExternalImport(source.ExternalRefKey, source.DataVersion, command.ImportedAtUtc);
 
-                ServiceError? persistenceError = await ReceivingOrderDraftReconciler
-                    .PersistAsync(dbContext, existing, persistedSkuByLineId, removed, nameof(Command), cancellationToken);
+                ServiceError? persistenceError = await ImportedReceivingOrderDraftReconciler
+                    .PersistAsync(dbContext, existing, removed, nameof(Command), cancellationToken);
 
                 if (persistenceError is not null)
                     return ServiceResult<Result>.Fail(persistenceError);

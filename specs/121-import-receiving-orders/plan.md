@@ -48,7 +48,7 @@ and application rules.
 
 | Concern | Repository finding | Selected use for #121 |
 |---|---|---|
-| Draft receiving behavior | `ReceivingOrder.Create` and `ReplaceDraft` validate non-empty plans, unique SKU lines, and Draft state. `UpdateReceivingOrderDraft` owns the delete/reassign savepoint path. | Extract or introduce a narrow internal Draft reconciliation service in the Receiving slice and use it from both the existing edit command and the new import command. Do not duplicate aggregate mutation logic. |
+| Draft receiving behavior | `ReceivingOrder.Create` and `ReplaceDraft` validate non-empty plans, unique SKU lines, and Draft state. `UpdateReceivingOrderDraft` owns the delete/reassign savepoint path. | Keep manual editing on its LineId-based delete/reassign path. Introduce SKU-based aggregate reconciliation for imports, with narrow persistence support only for deleting removed tracked lines. |
 | 1C source contract | The permitted research branch's #105 issue, **Verified 1C source contract**, records `Document_ПриходныйОрдерНаТовары` with the `Товары` tabular section. It lists header `Ref_Key`, `DataVersion`, `DeletionMark`, `Number`, `Date`, `Posted`, `Склад_Key`, and `Статус`; and line `Ref_Key`, `LineNumber`, `Номенклатура_Key`, `Упаковка_Key`, `КоличествоУпаковок`, and `Количество`. `OneCODataTransport.ReadCollectionAsync` accepts the adapter's query parameters. | Add typed adapter DTOs under `Myrmex.Integrations/OneC/ReceivingOrders`; raw Cyrillic properties remain there. Add a receiving-orders entity-set option and validate it with existing 1C settings. |
 | Eligibility and period | The same research records `Date` as the document period field and defines eligible new documents as posted, non-deleted, and non-accepted. Its known non-accepted plan states are `КПоступлению`, `ВРаботе`, and `ТребуетсяОбработка`; `Принят` maps to Accepted. | Query a half-open source-`Date` range `[start, day after end)` and process only posted, non-deleted documents in the three plan states. Reject invalid ranges before contacting 1C. |
 | Line mapping | The research acceptance criteria state that `Товары.Количество` becomes local planned quantity, `КоличествоУпаковок` is source context, and non-empty `Упаковка_Key` has a precise unsupported-package failure. It also defines `<document Ref_Key>:<LineNumber>` as the stable line identity. | Use `Количество` as planned quantity. Ignore `КоличествоУпаковок` because no package conversion is in scope; reject a non-empty `Упаковка_Key` with `UnsupportedPackage` because it would require that excluded conversion. Keep line identity only in transient validation/result diagnostics. Group valid lines by resolved SKU because local ReceivingOrder permits one line per SKU. |
@@ -101,7 +101,7 @@ developer-controlled-operation rules.
    feature never synchronizes or repairs them.
 6. The command finds a ReceivingOrder by its unique external `Ref_Key`. A missing match
    creates a Draft order; a matching Draft compares and reconciles the mapped header and
-   plan using the shared Draft reconciliation service; a matching non-Draft returns
+   plan using SKU-based imported Draft reconciliation; a matching non-Draft returns
    Skipped. `DataVersion` is stored only after the WMS result commits and never by itself
    decides that header or plan reconciliation can be skipped.
 7. The import operation converts each command result to the operator response and logs
@@ -119,8 +119,8 @@ developer-controlled-operation rules.
 - On a Draft match, the mapped `Number`, `WarehouseId`, and derived
   `ReceivingLocationId` overwrite the local Draft header. The mapped, aggregated SKU and
   planned-quantity pairs replace the Draft plan. Retained SKUs retain their local line
-  IDs; missing SKUs are removed and new SKUs receive new local IDs through the existing
-  replacement rules.
+  IDs; missing SKUs are removed and new SKUs receive new local IDs. Imported reconciliation
+  never reassigns an existing line to another SKU.
 - Import never changes `Status`, received quantities, start/completion timestamps,
   inventory transaction, aggregate identity, row version semantics, or created timestamp.
   A non-Draft order is never changed.
@@ -141,7 +141,7 @@ developer-controlled-operation rules.
 - `Myrmex.Modules.Wms/Receiving/Domain/ReceivingOrders/`: controlled external-import
   state methods on the aggregate.
 - `Myrmex.Modules.Wms/Receiving/Features/ReceivingOrders/`: public inbound import command,
-  dependency lookup, outcome mapping, and shared Draft reconciliation service.
+  dependency lookup, outcome mapping, and narrow import-specific persistence support.
 - `Myrmex.Modules.Wms/Topology/Domain/Warehouses/`, warehouse commands/endpoints, and
   `Myrmex.Shared/Wms/Topology/`: default receiving-location state, validation, and DTOs.
 - `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/`: owned import-state and

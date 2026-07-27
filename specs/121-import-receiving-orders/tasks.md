@@ -66,7 +66,7 @@ and never changes an order that has left Draft.
 external header or planned quantity, re-imports, and observes the same local Draft order
 updated with no duplicate lines.
 
-- [X] T019 [US2] Extend the source-neutral import command to locate ReceivingOrder by durable external key, compare mapped header/aggregated plan values, reconcile matching Draft orders through `ReceivingOrderDraftReconciler`, and preserve retained line identities in `Myrmex.Modules.Wms/Receiving/Features/ReceivingOrders/ImportExternalReceivingOrder.cs`.
+- [X] T019 [US2] Extend the source-neutral import command to locate ReceivingOrder by durable external key, compare mapped header/aggregated plan values, and reconcile matching Draft orders by SKU while preserving retained local line identities in `Myrmex.Modules.Wms/Receiving/Features/ReceivingOrders/ImportExternalReceivingOrder.cs`.
 - [X] T020 [US2] Record the latest opaque data version/observation time after successful creation, update, or mapped-plan-equal Skip; return Skip for non-Draft matches without mutation in `Myrmex.Modules.Wms/Receiving/Domain/ReceivingOrders/ReceivingOrder.cs` and `Myrmex.Modules.Wms/Receiving/Features/ReceivingOrders/ImportExternalReceivingOrder.cs`.
 - [ ] T021 [US2] Map Updated and non-Draft/unchanged Skipped outcomes into the manual import response and structured logs in `Myrmex.Integrations/OneC/ReceivingOrders/ReceivingOrderOneCImport.cs`.
 - [ ] T022 [US2] Present Updated and Skipped document reasons without treating a changed opaque version alone as a plan change in `Myrmex.WebApp/Components/Pages/Integrations/OneC/Index.razor`.

@@ -122,6 +122,10 @@ internal sealed class ReceivingOrder : AggregateRoot
         Guid? StockKeepingUnitId,
         decimal PlannedQuantity);
 
+    internal sealed record ImportedDraftLine(
+        Guid? StockKeepingUnitId,
+        decimal PlannedQuantity);
+
     public static DomainValidationResult Create(
         string? number,
         Guid? warehouseId,
@@ -232,6 +236,85 @@ internal sealed class ReceivingOrder : AggregateRoot
             {
                 throw new InvalidOperationException(
                     "Validated receiving plan could not create a receiving order line.");
+            }
+
+            _lines.Add(line);
+        }
+
+        foreach (ReceivingOrderLine removedLine in removed)
+        {
+            _lines.Remove(removedLine);
+        }
+
+        removedLines = removed;
+        Touch();
+        return DomainValidationResult.Valid;
+    }
+
+    public DomainValidationResult ReconcileImportedDraftPlan(
+        string? number,
+        Guid? warehouseId,
+        Guid? receivingLocationId,
+        IEnumerable<ImportedDraftLine>? lines,
+        out IReadOnlyList<ReceivingOrderLine> removedLines)
+    {
+        removedLines = [];
+
+        if (Status != ReceivingOrderStatus.Draft ||
+            !HasValidDraftPersistenceInvariant)
+        {
+            return DomainValidationResult.Invalid(
+                DomainValidationFailure.IncorrectState<ReceivingOrder>(nameof(Status)));
+        }
+
+        ImportedDraftLine[] materializedLines = lines?.ToArray() ?? [];
+        List<DomainValidationFailure> errors = ValidateHeader(
+            number,
+            warehouseId,
+            receivingLocationId);
+        errors.AddRange(ValidateDraftPlan(
+            materializedLines
+                .Select(line => new DraftLine(null, line.StockKeepingUnitId, line.PlannedQuantity))
+                .ToArray(),
+            existingLines: null));
+
+        DomainValidationResult result = DomainValidationResult.From(errors);
+        if (!result.IsValid)
+        {
+            return result;
+        }
+
+        Dictionary<Guid, ReceivingOrderLine> existingBySku = _lines
+            .ToDictionary(line => line.StockKeepingUnitId);
+        HashSet<Guid> importedSkuIds = materializedLines
+            .Select(line => line.StockKeepingUnitId!.Value)
+            .ToHashSet();
+        ReceivingOrderLine[] removed =
+            [.. _lines.Where(line => !importedSkuIds.Contains(line.StockKeepingUnitId))];
+
+        Number = DomainText.NormalizeCode(number);
+        WarehouseId = warehouseId!.Value;
+        ReceivingLocationId = receivingLocationId!.Value;
+
+        foreach (ImportedDraftLine importedLine in materializedLines)
+        {
+            Guid stockKeepingUnitId = importedLine.StockKeepingUnitId!.Value;
+            if (existingBySku.TryGetValue(stockKeepingUnitId, out ReceivingOrderLine? existingLine))
+            {
+                existingLine.ReplaceDraftPlan(stockKeepingUnitId, importedLine.PlannedQuantity);
+                continue;
+            }
+
+            DomainValidationResult lineResult = ReceivingOrderLine.Create(
+                Id,
+                stockKeepingUnitId,
+                importedLine.PlannedQuantity,
+                out ReceivingOrderLine? line);
+
+            if (!lineResult.IsValid || line is null)
+            {
+                throw new InvalidOperationException(
+                    "Validated imported receiving plan could not create a receiving order line.");
             }
 
             _lines.Add(line);
