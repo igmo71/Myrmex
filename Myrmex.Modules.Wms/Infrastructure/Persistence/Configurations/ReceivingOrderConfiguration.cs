@@ -99,7 +99,7 @@ internal sealed class ReceivingOrderConfiguration : IEntityTypeConfiguration<Rec
             .WithOne(x => x.ReceivingOrder)
             .HasForeignKey(x => x.ReceivingOrderId)
             .HasConstraintName(WmsDatabaseNames.ReceivingOrderLineReceivingOrderForeignKey)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.Navigation(x => x.Lines)
             .UsePropertyAccessMode(PropertyAccessMode.Field);

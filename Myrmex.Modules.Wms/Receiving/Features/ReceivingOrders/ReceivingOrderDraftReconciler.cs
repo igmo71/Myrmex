@@ -38,7 +38,16 @@ internal static class ReceivingOrderDraftReconciler
             .Where(line => !persistedSkuByLineId.ContainsKey(line.Id))
             .ToArray();
 
-        Guid[] releasedLineIds = [.. removedLines.Concat(reassignedLines).Select(line => line.Id).Distinct()];
+        HashSet<Guid> replacementSkuIds = reassignedLines
+            .Select(line => line.StockKeepingUnitId)
+            .Concat(newLines.Select(line => line.StockKeepingUnitId))
+            .ToHashSet();
+        ReceivingOrderLine[] releasedLines =
+        [
+            .. reassignedLines,
+            .. removedLines.Where(line => replacementSkuIds.Contains(line.StockKeepingUnitId))
+        ];
+        Guid[] releasedLineIds = [.. releasedLines.Select(line => line.Id)];
 
         IDbContextTransaction? ownedTransaction = null;
 
@@ -59,7 +68,7 @@ internal static class ReceivingOrderDraftReconciler
                     await transaction.CreateSavepointAsync(SavepointName, cancellationToken);
                 }
 
-                foreach (ReceivingOrderLine line in removedLines.Concat(reassignedLines))
+                foreach (ReceivingOrderLine line in releasedLines)
                 {
                     dbContext.Entry(line).State = EntityState.Detached;
                 }
@@ -77,10 +86,6 @@ internal static class ReceivingOrderDraftReconciler
                     return ReceivingOrderErrors.ConcurrencyConflict(concurrencyProperty);
                 }
                 dbContext.ReceivingOrderLines.AddRange(reassignedLines);
-            }
-            else
-            {
-                dbContext.ReceivingOrderLines.RemoveRange(removedLines);
             }
 
             dbContext.ReceivingOrderLines.AddRange(newLines);

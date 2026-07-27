@@ -48,7 +48,7 @@ and application rules.
 
 | Concern | Repository finding | Selected use for #121 |
 |---|---|---|
-| Draft receiving behavior | `ReceivingOrder.Create` and `ReplaceDraft` validate non-empty plans, unique SKU lines, and Draft state. `UpdateReceivingOrderDraft` owns the delete/reassign savepoint path. | Keep manual editing on its LineId-based delete/reassign path. Introduce SKU-based aggregate reconciliation for imports, with narrow persistence support only for deleting removed tracked lines. |
+| Draft receiving behavior | `ReceivingOrder.Create` and `ReplaceDraft` validate non-empty plans, unique SKU lines, and Draft state. `UpdateReceivingOrderDraft` owns the delete/reassign savepoint path. | Keep manual editing on its LineId-based delete/reassign path. Use SKU-based aggregate reconciliation for imports; required aggregate children use cascade/orphan deletion when removed from the Draft plan. |
 | 1C source contract | The permitted research branch's #105 issue, **Verified 1C source contract**, records `Document_ПриходныйОрдерНаТовары` with the `Товары` tabular section. It lists header `Ref_Key`, `DataVersion`, `DeletionMark`, `Number`, `Date`, `Posted`, `Склад_Key`, and `Статус`; and line `Ref_Key`, `LineNumber`, `Номенклатура_Key`, `Упаковка_Key`, `КоличествоУпаковок`, and `Количество`. `OneCODataTransport.ReadCollectionAsync` accepts the adapter's query parameters. | Add typed adapter DTOs under `Myrmex.Integrations/OneC/ReceivingOrders`; raw Cyrillic properties remain there. Add a receiving-orders entity-set option and validate it with existing 1C settings. |
 | Eligibility and period | The same research records `Date` as the document period field and defines eligible new documents as posted, non-deleted, and non-accepted. Its known non-accepted plan states are `КПоступлению`, `ВРаботе`, and `ТребуетсяОбработка`; `Принят` maps to Accepted. | Query a half-open source-`Date` range `[start, day after end)` and process only posted, non-deleted documents in the three plan states. Reject invalid ranges before contacting 1C. |
 | Line mapping | The research acceptance criteria state that `Товары.Количество` becomes local planned quantity, `КоличествоУпаковок` is source context, and non-empty `Упаковка_Key` has a precise unsupported-package failure. It also defines `<document Ref_Key>:<LineNumber>` as the stable line identity. | Use `Количество` as planned quantity. Ignore `КоличествоУпаковок` because no package conversion is in scope; reject a non-empty `Упаковка_Key` with `UnsupportedPackage` because it would require that excluded conversion. Keep line identity only in transient validation/result diagnostics. Group valid lines by resolved SKU because local ReceivingOrder permits one line per SKU. |
@@ -141,7 +141,7 @@ developer-controlled-operation rules.
 - `Myrmex.Modules.Wms/Receiving/Domain/ReceivingOrders/`: controlled external-import
   state methods on the aggregate.
 - `Myrmex.Modules.Wms/Receiving/Features/ReceivingOrders/`: public inbound import command,
-  dependency lookup, outcome mapping, and narrow import-specific persistence support.
+  dependency lookup, outcome mapping, and SKU-based Draft reconciliation.
 - `Myrmex.Modules.Wms/Topology/Domain/Warehouses/`, warehouse commands/endpoints, and
   `Myrmex.Shared/Wms/Topology/`: default receiving-location state, validation, and DTOs.
 - `Myrmex.Modules.Wms/Infrastructure/Persistence/Configurations/`: owned import-state and

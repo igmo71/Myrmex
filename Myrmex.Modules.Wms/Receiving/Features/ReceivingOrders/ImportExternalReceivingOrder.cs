@@ -110,15 +110,14 @@ public static class ImportExternalReceivingOrder
                     warehouse.Id,
                     location.Id,
                     mappedLines,
-                    out IReadOnlyList<ReceivingOrderLine> removed);
+                    out _);
 
                 if (!replacement.IsValid)
                     return ServiceResult<Result>.Invalid(replacement.Errors);
 
                 existing.RecordExternalImport(source.ExternalRefKey, source.DataVersion, command.ImportedAtUtc);
 
-                ServiceError? persistenceError = await ImportedReceivingOrderDraftReconciler
-                    .PersistAsync(dbContext, existing, removed, nameof(Command), cancellationToken);
+                ServiceError? persistenceError = await SaveAsync(dbContext, cancellationToken);
 
                 if (persistenceError is not null)
                     return ServiceResult<Result>.Fail(persistenceError);
@@ -158,6 +157,11 @@ public static class ImportExternalReceivingOrder
             {
                 await dbContext.SaveChangesAsync(cancellationToken);
                 return null;
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                dbContext.ChangeTracker.Clear();
+                return ReceivingOrderErrors.ConcurrencyConflict(nameof(Command));
             }
             catch (DbUpdateException exception)
             {
