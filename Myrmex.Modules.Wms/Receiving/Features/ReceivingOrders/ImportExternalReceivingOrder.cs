@@ -25,6 +25,7 @@ public static class ImportExternalReceivingOrder
         public async Task<ServiceResult<Result>> HandleAsync(Command command, CancellationToken cancellationToken = default)
         {
             Document source = command.Document;
+
             Warehouse? warehouse = await dbContext.Warehouses
                 .SingleOrDefaultAsync(x => x.ImportState != null && x.ImportState.RefKey == source.WarehouseExternalRefKey, cancellationToken);
 
@@ -32,7 +33,6 @@ public static class ImportExternalReceivingOrder
             {
                 return Fail("WarehouseNotImported", "The source Warehouse is not available locally.");
             }
-
             if (warehouse.DefaultReceivingLocationId is not Guid locationId)
             {
                 return Fail("ReceivingLocationNotConfigured", "The Warehouse has no default Receiving location.");
@@ -57,16 +57,22 @@ public static class ImportExternalReceivingOrder
                 .Distinct()
                 .ToArray();
 
-            Dictionary<Guid, StockKeepingUnit> skus = await dbContext.StockKeepingUnits.Include(x => x.BaseUnitOfMeasure)
-                .Where(x => x.ImportState != null && skuKeys.Contains(x.ImportState.RefKey)).ToDictionaryAsync(x => x.ImportState!.RefKey, cancellationToken);
+            Dictionary<Guid, StockKeepingUnit> skus = await dbContext.StockKeepingUnits
+                .Include(x => x.BaseUnitOfMeasure)
+                .Where(x => x.ImportState != null && skuKeys.Contains(x.ImportState.RefKey))
+                .ToDictionaryAsync(x => x.ImportState!.RefKey, cancellationToken);
+
             if (skus.Count != skuKeys.Length || skus.Values.Any(x => !x.IsActive || x.BaseUnitOfMeasure is null || !x.BaseUnitOfMeasure.IsActive))
             {
                 return Fail("SkuNotImported", "One or more source SKUs or their base units are unavailable locally.");
             }
 
-            List<ReceivingOrder.DraftLine> lines = source.Lines
+            List<(Guid StockKeepingUnitId, decimal PlannedQuantity)> mappedLines = source.Lines
                 .GroupBy(x => skus[x.StockKeepingUnitExternalRefKey].Id)
-                .Select(x => new ReceivingOrder.DraftLine(null, x.Key, x.Sum(line => line.PlannedQuantity))).ToList();
+                .Select(x => (
+                    StockKeepingUnitId: x.Key,
+                    PlannedQuantity: x.Sum(line => line.PlannedQuantity)))
+                .ToList();
 
             ReceivingOrder? existing = await dbContext.ReceivingOrders
                 .Include(x => x.Lines)
@@ -79,12 +85,32 @@ public static class ImportExternalReceivingOrder
                     return ServiceResult<Result>.Success(new("Skipped", "NonDraft", "The matching receiving order is no longer Draft."));
                 }
 
+                Dictionary<Guid, Guid> existingLineIdBySku = existing.Lines
+                    .ToDictionary(line => line.StockKeepingUnitId, line => line.Id);
+
+                List<ReceivingOrder.DraftLine> lines = mappedLines
+                    .Select(line =>
+                    {
+                        Guid? lineId = existingLineIdBySku.TryGetValue(
+                            line.StockKeepingUnitId,
+                            out Guid existingLineId)
+                            ? existingLineId
+                            : null;
+
+                        return new ReceivingOrder.DraftLine(
+                            lineId,
+                            line.StockKeepingUnitId,
+                            line.PlannedQuantity);
+                    })
+                    .ToList();
+
                 bool equal = existing.Number == source.Number &&
                      existing.WarehouseId == warehouse.Id &&
                      existing.ReceivingLocationId == location.Id &&
                      existing.Lines.Count == lines.Count &&
                      existing.Lines.All(line =>
                         lines.Any(candidate =>
+                            candidate.LineId == line.Id &&
                             candidate.StockKeepingUnitId == line.StockKeepingUnitId &&
                             candidate.PlannedQuantity == line.PlannedQuantity));
                 if (equal)
@@ -119,7 +145,11 @@ public static class ImportExternalReceivingOrder
                 return ServiceResult<Result>.Success(new("Updated", null, null));
             }
 
-            var creation = ReceivingOrder.Create(source.Number, warehouse.Id, location.Id, lines, out ReceivingOrder? order);
+            List<ReceivingOrder.DraftLine> creationLines = mappedLines
+                .Select(line => new ReceivingOrder.DraftLine(null, line.StockKeepingUnitId, line.PlannedQuantity))
+                .ToList();
+
+            var creation = ReceivingOrder.Create(source.Number, warehouse.Id, location.Id, creationLines, out ReceivingOrder? order);
 
             if (!creation.IsValid)
                 return ServiceResult<Result>.Invalid(creation.Errors);
