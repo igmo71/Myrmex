@@ -25,27 +25,38 @@ public static class ImportExternalReceivingOrder
         public async Task<ServiceResult<Result>> HandleAsync(Command command, CancellationToken cancellationToken = default)
         {
             Document source = command.Document;
-            Warehouse? warehouse = await dbContext.Warehouses.SingleOrDefaultAsync(
-                x => x.ImportState != null && x.ImportState.RefKey == source.WarehouseExternalRefKey, cancellationToken);
+            Warehouse? warehouse = await dbContext.Warehouses
+                .SingleOrDefaultAsync(x => x.ImportState != null && x.ImportState.RefKey == source.WarehouseExternalRefKey, cancellationToken);
+
             if (warehouse is null || !warehouse.IsActive)
             {
                 return Fail("WarehouseNotImported", "The source Warehouse is not available locally.");
             }
+
             if (warehouse.DefaultReceivingLocationId is not Guid locationId)
             {
                 return Fail("ReceivingLocationNotConfigured", "The Warehouse has no default Receiving location.");
             }
 
-            StorageLocation? location = await dbContext.StorageLocations.Include(x => x.StorageLocationType).Include(x => x.StorageLocationStatus)
+            StorageLocation? location = await dbContext.StorageLocations
+                .Include(x => x.StorageLocationType)
+                .Include(x => x.StorageLocationStatus)
                 .SingleOrDefaultAsync(x => x.Id == locationId, cancellationToken);
-            if (location is null || location.WarehouseId != warehouse.Id || location.StorageLocationType is null ||
+
+            if (location is null ||
+                location.WarehouseId != warehouse.Id ||
+                location.StorageLocationType is null ||
                 !StorageLocationEligibility.Evaluate(location).IsSelectable ||
                 !string.Equals(location.StorageLocationType.Code, StorageLocationTypeCodes.Receiving, StringComparison.Ordinal))
             {
                 return Fail("ReceivingLocationNotConfigured", "The Warehouse default Receiving location is invalid.");
             }
 
-            Guid[] skuKeys = source.Lines.Select(x => x.StockKeepingUnitExternalRefKey).Distinct().ToArray();
+            Guid[] skuKeys = source.Lines
+                .Select(x => x.StockKeepingUnitExternalRefKey)
+                .Distinct()
+                .ToArray();
+
             Dictionary<Guid, StockKeepingUnit> skus = await dbContext.StockKeepingUnits.Include(x => x.BaseUnitOfMeasure)
                 .Where(x => x.ImportState != null && skuKeys.Contains(x.ImportState.RefKey)).ToDictionaryAsync(x => x.ImportState!.RefKey, cancellationToken);
             if (skus.Count != skuKeys.Length || skus.Values.Any(x => !x.IsActive || x.BaseUnitOfMeasure is null || !x.BaseUnitOfMeasure.IsActive))
@@ -53,43 +64,77 @@ public static class ImportExternalReceivingOrder
                 return Fail("SkuNotImported", "One or more source SKUs or their base units are unavailable locally.");
             }
 
-            List<ReceivingOrder.DraftLine> lines = source.Lines.GroupBy(x => skus[x.StockKeepingUnitExternalRefKey].Id)
+            List<ReceivingOrder.DraftLine> lines = source.Lines
+                .GroupBy(x => skus[x.StockKeepingUnitExternalRefKey].Id)
                 .Select(x => new ReceivingOrder.DraftLine(null, x.Key, x.Sum(line => line.PlannedQuantity))).ToList();
-            ReceivingOrder? existing = await dbContext.ReceivingOrders.Include(x => x.Lines)
+
+            ReceivingOrder? existing = await dbContext.ReceivingOrders
+                .Include(x => x.Lines)
                 .SingleOrDefaultAsync(x => x.ImportState != null && x.ImportState.RefKey == source.ExternalRefKey, cancellationToken);
+
             if (existing is not null)
             {
                 if (existing.Status != ReceivingOrderStatus.Draft)
                 {
                     return ServiceResult<Result>.Success(new("Skipped", "NonDraft", "The matching receiving order is no longer Draft."));
                 }
-                bool equal = existing.Number == source.Number && existing.WarehouseId == warehouse.Id && existing.ReceivingLocationId == location.Id &&
-                    existing.Lines.Count == lines.Count && existing.Lines.All(line => lines.Any(candidate => candidate.StockKeepingUnitId == line.StockKeepingUnitId && candidate.PlannedQuantity == line.PlannedQuantity));
+
+                bool equal = existing.Number == source.Number &&
+                     existing.WarehouseId == warehouse.Id &&
+                     existing.ReceivingLocationId == location.Id &&
+                     existing.Lines.Count == lines.Count &&
+                     existing.Lines.All(line =>
+                        lines.Any(candidate =>
+                            candidate.StockKeepingUnitId == line.StockKeepingUnitId &&
+                            candidate.PlannedQuantity == line.PlannedQuantity));
                 if (equal)
                 {
                     existing.RecordExternalImport(source.ExternalRefKey, source.DataVersion, command.ImportedAtUtc);
+
                     ServiceError? metadataError = await SaveAsync(dbContext, cancellationToken);
-                    if (metadataError is not null) return ServiceResult<Result>.Fail(metadataError);
+
+                    if (metadataError is not null)
+                        return ServiceResult<Result>.Fail(metadataError);
+
                     return ServiceResult<Result>.Success(new("Skipped", "Unchanged", "The mapped Draft plan is unchanged."));
                 }
+
                 Dictionary<Guid, Guid> persistedSkuByLineId = existing.Lines.ToDictionary(line => line.Id, line => line.StockKeepingUnitId);
-                IReadOnlyList<ReceivingOrderLine> removed;
-                var replacement = ReceivingOrderDraftReconciler.Replace(existing, source.Number, warehouse.Id, location.Id, lines, out removed);
-                if (!replacement.IsValid) return ServiceResult<Result>.Invalid(replacement.Errors);
+
+
+                var replacement = ReceivingOrderDraftReconciler
+                    .Replace(existing, source.Number, warehouse.Id, location.Id, lines, out IReadOnlyList<ReceivingOrderLine> removed);
+
+                if (!replacement.IsValid)
+                    return ServiceResult<Result>.Invalid(replacement.Errors);
+
                 existing.RecordExternalImport(source.ExternalRefKey, source.DataVersion, command.ImportedAtUtc);
-                ServiceError? persistenceError = await ReceivingOrderDraftReconciler.PersistAsync(
-                    dbContext, existing, persistedSkuByLineId, removed, nameof(Command), cancellationToken);
-                if (persistenceError is not null) return ServiceResult<Result>.Fail(persistenceError);
+
+                ServiceError? persistenceError = await ReceivingOrderDraftReconciler
+                    .PersistAsync(dbContext, existing, persistedSkuByLineId, removed, nameof(Command), cancellationToken);
+
+                if (persistenceError is not null)
+                    return ServiceResult<Result>.Fail(persistenceError);
+
                 return ServiceResult<Result>.Success(new("Updated", null, null));
             }
 
             var creation = ReceivingOrder.Create(source.Number, warehouse.Id, location.Id, lines, out ReceivingOrder? order);
-            if (!creation.IsValid) return ServiceResult<Result>.Invalid(creation.Errors);
+
+            if (!creation.IsValid)
+                return ServiceResult<Result>.Invalid(creation.Errors);
+
             order!.RecordExternalImport(source.ExternalRefKey, source.DataVersion, command.ImportedAtUtc);
+
             dbContext.ReceivingOrders.Add(order);
+
             ServiceError? creationError = await SaveAsync(dbContext, cancellationToken);
-            if (creationError is not null) return ServiceResult<Result>.Fail(creationError);
+
+            if (creationError is not null)
+                return ServiceResult<Result>.Fail(creationError);
+
             logger.LogInformation("External receiving order {ExternalRefKey} created local order {ReceivingOrderId}.", source.ExternalRefKey, order.Id);
+
             return ServiceResult<Result>.Success(new("Created", null, null));
         }
 

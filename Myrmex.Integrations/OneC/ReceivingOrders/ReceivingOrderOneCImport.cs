@@ -27,7 +27,10 @@ internal sealed class ReceivingOrderOneCImport(
         }
 
         IReadOnlyList<ReceivingOrderSourceRecord> records;
-        try { records = await source.ReadPeriodAsync(start, end, cancellationToken); }
+        try
+        {
+            records = await source.ReadPeriodAsync(start, end, cancellationToken);
+        }
         catch (Exception exception)
         {
             logger.LogWarning(exception, "1C receiving-order import could not read period {StartDate} through {EndDate}.", start, end);

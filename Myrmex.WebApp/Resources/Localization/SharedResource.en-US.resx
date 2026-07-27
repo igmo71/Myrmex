@@ -255,7 +255,7 @@
   <data name="OneC.Connection.ApiUnavailable" xml:space="preserve">
     <value>Could not reach the API to test the 1С connection.</value>
   </data>
-  <data name="OneC.Import.Title" xml:space="preserve">
+  <data name="OneC.Import.Catalogs" xml:space="preserve">
     <value>Import Reference Data</value>
   </data>
   <data name="OneC.Import.Warehouses.Action" xml:space="preserve">
@@ -1545,9 +1545,22 @@
   <data name="Common.QuantityMustBePositive" xml:space="preserve">
     <value>Quantity must be positive</value>
   </data>
-  <data name="Warehouse.DefaultReceivingLocation" xml:space="preserve"><value>Default receiving location</value></data>
-  <data name="OneC.ReceivingOrders.StartDate" xml:space="preserve"><value>Start date</value></data>
-  <data name="OneC.ReceivingOrders.EndDate" xml:space="preserve"><value>End date</value></data>
-  <data name="OneC.ReceivingOrders.Action" xml:space="preserve"><value>Import receiving orders</value></data>
-  <data name="OneC.ReceivingOrders.InProgress" xml:space="preserve"><value>Importing receiving orders</value></data>
+  <data name="Warehouse.DefaultReceivingLocation" xml:space="preserve">
+    <value>Default receiving location</value>
+  </data>
+  <data name="OneC.ReceivingOrders.StartDate" xml:space="preserve">
+    <value>Start date</value>
+  </data>
+  <data name="OneC.ReceivingOrders.EndDate" xml:space="preserve">
+    <value>End date</value>
+  </data>
+  <data name="OneC.Import.ReceivingOrders.Action" xml:space="preserve">
+    <value>Import receiving orders</value>
+  </data>
+  <data name="OneC.Import.ReceivingOrders.InProgress" xml:space="preserve">
+    <value>Importing receiving orders</value>
+  </data>
+  <data name="OneC.Import.ReceivingOrders" xml:space="preserve">
+    <value>Receiving Orders</value>
+  </data>
 </root>

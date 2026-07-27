@@ -255,7 +255,7 @@
   <data name="OneC.Connection.ApiUnavailable" xml:space="preserve">
     <value>Не удалось связаться с API для проверки подключения к 1С.</value>
   </data>
-  <data name="OneC.Import.Title" xml:space="preserve">
+  <data name="OneC.Import.Catalogs" xml:space="preserve">
     <value>Импорт справочников</value>
   </data>
   <data name="OneC.Import.Warehouses.Action" xml:space="preserve">
@@ -1405,7 +1405,7 @@
     <value>Выберите SKU</value>
   </data>
   <data name="Receiving.Planned" xml:space="preserve">
-    <value>Запланировано</value>
+    <value>К приемке</value>
   </data>
   <data name="Receiving.Received" xml:space="preserve">
     <value>Принято</value>
@@ -1420,7 +1420,7 @@
     <value>Количество к приёмке</value>
   </data>
   <data name="Receiving.Start" xml:space="preserve">
-    <value>Начать</value>
+    <value>Начать приемку</value>
   </data>
   <data name="Receiving.Transaction" xml:space="preserve">
     <value>Транзакция запасов</value>
@@ -1545,9 +1545,22 @@
   <data name="Common.QuantityMustBePositive" xml:space="preserve">
     <value>Количество должно быть положительным</value>
   </data>
-  <data name="Warehouse.DefaultReceivingLocation" xml:space="preserve"><value>Основная ячейка приёмки</value></data>
-  <data name="OneC.ReceivingOrders.StartDate" xml:space="preserve"><value>Дата начала</value></data>
-  <data name="OneC.ReceivingOrders.EndDate" xml:space="preserve"><value>Дата окончания</value></data>
-  <data name="OneC.ReceivingOrders.Action" xml:space="preserve"><value>Импортировать приходные ордера</value></data>
-  <data name="OneC.ReceivingOrders.InProgress" xml:space="preserve"><value>Импорт приходных ордеров</value></data>
+  <data name="Warehouse.DefaultReceivingLocation" xml:space="preserve">
+    <value>Основная ячейка приёмки</value>
+  </data>
+  <data name="OneC.ReceivingOrders.StartDate" xml:space="preserve">
+    <value>Дата с</value>
+  </data>
+  <data name="OneC.ReceivingOrders.EndDate" xml:space="preserve">
+    <value>Дата по</value>
+  </data>
+  <data name="OneC.Import.ReceivingOrders.Action" xml:space="preserve">
+    <value>Импортировать приходные ордера</value>
+  </data>
+  <data name="OneC.Import.ReceivingOrders.InProgress" xml:space="preserve">
+    <value>Импорт приходных ордеров</value>
+  </data>
+  <data name="OneC.Import.ReceivingOrders" xml:space="preserve">
+    <value>Импорт Приходных ордеров</value>
+  </data>
 </root>

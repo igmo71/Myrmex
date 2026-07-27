@@ -30,41 +30,64 @@
             <MudAlert Severity="Severity.Error" Class="mt-4">@_errorMessage</MudAlert>
         }
     </MudStack>
+
     <MudDivider Class="my-6" />
-    <MudText Typo="Typo.h5" GutterBottom="true">@Localizer["OneC.Import.Title"]</MudText>
+
+
     <MudStack Row="true" Spacing="2">
+
         <MudStack Row="false" Spacing="2">
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Secondary"
-                       Disabled="@IsWarehouseImporting"
-                       OnClick="ImportWarehousesAsync"
-                       Class="mt-3">
-                @(Localizer[IsWarehouseImporting ? "OneC.Import.Warehouses.InProgress" : "OneC.Import.Warehouses.Action"])
-            </MudButton>
-            <MudDatePicker Label="@Localizer["OneC.ReceivingOrders.StartDate"]" @bind-Date="_receivingStartDate" />
-            <MudDatePicker Label="@Localizer["OneC.ReceivingOrders.EndDate"]" @bind-Date="_receivingEndDate" />
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Secondary"
-                       Disabled="@_isReceivingImporting"
-                       OnClick="ImportReceivingOrdersAsync">
-                @(Localizer[_isReceivingImporting ? "OneC.ReceivingOrders.InProgress" : "OneC.ReceivingOrders.Action"])
-            </MudButton>
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Secondary"
-                       Disabled="@IsUomImporting"
-                       OnClick="ImportUnitsOfMeasureAsync">
-                @(Localizer[IsUomImporting ? "OneC.Import.UnitsOfMeasure.InProgress" : "OneC.Import.UnitsOfMeasure.Action"])
-            </MudButton>
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Secondary"
-                       Disabled="@IsSkuImporting"
-                       OnClick="ImportStockKeepingUnitsAsync">
-                @(Localizer[IsSkuImporting ? "OneC.Import.Skus.InProgress" : "OneC.Import.Skus.Action"])
-                @if (IsSkuImporting)
-                {
-                    <MudProgressCircular Color="Color.Default" Size="Size.Small" Indeterminate="true" Class="ml-3" />
-                }
-            </MudButton>
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" GutterBottom="true">@Localizer["OneC.Import.Catalogs"]</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudStack Row="false" Spacing="2">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Secondary"
+                                   Disabled="@IsWarehouseImporting"
+                                   OnClick="ImportWarehousesAsync"
+                                   Class="mt-3">
+                            @(Localizer[IsWarehouseImporting ? "OneC.Import.Warehouses.InProgress" : "OneC.Import.Warehouses.Action"])
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Secondary"
+                                   Disabled="@IsUomImporting"
+                                   OnClick="ImportUnitsOfMeasureAsync">
+                            @(Localizer[IsUomImporting ? "OneC.Import.UnitsOfMeasure.InProgress" : "OneC.Import.UnitsOfMeasure.Action"])
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Secondary"
+                                   Disabled="@IsSkuImporting"
+                                   OnClick="ImportStockKeepingUnitsAsync">
+                            @(Localizer[IsSkuImporting ? "OneC.Import.Skus.InProgress" : "OneC.Import.Skus.Action"])
+                            @if (IsSkuImporting)
+                            {
+                                <MudProgressCircular Color="Color.Default" Size="Size.Small" Indeterminate="true" Class="ml-3" />
+                            }
+                        </MudButton>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" GutterBottom="true">@Localizer["OneC.Import.ReceivingOrders"]</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudDatePicker Label="@Localizer["OneC.ReceivingOrders.StartDate"]" @bind-Date="_receivingStartDate" />
+                    <MudDatePicker Label="@Localizer["OneC.ReceivingOrders.EndDate"]" @bind-Date="_receivingEndDate" />
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Secondary"
+                               Disabled="@_isReceivingImporting"
+                               OnClick="ImportReceivingOrdersAsync">
+                        @(Localizer[_isReceivingImporting ? "OneC.Import.ReceivingOrders.InProgress" : "OneC.Import.ReceivingOrders.Action"])
+                    </MudButton>
+                </MudCardContent>
+            </MudCard>
         </MudStack>
         <MudStack Row="false" Spacing="2">
             @if (!string.IsNullOrWhiteSpace(_importErrorMessage))

@@ -90,31 +90,36 @@
         </TemplateColumn>
         <TemplateColumn Title="@Localizer["Common.Actions"]" Sortable="false">
             <CellTemplate>
-                <MudTooltip Text="@Localizer["Receiving.Open"]">
-                    <MudIconButton Icon="@Icons.Material.Filled.Visibility"
-                                   Size="Size.Small"
-                                   Disabled="@BusyOrderId.HasValue"
-                                   aria-label="@Localizer["Receiving.Open"]"
-                                   OnClick="@(() => OpenRequested.InvokeAsync(context.Item))" />
-                </MudTooltip>
-                @if (context.Item.Status == ReceivingOrderStatusDetails.Draft)
-                {
-                    <MudTooltip Text="@Localizer["Common.Edit"]">
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                <MudStack Row="true"
+                          Wrap="Wrap.NoWrap"
+                          Spacing="0"
+                          AlignItems="AlignItems.Center">
+                    <MudTooltip Text="@Localizer["Receiving.Open"]">
+                        <MudIconButton Icon="@Icons.Material.Filled.Article"
                                        Size="Size.Small"
                                        Disabled="@BusyOrderId.HasValue"
-                                       aria-label="@Localizer["Common.Edit"]"
-                                       OnClick="@(() => EditRequested.InvokeAsync(context.Item))" />
+                                       aria-label="@Localizer["Receiving.Open"]"
+                                       OnClick="@(() => OpenRequested.InvokeAsync(context.Item))" />
                     </MudTooltip>
-                    <MudTooltip Text="@Localizer["Receiving.DeleteAction"]">
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                       Color="Color.Error"
-                                       Size="Size.Small"
-                                       Disabled="@BusyOrderId.HasValue"
-                                       aria-label="@Localizer["Receiving.DeleteAction"]"
-                                       OnClick="@(() => DeleteRequested.InvokeAsync(context.Item))" />
-                    </MudTooltip>
-                }
+                    @if (context.Item.Status == ReceivingOrderStatusDetails.Draft)
+                    {
+                        <MudTooltip Text="@Localizer["Common.Edit"]">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Size="Size.Small"
+                                           Disabled="@BusyOrderId.HasValue"
+                                           aria-label="@Localizer["Common.Edit"]"
+                                           OnClick="@(() => EditRequested.InvokeAsync(context.Item))" />
+                        </MudTooltip>
+                        <MudTooltip Text="@Localizer["Receiving.DeleteAction"]">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Color="Color.Error"
+                                           Size="Size.Small"
+                                           Disabled="@BusyOrderId.HasValue"
+                                           aria-label="@Localizer["Receiving.DeleteAction"]"
+                                           OnClick="@(() => DeleteRequested.InvokeAsync(context.Item))" />
+                        </MudTooltip>
+                    }
+                </MudStack>
             </CellTemplate>
         </TemplateColumn>
     </Columns>

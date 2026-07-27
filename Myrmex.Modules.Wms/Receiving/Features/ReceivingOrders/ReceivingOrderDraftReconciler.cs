@@ -28,13 +28,22 @@ internal static class ReceivingOrderDraftReconciler
         string concurrencyProperty,
         CancellationToken cancellationToken)
     {
-        ReceivingOrderLine[] reassignedLines = [.. order.Lines.Where(line =>
-            persistedSkuByLineId.TryGetValue(line.Id, out Guid persistedSkuId) &&
-            persistedSkuId != line.StockKeepingUnitId)];
-        ReceivingOrderLine[] newLines = [.. order.Lines.Where(line => !persistedSkuByLineId.ContainsKey(line.Id))];
+        ReceivingOrderLine[] reassignedLines = order.Lines
+            .Where(line =>
+                persistedSkuByLineId.TryGetValue(line.Id, out Guid persistedSkuId) &&
+                persistedSkuId != line.StockKeepingUnitId)
+            .ToArray();
+
+        ReceivingOrderLine[] newLines = order.Lines
+            .Where(line => !persistedSkuByLineId.ContainsKey(line.Id))
+            .ToArray();
+
         Guid[] releasedLineIds = [.. removedLines.Concat(reassignedLines).Select(line => line.Id).Distinct()];
+
         IDbContextTransaction? ownedTransaction = null;
+
         IDbContextTransaction? transaction = null;
+
         try
         {
             if (releasedLineIds.Length > 0)
@@ -49,16 +58,22 @@ internal static class ReceivingOrderDraftReconciler
                     transaction = dbContext.Database.CurrentTransaction!;
                     await transaction.CreateSavepointAsync(SavepointName, cancellationToken);
                 }
+
                 foreach (ReceivingOrderLine line in removedLines.Concat(reassignedLines))
                 {
                     dbContext.Entry(line).State = EntityState.Detached;
                 }
-                int released = await dbContext.ReceivingOrderLines.Where(line =>
-                    line.ReceivingOrderId == order.Id && releasedLineIds.Contains(line.Id)).ExecuteDeleteAsync(cancellationToken);
+
+                int released = await dbContext.ReceivingOrderLines
+                    .Where(line => line.ReceivingOrderId == order.Id &&
+                                   releasedLineIds.Contains(line.Id)).ExecuteDeleteAsync(cancellationToken);
+
                 if (released != releasedLineIds.Length)
                 {
                     await RollbackAsync(transaction, ownedTransaction is not null);
+
                     dbContext.ChangeTracker.Clear();
+
                     return ReceivingOrderErrors.ConcurrencyConflict(concurrencyProperty);
                 }
                 dbContext.ReceivingOrderLines.AddRange(reassignedLines);
@@ -67,34 +82,46 @@ internal static class ReceivingOrderDraftReconciler
             {
                 dbContext.ReceivingOrderLines.RemoveRange(removedLines);
             }
+
             dbContext.ReceivingOrderLines.AddRange(newLines);
+
             await dbContext.SaveChangesAsync(cancellationToken);
-            if (ownedTransaction is not null) await transaction!.CommitAsync(cancellationToken);
-            else if (transaction is not null) await transaction.ReleaseSavepointAsync(SavepointName, cancellationToken);
+
+            if (ownedTransaction is not null)
+                await transaction!.CommitAsync(cancellationToken);
+
+            else if (transaction is not null)
+                await transaction.ReleaseSavepointAsync(SavepointName, cancellationToken);
+
             return null;
         }
         catch (DbUpdateConcurrencyException)
         {
             await RollbackAsync(transaction, ownedTransaction is not null);
+
             dbContext.ChangeTracker.Clear();
+
             return ReceivingOrderErrors.ConcurrencyConflict(concurrencyProperty);
         }
         catch (DbUpdateException exception)
         {
             await RollbackAsync(transaction, ownedTransaction is not null);
+
             dbContext.ChangeTracker.Clear();
+
             ServiceError? error = WmsPersistenceExceptionMapper.TryMap(exception);
+
             if (error is not null)
-            {
                 return error;
-            }
 
             throw;
         }
         catch
         {
             await RollbackAsync(transaction, ownedTransaction is not null);
+
             dbContext.ChangeTracker.Clear();
+
             throw;
         }
         finally

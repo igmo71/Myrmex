@@ -10,13 +10,22 @@
     {
         <MudStack Spacing="3">
             <MudText Typo="Typo.h5">@PageTitleText</MudText>
-            <MudTextField T="string" Label="@Localizer["Receiving.Number"]" Variant="Variant.Outlined" Disabled="Saving" @bind-Value="Number" />
-            <MudAutocomplete T="WarehouseLookupItem" Label="@Localizer["Common.Warehouse"]" Variant="Variant.Outlined"
-                             Required="true" Disabled="Saving" MinCharacters="0" SearchFunc="SearchWarehousesAsync" ToStringFunc="FormatWarehouse"
-                             Value="Warehouse" ValueChanged="WarehouseChangedAsync" />
-            <MudAutocomplete T="StorageLocationLookupItem" Label="@Localizer["Receiving.Location"]" Variant="Variant.Outlined"
-                             Required="true" Disabled="@(Saving || Warehouse is null)" MinCharacters="0" SearchFunc="SearchLocationsAsync"
-                             ToStringFunc="FormatLocation" @bind-Value="Location" />
+            <MudStack Row>
+                <MudTextField T="string" Label="@Localizer["Receiving.Number"]" Variant="Variant.Outlined" Disabled="Saving" @bind-Value="Number" />
+                <MudAutocomplete T="WarehouseLookupItem"
+                                 Label="@Localizer["Common.Warehouse"]" 
+                                 Variant="Variant.Outlined"
+                                 Required="true" 
+                                 Disabled="Saving" 
+                                 MinCharacters="0" 
+                                 SearchFunc="SearchWarehousesAsync" 
+                                 ToStringFunc="FormatWarehouse"
+                                 Value="Warehouse" 
+                                 ValueChanged="WarehouseChangedAsync" />
+                <MudAutocomplete T="StorageLocationLookupItem" Label="@Localizer["Receiving.Location"]" Variant="Variant.Outlined"
+                                 Required="true" Disabled="@(Saving || Warehouse is null)" MinCharacters="0" SearchFunc="SearchLocationsAsync"
+                                 ToStringFunc="FormatLocation" @bind-Value="Location" />
+            </MudStack>
             <MudStack Row="true" AlignItems="AlignItems.Center">
                 <MudButton StartIcon="@Icons.Material.Filled.Add" Variant="Variant.Outlined" Disabled="Saving" OnClick="AddSkuAsync">@Localizer["Receiving.AddSku"]</MudButton>
                 <MudTextField T="string" Label="@Localizer["Receiving.SearchLines"]" Variant="Variant.Outlined"

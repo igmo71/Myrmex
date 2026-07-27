@@ -33,8 +33,9 @@ public static class Extensions
             {
                 if (builder.Environment.IsDevelopment())
                 {
+                    options.AttemptTimeout.Timeout = TimeSpan.FromMinutes(2);
+                    options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(4);
                     options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(10);
-                    options.AttemptTimeout.Timeout = TimeSpan.FromMinutes(10);
                 }
             });
 

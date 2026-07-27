@@ -52,7 +52,7 @@
             }
             <MudPaper Class="pa-4">
                 <MudGrid>
-                    <MudItem xs="6" md="2"><MudText Typo="Typo.caption">@Localizer["Common.Warehouse"]</MudText><MudText>@_order.Warehouse.Code - @_order.Warehouse.Name</MudText></MudItem>
+                    <MudItem xs="6" md="2"><MudText Typo="Typo.caption">@Localizer["Common.Warehouse"]</MudText><MudText>@_order.Warehouse.Name</MudText></MudItem>
                     <MudItem xs="6" md="2"><MudText Typo="Typo.caption">@Localizer["Receiving.Location"]</MudText><MudText>@_order.ReceivingLocation.Code - @_order.ReceivingLocation.Name</MudText></MudItem>
                     <MudItem xs="4" md="1"><MudText Typo="Typo.caption">@Localizer["Receiving.Planned"]</MudText><MudText>@_order.TotalPlannedQuantity.ToString("0.####")</MudText></MudItem>
                     <MudItem xs="4" md="1"><MudText Typo="Typo.caption">@Localizer["Receiving.Received"]</MudText><MudText>@_order.TotalReceivedQuantity.ToString("0.####")</MudText></MudItem>
