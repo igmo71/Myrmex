@@ -97,7 +97,7 @@ public static class ImportExternalReceivingOrder
                 {
                     existing.RecordExternalImport(source.ExternalRefKey, source.DataVersion, command.ImportedAtUtc);
 
-                    ServiceError? metadataError = await SaveAsync(dbContext, cancellationToken);
+                    ServiceError? metadataError = await SaveAsync(dbContext, logger, existing.Id, cancellationToken);
 
                     if (metadataError is not null)
                         return ServiceResult<Result>.Fail(metadataError);
@@ -117,7 +117,7 @@ public static class ImportExternalReceivingOrder
 
                 existing.RecordExternalImport(source.ExternalRefKey, source.DataVersion, command.ImportedAtUtc);
 
-                ServiceError? persistenceError = await SaveAsync(dbContext, cancellationToken);
+                ServiceError? persistenceError = await SaveAsync(dbContext, logger, existing.Id, cancellationToken);
 
                 if (persistenceError is not null)
                     return ServiceResult<Result>.Fail(persistenceError);
@@ -138,7 +138,7 @@ public static class ImportExternalReceivingOrder
 
             dbContext.ReceivingOrders.Add(order);
 
-            ServiceError? creationError = await SaveAsync(dbContext, cancellationToken);
+            ServiceError? creationError = await SaveAsync(dbContext, logger, order.Id, cancellationToken);
 
             if (creationError is not null)
                 return ServiceResult<Result>.Fail(creationError);
@@ -151,15 +151,24 @@ public static class ImportExternalReceivingOrder
         private static ServiceResult<Result> Fail(string reason, string message) =>
             ServiceResult<Result>.Success(new("Failed", reason, message));
 
-        private static async Task<ServiceError?> SaveAsync(WmsDbContext dbContext, CancellationToken cancellationToken)
+        private static async Task<ServiceError?> SaveAsync(
+            WmsDbContext dbContext,
+            ILogger logger,
+            Guid receivingOrderId,
+            CancellationToken cancellationToken)
         {
             try
             {
                 await dbContext.SaveChangesAsync(cancellationToken);
                 return null;
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException exception)
             {
+                ReceivingOrderConcurrencyDiagnostics.LogWarning(
+                    logger,
+                    exception,
+                    "ExternalDraftImport",
+                    receivingOrderId);
                 dbContext.ChangeTracker.Clear();
                 return ReceivingOrderErrors.ConcurrencyConflict(nameof(Command));
             }

@@ -67,8 +67,13 @@ internal static class DeleteReceivingOrderDraft
             {
                 await dbContext.SaveChangesAsync(cancellationToken);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException exception)
             {
+                ReceivingOrderConcurrencyDiagnostics.LogWarning(
+                    logger,
+                    exception,
+                    "ManualDraftDelete",
+                    order.Id);
                 return ServiceResult.Fail(
                     ReceivingOrderErrors.ConcurrencyConflict(nameof(Command.ExpectedOrderVersion)));
             }

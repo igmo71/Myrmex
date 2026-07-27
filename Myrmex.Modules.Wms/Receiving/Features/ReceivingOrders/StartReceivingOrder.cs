@@ -89,8 +89,13 @@ internal static class StartReceivingOrder
             {
                 await dbContext.SaveChangesAsync(cancellationToken);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException exception)
             {
+                ReceivingOrderConcurrencyDiagnostics.LogWarning(
+                    logger,
+                    exception,
+                    "StartReceivingOrder",
+                    order.Id);
                 return ServiceResult<ReceivingOrderDetails>.Fail(
                     ReceivingOrderErrors.ConcurrencyConflict(nameof(Command.ExpectedOrderVersion)));
             }

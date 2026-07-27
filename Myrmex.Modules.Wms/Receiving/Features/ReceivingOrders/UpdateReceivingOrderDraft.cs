@@ -92,7 +92,7 @@ internal static class UpdateReceivingOrderDraft
 
             ServiceError? persistenceError = await ReceivingOrderDraftReconciler.PersistAsync(
                 dbContext, order, persistedSkuByLineId, removedLines,
-                nameof(Command.ExpectedOrderVersion), cancellationToken);
+                nameof(Command.ExpectedOrderVersion), logger, cancellationToken);
             if (persistenceError is not null)
             {
                 return ServiceResult<ReceivingOrderDetails>.Fail(persistenceError);

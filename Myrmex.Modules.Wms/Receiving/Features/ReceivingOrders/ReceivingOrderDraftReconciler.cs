@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Logging;
 using Myrmex.Core.Domain.Validation;
 using Myrmex.Core.Results;
 using Myrmex.Modules.Wms.Infrastructure.Persistence;
@@ -26,6 +27,7 @@ internal static class ReceivingOrderDraftReconciler
         IReadOnlyDictionary<Guid, Guid> persistedSkuByLineId,
         IReadOnlyList<ReceivingOrderLine> removedLines,
         string concurrencyProperty,
+        ILogger logger,
         CancellationToken cancellationToken)
     {
         ReceivingOrderLine[] reassignedLines = order.Lines
@@ -100,8 +102,13 @@ internal static class ReceivingOrderDraftReconciler
 
             return null;
         }
-        catch (DbUpdateConcurrencyException)
+        catch (DbUpdateConcurrencyException exception)
         {
+            ReceivingOrderConcurrencyDiagnostics.LogWarning(
+                logger,
+                exception,
+                "ManualDraftUpdate",
+                order.Id);
             await RollbackAsync(transaction, ownedTransaction is not null);
 
             dbContext.ChangeTracker.Clear();
