@@ -40,8 +40,25 @@ internal sealed class ReceivingOrderOneCImport(
 
         List<ReceivingOrderImportDocumentResult> results = [];
         int created = 0, updated = 0, skipped = 0, failed = 0;
+        HashSet<Guid> seenExternalRefKeys = [];
         foreach (ReceivingOrderSourceRecord record in records)
         {
+            if (record.Ref_Key != Guid.Empty && !seenExternalRefKeys.Add(record.Ref_Key))
+            {
+                failed++;
+                logger.LogWarning(
+                    "1C receiving-order import skipped duplicate source document {ExternalRefKey}.",
+                    record.Ref_Key);
+                results.Add(new(
+                    record.Ref_Key,
+                    record.Number,
+                    record.Date,
+                    "Failed",
+                    ReceivingOrderImportReasons.DuplicateExternalRefKey,
+                    "The source period contains the same external receiving-order identity more than once."));
+                continue;
+            }
+
             if (!ReceivingOrderOneCMapper.TryMap(record, out ImportExternalReceivingOrder.Document? document, out string reason, out string message))
             {
                 failed++;
