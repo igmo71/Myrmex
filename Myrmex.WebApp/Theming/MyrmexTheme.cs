@@ -9,112 +9,112 @@ public static class MyrmexTheme
         PaletteLight = new PaletteLight
         {
             // Core brand
-            Primary = "#B86600",
-            PrimaryDarken = "#874800",
-            PrimaryLighten = "#D98300",
+            Primary = "#0D6EFD",
+            PrimaryDarken = "#0A58CA",
+            PrimaryLighten = "#3D8BFD",
             PrimaryContrastText = Colors.Shades.White,
 
-            Secondary = "#41596B",
-            SecondaryDarken = "#2C414F",
-            SecondaryLighten = "#607789",
+            Secondary = "#6C757D",
+            SecondaryDarken = "#565E64",
+            SecondaryLighten = "#8A9298",
 
-            Tertiary = "#526C7D",
+            Tertiary = "#495057",
 
             // Layout
             AppbarBackground = "#FFFFFF",
-            AppbarText = "#1C2A33",
+            AppbarText = "#212529",
 
-            DrawerBackground = "#F8FAFB",
-            DrawerText = "#344B5A",
-            DrawerIcon = "#526B7A",
+            DrawerBackground = "#F8F9FA",
+            DrawerText = "#495057",
+            DrawerIcon = "#6C757D",
 
-            Background = "#F3F6F8",
-            BackgroundGray = "#E6EBEF",
+            Background = "#F8F9FA",
+            BackgroundGray = "#E9ECEF",
             Surface = Colors.Shades.White,
 
             // Text
-            TextPrimary = "#1C2A33",
-            TextSecondary = "#526774",
-            TextDisabled = "#8998A1",
+            TextPrimary = "#212529",
+            TextSecondary = "#6C757D",
+            TextDisabled = "#ADB5BD",
 
             // Actions
-            ActionDefault = "#41596B",
-            ActionDisabled = "#8A99A2",
-            ActionDisabledBackground = "#E2E8EC",
+            ActionDefault = "#6C757D",
+            ActionDisabled = "#ADB5BD",
+            ActionDisabledBackground = "#E9ECEF",
 
             // Status colors, deliberately not Accent
-            Info = "#1769AA",
-            Success = "#2E7D4F",
-            Warning = "#B86600",
-            Error = "#B3261E",
+            Info = "#0DCAF0",
+            Success = "#198754",
+            Warning = "#FFC107",
+            Error = "#DC3545",
 
             // Lines / tables / borders
-            LinesDefault = "#CDD7DE",
-            TableLines = "#DCE4E9",
-            Divider = "#D7E0E6",
+            LinesDefault = "#DEE2E6",
+            TableLines = "#DEE2E6",
+            Divider = "#DEE2E6",
 
             // Basics
-            Black = "#1C2A33",
+            Black = "#212529",
             White = Colors.Shades.White,
 
             // Overlays
-            OverlayLight = "rgba(28, 42, 51, 0.08)",
-            OverlayDark = "rgba(20, 31, 38, 0.52)"
+            OverlayLight = "rgba(33, 37, 41, 0.08)",
+            OverlayDark = "rgba(33, 37, 41, 0.52)"
         },
 
         PaletteDark = new PaletteDark
         {
             // Core brand
-            Primary = "#F2A51D",
-            PrimaryDarken = "#C97600",
-            PrimaryLighten = "#FFC04D",
-            PrimaryContrastText = "#17232B",
+            Primary = "#6EA8FE",
+            PrimaryDarken = "#3D8BFD",
+            PrimaryLighten = "#9EC5FE",
+            PrimaryContrastText = "#052C65",
 
-            Secondary = "#A5BBC8",
-            SecondaryDarken = "#78909E",
-            SecondaryLighten = "#C4D4DD",
+            Secondary = "#A7ACB1",
+            SecondaryDarken = "#8A9298",
+            SecondaryLighten = "#C4C8CB",
 
-            Tertiary = "#9AB1BF",
+            Tertiary = "#CED4DA",
 
             // Layout
-            AppbarBackground = "#172630",
-            AppbarText = "#F1F5F7",
+            AppbarBackground = "#212529",
+            AppbarText = "#F8F9FA",
 
-            DrawerBackground = "#14212A",
-            DrawerText = "#D7E2E8",
-            DrawerIcon = "#9EB4C1",
+            DrawerBackground = "#2B3035",
+            DrawerText = "#DEE2E6",
+            DrawerIcon = "#ADB5BD",
 
-            Background = "#101A21",
-            BackgroundGray = "#16242D",
-            Surface = "#1C2C36",
+            Background = "#212529",
+            BackgroundGray = "#343A40",
+            Surface = "#2B3035",
 
             // Text
-            TextPrimary = "#F1F5F7",
-            TextSecondary = "#B2C2CB",
-            TextDisabled = "#71838D",
+            TextPrimary = "#F8F9FA",
+            TextSecondary = "#ADB5BD",
+            TextDisabled = "#6C757D",
 
             // Actions
-            ActionDefault = "#C0D0D8",
-            ActionDisabled = "#71838D",
-            ActionDisabledBackground = "#293943",
+            ActionDefault = "#CED4DA",
+            ActionDisabled = "#6C757D",
+            ActionDisabledBackground = "#495057",
 
             // Status colors, readable but still calm
-            Info = "#70B8F5",
-            Success = "#75C794",
-            Warning = "#F2A51D",
-            Error = "#FF8A80",
+            Info = "#6EDFF6",
+            Success = "#75B798",
+            Warning = "#FFDA6A",
+            Error = "#EA868F",
 
             // Lines / tables / borders
-            LinesDefault = "#40525D",
-            TableLines = "#354852",
-            Divider = "#30424C",
+            LinesDefault = "#495057",
+            TableLines = "#495057",
+            Divider = "#495057",
 
             // Basics
-            Black = "#0C1318",
-            White = "#F1F5F7",
+            Black = "#000000",
+            White = "#F8F9FA",
 
             // Overlays
-            OverlayLight = "rgba(214, 230, 238, 0.10)",
+            OverlayLight = "rgba(248, 249, 250, 0.10)",
             OverlayDark = "rgba(0, 0, 0, 0.68)"
         },
 
