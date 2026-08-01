@@ -9,119 +9,113 @@ public static class MyrmexTheme
         PaletteLight = new PaletteLight
         {
             // Core brand
-            Primary = Colors.BlueGray.Darken2,
-            PrimaryDarken = Colors.BlueGray.Darken4,
-            PrimaryLighten = Colors.BlueGray.Darken1,
+            Primary = "#B86600",
+            PrimaryDarken = "#874800",
+            PrimaryLighten = "#D98300",
+            PrimaryContrastText = Colors.Shades.White,
 
-            Secondary = Colors.Amber.Darken3,
-            SecondaryDarken = Colors.Amber.Darken4,
-            SecondaryLighten = Colors.Amber.Darken2,
-            //Secondary = Colors.Brown.Darken2,
-            //SecondaryDarken = Colors.Brown.Darken3,
-            //SecondaryLighten = Colors.Brown.Darken1,
+            Secondary = "#41596B",
+            SecondaryDarken = "#2C414F",
+            SecondaryLighten = "#607789",
 
-            Tertiary = Colors.BlueGray.Darken1,
+            Tertiary = "#526C7D",
 
             // Layout
-            AppbarBackground = Colors.Gray.Lighten5,
-            AppbarText = Colors.BlueGray.Darken4,
+            AppbarBackground = "#FFFFFF",
+            AppbarText = "#1C2A33",
 
-            DrawerBackground = Colors.Shades.White,
-            DrawerText = Colors.BlueGray.Darken3,
-            DrawerIcon = Colors.BlueGray.Darken1,
+            DrawerBackground = "#F8FAFB",
+            DrawerText = "#344B5A",
+            DrawerIcon = "#526B7A",
 
-            Background = Colors.Gray.Lighten4,
-            BackgroundGray = Colors.Gray.Lighten3,
+            Background = "#F3F6F8",
+            BackgroundGray = "#E6EBEF",
             Surface = Colors.Shades.White,
 
             // Text
-            TextPrimary = Colors.BlueGray.Darken4,
-            TextSecondary = Colors.BlueGray.Darken2,
-            TextDisabled = Colors.Gray.Darken1,
+            TextPrimary = "#1C2A33",
+            TextSecondary = "#526774",
+            TextDisabled = "#8998A1",
 
             // Actions
-            ActionDefault = Colors.BlueGray.Darken2,
-            ActionDisabled = Colors.Gray.Darken1,
-            ActionDisabledBackground = Colors.Gray.Lighten3,
+            ActionDefault = "#41596B",
+            ActionDisabled = "#8A99A2",
+            ActionDisabledBackground = "#E2E8EC",
 
             // Status colors, deliberately not Accent
-            Info = Colors.Blue.Darken2,
-            Success = Colors.Green.Darken2,
-            Warning = Colors.Amber.Darken3,
-            //Warning = Colors.Amber.Darken4,
-            Error = Colors.Red.Darken2,
+            Info = "#1769AA",
+            Success = "#2E7D4F",
+            Warning = "#B86600",
+            Error = "#B3261E",
 
             // Lines / tables / borders
-            LinesDefault = Colors.Gray.Lighten2,
-            TableLines = Colors.Gray.Lighten3,
-            Divider = Colors.Gray.Lighten3,
+            LinesDefault = "#CDD7DE",
+            TableLines = "#DCE4E9",
+            Divider = "#D7E0E6",
 
             // Basics
-            Black = Colors.BlueGray.Darken4,
+            Black = "#1C2A33",
             White = Colors.Shades.White,
 
             // Overlays
-            OverlayLight = "rgba(38, 50, 56, 0.08)",
-            OverlayDark = "rgba(38, 50, 56, 0.48)"
+            OverlayLight = "rgba(28, 42, 51, 0.08)",
+            OverlayDark = "rgba(20, 31, 38, 0.52)"
         },
 
         PaletteDark = new PaletteDark
         {
             // Core brand
-            Primary = Colors.BlueGray.Lighten2,
-            PrimaryDarken = Colors.BlueGray.Darken1,
-            PrimaryLighten = Colors.BlueGray.Lighten4,
+            Primary = "#F2A51D",
+            PrimaryDarken = "#C97600",
+            PrimaryLighten = "#FFC04D",
+            PrimaryContrastText = "#17232B",
 
-            Secondary = Colors.Amber.Darken2,
-            SecondaryDarken = Colors.Amber.Darken3,
-            SecondaryLighten = Colors.Amber.Lighten2,
-            //Secondary = Colors.Brown.Darken2,
-            //SecondaryDarken = Colors.Brown.Darken3,
-            //SecondaryLighten = Colors.Brown.Darken1,
+            Secondary = "#A5BBC8",
+            SecondaryDarken = "#78909E",
+            SecondaryLighten = "#C4D4DD",
 
-            Tertiary = Colors.BlueGray.Lighten2,
+            Tertiary = "#9AB1BF",
 
             // Layout
-            AppbarBackground = Colors.BlueGray.Darken4,
-            AppbarText = Colors.Gray.Lighten2,
+            AppbarBackground = "#172630",
+            AppbarText = "#F1F5F7",
 
-            DrawerBackground = Colors.BlueGray.Darken4,
-            DrawerText = Colors.BlueGray.Lighten4,
-            DrawerIcon = Colors.BlueGray.Lighten2,
+            DrawerBackground = "#14212A",
+            DrawerText = "#D7E2E8",
+            DrawerIcon = "#9EB4C1",
 
-            Background = Colors.BlueGray.Darken4,
-            BackgroundGray = Colors.Gray.Darken4,
-            Surface = Colors.BlueGray.Darken3,
+            Background = "#101A21",
+            BackgroundGray = "#16242D",
+            Surface = "#1C2C36",
 
             // Text
-            TextPrimary = Colors.Gray.Lighten2,
-            TextSecondary = Colors.BlueGray.Lighten3,
-            TextDisabled = Colors.BlueGray.Darken1,
+            TextPrimary = "#F1F5F7",
+            TextSecondary = "#B2C2CB",
+            TextDisabled = "#71838D",
 
             // Actions
-            ActionDefault = Colors.BlueGray.Lighten3,
-            ActionDisabled = Colors.BlueGray.Darken1,
-            ActionDisabledBackground = "rgba(96, 125, 139, 0.24)",
+            ActionDefault = "#C0D0D8",
+            ActionDisabled = "#71838D",
+            ActionDisabledBackground = "#293943",
 
             // Status colors, readable but still calm
-            Info = Colors.Blue.Lighten2,
-            Success = Colors.Green.Lighten2,
-            Warning = Colors.Amber.Darken2,
-            //Warning = Colors.Amber.Darken4,
-            Error = Colors.Red.Lighten2,
+            Info = "#70B8F5",
+            Success = "#75C794",
+            Warning = "#F2A51D",
+            Error = "#FF8A80",
 
             // Lines / tables / borders
-            LinesDefault = Colors.BlueGray.Darken2,
-            TableLines = Colors.BlueGray.Darken2,
-            Divider = Colors.BlueGray.Darken3,
+            LinesDefault = "#40525D",
+            TableLines = "#354852",
+            Divider = "#30424C",
 
             // Basics
-            Black = Colors.Shades.Black,
-            White = Colors.Gray.Lighten5,
+            Black = "#0C1318",
+            White = "#F1F5F7",
 
             // Overlays
-            OverlayLight = "rgba(236, 239, 241, 0.08)",
-            OverlayDark = "rgba(0, 0, 0, 0.72)"
+            OverlayLight = "rgba(214, 230, 238, 0.10)",
+            OverlayDark = "rgba(0, 0, 0, 0.68)"
         },
 
         LayoutProperties = new LayoutProperties

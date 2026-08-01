@@ -92,10 +92,12 @@
 
         <TemplateColumn Title="@Localizer["Common.Actions"]" Sortable="false">
             <CellTemplate>
-                <MudIconButton Icon="@GetActionIcon(context.Item)"
-                               Size="Size.Small"
-                               title="@GetActionTitle(context.Item)"
-                               OnClick="@(() => DetailsRequested.InvokeAsync(context.Item))" />
+                <MudTooltip Text="@GetActionTitle(context.Item)">
+                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
+                                   Size="Size.Small"
+                                   aria-label="@GetActionTitle(context.Item)"
+                                   OnClick="@(() => DetailsRequested.InvokeAsync(context.Item))" />
+                </MudTooltip>
             </CellTemplate>
         </TemplateColumn>
     </Columns>
@@ -185,13 +187,6 @@
             InventoryTransferStatusDetails.Completed => Color.Success,
             _ => Color.Default
         };
-    }
-
-    private static string GetActionIcon(InventoryTransferListItem transfer)
-    {
-        return transfer.Status == InventoryTransferStatusDetails.Completed
-            ? Icons.Material.Filled.Visibility
-            : Icons.Material.Filled.Edit;
     }
 
     private string GetActionTitle(InventoryTransferListItem transfer)

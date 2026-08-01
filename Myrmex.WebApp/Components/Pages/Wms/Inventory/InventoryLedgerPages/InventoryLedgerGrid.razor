@@ -104,11 +104,13 @@
         <TemplateColumn Title="@Localizer["Common.Actions"]"
                         Sortable="false">
             <CellTemplate>
-                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
-                               Size="Size.Small"
-                               Color="Color.Primary"
-                               OnClick="@(() => DetailsRequested.InvokeAsync(context.Item))"
-                               title="@Localizer["InventoryLedger.ViewTransactionDetails"]" />
+                <MudTooltip Text="@Localizer["InventoryLedger.ViewTransactionDetails"]">
+                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
+                                   Size="Size.Small"
+                                   Color="Color.Primary"
+                                   aria-label="@Localizer["InventoryLedger.ViewTransactionDetails"]"
+                                   OnClick="@(() => DetailsRequested.InvokeAsync(context.Item))" />
+                </MudTooltip>
             </CellTemplate>
         </TemplateColumn>
     </Columns>

@@ -58,17 +58,21 @@
         </TemplateColumn>
         <TemplateColumn Title="@Localizer["Common.Actions"]" Sortable="false">
             <CellTemplate>
-                <MudIconButton Icon="@GetActionIcon(context.Item)"
-                               Size="Size.Small"
-                               title="@GetActionTitle(context.Item)"
-                               OnClick="@(() => OpenRequested.InvokeAsync(context.Item))" />
+                <MudTooltip Text="@GetActionTitle(context.Item)">
+                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
+                                   Size="Size.Small"
+                                   aria-label="@GetActionTitle(context.Item)"
+                                   OnClick="@(() => OpenRequested.InvokeAsync(context.Item))" />
+                </MudTooltip>
                 @if (CanCancel(context.Item))
                 {
-                    <MudIconButton Icon="@Icons.Material.Filled.Cancel"
-                                   Color="Color.Error"
-                                   Size="Size.Small"
-                                   title="@Localizer["InventoryCount.CancelCount"]"
-                                   OnClick="@(() => CancelRequested.InvokeAsync(context.Item))" />
+                    <MudTooltip Text="@Localizer["InventoryCount.CancelCount"]">
+                        <MudIconButton Icon="@Icons.Material.Filled.Cancel"
+                                       Color="Color.Error"
+                                       Size="Size.Small"
+                                       aria-label="@Localizer["InventoryCount.CancelCount"]"
+                                       OnClick="@(() => CancelRequested.InvokeAsync(context.Item))" />
+                    </MudTooltip>
                 }
             </CellTemplate>
         </TemplateColumn>
@@ -154,18 +158,6 @@
             InventoryCountStatusDetails.Completed => Color.Success,
             InventoryCountStatusDetails.Cancelled => Color.Error,
             _ => Color.Default
-        };
-    }
-
-    private static string GetActionIcon(InventoryCountListItem count)
-    {
-        return count.Status switch
-        {
-            InventoryCountStatusDetails.Draft => Icons.Material.Filled.Edit,
-            InventoryCountStatusDetails.InProgress => Icons.Material.Filled.Edit,
-            InventoryCountStatusDetails.Completed => Icons.Material.Filled.Visibility,
-            InventoryCountStatusDetails.Cancelled => Icons.Material.Filled.Visibility,
-            _ => Icons.Material.Filled.Visibility
         };
     }
 

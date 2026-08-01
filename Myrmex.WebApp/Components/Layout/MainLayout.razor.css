@@ -1,0 +1,106 @@
+.myrmex-shell {
+    min-height: 100vh;
+}
+
+::deep .mud-appbar {
+    border-bottom: 1px solid var(--mud-palette-divider);
+    box-shadow: none;
+}
+
+::deep .mud-drawer {
+    border-right: 1px solid var(--mud-palette-divider);
+}
+
+::deep .mud-nav-link {
+    border-radius: 4px;
+    margin: 2px 8px;
+}
+
+::deep .mud-nav-link.active,
+::deep .mud-nav-link.active .mud-nav-link-text,
+::deep .mud-nav-link.active .mud-nav-link-icon {
+    color: var(--mud-palette-primary);
+    font-weight: 600;
+}
+
+::deep .mud-nav-link.active {
+    background-color: var(--mud-palette-action-default-hover);
+    box-shadow: inset 3px 0 0 var(--mud-palette-primary);
+}
+
+::deep .mud-paper,
+::deep .mud-dialog {
+    border-color: var(--mud-palette-lines-default);
+}
+
+::deep .mud-paper:not(.mud-alert) {
+    box-shadow: none;
+}
+
+::deep .mud-table-container,
+::deep .mud-data-grid {
+    background: var(--mud-palette-surface);
+    border-color: var(--mud-palette-table-lines);
+}
+
+::deep .mud-table-head,
+::deep .mud-data-grid thead {
+    background: var(--mud-palette-background-gray);
+}
+
+::deep .mud-table-head .mud-table-cell,
+::deep .mud-data-grid thead .mud-table-cell {
+    color: var(--mud-palette-text-secondary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+::deep .mud-table-row:hover,
+::deep .mud-data-grid .mud-table-row:hover {
+    background-color: var(--mud-palette-action-default-hover) !important;
+}
+
+::deep .mud-input-control.mud-input-disabled .mud-input,
+::deep .mud-input-control.mud-input-disabled .mud-input-adornment {
+    color: var(--mud-palette-text-secondary);
+}
+
+::deep .operation-route {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+::deep .operation-route__source,
+::deep .operation-route__destination {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+::deep .operation-route__source {
+    border-left: 3px solid var(--mud-palette-secondary);
+    padding-left: 0.5rem;
+}
+
+::deep .operation-route__destination {
+    border-left: 3px solid var(--mud-palette-primary);
+    padding-left: 0.5rem;
+}
+
+::deep .operation-route__arrow {
+    color: var(--mud-palette-primary);
+    flex: 0 0 auto;
+}
+
+@media (max-width: 600px) {
+    ::deep .operation-route {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    ::deep .operation-route__arrow {
+        align-self: center;
+        transform: rotate(90deg);
+    }
+}

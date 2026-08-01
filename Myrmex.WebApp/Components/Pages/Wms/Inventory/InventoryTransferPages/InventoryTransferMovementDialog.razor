@@ -25,24 +25,31 @@
                               Value="@BaseUnitOfMeasureDisplay"
                               Disabled="true" />
 
-                <MudGrid>
-                    <MudItem xs="12" md="6">
+                <div class="operation-route">
+                    <div class="operation-route__source">
                         <MudTextField T="string"
                                       Label="@FromLabel"
                                       Variant="Variant.Outlined"
                                       Margin="Margin.Dense"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@FromIcon"
                                       Value="@FromDisplay"
                                       Disabled="true" />
-                    </MudItem>
-                    <MudItem xs="12" md="6">
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.ArrowForward"
+                             Class="operation-route__arrow"
+                             aria-hidden="true" />
+                    <div class="operation-route__destination">
                         <MudTextField T="string"
                                       Label="@ToLabel"
                                       Variant="Variant.Outlined"
                                       Margin="Margin.Dense"
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@ToIcon"
                                       Value="@ToDisplay"
                                       Disabled="true" />
-                    </MudItem>
-                </MudGrid>
+                    </div>
+                </div>
 
                 <MudNumericField T="decimal"
                                  Label="@Localizer["InventoryTransfer.RemainingQuantity"]"
@@ -82,6 +89,7 @@
 
         <MudButton Color="Color.Primary"
                    Variant="Variant.Filled"
+                   StartIcon="@ActionIcon"
                    OnClick="SaveAsync"
                    Disabled="_isSaving || RemainingQuantity <= 0">
             @if (_isSaving)
@@ -172,6 +180,20 @@
         : IsPlace
             ? Localizer["InventoryTransfer.Place"]
             : Localizer["Common.Move"];
+
+    private string FromIcon => IsPlace
+        ? Icons.Material.Filled.LocalShipping
+        : Icons.Material.Filled.Output;
+
+    private string ToIcon => IsPick
+        ? Icons.Material.Filled.LocalShipping
+        : Icons.Material.Filled.Input;
+
+    private string ActionIcon => IsPick
+        ? Icons.Material.Filled.MoveToInbox
+        : IsPlace
+            ? Icons.Material.Filled.Outbox
+            : Icons.Material.Filled.SyncAlt;
 
     protected override void OnInitialized()
     {

@@ -27,8 +27,8 @@
             <MudTable Items="Transfer.Lines" Dense="true" Hover="true">
                 <HeaderContent>
                     <MudTh>@Localizer["Common.Sku"]</MudTh>
-                    <MudTh>@Localizer["Common.Source"]</MudTh>
-                    <MudTh>@Localizer["Common.Destination"]</MudTh>
+                    <MudTh><MudIcon Icon="@Icons.Material.Filled.Output" Size="Size.Small" aria-hidden="true" /> @Localizer["Common.Source"]</MudTh>
+                    <MudTh><MudIcon Icon="@Icons.Material.Filled.Input" Size="Size.Small" aria-hidden="true" /> @Localizer["Common.Destination"]</MudTh>
                     <MudTh>@Localizer["Sku.BaseUnitOfMeasure"]</MudTh>
                     <MudTh>@Localizer["InventoryTransfer.Requested"]</MudTh>
                     <MudTh>@Localizer["InventoryTransfer.Moved"]</MudTh>
@@ -57,6 +57,7 @@
                             <MudButton Size="Size.Small"
                                        Color="Color.Primary"
                                        Variant="Variant.Outlined"
+                                       StartIcon="@Icons.Material.Filled.SyncAlt"
                                        OnClick="@(() => OpenMovementDialogAsync(context, InventoryTransferMovementDialog.MoveAction))">
                                 @Localizer["Common.Move"]
                             </MudButton>
@@ -66,6 +67,7 @@
                             <MudButton Size="Size.Small"
                                        Color="Color.Primary"
                                        Variant="Variant.Outlined"
+                                       StartIcon="@Icons.Material.Filled.MoveToInbox"
                                        OnClick="@(() => OpenMovementDialogAsync(context, InventoryTransferMovementDialog.PickAction))">
                                 @Localizer["InventoryTransfer.Pick"]
                             </MudButton>
@@ -75,6 +77,7 @@
                             <MudButton Size="Size.Small"
                                        Color="Color.Primary"
                                        Variant="Variant.Outlined"
+                                       StartIcon="@Icons.Material.Filled.Outbox"
                                        OnClick="@(() => OpenMovementDialogAsync(context, InventoryTransferMovementDialog.PlaceAction))">
                                 @Localizer["InventoryTransfer.Place"]
                             </MudButton>
@@ -89,8 +92,8 @@
                     <MudTh>@Localizer["InventoryTransfer.Occurred"]</MudTh>
                     <MudTh>@Localizer["InventoryTransfer.Meaning"]</MudTh>
                     <MudTh>@Localizer["Common.Sku"]</MudTh>
-                    <MudTh>@Localizer["Common.From"]</MudTh>
-                    <MudTh>@Localizer["Common.To"]</MudTh>
+                    <MudTh><MudIcon Icon="@Icons.Material.Filled.Output" Size="Size.Small" aria-hidden="true" /> @Localizer["Common.From"]</MudTh>
+                    <MudTh><MudIcon Icon="@Icons.Material.Filled.Input" Size="Size.Small" aria-hidden="true" /> @Localizer["Common.To"]</MudTh>
                     <MudTh>@Localizer["Common.Quantity"]</MudTh>
                     <MudTh>@Localizer["Sku.BaseUnitOfMeasure"]</MudTh>
                     <MudTh>@Localizer["InventoryTransfer.Transaction"]</MudTh>

@@ -27,12 +27,51 @@
                                   Value="@WarehouseDisplay"
                                   Disabled="true" />
 
-                    <MudTextField T="string"
-                                  Label="@Localizer["InventoryBalance.SourceLocation"]"
-                                  Variant="Variant.Outlined"
-                                  Margin="Margin.Dense"
-                                  Value="@SourceStorageLocationDisplay"
-                                  Disabled="true" />
+                    <div class="operation-route">
+                        <div class="operation-route__source">
+                            <MudTextField T="string"
+                                          Label="@Localizer["InventoryBalance.SourceLocation"]"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="@Icons.Material.Filled.Output"
+                                          Value="@SourceStorageLocationDisplay"
+                                          Disabled="true" />
+                        </div>
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowForward"
+                                 Class="operation-route__arrow"
+                                 aria-hidden="true" />
+                        <div class="operation-route__destination">
+                            <MudAutocomplete T="StorageLocationLookupItem"
+                                             Label="@Localizer["InventoryBalance.DestinationLocation"]"
+                                             Variant="Variant.Outlined"
+                                             Margin="Margin.Dense"
+                                             Adornment="Adornment.Start"
+                                             AdornmentIcon="@Icons.Material.Filled.Input"
+                                             Required="true"
+                                             RequiredError="@Localizer["InventoryBalance.DestinationLocationRequired"]"
+                                             Clearable="true"
+                                             ShowProgressIndicator="true"
+                                             MinCharacters="0"
+                                             DebounceInterval="300"
+                                             MaxItems="20"
+                                             ResetValueOnEmptyText="true"
+                                             CoerceText="false"
+                                             CoerceValue="false"
+                                             Disabled="_isSaving || _hasConflict"
+                                             Value="_destinationStorageLocation"
+                                             ValueChanged="OnDestinationStorageLocationChanged"
+                                             SearchFunc="SearchDestinationStorageLocationsAsync"
+                                             ToStringFunc="FormatStorageLocation">
+                                <ItemTemplate>
+                                    <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
+                                </ItemTemplate>
+                                <NoItemsTemplate>
+                                    <MudText>@Localizer["InventoryBalance.NoEligibleDestinations"]</MudText>
+                                </NoItemsTemplate>
+                            </MudAutocomplete>
+                        </div>
+                    </div>
 
                     <MudNumericField T="decimal"
                                      Label="@Localizer["InventoryBalance.CurrentQuantity"]"
@@ -47,33 +86,6 @@
                                   Margin="Margin.Dense"
                                   Value="@BaseUnitOfMeasureDisplay"
                                   Disabled="true" />
-
-                    <MudAutocomplete T="StorageLocationLookupItem"
-                                     Label="@Localizer["InventoryBalance.DestinationLocation"]"
-                                     Variant="Variant.Outlined"
-                                     Margin="Margin.Dense"
-                                     Required="true"
-                                     RequiredError="@Localizer["InventoryBalance.DestinationLocationRequired"]"
-                                     Clearable="true"
-                                     ShowProgressIndicator="true"
-                                     MinCharacters="0"
-                                     DebounceInterval="300"
-                                     MaxItems="20"
-                                     ResetValueOnEmptyText="true"
-                                     CoerceText="false"
-                                     CoerceValue="false"
-                                     Disabled="_isSaving || _hasConflict"
-                                     Value="_destinationStorageLocation"
-                                     ValueChanged="OnDestinationStorageLocationChanged"
-                                     SearchFunc="SearchDestinationStorageLocationsAsync"
-                                     ToStringFunc="FormatStorageLocation">
-                        <ItemTemplate>
-                            <MudText Typo="Typo.body2">@context.Code - @context.Name</MudText>
-                        </ItemTemplate>
-                        <NoItemsTemplate>
-                            <MudText>@Localizer["InventoryBalance.NoEligibleDestinations"]</MudText>
-                        </NoItemsTemplate>
-                    </MudAutocomplete>
 
                     <MudNumericField T="decimal"
                                      Label="@Localizer["InventoryBalance.QuantityToMove"]"
@@ -144,6 +156,7 @@
 
             <MudButton Color="Color.Primary"
                        Variant="Variant.Filled"
+                       StartIcon="@Icons.Material.Filled.SyncAlt"
                        OnClick="SaveAsync"
                        Disabled="_isSaving || _hasConflict">
                 @if (_isSaving)
