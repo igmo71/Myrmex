@@ -32,7 +32,14 @@
 
         <TemplateColumn Title="@Localizer["InventoryTransfer.Transit"]">
             <CellTemplate>
-                @(context.Item.TransitStorageLocation?.Code ?? Localizer["InventoryTransfer.Direct"])
+                @if (context.Item.TransitStorageLocation is not null)
+                {
+                    <WmsReference Name="@context.Item.TransitStorageLocation.Name" Code="@context.Item.TransitStorageLocation.Code" />
+                }
+                else
+                {
+                    @Localizer["InventoryTransfer.Direct"]
+                }
             </CellTemplate>
         </TemplateColumn>
 

@@ -20,7 +20,14 @@
                 </MudItem>
                 <MudItem xs="12" md="4">
                     <MudText Typo="Typo.caption" Color="Color.Secondary">@Localizer["InventoryTransfer.Transit"]</MudText>
-                    <MudText Typo="Typo.body2">@(Transfer.TransitStorageLocation?.Code ?? Localizer["InventoryTransfer.Direct"])</MudText>
+                    @if (Transfer.TransitStorageLocation is not null)
+                    {
+                        <WmsReference Name="@Transfer.TransitStorageLocation.Name" Code="@Transfer.TransitStorageLocation.Code" />
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2">@Localizer["InventoryTransfer.Direct"]</MudText>
+                    }
                 </MudItem>
             </MudGrid>
 
@@ -40,9 +47,9 @@
                     <MudTh></MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd>@context.Sku.Code</MudTd>
-                    <MudTd>@context.SourceStorageLocation.Code</MudTd>
-                    <MudTd>@context.DestinationStorageLocation.Code</MudTd>
+                    <MudTd><WmsReference Name="@context.Sku.Name" Code="@context.Sku.Code" /></MudTd>
+                    <MudTd><WmsReference Name="@context.SourceStorageLocation.Name" Code="@context.SourceStorageLocation.Code" /></MudTd>
+                    <MudTd><WmsReference Name="@context.DestinationStorageLocation.Name" Code="@context.DestinationStorageLocation.Code" /></MudTd>
                     <MudTd>@FormatBaseUnitOfMeasure(context)</MudTd>
                     <MudTd>@context.RequestedQuantity</MudTd>
                     <MudTd>@context.MovedQuantity</MudTd>
@@ -101,9 +108,9 @@
                 <RowTemplate>
                     <MudTd>@context.OccurredAtUtc.ToLocalTime().ToString("g")</MudTd>
                     <MudTd>@context.MovementMeaning</MudTd>
-                    <MudTd>@context.Sku.Code</MudTd>
-                    <MudTd>@context.FromStorageLocation.Code</MudTd>
-                    <MudTd>@context.ToStorageLocation.Code</MudTd>
+                    <MudTd><WmsReference Name="@context.Sku.Name" Code="@context.Sku.Code" /></MudTd>
+                    <MudTd><WmsReference Name="@context.FromStorageLocation.Name" Code="@context.FromStorageLocation.Code" /></MudTd>
+                    <MudTd><WmsReference Name="@context.ToStorageLocation.Name" Code="@context.ToStorageLocation.Code" /></MudTd>
                     <MudTd>@context.Quantity</MudTd>
                     <MudTd>@FormatBaseUnitOfMeasure(context)</MudTd>
                     <MudTd>@context.InventoryTransactionId</MudTd>

@@ -110,10 +110,10 @@
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd>
-                        @context.Sku.Code - @context.Sku.Name
+                        <WmsReference Name="@context.Sku.Name" Code="@context.Sku.Code" />
                         <MudText Typo="Typo.caption">@FormatUom(context)</MudText>
                     </MudTd>
-                    <MudTd>@context.StorageLocation.Code - @context.StorageLocation.Name</MudTd>
+                    <MudTd><WmsReference Name="@context.StorageLocation.Name" Code="@context.StorageLocation.Code" /></MudTd>
                     <MudTd>@context.SystemQuantity</MudTd>
                     <MudTd>@(context.CountedQuantity?.ToString() ?? "—")</MudTd>
                     <MudTd>@(context.VarianceQuantity?.ToString() ?? "—")</MudTd>

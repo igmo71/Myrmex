@@ -1,10 +1,6 @@
 <MudTooltip Text="@Tooltip">
     <MudText Typo="Typo.body2" Class="wms-reference" title="@Tooltip">
         <span class="wms-reference__name">@DisplayName</span>
-        @if (!string.IsNullOrWhiteSpace(Code))
-        {
-            <span class="wms-reference__code">@Code</span>
-        }
     </MudText>
 </MudTooltip>
 
@@ -12,6 +8,8 @@
     [Parameter, EditorRequired] public string? Name { get; set; }
     [Parameter] public string? Code { get; set; }
     [Parameter] public string? Fallback { get; set; }
-    private string DisplayName => string.IsNullOrWhiteSpace(Name) ? Fallback ?? string.Empty : Name;
-    private string Tooltip => string.IsNullOrWhiteSpace(Code) ? DisplayName : $"{DisplayName} · {Code}";
+    private bool HasName => !string.IsNullOrWhiteSpace(Name);
+    private string ShortCode => Code?.Length > 12 ? Code[..12] : Code ?? string.Empty;
+    private string DisplayName => HasName ? Name! : !string.IsNullOrWhiteSpace(Code) ? ShortCode : Fallback ?? string.Empty;
+    private string Tooltip => HasName || string.IsNullOrWhiteSpace(Code) ? DisplayName : Code;
 }
