@@ -18,7 +18,7 @@
             <CellTemplate>
                 <MudText Typo="Typo.body2">@context.Item.Code</MudText>
                 <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    @context.Item.CreatedAtUtc.ToLocalTime().ToString("g")
+                    @WmsDisplayFormatter.FormatLocalDateTime(context.Item.CreatedAtUtc)
                 </MudText>
             </CellTemplate>
         </TemplateColumn>
@@ -26,7 +26,7 @@
         <TemplateColumn Title="@Localizer["Common.Warehouse"]"
                         Sortable="false">
             <CellTemplate>
-                @WarehouseDisplayFormatter.GetName(context.Item.SourceWarehouse.Name, Localizer)
+                <WmsReference Name="@context.Item.SourceWarehouse.Name" Code="@context.Item.SourceWarehouse.Code" />
             </CellTemplate>
         </TemplateColumn>
 
@@ -39,7 +39,7 @@
         <PropertyColumn Property="@(transfer => transfer.TotalRequestedQuantity)"
                         Title="@Localizer["InventoryTransfer.Requested"]"
                         SortBy="@(transfer => transfer.TotalRequestedQuantity)"
-                        Format="0.###" />
+                        Format="0.##" />
 
         @* <TemplateColumn Title="@Localizer["InventoryTransfer.Requested"]"
                         Tag="@InventoryTransferSortBy.TotalRequestedQuantity"
@@ -55,7 +55,7 @@
                         SortBy="@(transfer => transfer.TotalPickedQuantity)"
                         Sortable="true">
             <CellTemplate>
-                @context.Item.TotalPickedQuantity
+                @WmsDisplayFormatter.FormatQuantity(context.Item.TotalPickedQuantity)
             </CellTemplate>
         </TemplateColumn>
 
@@ -64,7 +64,7 @@
                         SortBy="@(transfer => transfer.TotalPlacedQuantity)"
                         Sortable="true">
             <CellTemplate>
-                @context.Item.TotalPlacedQuantity
+                @WmsDisplayFormatter.FormatQuantity(context.Item.TotalPlacedQuantity)
             </CellTemplate>
         </TemplateColumn>
 
@@ -73,7 +73,7 @@
                         SortBy="@(transfer => transfer.TotalInTransitQuantity)"
                         Sortable="true">
             <CellTemplate>
-                @context.Item.TotalInTransitQuantity
+                @WmsDisplayFormatter.FormatQuantity(context.Item.TotalInTransitQuantity)
             </CellTemplate>
         </TemplateColumn>
 
@@ -85,7 +85,7 @@
                 <MudChip T="string"
                          Size="Size.Small"
                          Color="@GetStatusColor(context.Item.Status)">
-                    @context.Item.Status
+                    @WmsDisplayFormatter.FormatTransferStatus(context.Item.Status, Localizer)
                 </MudChip>
             </CellTemplate>
         </TemplateColumn>

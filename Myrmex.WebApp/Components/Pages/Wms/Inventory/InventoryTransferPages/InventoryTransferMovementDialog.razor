@@ -56,7 +56,7 @@
                                  Value="@RemainingQuantity"
                                  Disabled="true"
                                  Culture="@QuantityCulture"
-                                 Format="0.###" />
+                                 Format="0.##" />
 
                 <MudNumericField T="decimal"
                                  Label="@QuantityLabel"
@@ -67,7 +67,7 @@
                                  Required="true"
                                  RequiredError="@Localizer["InventoryTransfer.MoveQuantityRequired"]"
                                  Culture="@QuantityCulture"
-                                 Format="0.###"
+                                 Format="0.##"
                                  InputMode="@(InputMode.@decimal)"
                                  @bind-Value="_quantity" />
 

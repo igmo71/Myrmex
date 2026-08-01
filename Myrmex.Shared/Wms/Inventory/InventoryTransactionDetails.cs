@@ -6,4 +6,5 @@ public sealed record InventoryTransactionDetails(
     string Reason,
     DateTimeOffset OccurredAtUtc,
     DateTimeOffset CreatedAtUtc,
-    IReadOnlyList<InventoryTransactionEntryDetails> Entries);
+    IReadOnlyList<InventoryTransactionEntryDetails> Entries,
+    InventoryTransactionSourceDetails? Source = null);

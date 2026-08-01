@@ -59,7 +59,32 @@ internal static class GetInventoryTransactionById
                     ServiceError.NotFound<InventoryTransaction>());
             }
 
-            return ServiceResult<InventoryTransactionDetails>.Success(detailsData.ToDetails());
+            InventoryTransactionSourceDetails? source = await GetSourceAsync(
+                dbContext,
+                detailsData.Id,
+                cancellationToken);
+
+            return ServiceResult<InventoryTransactionDetails>.Success(detailsData.ToDetails(source));
+        }
+
+        private static async Task<InventoryTransactionSourceDetails?> GetSourceAsync(
+            WmsDbContext dbContext,
+            Guid transactionId,
+            CancellationToken cancellationToken)
+        {
+            InventoryTransactionSourceDetails? receiving = await dbContext.ReceivingOrders
+                .AsNoTracking()
+                .Where(x => x.InventoryTransactionId == transactionId)
+                .Select(x => new InventoryTransactionSourceDetails("ReceivingOrder", x.Number, x.CreatedAtUtc))
+                .SingleOrDefaultAsync(cancellationToken);
+            if (receiving is not null) return receiving;
+
+            InventoryTransactionSourceDetails? transfer = await dbContext.InventoryTransferMovements
+                .AsNoTracking()
+                .Where(x => x.InventoryTransactionId == transactionId)
+                .Select(x => new InventoryTransactionSourceDetails("InventoryTransfer", x.InventoryTransfer.Code, x.InventoryTransfer.CreatedAtUtc))
+                .FirstOrDefaultAsync(cancellationToken);
+            return transfer;
         }
     }
 }
@@ -72,7 +97,7 @@ internal sealed record InventoryTransactionDetailsData(
     DateTimeOffset CreatedAtUtc,
     IReadOnlyList<InventoryTransactionEntryDetailsData> Entries)
 {
-    public InventoryTransactionDetails ToDetails()
+    public InventoryTransactionDetails ToDetails(InventoryTransactionSourceDetails? source)
     {
         return new InventoryTransactionDetails(
             Id,
@@ -80,7 +105,8 @@ internal sealed record InventoryTransactionDetailsData(
             Reason,
             OccurredAtUtc,
             CreatedAtUtc,
-            Entries.Select(x => x.ToDetails()).ToArray());
+            Entries.Select(x => x.ToDetails()).ToArray(),
+            source);
     }
 }
 

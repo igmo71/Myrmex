@@ -78,7 +78,7 @@
                                      Value="InventoryBalance.Quantity"
                                      Disabled="true"
                                      Culture="@QuantityCulture"
-                                     Format="0.###" />
+                                     Format="0.##" />
 
                     <MudTextField T="string"
                                   Label="@Localizer["Sku.BaseUnitOfMeasure"]"
@@ -96,7 +96,7 @@
                                      Required="true"
                                      RequiredError="@Localizer["Common.QuantityRequired"]"
                                      Culture="@QuantityCulture"
-                                     Format="0.###"
+                                     Format="0.##"
                                      InputMode="@(InputMode.@decimal)"
                                      Disabled="_isSaving || _hasConflict"
                                      @bind-Value="_quantity" />

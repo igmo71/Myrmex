@@ -6,15 +6,15 @@
         <MudStack Spacing="2">
             <MudText Typo="Typo.subtitle1">@Line.Sku.Code - @Line.Sku.Name</MudText>
             <MudText>@Localizer["Sku.BaseUnitOfMeasure"]: @BaseUnitOfMeasureDisplay</MudText>
-            <MudText>@Localizer["Receiving.Planned"]: @Line.PlannedQuantity.ToString("0.####")</MudText>
-            <MudText>@Localizer["Receiving.Received"]: @Line.ReceivedQuantity.ToString("0.####")</MudText>
-            <MudText>@Localizer["Receiving.Remaining"]: @Line.RemainingQuantity.ToString("0.####")</MudText>
+            <MudText>@Localizer["Receiving.Planned"]: @WmsDisplayFormatter.FormatQuantity(Line.PlannedQuantity)</MudText>
+            <MudText>@Localizer["Receiving.Received"]: @WmsDisplayFormatter.FormatQuantity(Line.ReceivedQuantity)</MudText>
+            <MudText>@Localizer["Receiving.Remaining"]: @WmsDisplayFormatter.FormatQuantity(Line.RemainingQuantity)</MudText>
             <MudNumericField T="decimal"
                              Label="@Localizer["Receiving.ReceiveQuantity"]"
                              Variant="Variant.Outlined"
                              Validation="@((Func<decimal, string?>)ValidatePositiveQuantity)"
                              Max="@Line.RemainingQuantity"
-                             Format="0.###"
+                             Format="0.##"
                              Required="true"
                              AutoFocus="true"
                              Disabled="_saving"

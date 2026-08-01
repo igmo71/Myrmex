@@ -16,12 +16,7 @@
                         SortBy="@(balance => balance.Sku.Code)"
                         Sortable="true">
             <CellTemplate>
-                <MudText Typo="Typo.body2">
-                    @context.Item.Sku.Code
-                </MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    @context.Item.Sku.Name
-                </MudText>
+                <WmsReference Name="@context.Item.Sku.Name" Code="@context.Item.Sku.Code" />
             </CellTemplate>
         </TemplateColumn>
 
@@ -30,7 +25,7 @@
                         SortBy="@(balance => balance.StorageLocation.Warehouse.Name)"
                         Sortable="true">
             <CellTemplate>
-                @WarehouseDisplayFormatter.GetName(context.Item.StorageLocation.Warehouse.Name, Localizer)
+                <WmsReference Name="@context.Item.StorageLocation.Warehouse.Name" Code="@context.Item.StorageLocation.Warehouse.Code" Fallback="@Localizer["Common.NotAvailable"]" />
             </CellTemplate>
         </TemplateColumn>
 
@@ -39,12 +34,7 @@
                         SortBy="@(balance => balance.StorageLocation.Code)"
                         Sortable="true">
             <CellTemplate>
-                <MudText Typo="Typo.body2">
-                    @context.Item.StorageLocation.Code
-                </MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    @context.Item.StorageLocation.Name
-                </MudText>
+                <WmsReference Name="@context.Item.StorageLocation.Name" Code="@context.Item.StorageLocation.Code" />
             </CellTemplate>
         </TemplateColumn>
 
@@ -53,7 +43,7 @@
                         SortBy="@(balance => balance.Quantity)"
                         Sortable="true">
             <CellTemplate>
-                @context.Item.Quantity @GetBaseUnitOfMeasureDisplay(context.Item)
+                @WmsDisplayFormatter.FormatQuantity(context.Item.Quantity) @WmsDisplayFormatter.FormatUom(context.Item.Sku.BaseUom.Symbol, null, context.Item.Sku.BaseUom.Code, Localizer)
             </CellTemplate>
         </TemplateColumn>
 
@@ -164,10 +154,4 @@
         _dataGrid.NavigateTo(Page.First);
     }
 
-    private static string GetBaseUnitOfMeasureDisplay(InventoryBalanceDetails inventoryBalance)
-    {
-        return string.IsNullOrWhiteSpace(inventoryBalance.Sku.BaseUom.Symbol)
-            ? inventoryBalance.Sku.BaseUom.Code
-            : inventoryBalance.Sku.BaseUom.Symbol;
-    }
 }

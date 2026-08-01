@@ -1563,4 +1563,20 @@
   <data name="OneC.Import.ReceivingOrders" xml:space="preserve">
     <value>Receiving Orders</value>
   </data>
+  <data name="InventoryTransaction.Type.Receiving" xml:space="preserve"><value>Receiving</value></data>
+  <data name="InventoryTransaction.Type.Transfer" xml:space="preserve"><value>Transfer</value></data>
+  <data name="InventoryTransaction.Type.Adjustment" xml:space="preserve"><value>Adjustment</value></data>
+  <data name="InventoryTransfer.Status.Created" xml:space="preserve"><value>Created</value></data>
+  <data name="InventoryTransfer.Status.InProgress" xml:space="preserve"><value>In progress</value></data>
+  <data name="InventoryTransfer.Status.Completed" xml:space="preserve"><value>Completed</value></data>
+  <data name="InventoryCount.Status.Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="InventoryCount.Status.InProgress" xml:space="preserve"><value>In progress</value></data>
+  <data name="InventoryCount.Status.Completed" xml:space="preserve"><value>Completed</value></data>
+  <data name="InventoryCount.Status.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="InventoryTransfer.Movement.Direct" xml:space="preserve"><value>Direct movement</value></data>
+  <data name="InventoryTransfer.Movement.Pick" xml:space="preserve"><value>Pick</value></data>
+  <data name="InventoryTransfer.Movement.Place" xml:space="preserve"><value>Place</value></data>
+  <data name="InventoryTransfer.Movement.Generic" xml:space="preserve"><value>Movement</value></data>
+  <data name="InventoryTransaction.Source.Receiving" xml:space="preserve"><value>Receiving order № {0} from {1}</value></data>
+  <data name="InventoryTransaction.Source.Transfer" xml:space="preserve"><value>Internal transfer № {0} from {1}</value></data>
 </root>

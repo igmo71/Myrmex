@@ -1,4 +1,3 @@
-@using System.Globalization
 @using Myrmex.Shared.Wms.Inventory
 @inject IStringLocalizer<SharedResource> Localizer
 
@@ -17,7 +16,7 @@
                         SortBy="@(entry => entry.OccurredAtUtc)"
                         Sortable="true">
             <CellTemplate>
-                @FormatTimestamp(context.Item.OccurredAtUtc)
+                @WmsDisplayFormatter.FormatLocalDateTime(context.Item.OccurredAtUtc)
             </CellTemplate>
         </TemplateColumn>
 
@@ -26,7 +25,7 @@
                         SortBy="@(entry => entry.TransactionType)"
                         Sortable="true">
             <CellTemplate>
-                @context.Item.TransactionType
+                @WmsDisplayFormatter.FormatTransactionType(context.Item.TransactionType, Localizer)
             </CellTemplate>
         </TemplateColumn>
 
@@ -35,10 +34,7 @@
                         SortBy="@(entry => entry.Sku.Code)"
                         Sortable="true">
             <CellTemplate>
-                <MudText Typo="Typo.body2">@context.Item.Sku.Code</MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    @context.Item.Sku.Name
-                </MudText>
+                <WmsReference Name="@context.Item.Sku.Name" Code="@context.Item.Sku.Code" />
             </CellTemplate>
         </TemplateColumn>
 
@@ -47,7 +43,7 @@
                         SortBy="@(entry => entry.StorageLocation.Warehouse.Name)"
                         Sortable="true">
             <CellTemplate>
-                @WarehouseDisplayFormatter.GetName(context.Item.StorageLocation.Warehouse.Name, Localizer)
+                <WmsReference Name="@context.Item.StorageLocation.Warehouse.Name" Code="@context.Item.StorageLocation.Warehouse.Code" Fallback="@Localizer["Common.NotAvailable"]" />
             </CellTemplate>
         </TemplateColumn>
 
@@ -56,10 +52,7 @@
                         SortBy="@(entry => entry.StorageLocation.Code)"
                         Sortable="true">
             <CellTemplate>
-                <MudText Typo="Typo.body2">@context.Item.StorageLocation.Code</MudText>
-                <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    @context.Item.StorageLocation.Name
-                </MudText>
+                <WmsReference Name="@context.Item.StorageLocation.Name" Code="@context.Item.StorageLocation.Code" />
             </CellTemplate>
         </TemplateColumn>
 
@@ -68,7 +61,7 @@
                         SortBy="@(entry => entry.BalanceBefore)"
                         Sortable="true">
             <CellTemplate>
-                @FormatQuantity(context.Item.BalanceBefore) @GetBaseUnitOfMeasureDisplay(context.Item)
+                @WmsDisplayFormatter.FormatQuantity(context.Item.BalanceBefore) @WmsDisplayFormatter.FormatUom(context.Item.Sku.BaseUom.Symbol, null, context.Item.Sku.BaseUom.Code, Localizer)
             </CellTemplate>
         </TemplateColumn>
 
@@ -77,7 +70,7 @@
                         SortBy="@(entry => entry.QuantityDelta)"
                         Sortable="true">
             <CellTemplate>
-                @FormatSignedQuantity(context.Item.QuantityDelta) @GetBaseUnitOfMeasureDisplay(context.Item)
+                @WmsDisplayFormatter.FormatSignedQuantity(context.Item.QuantityDelta) @WmsDisplayFormatter.FormatUom(context.Item.Sku.BaseUom.Symbol, null, context.Item.Sku.BaseUom.Code, Localizer)
             </CellTemplate>
         </TemplateColumn>
 
@@ -86,7 +79,7 @@
                         SortBy="@(entry => entry.BalanceAfter)"
                         Sortable="true">
             <CellTemplate>
-                @FormatQuantity(context.Item.BalanceAfter) @GetBaseUnitOfMeasureDisplay(context.Item)
+                @WmsDisplayFormatter.FormatQuantity(context.Item.BalanceAfter) @WmsDisplayFormatter.FormatUom(context.Item.Sku.BaseUom.Symbol, null, context.Item.Sku.BaseUom.Code, Localizer)
             </CellTemplate>
         </TemplateColumn>
 
@@ -134,7 +127,6 @@
     private MudDataGrid<InventoryLedgerEntryDetails>? _dataGrid;
 
     private static readonly int[] PageSizeOptions = [10, 25, 50, 100];
-    private static CultureInfo QuantityCulture => CultureInfo.CurrentCulture;
 
     private Task<GridData<InventoryLedgerEntryDetails>> LoadServerDataAsync(
         GridState<InventoryLedgerEntryDetails> state,
@@ -192,19 +184,4 @@
         _dataGrid.NavigateTo(Page.First);
     }
 
-    private static string FormatTimestamp(DateTimeOffset value) =>
-        value.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss 'UTC'", CultureInfo.InvariantCulture);
-
-    private static string FormatQuantity(decimal value) =>
-        value.ToString("0.####", QuantityCulture);
-
-    private static string FormatSignedQuantity(decimal value) =>
-        value > 0 ? $"+{FormatQuantity(value)}" : FormatQuantity(value);
-
-    private static string GetBaseUnitOfMeasureDisplay(InventoryLedgerEntryDetails item)
-    {
-        return string.IsNullOrWhiteSpace(item.Sku.BaseUom.Symbol)
-            ? item.Sku.BaseUom.Code
-            : item.Sku.BaseUom.Symbol;
-    }
 }

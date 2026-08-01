@@ -1563,4 +1563,20 @@
   <data name="OneC.Import.ReceivingOrders" xml:space="preserve">
     <value>Импорт Приходных ордеров</value>
   </data>
+  <data name="InventoryTransaction.Type.Receiving" xml:space="preserve"><value>Приемка</value></data>
+  <data name="InventoryTransaction.Type.Transfer" xml:space="preserve"><value>Перемещение</value></data>
+  <data name="InventoryTransaction.Type.Adjustment" xml:space="preserve"><value>Корректировка</value></data>
+  <data name="InventoryTransfer.Status.Created" xml:space="preserve"><value>Создано</value></data>
+  <data name="InventoryTransfer.Status.InProgress" xml:space="preserve"><value>В работе</value></data>
+  <data name="InventoryTransfer.Status.Completed" xml:space="preserve"><value>Завершено</value></data>
+  <data name="InventoryCount.Status.Draft" xml:space="preserve"><value>Черновик</value></data>
+  <data name="InventoryCount.Status.InProgress" xml:space="preserve"><value>В работе</value></data>
+  <data name="InventoryCount.Status.Completed" xml:space="preserve"><value>Завершено</value></data>
+  <data name="InventoryCount.Status.Cancelled" xml:space="preserve"><value>Отменено</value></data>
+  <data name="InventoryTransfer.Movement.Direct" xml:space="preserve"><value>Прямое перемещение</value></data>
+  <data name="InventoryTransfer.Movement.Pick" xml:space="preserve"><value>Отбор</value></data>
+  <data name="InventoryTransfer.Movement.Place" xml:space="preserve"><value>Размещение</value></data>
+  <data name="InventoryTransfer.Movement.Generic" xml:space="preserve"><value>Перемещение</value></data>
+  <data name="InventoryTransaction.Source.Receiving" xml:space="preserve"><value>Приходный ордер № {0} от {1}</value></data>
+  <data name="InventoryTransaction.Source.Transfer" xml:space="preserve"><value>Внутреннее перемещение № {0} от {1}</value></data>
 </root>

@@ -1,4 +1,3 @@
-@using System.Globalization
 @using Myrmex.Shared.Wms.Inventory
 @inject IStringLocalizer<SharedResource> Localizer
 
@@ -11,31 +10,26 @@
         <MudStack Spacing="3">
             <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="6">
                 <MudStack Spacing="0">
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">@Localizer["InventoryLedger.TransactionId"]</MudText>
-                    <MudText Typo="Typo.body2">@Transaction.Id</MudText>
-                </MudStack>
-
-                <MudStack Spacing="0">
                     <MudText Typo="Typo.caption" Color="Color.Secondary">@Localizer["InventoryLedger.TransactionType"]</MudText>
-                    <MudText Typo="Typo.body2">@Transaction.TransactionType</MudText>
+                    <MudText Typo="Typo.body2">@WmsDisplayFormatter.FormatTransactionType(Transaction.TransactionType, Localizer)</MudText>
                 </MudStack>
             </MudStack>
 
             <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="6">
                 <MudStack Spacing="0">
                     <MudText Typo="Typo.caption" Color="Color.Secondary">@Localizer["InventoryLedger.OccurredUtc"]</MudText>
-                    <MudText Typo="Typo.body2">@FormatTimestamp(Transaction.OccurredAtUtc)</MudText>
+                    <MudText Typo="Typo.body2">@WmsDisplayFormatter.FormatLocalDateTime(Transaction.OccurredAtUtc)</MudText>
                 </MudStack>
 
                 <MudStack Spacing="0">
                     <MudText Typo="Typo.caption" Color="Color.Secondary">@Localizer["Common.CreatedUtc"]</MudText>
-                    <MudText Typo="Typo.body2">@FormatTimestamp(Transaction.CreatedAtUtc)</MudText>
+                    <MudText Typo="Typo.body2">@WmsDisplayFormatter.FormatLocalDateTime(Transaction.CreatedAtUtc)</MudText>
                 </MudStack>
             </MudStack>
 
             <MudStack Spacing="0">
                 <MudText Typo="Typo.caption" Color="Color.Secondary">@Localizer["Common.Reason"]</MudText>
-                <MudText Typo="Typo.body2">@Transaction.Reason</MudText>
+                <MudText Typo="Typo.body2">@SourceDescription</MudText>
             </MudStack>
 
             <MudTable T="InventoryTransactionEntryDetails"
@@ -54,23 +48,17 @@
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="@Localizer["Common.Sku"]">
-                        <MudText Typo="Typo.body2">@context.Sku.Code</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">
-                            @context.Sku.Name - @GetBaseUnitOfMeasureDisplay(context)
-                        </MudText>
+                        <WmsReference Name="@context.Sku.Name" Code="@context.Sku.Code" />
                     </MudTd>
                     <MudTd DataLabel="@Localizer["Common.Warehouse"]">
-                        @WarehouseDisplayFormatter.GetName(context.StorageLocation.Warehouse.Name, Localizer)
+                        <WmsReference Name="@context.StorageLocation.Warehouse.Name" Code="@context.StorageLocation.Warehouse.Code" />
                     </MudTd>
                     <MudTd DataLabel="@Localizer["Common.StorageLocation"]">
-                        <MudText Typo="Typo.body2">@context.StorageLocation.Code</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">
-                            @context.StorageLocation.Name
-                        </MudText>
+                        <WmsReference Name="@context.StorageLocation.Name" Code="@context.StorageLocation.Code" />
                     </MudTd>
-                    <MudTd DataLabel="@Localizer["InventoryLedger.Before"]">@FormatQuantity(context.BalanceBefore)</MudTd>
-                    <MudTd DataLabel="@Localizer["InventoryLedger.Delta"]">@FormatSignedQuantity(context.QuantityDelta)</MudTd>
-                    <MudTd DataLabel="@Localizer["InventoryLedger.After"]">@FormatQuantity(context.BalanceAfter)</MudTd>
+                    <MudTd DataLabel="@Localizer["InventoryLedger.Before"]">@WmsDisplayFormatter.FormatQuantity(context.BalanceBefore)</MudTd>
+                    <MudTd DataLabel="@Localizer["InventoryLedger.Delta"]">@WmsDisplayFormatter.FormatSignedQuantity(context.QuantityDelta)</MudTd>
+                    <MudTd DataLabel="@Localizer["InventoryLedger.After"]">@WmsDisplayFormatter.FormatQuantity(context.BalanceAfter)</MudTd>
                 </RowTemplate>
                 <NoRecordsContent>
                     <MudText>@Localizer["InventoryLedger.NoTransactionEntries"]</MudText>
@@ -95,26 +83,17 @@
     [Parameter]
     public InventoryTransactionDetails Transaction { get; set; } = null!;
 
-    private static CultureInfo QuantityCulture => CultureInfo.CurrentCulture;
-
     private void Close()
     {
         MudDialog.Close();
     }
 
-    private static string FormatTimestamp(DateTimeOffset value) =>
-        value.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss 'UTC'", CultureInfo.InvariantCulture);
-
-    private static string FormatQuantity(decimal value) =>
-        value.ToString("0.####", QuantityCulture);
-
-    private static string FormatSignedQuantity(decimal value) =>
-        value > 0 ? $"+{FormatQuantity(value)}" : FormatQuantity(value);
-
-    private static string GetBaseUnitOfMeasureDisplay(InventoryTransactionEntryDetails entry)
+    private string SourceDescription => Transaction.Source switch
     {
-        return string.IsNullOrWhiteSpace(entry.Sku.BaseUom.Symbol)
-            ? entry.Sku.BaseUom.Code
-            : entry.Sku.BaseUom.Symbol;
-    }
+        { SourceType: "ReceivingOrder", DocumentNumber: not null, DocumentCreatedAtUtc: not null } source =>
+            Localizer["InventoryTransaction.Source.Receiving", source.DocumentNumber, WmsDisplayFormatter.FormatLocalDateTime(source.DocumentCreatedAtUtc.Value)],
+        { SourceType: "InventoryTransfer", DocumentNumber: not null, DocumentCreatedAtUtc: not null } source =>
+            Localizer["InventoryTransaction.Source.Transfer", source.DocumentNumber, WmsDisplayFormatter.FormatLocalDateTime(source.DocumentCreatedAtUtc.Value)],
+        _ => Transaction.Reason
+    };
 }

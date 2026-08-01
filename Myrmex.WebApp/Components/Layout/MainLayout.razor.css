@@ -93,6 +93,10 @@
     flex: 0 0 auto;
 }
 
+::deep .wms-reference { display: flex; gap: 0.35rem; min-width: 0; white-space: nowrap; }
+::deep .wms-reference__name { overflow: hidden; text-overflow: ellipsis; }
+::deep .wms-reference__code { color: var(--mud-palette-text-secondary); flex: 0 0 auto; }
+
 @media (max-width: 600px) {
     ::deep .operation-route {
         align-items: stretch;

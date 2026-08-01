@@ -1,0 +1,17 @@
+<MudTooltip Text="@Tooltip">
+    <MudText Typo="Typo.body2" Class="wms-reference" title="@Tooltip">
+        <span class="wms-reference__name">@DisplayName</span>
+        @if (!string.IsNullOrWhiteSpace(Code))
+        {
+            <span class="wms-reference__code">@Code</span>
+        }
+    </MudText>
+</MudTooltip>
+
+@code {
+    [Parameter, EditorRequired] public string? Name { get; set; }
+    [Parameter] public string? Code { get; set; }
+    [Parameter] public string? Fallback { get; set; }
+    private string DisplayName => string.IsNullOrWhiteSpace(Name) ? Fallback ?? string.Empty : Name;
+    private string Tooltip => string.IsNullOrWhiteSpace(Code) ? DisplayName : $"{DisplayName} · {Code}";
+}
